@@ -1,0 +1,181 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.cer",
+          "storePassword": "0000001BB4187A987735E1BE659599213938EF0810FF887D1439548AC1E5C1400F057E7F131FDE25C78A46",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BA2030526888BEA15A7D0A3AEC4ACB080CBD0B3C5303BBD484A7B11C1E35D3320C5797086DEC81F",
+          "profile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p12"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "5.0.0(12)",
+        "runtimeOS": "HarmonyOS",
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./products/entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mine",
+      "srcPath": "./features/mine",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "home",
+      "srcPath": "./features/home",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "utils",
+      "srcPath": "./commons/utils",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "network",
+      "srcPath": "./commons/network",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "encryption",
+      "srcPath": "./commons/encryption",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "db",
+      "srcPath": "./commons/db",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "photo",
+      "srcPath": "./features/photo",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "srcPath": "./commons/search",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "web",
+      "srcPath": "./commons/web",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "widget",
+      "srcPath": "./commons/widget",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "view",
+      "srcPath": "./features/view",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

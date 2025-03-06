@@ -1,0 +1,34 @@
+import { util } from '@kit.ArkTS';
+
+export class StringUtils {
+  static stringToUint8Array(str: String) {
+    let arr: number[] = new Array();
+    for (let i = 0, j = str.length; i < j; ++i) {
+      arr.push(str.charCodeAt(i));
+    }
+    let tmpArray = new Uint8Array(arr);
+    return tmpArray;
+  }
+
+  static uint8ArrayToString(array: Uint8Array) {
+    let textDecoder = util.TextDecoder.create("utf-8", { ignoreBOM: true })
+    let arrayString = textDecoder.decodeWithStream(array, { stream: false })
+    return arrayString
+  }
+
+  static stringToUint8ArrayUtf8(str: string) {
+    //编码
+    let strBuff = new util.TextEncoder().encodeInto(str) //utf-8
+    //解码
+    let newStr = util.TextDecoder.create("utf-8").decodeWithStream(new Uint8Array(strBuff))
+    console.info(newStr)
+    return newStr
+  }
+
+  static isNullOrEmpty(str: string): boolean {
+    if (str === null || str.length === 0 || str.trim().length === 0) {
+      return true
+    }
+    return false
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "photo",
+  "version": "1.0.0",
+  "description": "Please describe the basic information.",
+  "main": "Index.ets",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "@ohos/utils": "file:../../commons/utils",
+    "@ohos/widget": "file:../../commons/widget",
+    "@ohos/search": "file:../../commons/search",
+    "@ohos/db": "file:../../../KSST/commons/db",
+  }
+}
+

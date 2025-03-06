@@ -1,0 +1,19 @@
+{
+  "name": "home",
+  "version": "1.0.0",
+  "description": "Please describe the basic information.",
+  "main": "Index.ets",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "@ohos/network": "file:../../commons/network",
+    "@ohos/utils": "file:../../commons/utils",
+    "@ohos/search": "file:../../commons/search",
+    "@ohos/encryption": "file:../../commons/encryption",
+    "@ohos/db": "file:../../commons/db",
+    "@ohos/web": "file:../../commons/web",
+    "@ohos/photo": "file:../photo",
+    "@ohos/view": "file:../view",
+  }
+}
+

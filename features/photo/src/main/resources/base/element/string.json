@@ -1,0 +1,36 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "PhotoAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "PhotoAbility_label",
+      "value": "label"
+    },
+    {
+      "name": "search_result",
+      "value": "搜索结果"
+    },
+    {
+      "name": "not_find_question",
+      "value": "找不到题"
+    },
+    {
+      "name": "pay_times",
+      "value": "充值次数"
+    },
+    {
+      "name": "continue_search",
+      "value": "继续搜题"
+    },
+    {
+      "name": "residue_times",
+      "value": "剩余次数"
+    }
+  ]
+}

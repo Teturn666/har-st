@@ -1,0 +1,13 @@
+{
+  "name": "db",
+  "version": "1.0.0",
+  "description": "Please describe the basic information.",
+  "main": "Index.ets",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "@ohos/utils": "file:../../../XFJF/commons/utils",
+    "@ohos/encryption":"file:../../../XFJF/commons/encryption"
+  }
+}
+
