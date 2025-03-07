@@ -1,0 +1,16 @@
+{
+  "name": "bank",
+  "version": "1.0.0",
+  "description": "Please describe the basic information.",
+  "main": "",
+  "author": "",
+  "license": "",
+  "dependencies": {
+    "@ohos/network": "file:../../commons/network",
+    "@ohos/utils": "file:../../commons/utils",
+    "@ohos/search": "file:../../commons/search",
+    "@ohos/encryption": "file:../../commons/encryption",
+    "@ohos/db": "file:../../commons/db"
+  }
+}
+

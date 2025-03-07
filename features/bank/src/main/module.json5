@@ -1,0 +1,13 @@
+{
+  "module": {
+    "name": "bank",
+    "type": "har",
+    "description": "$string:module_desc",
+    "mainElement": "BankAbility",
+    "deviceTypes": [
+      "phone",
+      "tablet",
+      "2in1"
+    ],
+  }
+}

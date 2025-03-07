@@ -55,6 +55,10 @@
     {
       "name": "font_size_18fp",
       "value": "18fp"
+    },
+    {
+      "name": "font_size_24fp",
+      "value": "24fp"
     }
   ]
 }

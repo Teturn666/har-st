@@ -1,4 +1,5 @@
 import { HomePage } from '@ohos/home/Index';
+import { BankPage } from '@ohos/bank/Index';
 import { MinePage } from '@ohos/mine/Index';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { AppConstants } from '../constants/AppConstants';
@@ -18,6 +19,10 @@ struct MainPage {
         Tabs({ index: this.currentIndex }) {
           TabContent() {
             HomePage()
+          }
+
+          TabContent() {
+            BankPage()
           }
 
           TabContent() {

@@ -176,6 +176,18 @@
           ]
         }
       ]
+    },
+    {
+      "name": "bank",
+      "srcPath": "./features/bank",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -55,66 +55,59 @@ export struct HomePage {
 
   build() {
     Column() {
-      if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
-        Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
-          Canvas(this.controller)
-            .width('30%')
-            .height('20%')
-            .onReady(() => {
-              this.animateItem = lottie.loadAnimation({
-                container: this.controller,
-                renderer: 'canvas',
-                loop: true,
-                autoplay: true,
-                context: context,
-                name: this.animateName,
-                animationData: jsonData,
-              })
-            })
+      // if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
+      //   Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
+      //     Canvas(this.controller)
+      //       .width('30%')
+      //       .height('20%')
+      //       .onReady(() => {
+      //         this.animateItem = lottie.loadAnimation({
+      //           container: this.controller,
+      //           renderer: 'canvas',
+      //           loop: true,
+      //           autoplay: true,
+      //           context: context,
+      //           name: this.animateName,
+      //           animationData: jsonData,
+      //         })
+      //       })
+      //   }
+      //
+      // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
+      List({ space: CommonConstants.SPACE_16 }) {
+        ListItem() {
+          Banner({
+            swiperData: arr,
+            handleClick: (item: number) => {
+              hilog.info(0x0001, "testTag", "---->" + item);
+            }
+          })
         }
 
-      } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-        List({ space: CommonConstants.SPACE_16 }) {
-          ListItem() {
-            Banner({
-              swiperData: arr,
-              handleClick: (item: number) => {
-                hilog.info(0x0001, "testTag", "---->" + item);
-              }
-            })
-          }
-
-          ListItem() {
-            Notice()
-          }
-
-          ListItem() {
-            SearchHelper({
-              handleClick: async () => {
-                this.selectImage()
-              }
-            })
-          }
-
-          ListItem() {
-            UseHelper()
-          }
-
-          ListItem() {
-            OnlineExercise()
-          }
-
-          //测试显示ocr的文本
-          ListItem() {
-            Text(this.dataValues)
-              .fontSize($r('app.float.font_size_10fp'))
-              .fontColor($r('app.color.c_black'))
-          }
+        ListItem() {
+          Notice()
         }
-        .scrollBar(BarState.Off)
-      } else if (this.loadingStatus === LoadingStatus.FAILED) {
-        Text('数据插入失败').fontSize(18)
+
+        ListItem() {
+          SearchHelper({
+            handleClick: async () => {
+              this.selectImage()
+            }
+          })
+        }
+
+        //测试显示ocr的文本
+        ListItem() {
+          Text(this.dataValues)
+            .fontSize($r('app.float.font_size_10fp'))
+            .fontColor($r('app.color.c_black'))
+        }
       }
+      .scrollBar(BarState.Off)
+
+      // } else if (this.loadingStatus === LoadingStatus.FAILED) {
+      //   Text('数据插入失败').fontSize(18)
+      // }
     }
     .height(CommonConstants.FULL_PERCENT)
     .width(CommonConstants.FULL_PERCENT)
@@ -217,104 +210,6 @@ export struct HomePage {
   }
 }
 
-//使用帮助
-@Component
-struct UseHelper {
-  @State isShow: boolean = false
-
-  @Builder
-  payViewBuilder() {
-    Column() {
-      PayView()
-    }
-  }
-
-  build() {
-    Column() {
-      TitleText({
-        leftImage: $r('app.media.ic_home_help'),
-        text: $r('app.string.use_helper')
-      }).margin({ top: $r('app.float.float_15vp') })
-      Flex({
-        direction: FlexDirection.Row,
-        wrap: FlexWrap.NoWrap,
-        justifyContent: FlexAlign.SpaceAround,
-        alignItems: ItemAlign.Center,
-      }) {
-        HelperBtText({ title: $r('app.string.pay_times'), content: $r('app.string.reside_times') })
-          .onClick(() => {
-            //TODO 充值次数弹窗
-            this.isShow = true
-          })
-          .bindSheet($$this.isShow, this.payViewBuilder(), {
-            height: SheetSize.FIT_CONTENT,
-            blurStyle: BlurStyle.Thick,
-            showClose: false,
-            preferType: SheetType.BOTTOM,
-            shouldDismiss: ((sheetDismiss: SheetDismiss) => {
-              sheetDismiss.dismiss()
-            })
-          })
-
-        HelperBtText({ title: $r('app.string.search_teach') }).onClick(() => {
-          this.jumpToWeb()
-        })
-      }
-    }.alignItems(HorizontalAlign.Start)
-  }
-
-  //跳转到H5页面
-  private jumpToWeb() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_WEB, params: {
-        url: HomeConstants.USE_TEACH_URL,
-        title: '使用教程'
-      }
-    })
-  }
-}
-
-//在线练习
-@Component
-struct OnlineExercise {
-  build() {
-    Column() {
-      Row() {
-        TitleText({
-          leftImage: $r('app.media.ic_home_exercise'),
-          text: $r('app.string.online_exercise')
-        })
-        TitleText({
-          text: $r('app.string.type_car'),
-          textSize: $r('app.float.font_size_12fp'),
-          textColor: $r('app.color.c_1f59a8'),
-          leftImage: $r('app.media.ic_car'),
-          leftImageSize: $r('app.float.float_18vp'),
-          leftVisible: Visibility.Visible,
-          rightVisible: Visibility.Visible
-        })
-          .backgroundColor($r('app.color.c_f2f7ff'))
-          .borderRadius(CommonConstants.RADIUS_8)
-          .padding(CommonConstants.PADDING_8)
-      }
-      .width(CommonConstants.FULL_PERCENT)
-      .justifyContent(FlexAlign.SpaceBetween)
-      .margin({ top: $r('app.float.float_15vp') })
-
-      Flex({
-        direction: FlexDirection.Row,
-        wrap: FlexWrap.NoWrap,
-        justifyContent: FlexAlign.SpaceAround,
-        alignItems: ItemAlign.Center,
-      }) {
-        PicTopText({ text: $r('app.string.order_exercise'), img: $r('app.media.ic_in_order_exercise') })
-        PicTopText({ text: $r('app.string.mock_exam'), img: $r('app.media.ic_exam') })
-        PicTopText({ text: $r('app.string.wrong_review'), img: $r('app.media.ic_show_error') })
-        PicTopText({ text: $r('app.string.collection_exercise'), img: $r('app.media.ic_collect_exercise') })
-      }.margin({ top: $r('app.float.float_15vp') })
-    }
-  }
-}
 
 //搜题助手
 @Component
@@ -334,18 +229,7 @@ struct SearchHelper {
     Column() {
       Row() {
         TitleText({
-          leftImage: $r('app.media.ic_home_search'),
           text: $r('app.string.search_helper')
-        })
-        TitleText({
-          text: $r('app.string.pay_times'),
-          textSize: $r('app.float.font_size_12fp'),
-          textColor: $r('app.color.c_1f59a8'),
-          leftVisible: Visibility.None,
-          rightVisible: Visibility.Visible
-        }).onClick(() => {
-          //TODO 充值次数弹窗
-          this.isShow = true
         })
           .bindSheet($$this.isShow, this.payViewBuilder(), {
             height: SheetSize.FIT_CONTENT,
@@ -361,18 +245,12 @@ struct SearchHelper {
       .justifyContent(FlexAlign.SpaceBetween)
       .margin({ top: $r('app.float.float_15vp') })
 
-      Stack({ alignContent: Alignment.TopStart }) {
-        Image($r('app.media.ic_search_by_take_pic'))
+      Stack({ alignContent: Alignment.Center }) {
+        Image($r('app.media.ic_bg_almighty'))
           .objectFit(ImageFit.Contain)
-          .size({ width: 200, height: 60 })
-        Image($r('app.media.ic_times_bg'))
-          .objectFit(ImageFit.Contain)
-          .size({ width: 60, height: 40 })
-          .margin({ left: 20, top: -12 })
-        Text($r('app.string.reside_times'))
-          .fontSize($r('app.float.font_size_10fp'))
+        Text($r('app.string.almighty_search'))
+          .fontSize($r('app.float.font_size_24fp'))
           .fontColor($r('app.color.c_white'))
-          .margin({ left: 25, top: 2 })
       }.margin({ top: $r('app.float.float_10vp') }).onClick(() => this.handleClick())
     }
   }
@@ -448,7 +326,7 @@ struct TitleText {
   @Prop leftImage: Resource
   @Prop leftImageSize: Resource = $r('app.float.float_24vp')
   @Prop rightImageSize: Resource = $r('app.float.float_16vp')
-  @Prop rightImage: Resource = $r('app.media.ic_home_gps')
+  @Prop rightImage: Resource
   @Prop leftVisible: Visibility = Visibility.Visible
   @Prop rightVisible: Visibility = Visibility.None
 

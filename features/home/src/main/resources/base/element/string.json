@@ -14,7 +14,7 @@
     },
     {
       "name": "search_helper",
-      "value": "搜题助手"
+      "value": "搜题"
     },
     {
       "name": "online_exercise",
@@ -95,6 +95,10 @@
     {
       "name": "network_reason",
       "value": "Obtaining Network Information"
+    },
+    {
+      "name": "almighty_search",
+      "value": "全能搜题"
     }
   ]
 }

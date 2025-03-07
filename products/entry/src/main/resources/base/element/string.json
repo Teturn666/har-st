@@ -10,11 +10,15 @@
     },
     {
       "name": "PhoneAbility_label",
-      "value": "学法减分免费搜题"
+      "value": "快搜搜题测试"
     },
     {
       "name": "tab_home",
-      "value": "首页"
+      "value": "学习"
+    },
+    {
+      "name": "tab_bank",
+      "value": "题库广场"
     },
     {
       "name": "tab_mine",
