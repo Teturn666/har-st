@@ -91,6 +91,7 @@ export struct BankPage {
             TabContent() {
               Column() {
                 BankList({ aid: item.aid })
+                  .align(Alignment.Start)
                   .width('100%')
               }
             }
@@ -106,7 +107,7 @@ export struct BankPage {
           this.listScroller.scrollToIndex(targetIndex, true, ScrollAlign.CENTER);
         })
       } else if (this.loadingStatus === LoadingStatus.FAILED) {
-        Text('数据插入失败').fontSize(18)
+        Text('数据请求失败').fontSize(18)
       }
     }
     .height('100%')

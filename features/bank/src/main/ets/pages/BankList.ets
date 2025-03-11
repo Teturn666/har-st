@@ -20,21 +20,77 @@ export struct BankList {
       ForEach(this.bankRes.newsData, (item: TiKuRes) => {
         ListItem() {
           Column() {
-            Row() {
-              Text(item.name)
-                .fontColor(Color.Black)
-                .fontSize(14)
-                .fontWeight(FontWeight.Bold)
-              Blank()
-            }.justifyContent(FlexAlign.Start)
+            Flex({
+              direction: FlexDirection.Row,
+              justifyContent: FlexAlign.SpaceAround,
+              alignItems: ItemAlign.Center
+            }) {
+              Column() {
+                Row() {
+                  // Image($r('app.media.ic_feed'))
+                  //   .objectFit(ImageFit.Contain)
+                  //   .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
+                  Text(item.name)
+                    .fontColor($r('app.color.c_3e3e3e'))
+                    .fontSize($r('app.float.font_size_16fp'))
+                    .fontWeight(FontWeight.Bold)
+                  // .margin({
+                  //   left: $r('app.float.float_5vp'),
+                  // })
+                }
 
-            Text(item.desc)
-              .fontSize(16)
-              .margin({ left: 5, right: 5, bottom: 10 })
-          }.justifyContent(FlexAlign.Start).width('100%')
+                Text(item.desc)
+                  .fontColor($r('app.color.c_3e3e3e'))
+                  .fontSize($r('app.float.font_size_12fp'))
+                  .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
+
+                Row() {
+                  Text("题库状态：")
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .fontSize($r('app.float.font_size_10fp'))
+                  Text("未下载")
+                    .fontColor(Color.Blue)
+                    .fontSize($r('app.float.font_size_10fp'))
+                    .margin({ right: $r('app.float.float_30vp') })
+
+                  Text("题库更新时间：" + item.time)
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .fontSize($r('app.float.font_size_10fp'))
+                }
+              }
+              .width('85%')
+              .alignItems(HorizontalAlign.Start)
+              .margin({
+                left: $r('app.float.float_20vp'),
+                top: $r('app.float.float_20vp'),
+                right: $r('app.float.float_20vp'),
+              })
+
+              Column() {
+                Image($r('app.media.ic_download'))
+                  .objectFit(ImageFit.Contain)
+                  .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
+                Text("下载")
+                  .fontColor(Color.Black)
+                  .fontSize($r('app.float.font_size_10fp'))
+              }.margin({
+                right: $r('app.float.float_20vp'),
+              })
+            }
+
+            Divider()
+              .strokeWidth(0.5)
+              .color($r('app.color.c_ebebeb'))
+              .margin({
+                left: $r('app.float.float_20vp'),
+                top: $r('app.float.float_10vp'),
+                right: $r('app.float.float_20vp'),
+              })
+          }
         }
+
       }, (item: TiKuRes) => JSON.stringify(item))
-    }.width('100%')
+    }
   }
 
   async loadFeedData(): Promise<void> {

@@ -3,6 +3,22 @@
     {
       "name": "start_window_background",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "c_3e3e3e",
+      "value": "#3e3e3e"
+    },
+    {
+      "name": "c_9d9d9d",
+      "value": "#9d9d9d"
+    },
+    {
+      "name": "c_f2b771",
+      "value": "#f2b771"
+    },
+    {
+      "name": "c_ebebeb",
+      "value": "#ebebeb"
     }
   ]
 }
