@@ -1,3 +1,4 @@
+import { Logger } from '@ohos/utils'
 import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 import TikuRes from './TikuRes'
@@ -30,6 +31,7 @@ export class BankModel {
       let data = await this.funNetwork.getBankTypeList()
       return data
     } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
       return []
     }
   }
