@@ -1,8 +1,11 @@
 ///题库列表
-
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
 import TiKuRes from '../model/TikuRes';
+import { Logger } from '@ohos/utils';
+import { BankListRes } from '@ohos/db'
+
+const TAG = '[BankList]'
 
 
 @Component
@@ -17,7 +20,7 @@ export struct BankList {
 
   build() {
     List() {
-      ForEach(this.bankRes.newsData, (item: TiKuRes) => {
+      ForEach(this.bankRes.newsData, (item: BankListRes) => {
         ListItem() {
           Column() {
             Flex({
@@ -73,9 +76,16 @@ export struct BankList {
                 Text("下载")
                   .fontColor(Color.Black)
                   .fontSize($r('app.float.font_size_10fp'))
-              }.margin({
+              }
+              .margin({
                 right: $r('app.float.float_20vp'),
               })
+              .onClick(
+                () => {
+                  Logger.info(TAG, '题库内容--------' + item)
+                  this.bankModel.downLoadBank(item)
+                }
+              )
             }
 
             Divider()
@@ -89,7 +99,7 @@ export struct BankList {
           }
         }
 
-      }, (item: TiKuRes) => JSON.stringify(item))
+      }, (item: BankListRes) => JSON.stringify(item))
     }
   }
 

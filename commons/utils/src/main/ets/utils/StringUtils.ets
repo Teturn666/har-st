@@ -31,4 +31,12 @@ export class StringUtils {
     }
     return false
   }
+
+  static subUrl(url: string): string {
+    return url.substring(url.lastIndexOf('/') + 1)
+  }
+
+  static subLastIndex(str: string, s: string): string {
+    return str.substring(str.lastIndexOf(s))
+  }
 }

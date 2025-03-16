@@ -161,13 +161,13 @@ export class HomeModel {
       let quesId = quesInfo.id
 
       //解密题目
-      quesInfo.question = await SearchDecryptUtils.getQuestionText(quesInfo.question, quesId)
-      //解密获取图片
-      // quesInfo.img = await SearchDecryptUtils.getQuestionImages(quesInfo.question, quesId)
-      //解密选项
-      quesInfo.option = await SearchDecryptUtils.getOptions(quesInfo.option, quesId)
-      //解密答案
-      quesInfo.answer = await SearchDecryptUtils.getQuestionAnswer(quesInfo.answer, quesId)
+      // quesInfo.question = await SearchDecryptUtils.getQuestionText(quesInfo.question, quesId)
+      // //解密获取图片
+      // // quesInfo.img = await SearchDecryptUtils.getQuestionImages(quesInfo.question, quesId)
+      // //解密选项
+      // quesInfo.option = await SearchDecryptUtils.getOptions(quesInfo.option, quesId)
+      // //解密答案
+      // quesInfo.answer = await SearchDecryptUtils.getQuestionAnswer(quesInfo.answer, quesId)
 
       const id = await this.questionTable.insertDataAwait(quesInfo)
       Logger.info("====id==" + id)

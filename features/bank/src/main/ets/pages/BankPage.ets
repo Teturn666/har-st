@@ -1,13 +1,14 @@
 import { BankModel } from '../model/BankModel'
 import { BankCategory } from '../model/BankCategory';
 import { BankList } from './BankList';
-import { LoadingStatus } from '@ohos/utils';
+import { LoadingStatus, Logger } from '@ohos/utils';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
 
 const context = (getContext(this) as common.UIAbilityContext)
 let jsonData = null
+const TAG = '[BankPage]'
 
 @Component
 export struct BankPage {
@@ -89,11 +90,9 @@ export struct BankPage {
         Tabs({ barPosition: BarPosition.Start, controller: this.subController }) {
           ForEach(this.categoryList, (item: BankCategory) => {
             TabContent() {
-              Column() {
-                BankList({ aid: item.aid })
-                  .align(Alignment.Start)
-                  .width('100%')
-              }
+              BankList({
+                aid: item.aid
+              })
             }
             .backgroundColor(Color.White)
 

@@ -47,24 +47,24 @@ struct ListView {
 
     SearchModel.getInstance().searchResultList(this.ocrTxt).then(async (value: QuestionRes[]) => {
 
-      for (let i = 0; i < value.length; i++) {
-        let res = value[i]
-
-        let question = await SearchDecryptUtils.getQuestionWithPrefix(3, res.question, res.questionCase)
-        let optionAry = await SearchDecryptUtils.getOptionsWithPrefix(".", res.option)
-
-        let searchResultBean = new SearchResultBean()
-        searchResultBean.question = question
-        searchResultBean.optionAry = optionAry
-        searchResultBean.answer = res.answer
-        for (let index = 0; index < optionAry.length; index++) {
-          let pos = SearchDecryptUtils.isCorrectAnswer(index, res.answer)
-          if (pos != -1) {
-            searchResultBean.answerAry.push(pos)
-          }
-        }
-        this.resultData.push(searchResultBean)
-      }
+      // for (let i = 0; i < value.length; i++) {
+      //   let res = value[i]
+      //
+      //   let question = await SearchDecryptUtils.getQuestionWithPrefix(3, res.question, res.questionCase)
+      //   let optionAry = await SearchDecryptUtils.getOptionsWithPrefix(".", res.option)
+      //
+      //   let searchResultBean = new SearchResultBean()
+      //   searchResultBean.question = question
+      //   searchResultBean.optionAry = optionAry
+      //   searchResultBean.answer = res.answer
+      //   for (let index = 0; index < optionAry.length; index++) {
+      //     let pos = SearchDecryptUtils.isCorrectAnswer(index, res.answer)
+      //     if (pos != -1) {
+      //       searchResultBean.answerAry.push(pos)
+      //     }
+      //   }
+      //   this.resultData.push(searchResultBean)
+      // }
     })
   }
 

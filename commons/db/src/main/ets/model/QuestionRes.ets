@@ -1,3 +1,4 @@
+//题目表
 export interface QuestionRes {
   id: number
   questionId: number

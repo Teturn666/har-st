@@ -1,4 +1,4 @@
-export { HomeBankListRes } from './src/main/ets/model/HomeBankListRes'
+export { BankListRes } from './src/main/ets/model/BankListRes'
 
 export { QuestionRes } from './src/main/ets/model/QuestionRes'
 

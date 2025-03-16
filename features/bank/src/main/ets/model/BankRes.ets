@@ -1,7 +1,8 @@
+import { BankListRes } from '@ohos/db';
 import TiKuRes from './TikuRes';
 
 export default class BankRes {
-  newsData: Array<TiKuRes> = [];
+  newsData: Array<BankListRes> = [];
   currentPage: number = 1;
   pageSize: number = 10;
   isVisiblePullDown: boolean = false;

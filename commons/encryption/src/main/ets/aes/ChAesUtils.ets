@@ -1,6 +1,7 @@
 import util from '@ohos.util';
 import { Logger, StringUtils } from '@ohos/utils'
-import cryptoFramework from '@ohos.security.cryptoFramework';
+// import cryptoFramework from '@ohos.security.cryptoFramework';
+import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { ChAesCallBack } from './ChAesCallBack';
 
 const KEY: string = "QGKINVCYHLJXDYHLYYPZJXLLCBFMJHCH"
@@ -50,9 +51,9 @@ export class ChAesUtils {
   /**
    * 解密异步方法
    */
-  static async aesDecryptSync(message: string, questionId: number): Promise<string> {
+  static async aesDecryptSync(message: string, name: string): Promise<string> {
 
-    let iv = (questionId + KEY).substring(0, 16)
+    let iv = (name + KEY).substring(0, 16)
 
     let paramsSpec: cryptoFramework.IvParamsSpec = {
       iv: { data: StringUtils.stringToUint8Array(iv) },
@@ -70,12 +71,14 @@ export class ChAesUtils {
 
       let newMessage = that.decodeSync(message);
       let input: cryptoFramework.DataBlob = { data: newMessage };
+      // let data =   await cipher.update({data:newMessage})
+
 
       let data = await cipher.doFinal(input)
 
-      // Logger.info("DecryptOutPut is " + data.data);
+      Logger.info("DecryptOutPut is " + data.data);
       let result = StringUtils.uint8ArrayToString(data.data)
-      // Logger.info("result is " + result);
+      Logger.info("result is " + result);
       return result
     } catch (e) {
       Logger.debug("xxx" + e)

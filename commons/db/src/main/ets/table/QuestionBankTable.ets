@@ -1,7 +1,7 @@
 import ChRdb from '../ChRdb';
 import DbConstants from '../constants/DbConstants';
 import { relationalStore } from '@kit.ArkData';
-import { HomeBankListRes } from '../model/HomeBankListRes';
+import { BankListRes } from '../model/BankListRes';
 
 //题库表
 export class QuestionBankTable {
@@ -18,7 +18,7 @@ export class QuestionBankTable {
     this.accountTable.getRdbStore(callback);
   }
 
-  insertData(account: HomeBankListRes, callback: Function) {
+  insertData(account: BankListRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     this.accountTable.insertData(valueBucket, callback);
   }
@@ -26,21 +26,21 @@ export class QuestionBankTable {
   /**
    * 异步插入方法
    */
-  async insertDataAwait(account: HomeBankListRes): Promise<number> {
+  async insertDataAwait(account: BankListRes): Promise<number> {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account)
     return await this.accountTable.insertDataAwait(valueBucket)
   }
 
-  deleteData(account: HomeBankListRes, callback: Function) {
+  deleteData(account: BankListRes, callback: Function) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
-    predicates.equalTo('id', account.id);
+    predicates.equalTo('id', account.qid);
     this.accountTable.deleteData(predicates, callback);
   }
 
-  updateData(account: HomeBankListRes, callback: Function) {
+  updateData(account: BankListRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
-    predicates.equalTo('id', account.id);
+    predicates.equalTo('id', account.qid);
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
@@ -56,18 +56,25 @@ export class QuestionBankTable {
         callback([]);
       } else {
         resultSet.goToFirstRow();
-        const result: HomeBankListRes[] = [];
+        const result: BankListRes[] = [];
         for (let i = 0; i < count; i++) {
-          let tmp: HomeBankListRes = {
-            id: 0,
+          let tmp: BankListRes = {
+            qid: '',
             name: '',
             desc: '',
-            cover: '',
-            version: '0'
+            time: '',
+            url: '',
+            version: 0,
+            position: 0,
+
           };
-          tmp.id = resultSet.getDouble(resultSet.getColumnIndex('bankId'));
+          tmp.qid = resultSet.getString(resultSet.getColumnIndex('qid'));
           tmp.name = resultSet.getString(resultSet.getColumnIndex('name'));
-          tmp.version = resultSet.getString(resultSet.getColumnIndex('version'));
+          tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'));
+          tmp.time = resultSet.getString(resultSet.getColumnIndex('time'));
+          tmp.url = resultSet.getString(resultSet.getColumnIndex('url'));
+          tmp.version = resultSet.getDouble(resultSet.getColumnIndex('version'));
+          tmp.position = resultSet.getDouble(resultSet.getColumnIndex('position'));
           result[i] = tmp;
           resultSet.goToNextRow();
         }
@@ -77,10 +84,14 @@ export class QuestionBankTable {
   }
 }
 
-function generateBucket(account: HomeBankListRes): relationalStore.ValuesBucket {
+function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {};
-  obj.bankId = account.id;
+  obj.qid = account.qid;
   obj.name = account.name;
+  obj.desc = account.desc;
+  obj.time = account.time;
+  obj.url = account.url;
+  obj.position = account.position;
   obj.version = account.version;
   return obj;
 }
