@@ -10,9 +10,9 @@ export class StringUtils {
     return tmpArray;
   }
 
-  static uint8ArrayToString(array: Uint8Array) {
-    let textDecoder = util.TextDecoder.create("utf-8", { ignoreBOM: true })
-    let arrayString = textDecoder.decodeWithStream(array, { stream: false })
+  static uint8ArrayToString(array: Uint8Array): string {
+    let textDecoder = util.TextDecoder.create("utf-8")
+    let arrayString = textDecoder.decodeToString(array)
     return arrayString
   }
 
@@ -20,7 +20,7 @@ export class StringUtils {
     //编码
     let strBuff = new util.TextEncoder().encodeInto(str) //utf-8
     //解码
-    let newStr = util.TextDecoder.create("utf-8").decodeWithStream(new Uint8Array(strBuff))
+    let newStr = util.TextDecoder.create("utf-8").decodeToString(new Uint8Array(strBuff))
     console.info(newStr)
     return newStr
   }
