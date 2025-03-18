@@ -3,13 +3,9 @@ import { BaseResponse, HttpUtils } from '@ohos/network/Index';
 import axios, { AxiosResponse, AxiosProgressEvent } from '@ohos/axios';
 import { BankCategory } from '../model/BankCategory';
 import { BusinessError } from '@kit.BasicServicesKit';
-import TiKuRes from '../model/TikuRes';
 import { BankListRes } from '@ohos/db'
 import { Logger } from '@ohos/utils'
 import fs, { ReadTextOptions } from '@ohos.file.fs';
-import { Okio } from '@ohos/okio';
-import File from '@system.file';
-import { SearchDecryptUtils } from '@ohos/search'
 
 const TAG = '[BankNet]'
 
@@ -51,7 +47,7 @@ export class BankNet {
   }
 
   //获取题库文件内容
-  public getDownloadQuestionBank(downloadUrl: string, subTxtName: string): Promise<string> {
+  public getDownloadQuestionBank(downloadUrl: string): Promise<string> {
 
     return new Promise((resolve: Function, reject: Function) => {
 
@@ -80,23 +76,19 @@ export class BankNet {
         console.info("result: " + JSON.stringify(res.data));
 
         try {
-          let sink = new Okio.Sink(filePath)
           let readTextOptions: ReadTextOptions = {
-            offset: 1,
+            offset: 0,
             length: 0,
             encoding: 'utf-8'
           };
           let stat = fs.statSync(filePath);
           readTextOptions.length = stat.size;
           let str = fs.readTextSync(filePath, readTextOptions)
-          Logger.info(TAG, "读取的长度----" + str)
-          let trStr = SearchDecryptUtils.getTrText(str, subTxtName)
-          Logger.info(TAG, 'trStr--------' + trStr)
-          return str
+          // Logger.info(TAG, "读取的长度----" + str)
+          resolve(str);
         } catch (e) {
           Logger.info(TAG, "读取文件内容失败----" + e)
         }
-        return ""
       }).catch((error: BusinessError) => {
         console.error("error:" + JSON.stringify(error));
       })

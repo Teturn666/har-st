@@ -11,8 +11,8 @@ export class StringUtils {
   }
 
   static uint8ArrayToString(array: Uint8Array): string {
-    let textDecoder = util.TextDecoder.create("utf-8")
-    let arrayString = textDecoder.decodeToString(array)
+    let textDecoder = util.TextDecoder.create("utf-8", { ignoreBOM: true })
+    let arrayString = textDecoder.decodeToString(array, { stream: false })
     return arrayString
   }
 

@@ -3,7 +3,6 @@ import { SearchDecryptUtils } from '@ohos/search'
 import { Logger, StringUtils } from '@ohos/utils'
 import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
-import TikuRes from './TikuRes'
 
 const TAG = '[BankModel]'
 
@@ -66,16 +65,18 @@ export class BankModel {
   public async downLoadBankFile(qid: string, url: string): Promise<boolean> {
     try {
       let subTxtName = StringUtils.subUrl(url)
-      Logger.info(TAG, 'subTxtName--------' + subTxtName)
-      let str = await this.bankNet.getDownloadQuestionBank(url,subTxtName)
-      let suffix = StringUtils.subLastIndex(subTxtName,'.')
-      Logger.info(TAG, 'suffix--------' + suffix)
-      let trStr =  await SearchDecryptUtils.getTrText(str,subTxtName)
+      // Logger.info(TAG, 'subTxtName--------' + subTxtName)
+      let suffix = StringUtils.subLastIndex(subTxtName, '.')
+      // Logger.info(TAG, 'suffix--------' + suffix)
+
+      let str = await this.bankNet.getDownloadQuestionBank(url)
+      // Logger.info(TAG, 'trStr--------' + str)
+
+      let trStr = await SearchDecryptUtils.getTrText(suffix, str, subTxtName)
       Logger.info(TAG, 'trStr--------' + trStr)
-
-
       return true
     } catch (e) {
+      // Logger.info(TAG, "----->" + e)
       return false
     }
   }
