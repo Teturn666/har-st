@@ -2,9 +2,7 @@ import { CommonConstants, Logger } from '@ohos/utils/Index'
 import { TitleBar } from '@ohos/widget/Index'
 import router from '@ohos.router'
 import { SearchModel } from '../model/SearchModel'
-import { QuestionRes } from '@ohos/db'
-import { SearchDecryptUtils } from '@ohos/search'
-import { SearchResultBean } from '../model/SearchResultBean'
+import { SearchResultRes } from '../model/SearchResultRes'
 
 
 @Entry({ routeName: 'searchResultPage' })
@@ -35,7 +33,7 @@ export struct SearchResultPage {
 
 @Component
 struct ListView {
-  @State resultData: SearchResultBean[] = []
+  @State resultData: SearchResultRes[] = []
   ocrTxt = '驾驶人'
 
   aboutToAppear(): void {
@@ -45,33 +43,27 @@ struct ListView {
       this.ocrTxt = ocrTxtParam.replaceAll("\n", "")
     }
 
+    SearchModel.getInstance().searchResultList(this.ocrTxt).then(async (value: SearchResultRes[]) => {
 
-    // SearchModel.getInstance().searchResultList(this.ocrTxt).then(async (value: QuestionRes[]) => {
+      for (let i = 0; i < value.length; i++) {
+        let res = value[i]
 
-    // for (let i = 0; i < value.length; i++) {
-    //   let res = value[i]
-    //
-    //   let question = await SearchDecryptUtils.getQuestionWithPrefix(3, res.question, res.questionCase)
-    //   let optionAry = await SearchDecryptUtils.getOptionsWithPrefix(".", res.option)
-    //
-    //   let searchResultBean = new SearchResultBean()
-    //   searchResultBean.question = question
-    //   searchResultBean.optionAry = optionAry
-    //   searchResultBean.answer = res.answer
-    //   for (let index = 0; index < optionAry.length; index++) {
-    //     let pos = SearchDecryptUtils.isCorrectAnswer(index, res.answer)
-    //     if (pos != -1) {
-    //       searchResultBean.answerAry.push(pos)
-    //     }
-    //   }
-    //   this.resultData.push(searchResultBean)
-    // }
-    // })
-
-    for (let i = 0; i < 20; i++) {
-      let searchResultBean = new SearchResultBean()
-      this.resultData.push(searchResultBean)
-    }
+        let searchResultRes = new SearchResultRes()
+        searchResultRes.q = res.q
+        searchResultRes.ans = res.ans
+        searchResultRes.Name = res.Name
+        for (let index = 0; index < res.ASlice.length; index++) {
+          let prefix = String.fromCharCode('A'.charCodeAt(0) + index)
+          searchResultRes.ASlice.push(prefix + "、" + res.ASlice[index])
+          if (res.ans.includes(prefix)) {
+            if (index != -1) {
+              searchResultRes.answerAry.push(index)
+            }
+          }
+        }
+        this.resultData.push(searchResultRes)
+      }
+    })
   }
 
   build() {
@@ -85,19 +77,19 @@ struct ListView {
       }
 
       ForEach(this.resultData,
-        (item: SearchResultBean) => {
+        (item: SearchResultRes) => {
           ListItem() {
             Column() {
-              Text("答案：" + item.answer)
+              Text("答案：" + item.ans)
                 .fontSize(16)
                 .fontColor($r('app.color.c_f75a23'))
                 .margin({ bottom: 15 })
                 .align(Alignment.Start)
-              Text(item.question)
+              Text(item.q)
                 .fontSize(16)
                 .align(Alignment.Start)
 
-              ForEach(item.optionAry, (optionTxt: string, index: number) => {
+              ForEach(item.ASlice, (optionTxt: string, index: number) => {
                 if (item.answerAry.includes(index)) {
                   Text(optionTxt).fontSize(16).fontColor($r('app.color.c_f75a23')).margin({ top: 10 })
                 } else {
@@ -110,18 +102,19 @@ struct ListView {
                 alignItems: ItemAlign.Center,
                 wrap: FlexWrap.Wrap
               }) {
-                Row() {
-                  Text("题库名称")
-                    .fontSize(14)
-                    .fontColor($r('app.color.c_3e3e3e'))
-                    .margin({ top: 30 })
-                    .align(Alignment.Start)
-                  Text("（下载状态）")
-                    .fontSize(14)
-                    .fontColor($r('app.color.c_9d9d9d'))
-                    .margin({ top: 30 })
-                    .align(Alignment.Start)
-                }
+                // Row() {
+                Text(item.Name)
+                  .fontSize(14)
+                  .fontColor($r('app.color.c_3e3e3e'))
+                  .margin({ top: 30 })
+                  .align(Alignment.Start)
+                  .width('70%')
+                // Text("（下载状态）")
+                //   .fontSize(14)
+                //   .fontColor($r('app.color.c_9d9d9d'))
+                //   .margin({ top: 30 })
+                //   .align(Alignment.Start)
+                // }
 
                 Text("去下载")
                   .fontSize(14)

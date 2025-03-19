@@ -10,6 +10,7 @@
     "@ohos/widget": "file:../../commons/widget",
     "@ohos/search": "file:../../commons/search",
     "@ohos/db": "file:../../../KSST/commons/db",
+    "@ohos/network": "file:../../commons/network"
   }
 }
 
