@@ -22,9 +22,9 @@ export default class DbConstants {
   //题目表
   static readonly QUESTION_TABLE: DbTableBean = {
     tableName: 'question',
-    sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, questionId INTEGER, ' +
-      'chapterId INTEGER, questionCase TEXT, question TEXT, option TEXT, answer TEXT, questionImg TEXT)',
-    columns: ['id', 'questionId', 'chapterId', 'questionCase', 'question', 'option', 'answer', 'questionImg']
+    sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
+      'question TEXT, option TEXT, answer TEXT)',
+    columns: ['id', 'qId', 'question', 'option', 'answer']
   };
   /**
    * Log tag.

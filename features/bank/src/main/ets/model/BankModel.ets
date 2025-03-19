@@ -1,4 +1,4 @@
-import { QuestionBankTable, BankListRes } from '@ohos/db'
+import { QuestionBankTable, QuestionTable, BankListRes, QuestionRes } from '@ohos/db'
 import { SearchDecryptUtils } from '@ohos/search'
 import { Logger, StringUtils } from '@ohos/utils'
 import { BankNet } from '../service/BankNet'
@@ -11,6 +11,7 @@ export class BankModel {
   private bankNet: BankNet
   private static instance: BankModel
   private questionBankTable = new QuestionBankTable()
+  private questionTable = new QuestionTable()
 
   private constructor() {
     this.bankNet = new BankNet()
@@ -26,6 +27,7 @@ export class BankModel {
   //创建数据库
   createTable() {
     this.questionBankTable.getRdbStore()
+    this.questionTable.getRdbStore()
   }
 
   //获取题库tab类型目录列表
@@ -53,7 +55,9 @@ export class BankModel {
   public async downLoadBank(bankListRes: BankListRes): Promise<boolean> {
     try {
       //插入题库表
-      await this.questionBankTable.insertDataAwait(bankListRes)
+      let ret = await this.questionBankTable.insertDataAwait(bankListRes)
+      Logger.info(TAG, 'ret--------' + ret)
+
       await this.downLoadBankFile(bankListRes.qid, bankListRes.url)
       return true
     } catch (e) {
@@ -74,9 +78,13 @@ export class BankModel {
 
       let trStr = await SearchDecryptUtils.getTrText(suffix, str, subTxtName)
       Logger.info(TAG, 'trStr--------' + trStr)
+      //转换成 题目的对象
+      let jsonStr = JSON.parse(trStr.replace(/[\r\n\t]/g, '')) as QuestionRes
+      let ret = await this.questionTable.insertDataAwait(jsonStr)
+      Logger.info(TAG, 'ret--------' + ret)
       return true
     } catch (e) {
-      // Logger.info(TAG, "----->" + e)
+      Logger.info(TAG, "----->" + e)
       return false
     }
   }

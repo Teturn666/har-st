@@ -8,7 +8,6 @@ import { SearchEngine } from '@ohos/search/Index'
 import { preferences } from '@kit.ArkData'
 import { Context } from '@kit.AbilityKit'
 import HomeConstants from '../Constants/HomeConstants'
-import { SearchDecryptUtils } from '@ohos/search'
 
 const TAG = '[HomeModel]'
 
@@ -158,7 +157,7 @@ export class HomeModel {
     Logger.info("====ll==" + data.length)
     for (let i = 0; i < data.length; i++) {
       const quesInfo: QuestionRes = data[i]
-      let quesId = quesInfo.id
+      // let quesId = quesInfo.id
 
       //解密题目
       // quesInfo.question = await SearchDecryptUtils.getQuestionText(quesInfo.question, quesId)

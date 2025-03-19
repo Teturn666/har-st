@@ -31,14 +31,14 @@ export class QuestionTable {
 
   deleteData(account: QuestionRes, callback: Function) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    predicates.equalTo('id', account.id);
+    // predicates.equalTo('id', account.id);
     this.accountTable.deleteData(predicates, callback);
   }
 
   updateData(account: QuestionRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    predicates.equalTo('id', account.id);
+    // predicates.equalTo('id', account.id);
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
@@ -57,23 +57,17 @@ export class QuestionTable {
         const result: QuestionRes[] = [];
         for (let i = 0; i < count; i++) {
           let tmp: QuestionRes = {
-            id: 0,
-            pid: 0,
-            questionId: 0,
-            question: '0',
-            answer: '0',
-            questionCase: '0',
-            option: [],
-            img: ''
+            // id: 0,
+            // qId: 0,
+            q: '0',
+            ans: '0',
+            a: [],
           };
-          tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-          tmp.questionId = resultSet.getDouble(resultSet.getColumnIndex('questionId'));
-          tmp.pid = resultSet.getDouble(resultSet.getColumnIndex('chapterId'));
-          tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
-          tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
-          tmp.questionCase = resultSet.getString(resultSet.getColumnIndex('questionCase'));
-          tmp.img = resultSet.getString(resultSet.getColumnIndex('questionImg'));
-          tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+          // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+          // tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+          tmp.q = resultSet.getString(resultSet.getColumnIndex('question'));
+          tmp.ans = resultSet.getString(resultSet.getColumnIndex('answer'));
+          tmp.a = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
           result[i] = tmp;
           resultSet.goToNextRow();
         }
@@ -102,23 +96,17 @@ export class QuestionTable {
           const result: QuestionRes[] = [];
           for (let i = 0; i < count; i++) {
             let tmp: QuestionRes = {
-              id: 0,
-              pid: 0,
-              questionId: 0,
-              question: '0',
-              answer: '0',
-              questionCase: '0',
-              option: [],
-              img: ''
+              // id: 0,
+              // qId: 0,
+              q: '0',
+              ans: '0',
+              a: [],
             };
-            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-            tmp.questionId = resultSet.getDouble(resultSet.getColumnIndex('questionId'));
-            tmp.pid = resultSet.getDouble(resultSet.getColumnIndex('chapterId'));
-            tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
-            tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
-            tmp.questionCase = resultSet.getString(resultSet.getColumnIndex('questionCase'));
-            tmp.img = resultSet.getString(resultSet.getColumnIndex('questionImg'));
-            tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+            // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+            // tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+            tmp.q = resultSet.getString(resultSet.getColumnIndex('question'));
+            tmp.ans = resultSet.getString(resultSet.getColumnIndex('answer'));
+            tmp.a = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
             result[i] = tmp;
             resultSet.goToNextRow();
           }
@@ -134,11 +122,9 @@ export class QuestionTable {
 
 function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {};
-  obj.questionId = account.id;
-  obj.chapterId = account.pid;
-  obj.questionCase = account.questionCase;
-  obj.question = account.question;
-  obj.answer = account.answer;
-  obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
+  // obj.questionId = account.qId;
+  obj.question = account.q;
+  obj.answer = account.ans;
+  obj.option = (account.a ?? []).join(DbConstants.SEPARATOR)
   return obj;
 }

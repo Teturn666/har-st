@@ -98,7 +98,7 @@ export class SearchEngine {
 
     this.questionList.forEach((item) => {
       // 题目提取的文字内容
-      let str = item.question + item.option.join()
+      let str = item.q + item.a.join()
       if (!StringUtils.isNullOrEmpty(str)) {
         //分词
         let list = SegmentEngine.getInstance().cut(str)
@@ -110,7 +110,7 @@ export class SearchEngine {
           if (this.mDataTexts.hasKey(key)) {
             textList = this.mDataTexts.get(key)
           }
-          textList.add(item.id)
+          // textList.add(item.id)
           this.mDataTexts.set(key, textList)
         })
       }
@@ -233,7 +233,7 @@ export class SearchEngine {
       }
       let ss = ""
       if (qs != null) {
-        ss = qs.question + qs.answer
+        ss = qs.q + qs.ans
       }
       let lcsVal = this.lcs(q, ss)
       if (maxLcs < lcsVal) {
@@ -275,8 +275,8 @@ export class SearchEngine {
     if (result.length > 0 && result[0] != null) {
       let record: QuestionRes = result[0]
       const qItem = new QuestionBean()
-      qItem.q = "【" + record.answer + "】" + record.question
-      let options = record.option
+      qItem.q = "【" + record.ans + "】" + record.q
+      let options = record.a
       options.forEach((optionsElement) => {
         qItem.a.add(optionsElement)
       })
@@ -401,19 +401,19 @@ export class SearchEngine {
       Logger.info('题目表获取到的数据====>' + result.length)
       if (result.length > 0) {
         let qs: QuestionRes = result[0]
-        let cacheStr: string = qs.question + " " + (qs.option).join(SearchConstants.SEPARATOR)
+        let cacheStr: string = qs.q + " " + (qs.a).join(SearchConstants.SEPARATOR)
         if (qsCache.has(cacheStr)) {
           continue
         }
         qsCache.add(cacheStr)
         let ss = ""
         if (qs != null) {
-          ss = qs.question + qs.answer
+          ss = qs.q + qs.ans
         }
         let lcsVal = this.lcs(q, ss)
         let score = item.score * lcsVal * 1.0 / ss.length
         let topItem = new TopItem()
-        topItem.id = qs.id
+        // topItem.id = qs.id
         topItem.score = score
         resList.add(item)
       }
