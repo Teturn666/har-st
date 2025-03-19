@@ -45,27 +45,33 @@ struct ListView {
       this.ocrTxt = ocrTxtParam.replaceAll("\n", "")
     }
 
-    SearchModel.getInstance().searchResultList(this.ocrTxt).then(async (value: QuestionRes[]) => {
 
-      // for (let i = 0; i < value.length; i++) {
-      //   let res = value[i]
-      //
-      //   let question = await SearchDecryptUtils.getQuestionWithPrefix(3, res.question, res.questionCase)
-      //   let optionAry = await SearchDecryptUtils.getOptionsWithPrefix(".", res.option)
-      //
-      //   let searchResultBean = new SearchResultBean()
-      //   searchResultBean.question = question
-      //   searchResultBean.optionAry = optionAry
-      //   searchResultBean.answer = res.answer
-      //   for (let index = 0; index < optionAry.length; index++) {
-      //     let pos = SearchDecryptUtils.isCorrectAnswer(index, res.answer)
-      //     if (pos != -1) {
-      //       searchResultBean.answerAry.push(pos)
-      //     }
-      //   }
-      //   this.resultData.push(searchResultBean)
-      // }
-    })
+    // SearchModel.getInstance().searchResultList(this.ocrTxt).then(async (value: QuestionRes[]) => {
+
+    // for (let i = 0; i < value.length; i++) {
+    //   let res = value[i]
+    //
+    //   let question = await SearchDecryptUtils.getQuestionWithPrefix(3, res.question, res.questionCase)
+    //   let optionAry = await SearchDecryptUtils.getOptionsWithPrefix(".", res.option)
+    //
+    //   let searchResultBean = new SearchResultBean()
+    //   searchResultBean.question = question
+    //   searchResultBean.optionAry = optionAry
+    //   searchResultBean.answer = res.answer
+    //   for (let index = 0; index < optionAry.length; index++) {
+    //     let pos = SearchDecryptUtils.isCorrectAnswer(index, res.answer)
+    //     if (pos != -1) {
+    //       searchResultBean.answerAry.push(pos)
+    //     }
+    //   }
+    //   this.resultData.push(searchResultBean)
+    // }
+    // })
+
+    for (let i = 0; i < 20; i++) {
+      let searchResultBean = new SearchResultBean()
+      this.resultData.push(searchResultBean)
+    }
   }
 
   build() {
@@ -82,36 +88,61 @@ struct ListView {
         (item: SearchResultBean) => {
           ListItem() {
             Column() {
-              Text(item.question)
-                .fontSize(14)
+              Text("答案：" + item.answer)
+                .fontSize(16)
+                .fontColor($r('app.color.c_f75a23'))
+                .margin({ bottom: 15 })
                 .align(Alignment.Start)
-              //测试看高亮的文本是否和答案一致
-              // Text(item.answer)
-              //   .fontSize(14)
-              //   .align(Alignment.Start)
-              Image(item.questionImg)
-                .objectFit(ImageFit.Contain)
-                .size({ width: 100 })
-                .margin({ left: $r('app.float.float_20vp'), bottom: $r('app.float.float_20vp') })
-              ForEach(item.optionAry, (optionTxt: string, index: number) => {
+              Text(item.question)
+                .fontSize(16)
+                .align(Alignment.Start)
 
+              ForEach(item.optionAry, (optionTxt: string, index: number) => {
                 if (item.answerAry.includes(index)) {
-                  Text(optionTxt).fontSize(14).fontColor($r('app.color.c_1f59a8'))
+                  Text(optionTxt).fontSize(16).fontColor($r('app.color.c_f75a23')).margin({ top: 10 })
                 } else {
-                  Text(optionTxt).fontSize(14).fontColor($r('app.color.c_3f3f3f'))
+                  Text(optionTxt).fontSize(16).fontColor($r('app.color.c_3f3f3f')).margin({ top: 10 })
                 }
               })
+              Flex({
+                direction: FlexDirection.Row,
+                justifyContent: FlexAlign.SpaceBetween,
+                alignItems: ItemAlign.Center,
+                wrap: FlexWrap.Wrap
+              }) {
+                Row() {
+                  Text("题库名称")
+                    .fontSize(14)
+                    .fontColor($r('app.color.c_3e3e3e'))
+                    .margin({ top: 30 })
+                    .align(Alignment.Start)
+                  Text("（下载状态）")
+                    .fontSize(14)
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .margin({ top: 30 })
+                    .align(Alignment.Start)
+                }
+
+                Text("去下载")
+                  .fontSize(14)
+                  .fontColor($r('app.color.c_1f59a8'))
+                  .margin({ top: 30 })
+                  .align(Alignment.End)
+              }
             }
             .padding(15)
             .alignItems(HorizontalAlign.Start)
           }
           .width('92%')
-          .backgroundColor($r('app.color.c_f4f4f4'))
+          .shadow({
+            radius: 15,
+            color: $r('app.color.c_d3d3d3'),
+          })
           .borderRadius(10)
           .margin({ left: 15, top: 15 })
           .align(Alignment.Start)
-
-        })
+        }
+      )
     }
     .cachedCount(5)
   }
@@ -128,49 +159,20 @@ struct BottomBar {
 
   build() {
     Stack() {
-      Row() {
-        Column() {
-          Image($r('app.media.ic_cant_find'))
-            .objectFit(ImageFit.Contain)
-            .size({ width: $r('app.float.float_24vp'), height: $r('app.float.float_24vp') })
-          Text($r('app.string.not_find_question'))
-            .fontSize($r('app.float.font_size_12fp'))
-            .fontColor($r('app.color.c_3f3f3f'))
-            .textAlign(TextAlign.Center)
-        }
-        .width(CommonConstants.TWENTY_FIVE_PERCENT)
-        .onClick(() => this.findClick())
-
-        Column() {
-          Image($r('app.media.ic_recharge_times'))
-            .objectFit(ImageFit.Contain)
-            .size({ width: $r('app.float.float_24vp'), height: $r('app.float.float_24vp') })
-          Text($r('app.string.pay_times'))
-            .fontSize($r('app.float.font_size_12fp'))
-            .fontColor($r('app.color.c_3f3f3f'))
-            .textAlign(TextAlign.Center)
-        }
-        .width(CommonConstants.TWENTY_PERCENT)
-        .onClick(() => this.payClick())
-
-        Stack({ alignContent: Alignment.Center }) {
-          Image($r('app.media.bg_btn'))
-            .objectFit(ImageFit.Contain)
-            .size({ width: $r('app.float.float_140vp'), height: $r('app.float.float_48vp') })
-          Column() {
-            Text($r('app.string.continue_search'))
-              .fontSize($r('app.float.font_size_16fp'))
-              .fontColor($r('app.color.start_window_background'))
-            Text($r('app.string.residue_times'))
-              .fontSize($r('app.float.font_size_10fp'))
-              .fontColor($r('app.color.start_window_background'))
-          }
-        }
-        .width(CommonConstants.SIXTY_PERCENT)
+      Text($r('app.string.search_again'))
+        .fontSize($r('app.float.font_size_18fp'))
+        .fontColor($r('app.color.start_window_background'))
+        .borderRadius(50)
+        .textAlign(TextAlign.Center)
+        .align(Alignment.Center)
+        .width(CommonConstants.EIGHTY_PERCENT)
+        .height($r('app.float.float_48vp'))
+        .margin({ left: '10%', right: '10%' })
+        .backgroundColor($r('app.color.c_f75a23'))
         .onClick(() => this.searchClick())
-      }
     }
-    .padding({ top: $r('app.float.float_10vp') })
+    .padding({ top: $r('app.float.float_20vp') })
     .align(Alignment.BottomStart)
+    .alignContent(Alignment.Center)
   }
 }

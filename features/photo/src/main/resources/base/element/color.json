@@ -19,6 +19,26 @@
     {
       "name": "c_ff0000",
       "value": "#ff0000"
+    },
+    {
+      "name": "c_f75a23",
+      "value": "#f75a23"
+    },
+    {
+      "name": "c_0440dc",
+      "value": "#0440dc"
+    },
+    {
+      "name": "c_3e3e3e",
+      "value": "#3e3e3e"
+    },
+    {
+      "name": "c_9d9d9d",
+      "value": "#9d9d9d"
+    },
+    {
+      "name": "c_d3d3d3",
+      "value": "#d3d3d3"
     }
   ]
 }

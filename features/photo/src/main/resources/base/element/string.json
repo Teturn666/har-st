@@ -31,6 +31,10 @@
     {
       "name": "residue_times",
       "value": "剩余次数"
+    },
+    {
+      "name": "search_again",
+      "value": "重拍一题"
     }
   ]
 }
