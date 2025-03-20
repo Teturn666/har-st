@@ -17,14 +17,8 @@ export struct SearchResultPage {
       })
       ListView()
       BottomBar({
-        findClick: () => {
-          //TODO 找不到题的监听
-        },
-        payClick: () => {
-
-        },
         searchClick: () => {
-
+          router.back()
         }
       })
     }
@@ -67,86 +61,89 @@ struct ListView {
   }
 
   build() {
-    List() {
-      ListItem() {
-        //TODO 显示ocr识别后的文本，上线后需删除
-        Text(this.ocrTxt)
-          .fontSize(14)
-          .align(Alignment.Start)
-          .fontColor($r('app.color.c_ff0000'))
-      }
-
-      ForEach(this.resultData,
-        (item: SearchResultRes) => {
-          ListItem() {
-            Column() {
-              Text("答案：" + item.ans)
-                .fontSize(16)
-                .fontColor($r('app.color.c_f75a23'))
-                .margin({ bottom: 15 })
-                .align(Alignment.Start)
-              Text(item.q)
-                .fontSize(16)
-                .align(Alignment.Start)
-
-              ForEach(item.ASlice, (optionTxt: string, index: number) => {
-                if (item.answerAry.includes(index)) {
-                  Text(optionTxt).fontSize(16).fontColor($r('app.color.c_f75a23')).margin({ top: 10 })
-                } else {
-                  Text(optionTxt).fontSize(16).fontColor($r('app.color.c_3f3f3f')).margin({ top: 10 })
-                }
-              })
-              Flex({
-                direction: FlexDirection.Row,
-                justifyContent: FlexAlign.SpaceBetween,
-                alignItems: ItemAlign.Center,
-                wrap: FlexWrap.Wrap
-              }) {
-                // Row() {
-                Text(item.Name)
-                  .fontSize(14)
-                  .fontColor($r('app.color.c_3e3e3e'))
-                  .margin({ top: 30 })
-                  .align(Alignment.Start)
-                  .width('70%')
-                // Text("（下载状态）")
-                //   .fontSize(14)
-                //   .fontColor($r('app.color.c_9d9d9d'))
-                //   .margin({ top: 30 })
-                //   .align(Alignment.Start)
-                // }
-
-                Text("去下载")
-                  .fontSize(14)
-                  .fontColor($r('app.color.c_1f59a8'))
-                  .margin({ top: 30 })
-                  .align(Alignment.End)
-              }
-            }
-            .padding(15)
-            .alignItems(HorizontalAlign.Start)
-          }
-          .width('92%')
-          .shadow({
-            radius: 15,
-            color: $r('app.color.c_d3d3d3'),
-          })
-          .borderRadius(10)
-          .margin({ left: 15, top: 15 })
-          .align(Alignment.Start)
+    if (this.resultData.length > 0) {
+      List() {
+        ListItem() {
+          //TODO 显示ocr识别后的文本，上线后需删除
+          Text(this.ocrTxt)
+            .fontSize(14)
+            .align(Alignment.Start)
+            .fontColor($r('app.color.c_ff0000'))
         }
-      )
+
+        ForEach(this.resultData,
+          (item: SearchResultRes) => {
+            ListItem() {
+              Column() {
+                Text("答案：" + item.ans)
+                  .fontSize(16)
+                  .fontColor($r('app.color.c_f75a23'))
+                  .margin({ bottom: 15 })
+                  .align(Alignment.Start)
+                Text(item.q)
+                  .fontSize(16)
+                  .align(Alignment.Start)
+
+                ForEach(item.ASlice, (optionTxt: string, index: number) => {
+                  if (item.answerAry.includes(index)) {
+                    Text(optionTxt).fontSize(16).fontColor($r('app.color.c_f75a23')).margin({ top: 10 })
+                  } else {
+                    Text(optionTxt).fontSize(16).fontColor($r('app.color.c_3f3f3f')).margin({ top: 10 })
+                  }
+                })
+                Flex({
+                  direction: FlexDirection.Row,
+                  justifyContent: FlexAlign.SpaceBetween,
+                  alignItems: ItemAlign.Center,
+                  wrap: FlexWrap.Wrap
+                }) {
+                  // Row() {
+                  Text(item.Name)
+                    .fontSize(14)
+                    .fontColor($r('app.color.c_3e3e3e'))
+                    .margin({ top: 30 })
+                    .align(Alignment.Start)
+                    .width('80%')
+                  // Text("（下载状态）")
+                  //   .fontSize(14)
+                  //   .fontColor($r('app.color.c_9d9d9d'))
+                  //   .margin({ top: 30 })
+                  //   .align(Alignment.Start)
+                  // }
+
+                  Text("去下载")
+                    .fontSize(14)
+                    .fontColor($r('app.color.c_1f59a8'))
+                    .margin({ top: 30 })
+                    .align(Alignment.End)
+                }
+              }
+              .padding(15)
+              .alignItems(HorizontalAlign.Start)
+            }
+            .width('92%')
+            .shadow({
+              radius: 15,
+              color: $r('app.color.c_d3d3d3'),
+            })
+            .borderRadius(10)
+            .margin({ left: 15, top: 15 })
+            .align(Alignment.Start)
+          }
+        )
+      }
+      .cachedCount(5)
+    } else {
+      Text($r('app.string.search_nodata'))
+        .fontSize(16)
+        .align(Alignment.Start)
+        .fontColor($r('app.color.c_f75a23'))
     }
-    .cachedCount(5)
   }
 }
 
 @Component
 struct BottomBar {
-  findClick: () => void = () => {
-  }
-  payClick: () => void = () => {
-  }
   searchClick: () => void = () => {
   }
 

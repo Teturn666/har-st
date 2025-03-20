@@ -35,6 +35,10 @@
     {
       "name": "search_again",
       "value": "重拍一题"
+    },
+    {
+      "name": "search_nodata",
+      "value": "未搜索到匹配的数据，请重拍一题进行搜索哦～"
     }
   ]
 }
