@@ -18,5 +18,5 @@ export default class HomeConstants {
   //解密字符串的正则
   static readonly IMAGE_REGEX = /\$\{.*?\}/g
   //使用教程链接
-  static readonly USE_TEACH_URL = 'https://xfjf2.chznai.com/static/doc/flow.html'
+  static readonly USE_TEACH_URL = 'https://ti.iksdt.com/static/doc/stjc.webm'
 }

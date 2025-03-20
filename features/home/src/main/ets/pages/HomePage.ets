@@ -19,7 +19,7 @@ import('@ohos/web/src/main/ets/pages/ChWebPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
-let arr: number[] = [1, 2, 3]
+let arr: number[] = [1]
 const context = (getContext(this) as common.UIAbilityContext)
 
 const TAG = '[HomePage]'
@@ -80,12 +80,9 @@ export struct HomePage {
             swiperData: arr,
             handleClick: (item: number) => {
               hilog.info(0x0001, "testTag", "---->" + item);
+              this.jumpToWeb()
             }
           })
-        }
-
-        ListItem() {
-          Notice()
         }
 
         ListItem() {
@@ -131,6 +128,16 @@ export struct HomePage {
     router.pushNamedRoute({
       name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
         ocrTxt: ocrTxt
+      }
+    })
+  }
+
+  //跳转到H5页面
+  private jumpToWeb() {
+    router.pushNamedRoute({
+      name: HomeConstants.ROUTER_WEB, params: {
+        url: HomeConstants.USE_TEACH_URL,
+        title: '使用教程'
       }
     })
   }
@@ -227,24 +234,6 @@ struct SearchHelper {
 
   build() {
     Column() {
-      Row() {
-        TitleText({
-          text: $r('app.string.search_helper')
-        })
-          .bindSheet($$this.isShow, this.payViewBuilder(), {
-            height: SheetSize.FIT_CONTENT,
-            blurStyle: BlurStyle.Thick,
-            showClose: false,
-            preferType: SheetType.BOTTOM,
-            shouldDismiss: ((sheetDismiss: SheetDismiss) => {
-              sheetDismiss.dismiss()
-            })
-          })
-      }
-      .width(CommonConstants.FULL_PERCENT)
-      .justifyContent(FlexAlign.SpaceBetween)
-      .margin({ top: $r('app.float.float_15vp') })
-
       Stack({ alignContent: Alignment.Center }) {
         Image($r('app.media.ic_bg_almighty'))
           .objectFit(ImageFit.Contain)
@@ -253,30 +242,6 @@ struct SearchHelper {
           .fontColor($r('app.color.c_white'))
       }.margin({ top: $r('app.float.float_10vp') }).onClick(() => this.handleClick())
     }
-  }
-}
-
-//公告
-@Component
-struct Notice {
-  build() {
-    Flex({ alignItems: ItemAlign.Center }) {
-      Row() {
-        Image($r('app.media.ic_laba'))
-          .objectFit(ImageFit.Contain)
-          .size({ width: 15, height: 15 })
-        Text($r('app.string.notice_tip'))
-          .fontSize($r('app.float.font_size_14fp'))
-          .fontColor($r('app.color.c_ce4949'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.MARQUEE })
-      }.justifyContent(FlexAlign.Center)
-    }
-    .width(CommonConstants.FULL_PERCENT)
-    .height(CommonConstants.HEIGHT_30)
-    .backgroundColor($r('app.color.c_f2f7ff'))
-    .padding({ left: $r('app.float.float_10vp'), right: $r('app.float.float_10vp') })
-    .borderRadius(CommonConstants.RADIUS_10)
   }
 }
 
@@ -292,7 +257,7 @@ struct Banner {
     Swiper(this.swiperController) {
       ForEach(this.swiperData, (item: number) => {
         Row() {
-          Image($r('app.media.startIcon'))
+          Image($r('app.media.bg_banner'))
             .width(CommonConstants.FULL_PERCENT)
             .height(CommonConstants.FULL_PERCENT)
             .borderRadius($r('app.float.float_16vp'))
@@ -312,93 +277,5 @@ struct Banner {
       .selectedColor($r('app.color.c_0a59f0')))
     .autoPlay(true)
     .loop(true)
-  }
-}
-
-//自定义view,左图中字右图
-@Component
-struct TitleText {
-  @Prop text: Resource
-  @Prop textSize: Resource = $r('app.float.font_size_18fp')
-  @Prop textColor: Resource = $r('app.color.c_black')
-  @Prop textMarginLeft: Resource = $r('app.float.float_10vp')
-  @Prop textMarginRight: Resource = $r('app.float.float_5vp')
-  @Prop leftImage: Resource
-  @Prop leftImageSize: Resource = $r('app.float.float_24vp')
-  @Prop rightImageSize: Resource = $r('app.float.float_16vp')
-  @Prop rightImage: Resource
-  @Prop leftVisible: Visibility = Visibility.Visible
-  @Prop rightVisible: Visibility = Visibility.None
-
-  build() {
-    Row() {
-      Image(this.leftImage)
-        .objectFit(ImageFit.Contain)
-        .size({
-          width: this.leftImageSize,
-          height: this.leftImageSize
-        })
-        .visibility(this.leftVisible)
-      Text(this.text)
-        .fontSize(this.textSize)
-        .margin({ left: this.textMarginLeft, right: this.textMarginRight })
-        .fontColor(this.textColor)
-      Image(this.rightImage)
-        .objectFit(ImageFit.Contain)
-        .size({
-          width: this.rightImageSize,
-          height: this.rightImageSize
-        })
-        .visibility(this.rightVisible)
-    }
-  }
-}
-
-
-//自定义view，帮助的按钮
-@Component
-struct HelperBtText {
-  @Prop title: Resource
-  @Prop content: Resource
-
-  build() {
-    Stack({ alignContent: Alignment.Center }) {
-      Column() {
-        Text(this.title)
-          .fontSize($r('app.float.font_size_16fp'))
-          .fontColor($r('app.color.c_177DF9'))
-        Text(this.content)
-          .fontSize($r('app.float.font_size_12fp'))
-          .margin({ top: $r('app.float.float_5vp') })
-          .fontColor($r('app.color.c_bbbbbb'))
-      }
-    }
-    .backgroundColor($r('app.color.c_daebff'))
-    .width(CommonConstants.FORTY_FIVE_PERCENT)
-    .height(CommonConstants.HEIGHT_56)
-    .borderRadius(CommonConstants.RADIUS_10)
-    .margin({ top: $r('app.float.float_10vp') })
-  }
-}
-
-//自定义view，上图下字
-@Component
-struct PicTopText {
-  @Prop text: Resource
-  @Prop img: Resource
-
-  build() {
-    Column() {
-      Image(this.img)
-        .objectFit(ImageFit.Contain)
-        .size({
-          width: CommonConstants.HEIGHT_60,
-          height: CommonConstants.HEIGHT_60
-        })
-      Text(this.text)
-        .fontSize($r('app.float.font_size_14fp'))
-        .margin({ top: $r('app.float.float_10vp') })
-        .fontColor($r('app.color.c_606060'))
-    }
   }
 }
