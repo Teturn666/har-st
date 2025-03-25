@@ -1,8 +1,8 @@
 //题目表
-export interface QuestionRes {
+export class QuestionRes {
   // id: number
   // qId: number
-  q: string
-  a: string[]
-  ans: string
+  q: string = ""
+  a: string[] = []
+  ans: string = ""
 }

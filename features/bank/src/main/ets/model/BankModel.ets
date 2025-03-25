@@ -1,6 +1,7 @@
 import { QuestionBankTable, QuestionTable, BankListRes, QuestionRes } from '@ohos/db'
 import { SearchDecryptUtils } from '@ohos/search'
 import { Logger, StringUtils } from '@ohos/utils'
+import { plainToClass } from 'class-transformer'
 import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 
@@ -79,9 +80,16 @@ export class BankModel {
       let trStr = await SearchDecryptUtils.getTrText(suffix, str, subTxtName)
       Logger.info(TAG, 'trStr--------' + trStr)
       //转换成 题目的对象
-      let jsonStr = JSON.parse(trStr.replace(/[\r\n\t]/g, '')) as QuestionRes
-      let ret = await this.questionTable.insertDataAwait(jsonStr)
-      Logger.info(TAG, 'ret--------' + ret)
+      let lines = trStr.split('\n')
+      for (let line of lines) {
+        if (line !== '') {
+          const instance = plainToClass(QuestionRes, JSON.parse(line))
+          console.info('instance:', JSON.stringify(instance))
+          //题目数据插入存储
+          let ret = this.questionTable.insertDataAwait(instance)
+          Logger.info(TAG, 'ret--------' + ret)
+        }
+      }
       return true
     } catch (e) {
       Logger.info(TAG, "----->" + e)
