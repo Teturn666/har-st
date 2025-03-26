@@ -1,5 +1,4 @@
 import { BankListRes } from '@ohos/db';
-import TiKuRes from './TikuRes';
 
 export default class BankRes {
   newsData: Array<BankListRes> = [];

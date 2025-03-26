@@ -28,10 +28,10 @@ export class BankNet {
   }
 
   //获取题库列表
-  public getBankList(aid: string, pageSize: number, pageNo: number): Promise<BankListRes[]> {
+  public getBankList(aid: string, pageNo: number): Promise<BankListRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
       HttpUtils.getInstance()
-        .get(BankTrigger.HOME_BANK_LIST_URL, { params: { "aid": aid, "pageSize": pageSize, "pageNo": pageNo } })
+        .get(BankTrigger.HOME_BANK_LIST_URL, { params: { "aid": aid, "pageSize": 10, "pageNo": pageNo } })
         .then((res: AxiosResponse<BaseResponse<BankListRes[]>>) => {
           let code = res.data.code
           if (code === "0") {

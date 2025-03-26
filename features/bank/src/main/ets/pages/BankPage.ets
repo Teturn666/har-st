@@ -75,7 +75,7 @@ export struct BankPage {
 
       } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
         Row() {
-          List({ initialIndex: 0, scroller: this.listScroller }) {
+          List({ initialIndex: 0, scroller: this.listScroller, space: 20 }) {
             ForEach(this.categoryList, (item: BankCategory, index: number) => {
               this.subTabBuilder(item, index)
             }, (item: BankCategory, index: number) => JSON.stringify(item) + index)
@@ -95,6 +95,7 @@ export struct BankPage {
               })
             }
             .backgroundColor(Color.White)
+            .margin({ bottom: 30 })
 
           }, (item: BankCategory, index: number) => JSON.stringify(item) + index)
         }

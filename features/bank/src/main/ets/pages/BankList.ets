@@ -1,9 +1,9 @@
 ///题库列表
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
-import TiKuRes from '../model/TikuRes';
 import { Logger } from '@ohos/utils';
 import { BankListRes } from '@ohos/db'
+import { Position } from '@ohos.arkui.node';
 
 const TAG = '[BankList]'
 
@@ -13,14 +13,17 @@ export struct BankList {
   @State bankRes: BankRes = new BankRes();
   @State bankModel: BankModel = BankModel.getInstance()
   aid: String = ""
+  @State pageNum: number = 1
+  @State loadMore: boolean = false
 
   aboutToAppear(): void {
+    this.bankRes.newsData = []
     this.loadFeedData()
   }
 
   build() {
     List() {
-      ForEach(this.bankRes.newsData, (item: BankListRes) => {
+      ForEach(this.bankRes.newsData, (item: BankListRes, index) => {
         ListItem() {
           Column() {
             Flex({
@@ -96,15 +99,30 @@ export struct BankList {
                 top: $r('app.float.float_10vp'),
                 right: $r('app.float.float_20vp'),
               })
+            if (index === this.bankRes.newsData.length - 1) {
+              Text("没有更多数据了")
+                .fontSize(14)
+                .fontColor($r('app.color.c_9d9d9d'))
+                .margin({ top: 15, bottom: 15 })
+            }
           }
         }
-
-      }, (item: BankListRes) => JSON.stringify(item))
-    }
+      })
+    }.onReachEnd(() => {
+      if (this.loadMore) {
+        this.loadFeedData()
+      }
+    })
   }
 
   async loadFeedData(): Promise<void> {
-    let list = await this.bankModel.getBankList(this.aid.toString(), 20, 1)
-    this.bankRes.newsData = list
+    let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
+    if (list === null || list.length < 10) {
+      this.loadMore = false
+    } else {
+      this.pageNum++
+      this.loadMore = true
+    }
+    this.bankRes.newsData = this.bankRes.newsData.concat(list)
   }
 }

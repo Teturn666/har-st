@@ -43,9 +43,9 @@ export class BankModel {
   }
 
   //获取题库列表详情
-  public async getBankList(aid: string, pageSize: number, pageNo: number): Promise<BankListRes[]> {
+  public async getBankList(aid: string, pageNo: number): Promise<BankListRes[]> {
     try {
-      let data = await this.bankNet.getBankList(aid, pageSize, pageNo)
+      let data = await this.bankNet.getBankList(aid, pageNo)
       return data
     } catch (e) {
       return []
@@ -80,16 +80,16 @@ export class BankModel {
       let trStr = await SearchDecryptUtils.getTrText(suffix, str, subTxtName)
       Logger.info(TAG, 'trStr--------' + trStr)
       //转换成 题目的对象
-      let lines = trStr.split('\n')
-      for (let line of lines) {
-        if (line !== '') {
-          const instance = plainToClass(QuestionRes, JSON.parse(line))
-          console.info('instance:', JSON.stringify(instance))
-          //题目数据插入存储
-          let ret = this.questionTable.insertDataAwait(instance)
-          Logger.info(TAG, 'ret--------' + ret)
-        }
-      }
+      // let lines = trStr.split('\n')
+      // for (let line of lines) {
+      //   if (line !== '') {
+      //     const instance = plainToClass(QuestionRes, JSON.parse(line))
+      //     console.info('instance:', JSON.stringify(instance))
+      //     //题目数据插入存储
+      //     let ret = this.questionTable.insertDataAwait(instance)
+      //     Logger.info(TAG, 'ret--------' + ret)
+      //   }
+      // }
       return true
     } catch (e) {
       Logger.info(TAG, "----->" + e)
