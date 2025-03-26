@@ -11,6 +11,38 @@
     {
       "name": "MineAbility_label",
       "value": "label"
+    },
+    {
+      "name": "share_friend",
+      "value": "分享好友"
+    },
+    {
+      "name": "support_us",
+      "value": "支持我们"
+    },
+    {
+      "name": "follow_official_account",
+      "value": "关注公众号"
+    },
+    {
+      "name": "help_center",
+      "value": "帮助中心"
+    },
+    {
+      "name": "feedback",
+      "value": "意见反馈"
+    },
+    {
+      "name": "about_us",
+      "value": "关于我们"
+    },
+    {
+      "name": "share_content",
+      "value": "我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧！官方下载链接：http://app.iksdt.com"
+    },
+    {
+      "name": "i_know",
+      "value": "我知道了"
     }
   ]
 }

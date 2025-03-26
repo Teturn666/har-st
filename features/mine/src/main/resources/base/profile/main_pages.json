@@ -1,5 +1,6 @@
 {
   "src": [
-    "pages/MinePage"
+    "pages/MinePage",
+    "pages/AboutUsPage"
   ]
 }
