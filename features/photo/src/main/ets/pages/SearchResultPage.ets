@@ -63,13 +63,13 @@ struct ListView {
   build() {
     if (this.resultData.length > 0) {
       List() {
-        ListItem() {
-          //TODO 显示ocr识别后的文本，上线后需删除
-          Text(this.ocrTxt)
-            .fontSize(14)
-            .align(Alignment.Start)
-            .fontColor($r('app.color.c_ff0000'))
-        }
+        // ListItem() {
+        //   //TODO 显示ocr识别后的文本，上线后需删除
+        //   Text(this.ocrTxt)
+        //     .fontSize(14)
+        //     .align(Alignment.Start)
+        //     .fontColor($r('app.color.c_ff0000'))
+        // }
 
         ForEach(this.resultData,
           (item: SearchResultRes) => {
@@ -103,7 +103,7 @@ struct ListView {
                     .fontColor($r('app.color.c_3e3e3e'))
                     .margin({ top: 30 })
                     .align(Alignment.Start)
-                    .width('80%')
+                    .width('100%')
                   // Text("（下载状态）")
                   //   .fontSize(14)
                   //   .fontColor($r('app.color.c_9d9d9d'))
@@ -111,11 +111,11 @@ struct ListView {
                   //   .align(Alignment.Start)
                   // }
 
-                  Text("去下载")
-                    .fontSize(14)
-                    .fontColor($r('app.color.c_1f59a8'))
-                    .margin({ top: 30 })
-                    .align(Alignment.End)
+                  // Text("去下载")
+                  //   .fontSize(14)
+                  //   .fontColor($r('app.color.c_1f59a8'))
+                  //   .margin({ top: 30 })
+                  //   .align(Alignment.End)
                 }
               }
               .padding(15)
