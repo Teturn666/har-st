@@ -8,7 +8,6 @@ import { TabBarType } from '../model/TabBarModel';
 import router from '@ohos.router'
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
-import hilog from '@ohos.hilog';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -113,7 +112,7 @@ struct MainPage {
                 .height(80)
                 .textAlign(TextAlign.Center)
                 .onClick(() => {
-
+                  context.terminateSelf()
                 })
               Blank()
               Text("同意并继续")
@@ -142,7 +141,3 @@ struct MainPage {
     }
   }
 }
-
-// function HomePage() {
-//   throw new Error('Function not implemented.');
-// }
