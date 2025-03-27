@@ -7,17 +7,10 @@ import { ComponentContent } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import router from '@ohos.router'
 import MainConstants from "../Constants/MineConstants";
-
-class Params {
-  text: string = ""
-
-  constructor(text: string) {
-    this.text = text;
-  }
-}
+import { faceDetector } from "@kit.CoreVisionKit";
 
 @Builder
-function buildText(params: Params) {
+function buildText() {
   Column() {
     Text("关注题库公众号")
       .fontSize(18)
@@ -48,23 +41,25 @@ export struct MinePage {
   @State message: string = "hello"
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
-    new ComponentContent(this.ctx, wrapBuilder(buildText), new Params(this.message));
+    new ComponentContent(this.ctx, wrapBuilder(buildText));
 
   aboutToAppear(): void {
     OfficialDialog.setContext(this.ctx);
     OfficialDialog.setContentNode(this.contentNode);
-    OfficialDialog.setOptions({ alignment: DialogAlignment.Center });
+    OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: false });
   }
 
   private jumpToSearchResult() {
-    router.pushNamedRoute({name: MainConstants.ROUTER_ABOUT_US})
+    router.pushNamedRoute({ name: MainConstants.ROUTER_ABOUT_US })
   }
 
   private jumpToHelpCenter() {
-    router.pushNamedRoute({name: MainConstants.ROUTER_WEB,params: {
-      url: "https://ti.iksdt.com/static/doc/help/help.html",
-      title: "帮助中心"
-    }})
+    router.pushNamedRoute({
+      name: MainConstants.ROUTER_WEB, params: {
+        url: "https://ti.iksdt.com/static/doc/help/help.html",
+        title: "帮助中心"
+      }
+    })
   }
 
   private async share() {
@@ -150,7 +145,7 @@ export struct MinePage {
             .lineHeight(20)
         }.alignItems(HorizontalAlign.Start)
       }.alignItems(VerticalAlign.Top)
-      .margin({ left: 28, top: 40 })
+      .margin({ left: 28, top: 40 }).visibility(Visibility.None)
 
       List() {
         ListItem() {
@@ -240,7 +235,7 @@ struct UserListItem {
           [$r("app.color.c_transparent"), 0.0],
           [$r("app.color.c_ebebeb"), 1],
         ]
-      }).visibility(this.isShow ? Visibility.Visible : Visibility.Hidden)
+      }).visibility(Visibility.Hidden)
     }.onClick(() => this.click()).width('100%')
   }
 }

@@ -4,9 +4,74 @@ import BankRes from '../model/BankRes'
 import { Logger } from '@ohos/utils';
 import { BankListRes } from '@ohos/db'
 import { Position } from '@ohos.arkui.node';
+import { ComponentContent } from '@kit.ArkUI';
+import { LoadingDialog } from './LoadingDialog';
+import { FinishDialog } from './FinishDialog';
+import lottie, { AnimationItem } from '@ohos/lottie';
+import { common } from '@kit.AbilityKit';
+import { util } from '@kit.ArkTS'
 
 const TAG = '[BankList]'
+let jsonData = null
 
+const context = (getContext(this) as common.UIAbilityContext)
+
+class Params {
+  controller: CanvasRenderingContext2D
+  animateName: string
+
+  constructor(controller: CanvasRenderingContext2D, animateName: string) {
+    this.controller = controller;
+    this.animateName = animateName;
+  }
+}
+
+@Builder
+function buildText(params: Params) {
+  Column() {
+    Blank()
+    Column() {
+      Row() {
+        Image($r('app.media.loading_default')).width('90%').margin({ top: 15 })
+      }
+
+      Text("题库下载中").fontSize(12)
+        .fontColor($r("app.color.c_9d9d9d"))
+        .textAlign(TextAlign.Center).margin({ top: 18 })
+
+      Canvas(params.controller)
+        .width('30%')
+        .height('20%')
+        .onReady(() => {
+          lottie.loadAnimation({
+            container: params.controller,
+            renderer: 'canvas',
+            loop: true,
+            autoplay: true,
+            context: context,
+            name: params.animateName,
+            animationData: jsonData,
+          })
+        })
+        .width('90%')
+        .height(16)
+        .margin({ bottom: 16, top: 8 })
+    }.width('90%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+
+    Blank()
+  }.width('100%').height('100%').alignItems(HorizontalAlign.Center)
+}
+
+@Builder
+function buildFinishText() {
+  Column() {
+    Blank()
+    Text("题库下载完成").fontSize(12)
+      .fontColor($r("app.color.c_9d9d9d"))
+      .textAlign(TextAlign.Center)
+    Blank()
+  }.width('50%').height(80).backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+}
 
 @Component
 export struct BankList {
@@ -15,10 +80,50 @@ export struct BankList {
   aid: String = ""
   @State pageNum: number = 1
   @State loadMore: boolean = false
+  private ctx: UIContext = this.getUIContext();
+  private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
+  private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
+  private animateName = "loading"
+  private contentNode: ComponentContent<Object> =
+    new ComponentContent(this.ctx, wrapBuilder(buildText), new Params(this.controller, this.animateName));
+  private contentNode1: ComponentContent<Object> =
+    new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
+  private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
+  @State hasLoadData: boolean = false
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
     this.loadFeedData()
+    this.initLottie()
+    LoadingDialog.setContext(this.ctx);
+    LoadingDialog.setContentNode(this.contentNode);
+    LoadingDialog.setOptions({
+      alignment: DialogAlignment.Center, onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
+        if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
+          // dismissDialogAction.dismiss()
+        }
+        if (dismissDialogAction.reason == DismissReason.TOUCH_OUTSIDE) {
+          // dismissDialogAction.dismiss()
+        }
+      }
+    });
+    FinishDialog.setContext(this.ctx);
+    FinishDialog.setContentNode(this.contentNode1);
+    FinishDialog.setOptions({
+      alignment: DialogAlignment.Center
+    });
+  }
+
+  private initLottie() {
+    // loading.json需要放到lottie包下的rawfile中
+    context.resourceManager.getRawFileContent('loading1.json', async (err: Error, data: Uint8Array) => {
+      if (data === null || data === undefined || data.buffer === undefined) {
+        return;
+      }
+      let lottieStr = await this.resStr.decodeWithStream(new Uint8Array(data.buffer))
+      jsonData = JSON.parse(lottieStr);
+      this.hasLoadData = true
+    })
   }
 
   build() {
@@ -84,9 +189,27 @@ export struct BankList {
                 right: $r('app.float.float_20vp'),
               })
               .onClick(
-                () => {
+                async () => {
                   Logger.info(TAG, '题库内容--------' + item)
-                  this.bankModel.downLoadBank(item)
+                  LoadingDialog.openDialog()
+                  try {
+                    const result = await this.bankModel.downLoadBank(item);
+                    if (result) {
+                      Logger.info(TAG, '下载成功' + item)
+                      console.log('下载成功');
+                      LoadingDialog.closeDialog()
+                      FinishDialog.openDialog()
+                    } else {
+                      Logger.info(TAG, '下载失败' + item)
+                      LoadingDialog.closeDialog()
+                      FinishDialog.openDialog()
+                    }
+                  } catch (error) {
+                    Logger.info(TAG, '下载过程中发生错误' + item)
+                    LoadingDialog.closeDialog()
+                    FinishDialog.openDialog()
+                  }
+                  // this.bankModel.downLoadBank(item)
                 }
               )
             }
