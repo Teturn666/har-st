@@ -94,11 +94,11 @@ export struct HomePage {
         }
 
         //测试显示ocr的文本
-        ListItem() {
-          Text(this.dataValues)
-            .fontSize($r('app.float.font_size_10fp'))
-            .fontColor($r('app.color.c_black'))
-        }
+        // ListItem() {
+        //   Text(this.dataValues)
+        //     .fontSize($r('app.float.font_size_10fp'))
+        //     .fontColor($r('app.color.c_black'))
+        // }
       }
       .scrollBar(BarState.Off)
 
