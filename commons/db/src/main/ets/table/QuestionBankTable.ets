@@ -66,17 +66,18 @@ export class QuestionBankTable {
             url: '',
             version: 0,
             position: 0,
-
+            downloadedState: 1
           };
-          tmp.qid = resultSet.getString(resultSet.getColumnIndex('qid'));
-          tmp.name = resultSet.getString(resultSet.getColumnIndex('name'));
-          tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'));
-          tmp.time = resultSet.getString(resultSet.getColumnIndex('time'));
-          tmp.url = resultSet.getString(resultSet.getColumnIndex('url'));
-          tmp.version = resultSet.getDouble(resultSet.getColumnIndex('version'));
-          tmp.position = resultSet.getDouble(resultSet.getColumnIndex('position'));
-          result[i] = tmp;
-          resultSet.goToNextRow();
+          tmp.qid = resultSet.getString(resultSet.getColumnIndex('qid'))
+          tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
+          tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'))
+          tmp.time = resultSet.getString(resultSet.getColumnIndex('time'))
+          tmp.url = resultSet.getString(resultSet.getColumnIndex('url'))
+          tmp.version = resultSet.getDouble(resultSet.getColumnIndex('version'))
+          tmp.position = resultSet.getDouble(resultSet.getColumnIndex('position'))
+          tmp.downloadedState = resultSet.getDouble(resultSet.getColumnIndex('downloadedState'))
+          result[i] = tmp
+          resultSet.goToNextRow()
         }
         callback(result);
       }
@@ -85,13 +86,14 @@ export class QuestionBankTable {
 }
 
 function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
-  let obj: relationalStore.ValuesBucket = {};
-  obj.qid = account.qid;
-  obj.name = account.name;
-  obj.desc = account.desc;
-  obj.time = account.time;
-  obj.url = account.url;
-  obj.position = account.position;
-  obj.version = account.version;
+  let obj: relationalStore.ValuesBucket = {}
+  obj.qid = account.qid
+  obj.name = account.name
+  obj.desc = account.desc
+  obj.time = account.time
+  obj.url = account.url
+  obj.position = account.position
+  obj.version = account.version
+  obj.downloadState = account.downloadedState
   return obj;
 }

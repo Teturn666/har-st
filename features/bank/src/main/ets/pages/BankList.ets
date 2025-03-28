@@ -3,13 +3,13 @@ import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
 import { Logger } from '@ohos/utils';
 import { BankListRes } from '@ohos/db'
-import { Position } from '@ohos.arkui.node';
 import { ComponentContent } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
 import { FinishDialog } from './FinishDialog';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
+import { DeleteDialog } from './DeleteDialog';
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -80,7 +80,48 @@ function buildFinishText() {
       .textAlign(TextAlign.Center)
       .margin({ top: 25, bottom: 15 })
     Blank()
-  }.width('50%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+  }.width('80%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+}
+
+@Builder
+function buildDeleteText() {
+  Column() {
+    Blank()
+    Text("提示").fontSize(18)
+      .fontColor($r("app.color.c_9d9d9d"))
+      .textAlign(TextAlign.Center).margin({ top: 20 })
+    Text("确定删除这个题库吗？").fontSize(18)
+      .fontColor($r("app.color.c_9d9d9d"))
+      .textAlign(TextAlign.Center).margin({ top: 20 })
+    Row() {
+      Text("确定")
+        .width(80)
+        .height(30)
+        .borderRadius(5)
+        .fontColor($r('app.color.c_2a5089'))
+        .backgroundColor($r('app.color.c_f4f3fb'))
+        .onClick(() => {
+          DeleteDialog.closeDialog()
+        })
+        .textAlign(TextAlign.Center)
+        .margin({ top: 25, bottom: 15 })
+      Text("取消")
+        .width(80)
+        .height(30)
+        .borderRadius(5)
+        .fontColor($r('app.color.c_f75a23'))
+        .backgroundColor($r('app.color.c_fce8e8'))
+        .onClick(() => {
+          DeleteDialog.closeDialog()
+        })
+        .textAlign(TextAlign.Center)
+        .margin({ top: 25, bottom: 15 })
+    }
+    .justifyContent(FlexAlign.SpaceAround)
+    .width('100%')
+
+    Blank()
+  }.width('80%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
 }
 
 @Component
@@ -98,6 +139,8 @@ export struct BankList {
     new ComponentContent(this.ctx, wrapBuilder(buildText), new Params(this.controller, this.animateName));
   private contentNode1: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
+  private contentNode2: ComponentContent<Object> =
+    new ComponentContent(this.ctx, wrapBuilder(buildDeleteText));
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
   @State hasLoadData: boolean = false
 
@@ -105,6 +148,10 @@ export struct BankList {
     this.bankRes.newsData = []
     this.loadFeedData()
     this.initLottie()
+    this.initDialog()
+  }
+
+  private initDialog() {
     LoadingDialog.setContext(this.ctx);
     LoadingDialog.setContentNode(this.contentNode);
     LoadingDialog.setOptions({
@@ -117,9 +164,16 @@ export struct BankList {
         }
       }
     });
+
     FinishDialog.setContext(this.ctx);
     FinishDialog.setContentNode(this.contentNode1);
     FinishDialog.setOptions({
+      alignment: DialogAlignment.Center
+    });
+
+    DeleteDialog.setContext(this.ctx);
+    DeleteDialog.setContentNode(this.contentNode2);
+    DeleteDialog.setOptions({
       alignment: DialogAlignment.Center
     });
   }
@@ -169,10 +223,17 @@ export struct BankList {
                   Text("题库状态：")
                     .fontColor($r('app.color.c_9d9d9d'))
                     .fontSize($r('app.float.font_size_10fp'))
-                  Text("未下载")
-                    .fontColor(Color.Blue)
-                    .fontSize($r('app.float.font_size_10fp'))
-                    .margin({ right: $r('app.float.float_30vp') })
+                  if (item.downloadedState === 1) {
+                    Text("未下载")
+                      .fontColor(Color.Blue)
+                      .fontSize($r('app.float.font_size_10fp'))
+                      .margin({ right: $r('app.float.float_30vp') })
+                  } else {
+                    Text("已下载")
+                      .fontColor(Color.Blue)
+                      .fontSize($r('app.float.font_size_10fp'))
+                      .margin({ right: $r('app.float.float_30vp') })
+                  }
 
                   Text("题库更新时间：" + item.time)
                     .fontColor($r('app.color.c_9d9d9d'))
@@ -188,38 +249,54 @@ export struct BankList {
               })
 
               Column() {
-                Image($r('app.media.ic_download'))
-                  .objectFit(ImageFit.Contain)
-                  .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                Text("下载")
-                  .fontColor(Color.Black)
-                  .fontSize($r('app.float.font_size_10fp'))
+                if (item.downloadedState === 1) {
+                  Image($r('app.media.ic_remove'))
+                    .objectFit(ImageFit.Contain)
+                    .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
+                  Text("删除")
+                    .fontColor(Color.Black)
+                    .fontSize($r('app.float.font_size_10fp'))
+                } else {
+                  Image($r('app.media.ic_download'))
+                    .objectFit(ImageFit.Contain)
+                    .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
+                  Text("下载")
+                    .fontColor(Color.Black)
+                    .fontSize($r('app.float.font_size_10fp'))
+                }
+
               }
               .margin({
                 right: $r('app.float.float_20vp'),
               })
               .onClick(
                 async () => {
-                  Logger.info(TAG, '题库内容--------' + item)
-                  LoadingDialog.openDialog()
-                  try {
-                    const result = await this.bankModel.downLoadBank(item);
-                    if (result) {
-                      Logger.info(TAG, '下载成功' + item)
-                      console.log('下载成功');
-                      LoadingDialog.closeDialog()
-                      FinishDialog.openDialog()
-                    } else {
-                      Logger.info(TAG, '下载失败' + item)
+                  if (item.downloadedState === 1) {
+                    DeleteDialog.openDialog()
+                  } else {
+                    Logger.info(TAG, '题库内容--------' + item)
+                    LoadingDialog.openDialog()
+                    try {
+                      const success = await this.bankModel.downLoadBank(item);
+                      if (success) {
+                        Logger.info(TAG, '下载成功' + item)
+                        //更新状态为已下载
+                        item.downloadedState = 1
+                        //触发UI重新渲染
+                        this.bankRes.newsData = [...this.bankRes.newsData]
+                        LoadingDialog.closeDialog()
+                        FinishDialog.openDialog()
+                      } else {
+                        Logger.info(TAG, '下载失败' + item)
+                        LoadingDialog.closeDialog()
+                        FinishDialog.openDialog()
+                      }
+                    } catch (error) {
+                      Logger.info(TAG, '下载过程中发生错误' + item)
                       LoadingDialog.closeDialog()
                       FinishDialog.openDialog()
                     }
-                  } catch (error) {
-                    Logger.info(TAG, '下载过程中发生错误' + item)
-                    LoadingDialog.closeDialog()
-                    FinishDialog.openDialog()
                   }
-                  // this.bankModel.downLoadBank(item)
                 }
               )
             }
@@ -246,6 +323,7 @@ export struct BankList {
         this.loadFeedData()
       }
     })
+
   }
 
   async loadFeedData(): Promise<void> {

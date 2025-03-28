@@ -58,16 +58,16 @@ export class QuestionTable {
         for (let i = 0; i < count; i++) {
           let tmp: QuestionRes = {
             // id: 0,
-            // qId: 0,
-            q: '0',
-            ans: '0',
-            a: [],
+            qId: '',
+            question: '',
+            answer: '',
+            option: [],
           };
           // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-          // tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
-          tmp.q = resultSet.getString(resultSet.getColumnIndex('question'));
-          tmp.ans = resultSet.getString(resultSet.getColumnIndex('answer'));
-          tmp.a = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+          tmp.qId = resultSet.getString(resultSet.getColumnIndex('qId'));
+          tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
+          tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
+          tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
           result[i] = tmp;
           resultSet.goToNextRow();
         }
@@ -97,16 +97,16 @@ export class QuestionTable {
           for (let i = 0; i < count; i++) {
             let tmp: QuestionRes = {
               // id: 0,
-              // qId: 0,
-              q: '0',
-              ans: '0',
-              a: [],
+              qId: '',
+              question: '',
+              answer: '',
+              option: [],
             };
             // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-            // tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
-            tmp.q = resultSet.getString(resultSet.getColumnIndex('question'));
-            tmp.ans = resultSet.getString(resultSet.getColumnIndex('answer'));
-            tmp.a = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+            tmp.qId = resultSet.getString(resultSet.getColumnIndex('qId'));
+            tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
+            tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
+            tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
             result[i] = tmp;
             resultSet.goToNextRow();
           }
@@ -122,9 +122,9 @@ export class QuestionTable {
 
 function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {};
-  // obj.questionId = account.qId;
-  obj.question = account.q;
-  obj.answer = account.ans;
-  obj.option = (account.a ?? []).join(DbConstants.SEPARATOR)
+  obj.qId = account.qId;
+  obj.question = account.question;
+  obj.answer = account.answer;
+  obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
   return obj;
 }

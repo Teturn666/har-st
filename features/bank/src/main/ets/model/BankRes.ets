@@ -1,5 +1,6 @@
 import { BankListRes } from '@ohos/db';
 
+@Observed
 export default class BankRes {
   newsData: Array<BankListRes> = [];
   currentPage: number = 1;
