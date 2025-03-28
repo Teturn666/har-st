@@ -9,7 +9,6 @@ import { FinishDialog } from './FinishDialog';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
-import { DeleteDialog } from './DeleteDialog';
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -62,67 +61,99 @@ function buildText(params: Params) {
   }.width('100%').height('100%').alignItems(HorizontalAlign.Center)
 }
 
-@Builder
-function buildFinishText() {
-  Column() {
-    Blank()
-    Text("题库下载完成").fontSize(18)
-      .fontColor($r("app.color.c_9d9d9d"))
-      .textAlign(TextAlign.Center).margin({ top: 20 })
-    Text("确定")
-      .width(80)
-      .height(30)
-      .borderRadius(5)
-      .backgroundColor($r('app.color.c_fce8e8'))
-      .onClick(() => {
-        FinishDialog.closeDialog()
-      })
-      .textAlign(TextAlign.Center)
-      .margin({ top: 25, bottom: 15 })
-    Blank()
-  }.width('80%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
-}
+@CustomDialog
+struct DownloadOverDialog {
+  success: boolean = false
+  controller: CustomDialogController;
+  bank: BankListRes = {} as BankListRes;
 
-@Builder
-function buildDeleteText() {
-  Column() {
-    Blank()
-    Text("提示").fontSize(18)
-      .fontColor($r("app.color.c_9d9d9d"))
-      .textAlign(TextAlign.Center).margin({ top: 20 })
-    Text("确定删除这个题库吗？").fontSize(18)
-      .fontColor($r("app.color.c_9d9d9d"))
-      .textAlign(TextAlign.Center).margin({ top: 20 })
-    Row() {
+  constructor(controller: CustomDialogController, bank: BankListRes) {
+    super();
+    this.controller = controller;
+    this.bank = bank;
+  }
+
+  build() {
+    Column() {
+      Blank()
+      Text(this.success ? `导入成功：导入数据${this.bank.num}条` : "导入失败：文件不存在或者内容格式异常").fontSize(18)
+        .fontColor($r("app.color.c_9d9d9d"))
+        .textAlign(TextAlign.Center).margin({ top: 20 })
       Text("确定")
         .width(80)
         .height(30)
         .borderRadius(5)
-        .fontColor($r('app.color.c_2a5089'))
-        .backgroundColor($r('app.color.c_f4f3fb'))
-        .onClick(() => {
-          DeleteDialog.closeDialog()
-        })
-        .textAlign(TextAlign.Center)
-        .margin({ top: 25, bottom: 15 })
-      Text("取消")
-        .width(80)
-        .height(30)
-        .borderRadius(5)
-        .fontColor($r('app.color.c_f75a23'))
         .backgroundColor($r('app.color.c_fce8e8'))
         .onClick(() => {
-          DeleteDialog.closeDialog()
+          this.controller.close()
         })
         .textAlign(TextAlign.Center)
         .margin({ top: 25, bottom: 15 })
-    }
-    .justifyContent(FlexAlign.SpaceAround)
-    .width('100%')
-
-    Blank()
-  }.width('80%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+      Blank()
+    }.width('80%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+  }
 }
+
+@Builder
+function buildFinishText() {
+
+}
+
+@CustomDialog
+struct DeleteDialog {
+  confirm?: (item: BankListRes) => void
+  controller: CustomDialogController;
+  bank: BankListRes = {} as BankListRes;
+
+  constructor(controller: CustomDialogController, bank: BankListRes) {
+    super();
+    this.controller = controller;
+    this.bank = bank;
+  }
+
+  build() {
+    Column() {
+      Blank()
+      Text("提示").fontSize(18)
+        .fontColor($r("app.color.c_9d9d9d"))
+        .textAlign(TextAlign.Center).margin({ top: 20 })
+      Text(`确定删除${this.bank.name}这个题库吗？`).fontSize(18)
+        .fontColor($r("app.color.c_9d9d9d"))
+        .textAlign(TextAlign.Center).margin({ top: 20 })
+      Row() {
+        Text("确定")
+          .width(80)
+          .height(30)
+          .borderRadius(5)
+          .fontColor($r('app.color.c_2a5089'))
+          .backgroundColor($r('app.color.c_f4f3fb'))
+          .onClick(() => {
+            //删除确定
+            this.controller.close()
+          })
+          .textAlign(TextAlign.Center)
+          .margin({ top: 25, bottom: 15 })
+        Text("取消")
+          .width(80)
+          .height(30)
+          .borderRadius(5)
+          .fontColor($r('app.color.c_f75a23'))
+          .backgroundColor($r('app.color.c_fce8e8'))
+          .onClick(() => {
+            //删除取消
+            this.controller.close()
+          })
+          .textAlign(TextAlign.Center)
+          .margin({ top: 25, bottom: 15 })
+      }
+      .justifyContent(FlexAlign.SpaceAround)
+      .width('100%')
+
+      Blank()
+    }.width('80%').backgroundColor($r('app.color.start_window_background'))
+  }
+}
+
 
 @Component
 export struct BankList {
@@ -139,16 +170,43 @@ export struct BankList {
     new ComponentContent(this.ctx, wrapBuilder(buildText), new Params(this.controller, this.animateName));
   private contentNode1: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
-  private contentNode2: ComponentContent<Object> =
-    new ComponentContent(this.ctx, wrapBuilder(buildDeleteText));
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
   @State hasLoadData: boolean = false
+  @State mCurBank: BankListRes = {} as BankListRes;
+  dialogDeleteController?: CustomDialogController;
+  dialogDownloadController?: CustomDialogController;
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
     this.loadFeedData()
     this.initLottie()
     this.initDialog()
+  }
+
+  //删除弹窗
+  showDeleteDialog() {
+    this.dialogDeleteController = new CustomDialogController({
+      builder: DeleteDialog({
+        bank: this.mCurBank, confirm: (item) => {
+          //删除确定
+          //更新状态为未下载
+          item.downloadedState = 2
+          //触发UI重新渲染
+          this.bankRes.newsData = [...this.bankRes.newsData]
+          this.dialogDeleteController?.close()
+        }
+      })
+    });
+    this.dialogDeleteController.open();
+  }
+
+  showDownloadOverDialog(success: boolean) {
+    this.dialogDownloadController = new CustomDialogController({
+      builder: DownloadOverDialog({
+        bank: this.mCurBank, success: success
+      })
+    });
+    this.dialogDownloadController.open();
   }
 
   private initDialog() {
@@ -170,17 +228,11 @@ export struct BankList {
     FinishDialog.setOptions({
       alignment: DialogAlignment.Center
     });
-
-    DeleteDialog.setContext(this.ctx);
-    DeleteDialog.setContentNode(this.contentNode2);
-    DeleteDialog.setOptions({
-      alignment: DialogAlignment.Center
-    });
   }
 
   private initLottie() {
     // loading.json需要放到lottie包下的rawfile中
-    context.resourceManager.getRawFileContent('loading1.json', async (err: Error, data: Uint8Array) => {
+    context.resourceManager.getRawFileContent('loading.json', async (err: Error, data: Uint8Array) => {
       if (data === null || data === undefined || data.buffer === undefined) {
         return;
       }
@@ -271,8 +323,9 @@ export struct BankList {
               })
               .onClick(
                 async () => {
+                  this.mCurBank = item
                   if (item.downloadedState === 1) {
-                    DeleteDialog.openDialog()
+                    this.showDeleteDialog()
                   } else {
                     Logger.info(TAG, '题库内容--------' + item)
                     LoadingDialog.openDialog()
@@ -285,16 +338,16 @@ export struct BankList {
                         //触发UI重新渲染
                         this.bankRes.newsData = [...this.bankRes.newsData]
                         LoadingDialog.closeDialog()
-                        FinishDialog.openDialog()
+                        this.showDownloadOverDialog(true)
                       } else {
                         Logger.info(TAG, '下载失败' + item)
                         LoadingDialog.closeDialog()
-                        FinishDialog.openDialog()
+                        this.showDownloadOverDialog(false)
                       }
                     } catch (error) {
                       Logger.info(TAG, '下载过程中发生错误' + item)
                       LoadingDialog.closeDialog()
-                      FinishDialog.openDialog()
+                      this.showDownloadOverDialog(false)
                     }
                   }
                 }

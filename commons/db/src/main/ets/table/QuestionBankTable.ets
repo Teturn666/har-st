@@ -64,12 +64,14 @@ export class QuestionBankTable {
             desc: '',
             time: '',
             url: '',
+            num: '',
             version: 0,
             position: 0,
             downloadedState: 1
           };
           tmp.qid = resultSet.getString(resultSet.getColumnIndex('qid'))
           tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
+          tmp.num = resultSet.getString(resultSet.getColumnIndex('num'))
           tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'))
           tmp.time = resultSet.getString(resultSet.getColumnIndex('time'))
           tmp.url = resultSet.getString(resultSet.getColumnIndex('url'))
@@ -91,6 +93,7 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   obj.name = account.name
   obj.desc = account.desc
   obj.time = account.time
+  obj.num = account.num
   obj.url = account.url
   obj.position = account.position
   obj.version = account.version

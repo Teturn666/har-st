@@ -5,6 +5,7 @@ export class BankListRes {
   desc: string = ''
   time: string = ''
   url: string = ''
+  num: string = ''
   version: number = 0
   position: number = 0
   //1=已下载，2=未下载

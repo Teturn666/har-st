@@ -148,16 +148,16 @@ export struct MinePage {
       .margin({ left: 28, top: 40 }).visibility(Visibility.None)
 
       List() {
-        ListItem() {
-          UserListItem({
-            name: $r('app.string.share_friend'),
-            isShow: true,
-            click: () => {
-              this.share()
-              // hilog.info(0x001, "text", "分享好友")
-            }
-          })
-        }
+        // ListItem() {
+        //   UserListItem({
+        //     name: $r('app.string.share_friend'),
+        //     isShow: true,
+        //     click: () => {
+        //       this.share()
+        //       // hilog.info(0x001, "text", "分享好友")
+        //     }
+        //   })
+        // }
 
         ListItem() {
           UserListItem({
@@ -179,16 +179,16 @@ export struct MinePage {
         //   })
         // }
         //
-        // ListItem() {
-        //   UserListItem({
-        //     name: $r('app.string.feedback'),
-        //     isShow: true,
-        //     click: () => {
-        //       this.goWeb()
-        //       // hilog.info(0x0001, "text", "意见反馈")
-        //     }
-        //   })
-        // }
+        ListItem() {
+          UserListItem({
+            name: $r('app.string.feedback'),
+            isShow: true,
+            click: () => {
+              this.goWeb()
+              // hilog.info(0x0001, "text", "意见反馈")
+            }
+          })
+        }
 
         ListItem() {
           UserListItem({
