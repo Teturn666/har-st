@@ -129,6 +129,9 @@ struct DeleteDialog {
           .backgroundColor($r('app.color.c_f4f3fb'))
           .onClick(() => {
             //删除确定
+            if (this.confirm) {
+              this.confirm(this.bank)
+            }
             this.controller.close()
           })
           .textAlign(TextAlign.Center)
