@@ -66,11 +66,21 @@ function buildText(params: Params) {
 function buildFinishText() {
   Column() {
     Blank()
-    Text("题库下载完成").fontSize(12)
+    Text("题库下载完成").fontSize(18)
       .fontColor($r("app.color.c_9d9d9d"))
+      .textAlign(TextAlign.Center).margin({ top: 20 })
+    Text("确定")
+      .width(80)
+      .height(30)
+      .borderRadius(5)
+      .backgroundColor($r('app.color.c_fce8e8'))
+      .onClick(() => {
+        FinishDialog.closeDialog()
+      })
       .textAlign(TextAlign.Center)
+      .margin({ top: 25, bottom: 15 })
     Blank()
-  }.width('50%').height(80).backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+  }.width('50%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
 }
 
 @Component

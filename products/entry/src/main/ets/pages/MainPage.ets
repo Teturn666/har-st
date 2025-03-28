@@ -16,22 +16,32 @@ const context = (getContext(this) as common.UIAbilityContext)
 struct MainPage {
   @LocalStorageLink('mainTabIndex') currentIndex: TabBarType = TabBarType.HOME;
   @Provide('appPathStack') appPathStack: NavPathStack = new NavPathStack();
-  @State showDialog: boolean = true
+  @State showDialog: boolean = false
   private sp: preferences.Preferences | null = null
 
   private initPreferences() {
     this.sp = preferences.getPreferencesSync(context, HomeConstants.SP_OPTIONS)
-    let show = this.sp.getSync("isFirstInstall", false)
+    let show = this.sp.getSync("isFirstInstall", true)
     if (typeof show === 'boolean') {
       this.showDialog = show
     }
   }
-
-  constructor() {
-    super();
-    this.initPreferences()
+  // 修改布尔值的方法
+  updateBooleanValue(newValue: boolean) {
+    try {
+      // 同步更新布尔值
+      this.sp?.putSync("isFirstInstall", newValue);
+      // 同步保存更改
+      this.sp?.flushSync();
+    } catch (err) {
+      console.error('更新布尔值失败:', err);
+    }
   }
 
+
+  aboutToAppear(): void {
+    this.initPreferences()
+  }
   build() {
     RelativeContainer() {
       Navigation(this.appPathStack) {
@@ -123,6 +133,7 @@ struct MainPage {
                 .textAlign(TextAlign.Center)
                 .onClick(() => {
                   this.showDialog = false
+                  this.updateBooleanValue(false)
                 })
               Blank()
             }.width('100%')

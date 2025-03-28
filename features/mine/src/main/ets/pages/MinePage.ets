@@ -169,26 +169,26 @@ export struct MinePage {
           })
         }
 
-        ListItem() {
-          UserListItem({
-            name: $r('app.string.help_center'),
-            isShow: true,
-            click: () => {
-              this.jumpToHelpCenter()
-            }
-          })
-        }
-
-        ListItem() {
-          UserListItem({
-            name: $r('app.string.feedback'),
-            isShow: true,
-            click: () => {
-              this.goWeb()
-              // hilog.info(0x0001, "text", "意见反馈")
-            }
-          })
-        }
+        // ListItem() {
+        //   UserListItem({
+        //     name: $r('app.string.help_center'),
+        //     isShow: true,
+        //     click: () => {
+        //       this.jumpToHelpCenter()
+        //     }
+        //   })
+        // }
+        //
+        // ListItem() {
+        //   UserListItem({
+        //     name: $r('app.string.feedback'),
+        //     isShow: true,
+        //     click: () => {
+        //       this.goWeb()
+        //       // hilog.info(0x0001, "text", "意见反馈")
+        //     }
+        //   })
+        // }
 
         ListItem() {
           UserListItem({
@@ -228,14 +228,19 @@ struct UserListItem {
         .height(54)
       Row() {
 
-      }.width('90%')
-      .height(1).linearGradient({
-        angle: 90,
-        colors: [
-          [$r("app.color.c_transparent"), 0.0],
-          [$r("app.color.c_ebebeb"), 1],
-        ]
-      }).visibility(Visibility.Hidden)
+      }
+      .width('90%')
+      .height(1)
+      .backgroundColor($r("app.color.c_ebebeb"))
+      .margin({ left: 32, right: 32 })
+      // .linearGradient({
+      //   angle: 90,
+      //   colors: [
+      //     [$r("app.color.c_transparent"), 0.0],
+      //     [$r("app.color.c_ebebeb"), 1],
+      //   ]
+      // })
+      .visibility(this.isShow ? Visibility.Visible : Visibility.Hidden)
     }.onClick(() => this.click()).width('100%')
   }
 }
