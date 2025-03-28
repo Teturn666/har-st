@@ -47,6 +47,10 @@ export class BankModel {
   public async getBankList(aid: string, pageNo: number): Promise<BankListRes[]> {
     try {
       let data = await this.bankNet.getBankList(aid, pageNo)
+      for (let item of data) {
+        let result = await this.questionBankTable.querySync(item.qid, false) ?? [];
+        Logger.info(TAG, 'result--------' + result)
+      }
       return data
     } catch (e) {
       return []
@@ -56,20 +60,8 @@ export class BankModel {
   //点击题库下载的操作
   public async downLoadBank(bankListRes: BankListRes): Promise<boolean> {
     try {
-      //插入题库表
-      let ret = await this.questionBankTable.insertDataAwait(bankListRes)
-      Logger.info(TAG, 'ret--------' + ret)
-
-      await this.downLoadBankFile(bankListRes.qid, bankListRes.url)
-      return true
-    } catch (e) {
-      return false
-    }
-  }
-
-  //下载题库文件
-  public async downLoadBankFile(qid: string, url: string): Promise<boolean> {
-    try {
+      let qid = bankListRes.qid
+      let url = bankListRes.url
       let subTxtName = StringUtils.subUrl(url)
       // Logger.info(TAG, 'subTxtName--------' + subTxtName)
       let suffix = StringUtils.subLastIndex(subTxtName, '.')
@@ -96,6 +88,10 @@ export class BankModel {
           Logger.info(TAG, 'ret--------' + ret)
         }
       }
+      //插入题库表,下载成功后的状态
+      bankListRes.downloadedState = 1
+      let ret = await this.questionBankTable.insertDataAwait(bankListRes)
+      Logger.info(TAG, 'ret--------' + ret)
       return true
     } catch (e) {
       Logger.info(TAG, "----->" + e)

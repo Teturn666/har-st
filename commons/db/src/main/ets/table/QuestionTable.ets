@@ -31,14 +31,14 @@ export class QuestionTable {
 
   deleteData(account: QuestionRes, callback: Function) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    // predicates.equalTo('id', account.id);
+    predicates.equalTo('id', account.qId);
     this.accountTable.deleteData(predicates, callback);
   }
 
   updateData(account: QuestionRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    // predicates.equalTo('id', account.id);
+    predicates.equalTo('id', account.qId);
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 

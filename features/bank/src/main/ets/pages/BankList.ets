@@ -52,8 +52,8 @@ function buildText(params: Params) {
             animationData: jsonData,
           })
         })
-        .width('90%')
-        .height(16)
+        // .width('90%')
+        .height(30)
         .margin({ bottom: 16, top: 8 })
     }.width('90%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
 
@@ -117,7 +117,7 @@ struct DeleteDialog {
       Text("提示").fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 20 })
-      Text(`确定删除${this.bank.name}这个题库吗？`).fontSize(18)
+      Text('确定删除 “' + this.bank?.name + '” 这个题库吗？').fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Start).margin({ top: 20, left: 20, right: 20 })
       Row() {
@@ -279,12 +279,12 @@ export struct BankList {
                     .fontColor($r('app.color.c_9d9d9d'))
                     .fontSize($r('app.float.font_size_10fp'))
                   if (item.downloadedState === 1) {
-                    Text("未下载")
+                    Text("已下载")
                       .fontColor(Color.Blue)
                       .fontSize($r('app.float.font_size_10fp'))
                       .margin({ right: $r('app.float.float_30vp') })
                   } else {
-                    Text("已下载")
+                    Text("未下载")
                       .fontColor(Color.Blue)
                       .fontSize($r('app.float.font_size_10fp'))
                       .margin({ right: $r('app.float.float_30vp') })

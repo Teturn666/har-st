@@ -9,6 +9,8 @@ import router from '@ohos.router'
 import MainConstants from "../Constants/MineConstants";
 import { faceDetector } from "@kit.CoreVisionKit";
 
+const context = (getContext(this) as common.UIAbilityContext)
+
 @Builder
 function buildText() {
   Column() {
@@ -46,7 +48,7 @@ export struct MinePage {
   aboutToAppear(): void {
     OfficialDialog.setContext(this.ctx);
     OfficialDialog.setContentNode(this.contentNode);
-    OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: false });
+    OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true });
   }
 
   private jumpToSearchResult() {
@@ -83,24 +85,14 @@ export struct MinePage {
     });
   }
 
-  private async goWeb() {
-    let shareData: systemShare.SharedData = new systemShare.SharedData({
-      utd: utd.UniformDataType.HYPERLINK,
-      content: 'https://crmeb.yweiai.com/chat/pc?noCanClose=1&kefu_id=12&token=075774b0dae195a3b971d8f98388d502&openid=harmony&nickName=harmony',
-      title: '快搜搜题意见反馈',
-      description: '快搜搜题意见反馈',
-    });
-
-    let controller: systemShare.ShareController = new systemShare.ShareController(shareData);
-    let context = getContext(this) as common.UIAbilityContext;
-    controller.show(context, {
-      selectionMode: systemShare.SelectionMode.SINGLE,
-      previewMode: systemShare.SharePreviewMode.DEFAULT,
-    }).then(() => {
-      // logger.info('ShareController show success.');
-    }).catch((error: BusinessError) => {
-      // logger.error(`ShareController show error. code: ${error.code}, message: ${error.message}`);
-    });
+  private async goFeedback() {
+    context.openLink(MainConstants.FEEDBACK_URL, { appLinkingOnly: false })
+      .then(() => {
+        console.info('Link opened successfully');
+      })
+      .catch((error: BusinessError) => {
+        console.error('Failed to open link:', error);
+      });
   }
 
   // private async goWeb(){
@@ -184,7 +176,7 @@ export struct MinePage {
             name: $r('app.string.feedback'),
             isShow: true,
             click: () => {
-              this.goWeb()
+              this.goFeedback()
               // hilog.info(0x0001, "text", "意见反馈")
             }
           })
