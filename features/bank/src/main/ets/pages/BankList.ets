@@ -90,7 +90,7 @@ struct DownloadOverDialog {
         .textAlign(TextAlign.Center)
         .margin({ top: 25, bottom: 15 })
       Blank()
-    }.width('80%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
+    }.width('100%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
   }
 }
 
@@ -119,7 +119,7 @@ struct DeleteDialog {
         .textAlign(TextAlign.Center).margin({ top: 20 })
       Text(`确定删除${this.bank.name}这个题库吗？`).fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
-        .textAlign(TextAlign.Center).margin({ top: 20 })
+        .textAlign(TextAlign.Start).margin({ top: 20, left: 20, right: 20 })
       Row() {
         Text("确定")
           .width(80)
@@ -150,7 +150,7 @@ struct DeleteDialog {
       .width('100%')
 
       Blank()
-    }.width('80%').backgroundColor($r('app.color.start_window_background'))
+    }.width('100%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
   }
 }
 
