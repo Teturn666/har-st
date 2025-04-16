@@ -6,12 +6,12 @@
         "type": "HarmonyOS",
         "material": {
           "certpath": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.cer",
-          "storePassword": "0000001BB4187A987735E1BE659599213938EF0810FF887D1439548AC1E5C1400F057E7F131FDE25C78A46",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BA2030526888BEA15A7D0A3AEC4ACB080CBD0B3C5303BBD484A7B11C1E35D3320C5797086DEC81F",
+          "keyPassword": "0000001BB8BB1B90DD7F09B6C9B0E5518C756E3CCA70F88F88DDFF91DF38274111C07C460C91A10BB7228A",
           "profile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p12"
+          "storeFile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p12",
+          "storePassword": "0000001B879E52B34120968B82EAE4F5658737A32E00F833F7BDC842EBD3539AD06D9967EA60F823B5BB4B"
         }
       }
     ],
@@ -19,8 +19,8 @@
       {
         "name": "default",
         "signingConfig": "default",
-        "compatibleSdkVersion": "5.0.2(14)",
-        "runtimeOS": "HarmonyOS",
+        "compatibleSdkVersion": "5.0.3(15)",
+        "runtimeOS": "HarmonyOS"
       }
     ],
     "buildModeSet": [

@@ -1,7 +1,7 @@
 //题目表
 export class QuestionRes {
   //题库ID
-  qId: string = ""
+  qId: number=0
   //问题
   question: string = ""
   //选项数组

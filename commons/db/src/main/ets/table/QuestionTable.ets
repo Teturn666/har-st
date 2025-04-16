@@ -31,7 +31,7 @@ export class QuestionTable {
 
   deleteData(account: QuestionRes, callback: Function) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    predicates.equalTo('id', account.qId);
+    predicates.equalTo('qId', account.qId);
     this.accountTable.deleteData(predicates, callback);
   }
 
@@ -58,13 +58,13 @@ export class QuestionTable {
         for (let i = 0; i < count; i++) {
           let tmp: QuestionRes = {
             // id: 0,
-            qId: '',
+            qId: 0,
             question: '',
             answer: '',
             option: [],
           };
           // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-          tmp.qId = resultSet.getString(resultSet.getColumnIndex('qId'));
+          tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
           tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
           tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
           tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
@@ -79,7 +79,7 @@ export class QuestionTable {
   async querySync(id: number, isAll: boolean = true): Promise<Array<QuestionRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
     if (!isAll) {
-      predicates.equalTo('id', id);
+      predicates.equalTo('qId', id);
     }
 
     let resultSet = await this.accountTable.querySync(predicates)
@@ -97,13 +97,13 @@ export class QuestionTable {
           for (let i = 0; i < count; i++) {
             let tmp: QuestionRes = {
               // id: 0,
-              qId: '',
+              qId: 0,
               question: '',
               answer: '',
               option: [],
             };
             // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-            tmp.qId = resultSet.getString(resultSet.getColumnIndex('qId'));
+            tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
             tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);

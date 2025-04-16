@@ -15,9 +15,9 @@ export default class DbConstants {
   //题库表
   static readonly QUESTION_BANK_TABLE: DbTableBean = {
     tableName: 'questionBank',
-    sqlCreate: 'CREATE TABLE IF NOT EXISTS questionBank(id INTEGER PRIMARY KEY AUTOINCREMENT, qId TEXT, ' +
-      'name TEXT,desc TEXT,time TEXT, url TEXT,version INTEGER,position INTEGER，downloadedState INTEGER)',
-    columns: ['id', 'qId', 'name', 'desc', 'time', 'url', 'version', 'position', 'downloadedState ']
+    sqlCreate: 'CREATE TABLE IF NOT EXISTS questionBank(id INTEGER PRIMARY KEY AUTOINCREMENT, qid INTEGER, ' +
+      'name TEXT,desc TEXT,time TEXT, url TEXT,version TEXT,position INTEGER,downloadedState INTEGER)',
+    columns: ['id', 'qid', 'name', 'desc', 'time', 'url', 'version', 'position', 'downloadedState ']
   };
   //题目表
   static readonly QUESTION_TABLE: DbTableBean = {

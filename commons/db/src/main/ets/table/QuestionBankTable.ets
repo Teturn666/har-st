@@ -34,7 +34,7 @@ export class QuestionBankTable {
 
   deleteData(account: BankListRes, callback: Function) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
-    predicates.equalTo('id', account.qid);
+    predicates.equalTo('qid', account.qid);
     this.accountTable.deleteData(predicates, callback);
   }
 
@@ -45,47 +45,7 @@ export class QuestionBankTable {
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
-  // query(amount: number, callback: Function, isAll: boolean = true) {
-  //   let predicates = new relationalStore.RdbPredicates(DbConstants..tableName);
-  //   if (!isAll) {
-  //     predicates.equalTo('amount', amount);
-  //   }
-  //   this.accountTable.query(predicates, (resultSet: relationalStore.ResultSet) => {
-  //     let count: number = resultSet.rowCount;
-  //     if (count === 0 || typeof count === 'string') {
-  //       console.log(`${DbConstants.TABLE_TAG}` + 'Query no results!');
-  //       callback([]);
-  //     } else {
-  //       resultSet.goToFirstRow();
-  //       const result: BankListRes[] = [];
-  //       for (let i = 0; i < count; i++) {
-  //         let tmp: BankListRes = {
-  //           qid: '',
-  //           name: '',
-  //           desc: '',
-  //           time: '',
-  //           url: '',
-  //           version: 0,
-  //           position: 0,
-  //           downloadedState: 2
-  //         };
-  //         tmp.qid = resultSet.getString(resultSet.getColumnIndex('qid'))
-  //         tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
-  //         tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'))
-  //         tmp.time = resultSet.getString(resultSet.getColumnIndex('time'))
-  //         tmp.url = resultSet.getString(resultSet.getColumnIndex('url'))
-  //         tmp.version = resultSet.getDouble(resultSet.getColumnIndex('version'))
-  //         tmp.position = resultSet.getDouble(resultSet.getColumnIndex('position'))
-  //         tmp.downloadedState = resultSet.getDouble(resultSet.getColumnIndex('downloadedState'))
-  //         result[i] = tmp
-  //         resultSet.goToNextRow()
-  //       }
-  //       callback(result);
-  //     }
-  //   });
-  // }
-
-  async querySync(qid: string, isAll: boolean = true): Promise<Array<BankListRes>> {
+  async querySync(qid: number, isAll: boolean = true): Promise<Array<BankListRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
     if (!isAll) {
       predicates.equalTo('qid', qid);
@@ -106,24 +66,24 @@ export class QuestionBankTable {
           for (let i = 0; i < count; i++) {
             let tmp: BankListRes = {
               id: 0,
-              qid: '',
+              qid: 0,
               name: '',
               desc: '',
               time: '',
               url: '',
               num: '',
-              version: 0,
+              version: '',
               position: 0,
               downloadedState: 2
             };
             tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'))
-            tmp.qid = resultSet.getString(resultSet.getColumnIndex('qid'))
+            tmp.qid = resultSet.getDouble(resultSet.getColumnIndex('qid'))
             tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
-            tmp.num = resultSet.getString(resultSet.getColumnIndex('num'))
+            // tmp.num = resultSet.getString(resultSet.getColumnIndex('num'))
             tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'))
             tmp.time = resultSet.getString(resultSet.getColumnIndex('time'))
             tmp.url = resultSet.getString(resultSet.getColumnIndex('url'))
-            tmp.version = resultSet.getDouble(resultSet.getColumnIndex('version'))
+            tmp.version = resultSet.getString(resultSet.getColumnIndex('version'))
             tmp.position = resultSet.getDouble(resultSet.getColumnIndex('position'))
             tmp.downloadedState = resultSet.getDouble(resultSet.getColumnIndex('downloadedState'))
             result[i] = tmp
@@ -145,10 +105,10 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   obj.name = account.name
   obj.desc = account.desc
   obj.time = account.time
-  obj.num = account.num
+  // obj.num = account.num
   obj.url = account.url
   obj.position = account.position
   obj.version = account.version
-  obj.downloadState = account.downloadedState
+  obj.downloadedState = account.downloadedState
   return obj;
 }

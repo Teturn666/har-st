@@ -51,8 +51,7 @@ function buildText(params: Params) {
             name: params.animateName,
             animationData: jsonData,
           })
-        })
-        // .width('90%')
+        })// .width('90%')
         .height(30)
         .margin({ bottom: 16, top: 8 })
     }.width('90%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
@@ -197,6 +196,7 @@ export struct BankList {
           //触发UI重新渲染
           this.bankRes.newsData = [...this.bankRes.newsData]
           this.dialogDeleteController?.close()
+          this.bankModel.deleteTable(item.qid)
         }
       })
     });
