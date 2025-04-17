@@ -3,11 +3,11 @@ import { BankPage } from '@ohos/bank/Index';
 import { MinePage } from '@ohos/mine/Index';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { AppConstants } from '../constants/AppConstants';
-import HomeConstants from '../../../../../../features/home/src/main/ets/Constants/HomeConstants';
 import { TabBarType } from '../model/TabBarModel';
 import router from '@ohos.router'
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
+import { init, onEventObject } from '@umeng/analytics';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -20,12 +20,13 @@ struct MainPage {
   private sp: preferences.Preferences | null = null
 
   private initPreferences() {
-    this.sp = preferences.getPreferencesSync(context, HomeConstants.SP_OPTIONS)
+    this.sp = preferences.getPreferencesSync(context, AppConstants.SP_OPTIONS)
     let show = this.sp.getSync("isFirstInstall", true)
     if (typeof show === 'boolean') {
       this.showDialog = show
     }
   }
+
   // 修改布尔值的方法
   updateBooleanValue(newValue: boolean) {
     try {
@@ -38,10 +39,10 @@ struct MainPage {
     }
   }
 
-
   aboutToAppear(): void {
     this.initPreferences()
   }
+
   build() {
     RelativeContainer() {
       Navigation(this.appPathStack) {
@@ -134,6 +135,10 @@ struct MainPage {
                 .onClick(() => {
                   this.showDialog = false
                   this.updateBooleanValue(false)
+                  init(); // 在用户同意隐私政策后再调用此方法
+                  // onEventObject("eventA", {
+                  //   "key": "value"
+                  // }); // 埋个点
                 })
               Blank()
             }.width('100%')

@@ -13,6 +13,8 @@ import router from '@ohos.router'
 import { PayView } from '@ohos/view/Index'
 import lottie, { AnimationItem } from '@ohos/lottie'
 import { util } from '@kit.ArkTS'
+import { onEventObject } from '@umeng/analytics'
+import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 
 import('@ohos/photo/src/main/ets/pages/SearchResultPage')
 import('@ohos/web/src/main/ets/pages/ChWebPage')
@@ -130,6 +132,7 @@ export struct HomePage {
         ocrTxt: ocrTxt
       }
     })
+    onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
   }
 
   //跳转到H5页面
@@ -140,6 +143,7 @@ export struct HomePage {
         title: '使用教程'
       }
     })
+    onEventObject(HomeMobClickConstants.PLAY_GUIDE_VIDEO)
   }
 
   private async ocrToText() {

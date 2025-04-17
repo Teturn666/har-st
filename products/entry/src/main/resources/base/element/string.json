@@ -23,6 +23,14 @@
     {
       "name": "tab_mine",
       "value": "我的"
+    },
+    {
+      "name": "internet_reason",
+      "value": "Request network data"
+    },
+    {
+      "name": "reason",
+      "value": "采集oaid信息用于统计分析"
     }
   ]
 }
