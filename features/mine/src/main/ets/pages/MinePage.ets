@@ -8,6 +8,8 @@ import { OfficialDialog } from './OfficialDialog';
 import router from '@ohos.router'
 import MainConstants from "../Constants/MineConstants";
 import { faceDetector } from "@kit.CoreVisionKit";
+import MineMobClickConstants from "../Constants/MineMobClickConstants";
+import { onEventObject } from "@umeng/analytics";
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -157,6 +159,7 @@ export struct MinePage {
             isShow: true,
             click: () => {
               OfficialDialog.openDialog()
+              onEventObject(MineMobClickConstants.MENU_MY_CODE)
             }
           })
         }
@@ -188,7 +191,8 @@ export struct MinePage {
             isShow: false,
             click: () => {
               this.jumpToSearchResult()
-              hilog.info(0x0001, "text", "关于我们")
+              // hilog.info(0x0001, "text", "关于我们")
+              onEventObject(MineMobClickConstants.MENU_ABOUT)
             }
           })
         }

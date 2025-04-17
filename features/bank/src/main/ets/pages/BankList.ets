@@ -9,6 +9,8 @@ import { FinishDialog } from './FinishDialog';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
+import { onEventObject } from '@umeng/analytics';
+import BankMobClickConstants from '../Constants/BankMobClickConstants';
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -342,15 +344,24 @@ export struct BankList {
                         this.bankRes.newsData = [...this.bankRes.newsData]
                         LoadingDialog.closeDialog()
                         this.showDownloadOverDialog(true)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                          "question_bank_id": item.qid
+                        })
                       } else {
                         Logger.info(TAG, '下载失败' + item)
                         LoadingDialog.closeDialog()
                         this.showDownloadOverDialog(false)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                          "question_bank_id": item.qid
+                        })
                       }
                     } catch (error) {
                       Logger.info(TAG, '下载过程中发生错误' + item)
                       LoadingDialog.closeDialog()
                       this.showDownloadOverDialog(false)
+                      onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                        "question_bank_id": item.qid
+                      })
                     }
                   }
                 }
