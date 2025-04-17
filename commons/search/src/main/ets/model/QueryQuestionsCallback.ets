@@ -1,4 +1,4 @@
-import { QuestionRes } from '@ohos/db/Index'
+import { QuestionRes } from 'db/Index'
 import { QuestionBean } from './QuestionBean'
 
 export interface QueryQuestionsCallback {

@@ -1,4 +1,4 @@
-import { BankListRes } from '@ohos/db';
+import { BankListRes } from 'db';
 
 @Observed
 export default class BankRes {

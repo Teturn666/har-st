@@ -1,5 +1,5 @@
-import { SearchEngine } from '@ohos/search/Index'
-import { Logger } from '@ohos/utils/Index'
+import { SearchEngine } from 'search/Index'
+import { Logger } from 'utils/Index'
 import { SearchResultNet } from '../service/SearchResultNet'
 import { SearchResultRes } from './SearchResultRes'
 

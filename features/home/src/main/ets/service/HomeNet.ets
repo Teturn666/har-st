@@ -2,12 +2,12 @@ import { HomeBankListRes } from '../model/HomeBankListRes';
 import { HomeTrigger } from './HomeTrigger';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { AxiosResponse } from '@ohos/axios';
-import { BaseResponse, HttpUtils } from '@ohos/network/Index';
+import { BaseResponse, HttpUtils } from 'network/Index';
 import { List } from '@kit.ArkTS';
 import { HomeBankChapterRes } from '../model/HomeBankChapterRes';
 import { UpdateRes } from '../model/UpdateRes';
 // import { QuestionRes } from '../model/QuestionRes';
-import { QuestionRes } from '@ohos/db/Index'
+import { QuestionRes } from 'db/Index'
 
 const TAG = '[HomeNet]';
 
@@ -32,9 +32,9 @@ export class HomeNet {
 
   //获取章节信息
   public getHomeBankChapterRes(bankId: number): Promise<HomeBankChapterRes> {
-    return new Promise((resolve: (value: HomeBankChapterRes | PromiseLike<HomeBankChapterRes>) => void,
+    return new Promise(async (resolve: (value: HomeBankChapterRes | PromiseLike<HomeBankChapterRes>) => void,
       reject: (reason?: Object) => void) => {
-      HttpUtils.getInstance().get(HomeTrigger.HOME_BANK_CHAPTER, { params: { "bankId": bankId } })
+      (await HttpUtils.getInstance()).get(HomeTrigger.HOME_BANK_CHAPTER, { params: { "bankId": bankId } })
         .then((res: AxiosResponse<BaseResponse<HomeBankChapterRes>>) => {
           let code = res.data.code
           if (code === "0") {

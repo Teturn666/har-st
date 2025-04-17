@@ -1,4 +1,4 @@
-import { Logger, StringUtils } from '@ohos/utils'
+import { Logger, StringUtils } from 'utils'
 
 export class StringFilter {
   private static readonly ALPLIST = "ABCDEFGHIJKLMNOPQRST"

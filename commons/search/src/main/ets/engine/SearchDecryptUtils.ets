@@ -1,4 +1,4 @@
-import { ChAesUtils } from '@ohos/encryption';
+import { ChAesUtils } from 'encryption';
 
 //搜索后解密的工具类
 export class SearchDecryptUtils {

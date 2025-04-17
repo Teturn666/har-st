@@ -1,4 +1,4 @@
-import { CommonConstants, Logger } from '@ohos/utils/Index'
+import { CommonConstants, Logger } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { fileIo, picker } from '@kit.CoreFileKit'
@@ -6,18 +6,18 @@ import { image } from '@kit.ImageKit'
 import { textRecognition } from '@kit.CoreVisionKit'
 import { HomeModel } from '../model/HomeModel'
 import { HomeBankListRes } from '../model/HomeBankListRes'
-import { LoadingStatus } from '@ohos/utils'
+import { LoadingStatus } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import common from '@ohos.app.ability.common'
 import router from '@ohos.router'
-import { PayView } from '@ohos/view/Index'
+import { PayView } from 'view/Index'
 import lottie, { AnimationItem } from '@ohos/lottie'
 import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 
-import('@ohos/photo/src/main/ets/pages/SearchResultPage')
-import('@ohos/web/src/main/ets/pages/ChWebPage')
+import('photo/src/main/ets/pages/SearchResultPage')
+import('web/src/main/ets/pages/ChWebPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
@@ -46,9 +46,6 @@ export struct HomePage {
 
   aboutToAppear(): void {
     this.initLottie()
-    this.homeModel.createTable()
-    this.homeModel.createSp(context)
-    this.loadResources()
   }
 
   aboutToDisappear(): void {
@@ -113,16 +110,6 @@ export struct HomePage {
     .padding({
       left: $r('app.float.float_15vp'), right: $r('app.float.float_15vp')
     })
-  }
-
-  async loadResources(): Promise<void> {
-    this.loadingStatus = LoadingStatus.LOADING
-    let queryFinish = await this.homeModel.queryFirstData()
-    if (queryFinish) {
-      this.loadingStatus = LoadingStatus.SUCCESS
-    } else {
-      this.loadingStatus = LoadingStatus.FAILED
-    }
   }
 
   //跳转到搜索结果页

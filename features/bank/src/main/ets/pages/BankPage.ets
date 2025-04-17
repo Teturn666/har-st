@@ -1,7 +1,7 @@
 import { BankModel } from '../model/BankModel'
 import { BankCategory } from '../model/BankCategory';
 import { BankList } from './BankList';
-import { LoadingStatus, Logger } from '@ohos/utils';
+import { LoadingStatus, Logger } from 'utils';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'

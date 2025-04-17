@@ -1,5 +1,5 @@
 import util from '@ohos.util';
-import { Logger, StringUtils } from '@ohos/utils'
+import { Logger, StringUtils } from 'utils'
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { buffer } from '@kit.ArkTS';
 

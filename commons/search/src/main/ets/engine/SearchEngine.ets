@@ -1,6 +1,6 @@
 import { ArrayList, HashMap, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
-import { QuestionRes, QuestionTable } from '@ohos/db/Index'
-import { Logger, StringUtils } from '@ohos/utils/Index'
+import { QuestionRes, QuestionTable } from 'db/Index'
+import { Logger, StringUtils } from 'utils/Index'
 import { SegmentEngine } from './SegmentEngine'
 import { taskpool } from '@kit.ArkTS';
 

@@ -1,6 +1,5 @@
-import { TitleBar } from '@ohos/widget/Index'
+import { TitleBar } from 'widget/Index'
 import router from '@ohos.router'
-import App from '@system.app'
 import MainConstants from "../Constants/MineConstants";
 
 @Entry({ routeName: 'aboutUsPage' })
@@ -60,16 +59,17 @@ export struct AboutUsPage {
       .alignItems(HorizontalAlign.Start)
       .backgroundColor($r('app.color.c_f9f9f9'))
       .borderRadius(5)
+
       Blank()
       Text("快搜搜题").fontSize(16)
         .fontColor($r("app.color.c_9d9d9d"))
-        .textAlign(TextAlign.Start).margin({bottom:4})
+        .textAlign(TextAlign.Start).margin({ bottom: 4 })
       Text("版本号1.0.0").fontSize(16)
         .fontColor($r("app.color.c_9d9d9d"))
-        .textAlign(TextAlign.Start).margin({bottom:4})
+        .textAlign(TextAlign.Start).margin({ bottom: 4 })
       Text("粤ICP备2021067372号-2A").fontSize(12)
         .fontColor($r("app.color.c_9d9d9d"))
-        .textAlign(TextAlign.Start).margin({bottom:40})
+        .textAlign(TextAlign.Start).margin({ bottom: 40 })
 
     }.alignItems(HorizontalAlign.Center)
     .width('100%')

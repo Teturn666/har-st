@@ -6,8 +6,8 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@ohos/utils": "file:../../../XFJF/commons/utils",
-    "@ohos/encryption":"file:../../../XFJF/commons/encryption"
+    "utils": "file:../../../XFJF/commons/utils",
+    "encryption":"file:../../../XFJF/commons/encryption"
   }
 }
 

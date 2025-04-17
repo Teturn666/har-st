@@ -6,9 +6,9 @@
   "author": "",
   "license": "",
   "dependencies": {
-    '@ohos/home': 'file:../../features/home',
-    '@ohos/bank': 'file:../../features/bank',
-    '@ohos/mine': 'file:../../features/mine',
+    "home": 'file:../../features/home',
+    "bank": 'file:../../features/bank',
+    "mine": 'file:../../features/mine',
   }
 }
 

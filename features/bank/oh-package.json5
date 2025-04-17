@@ -6,11 +6,11 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@ohos/network": "file:../../commons/network",
-    "@ohos/utils": "file:../../commons/utils",
-    "@ohos/search": "file:../../commons/search",
-    "@ohos/encryption": "file:../../commons/encryption",
-    "@ohos/db": "file:../../commons/db"
+    "network": "file:../../commons/network",
+    "utils": "file:../../commons/utils",
+    "search": "file:../../commons/search",
+    "encryption": "file:../../commons/encryption",
+    "db": "file:../../commons/db"
   }
 }
 

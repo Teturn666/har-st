@@ -1,4 +1,4 @@
-import { Logger } from '@ohos/utils/Index';
+import { Logger } from 'utils/Index';
 import DbConstants from './constants/DbConstants';
 import { relationalStore } from '@kit.ArkData';
 

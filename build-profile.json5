@@ -1,17 +1,29 @@
 {
   "app": {
     "signingConfigs": [
+      //      {
+      //        "name": "default",
+      //        "material": {
+      //          "certpath": "/Users/xinxin/HarmonyOs/key/ks/ksst_cer.cer",
+      //          "keyAlias": "kinva",
+      //          "keyPassword": "0000001A7EA663BAFF046CD381DC1082B4F14C8FD836A8A5E93005EDF2922D7556871FF572141A477F66",
+      //          "profile": "/Users/xinxin/HarmonyOs/key/ks/ksst_profileRelease.p7b",
+      //          "signAlg": "SHA256withECDSA",
+      //          "storeFile": "/Users/xinxin/HarmonyOs/key/ks/ksst.p12",
+      //          "storePassword": "0000001AEAE1C3FF39127DA599F5F89252D536E8B023A0798CA3EF17F66684610266478CB2605D041E17"
+      ////        }
+      //      }
       {
         "name": "default",
         "type": "HarmonyOS",
         "material": {
           "certpath": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001BB8BB1B90DD7F09B6C9B0E5518C756E3CCA70F88F88DDFF91DF38274111C07C460C91A10BB7228A",
+          "keyPassword": "0000001B82DD25EC6738EF8A43E5224717A047C9E81A2874EF0D80369C2D74C2AB5042AAAA232F8647D5BB",
           "profile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p12",
-          "storePassword": "0000001B879E52B34120968B82EAE4F5658737A32E00F833F7BDC842EBD3539AD06D9967EA60F823B5BB4B"
+          "storePassword": "0000001B40340A9C8DD1D65ED80483416E90A1362B589BA76C55293DE58DCB98A296EB21462222614D5CAE"
         }
       }
     ],

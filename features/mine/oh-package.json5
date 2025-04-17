@@ -6,7 +6,8 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@ohos/widget": "file:../../commons/widget"
+    "widget": "file:../../commons/widget",
+    "utils": "file:../../commons/utils"
   }
 }
 

@@ -1,8 +1,8 @@
 ///题库列表
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
-import { Logger } from '@ohos/utils';
-import { BankListRes } from '@ohos/db'
+import { Logger } from 'utils';
+import { BankListRes } from 'db'
 import { ComponentContent } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
 import { FinishDialog } from './FinishDialog';

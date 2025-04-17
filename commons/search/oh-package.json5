@@ -6,9 +6,9 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@ohos/utils": "file:../utils",
-    "@ohos/db": "file:../../commons/db",
-    "@ohos/encryption": "file:../encryption",
+    "utils": "file:../utils",
+    "db": "file:../../commons/db",
+    "encryption": "file:../encryption",
 
   }
 }

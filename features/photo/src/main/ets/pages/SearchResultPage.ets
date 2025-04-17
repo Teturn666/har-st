@@ -1,5 +1,5 @@
-import { CommonConstants, Logger } from '@ohos/utils/Index'
-import { TitleBar } from '@ohos/widget/Index'
+import { CommonConstants, Logger } from 'utils/Index'
+import { TitleBar } from 'widget/Index'
 import router from '@ohos.router'
 import { SearchModel } from '../model/SearchModel'
 import { SearchResultRes } from '../model/SearchResultRes'

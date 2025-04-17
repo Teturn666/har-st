@@ -1,10 +1,10 @@
 import { BankTrigger } from './BankTrigger';
-import { BaseResponse, HttpUtils } from '@ohos/network/Index';
+import { BaseResponse, HttpUtils } from 'network/Index';
 import axios, { AxiosResponse, AxiosProgressEvent } from '@ohos/axios';
 import { BankCategory } from '../model/BankCategory';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { BankListRes } from '@ohos/db'
-import { Logger } from '@ohos/utils'
+import { BankListRes } from 'db'
+import { Logger } from 'utils'
 import fs, { ReadTextOptions } from '@ohos.file.fs';
 
 const TAG = '[BankNet]'

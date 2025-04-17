@@ -1,6 +1,6 @@
-import { HomePage } from '@ohos/home/Index';
-import { BankPage } from '@ohos/bank/Index';
-import { MinePage } from '@ohos/mine/Index';
+import { HomePage } from 'home/Index';
+import { BankPage } from 'bank/Index';
+import { MinePage } from 'mine/Index';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { AppConstants } from '../constants/AppConstants';
 import { TabBarType } from '../model/TabBarModel';

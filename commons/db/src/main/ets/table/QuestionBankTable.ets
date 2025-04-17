@@ -2,7 +2,7 @@ import ChRdb from '../ChRdb';
 import DbConstants from '../constants/DbConstants';
 import { relationalStore } from '@kit.ArkData';
 import { BankListRes } from '../model/BankListRes';
-import { Logger } from '@ohos/utils';
+import { Logger } from 'utils';
 
 //题库表
 export class QuestionBankTable {
