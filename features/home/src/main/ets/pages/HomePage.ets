@@ -27,7 +27,12 @@ const context = (getContext(this) as common.UIAbilityContext)
 const TAG = '[HomePage]'
 
 let jsonData = null
+@Builder
+export function HomePageBuilder() {
+  HomePage()
+}
 
+@Entry()
 @Component
 export struct HomePage {
   private imageSource: image.ImageSource | undefined = undefined
