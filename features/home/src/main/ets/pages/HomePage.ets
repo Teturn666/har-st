@@ -27,6 +27,7 @@ const context = (getContext(this) as common.UIAbilityContext)
 const TAG = '[HomePage]'
 
 let jsonData = null
+
 @Builder
 export function HomePageBuilder() {
   HomePage()
@@ -94,6 +95,28 @@ export struct HomePage {
             handleClick: async () => {
               this.selectImage()
             }
+          })
+        }
+
+        ListItem() {
+          BankHelper({
+            downloadClick: async () => {
+              //跳转到flutter的下载页面
+            }
+          })
+        }
+
+        ListItem() {
+          ExerciseHelper({
+            bankClick: async () => {
+              //TODO 跳转到flutter的练习页面
+            },
+            wrongClick: async () => {
+              //TODO 跳转到flutter的错题练习页面
+            },
+            collectionClick: async () => {
+              //TODO 跳转到flutter的收藏练习页面
+            },
           })
         }
 
@@ -273,5 +296,71 @@ struct Banner {
       .selectedColor($r('app.color.c_0a59f0')))
     .autoPlay(true)
     .loop(true)
+  }
+}
+
+//题库
+@Component
+struct BankHelper {
+  downloadClick: () => void = () => {
+  }
+
+  build() {
+    Column() {
+      Row() {
+        Image($r('app.media.ic_question_bank'))
+          .width(18)
+          .height(18)
+        Image($r('app.media.ic_question_bank_txt'))
+          .height(15)
+      }
+      .alignItems(VerticalAlign.Top)
+
+      Image($r('app.media.ic_my_download'))
+        .width(90)
+        .height(90)
+        .onClick(() => this.downloadClick())
+
+    }.margin({ top: $r('app.float.float_15vp') })
+  }
+}
+
+//练习
+@Component
+struct ExerciseHelper {
+  bankClick: () => void = () => {
+  }
+  wrongClick: () => void = () => {
+  }
+  collectionClick: () => void = () => {
+  }
+
+  build() {
+    Column() {
+      Row() {
+        Image($r('app.media.ic_exercise'))
+          .width(18)
+          .height(18)
+        Image($r('app.media.ic_exercise_txt'))
+          .height(15)
+      }
+      .alignItems(VerticalAlign.Top)
+
+      Row() {
+        Image($r('app.media.ic_question_bank_exercise'))
+          .width(90)
+          .height(90)
+          .onClick(() => this.bankClick())
+        Image($r('app.media.ic_fault_exercise'))
+          .width(90)
+          .height(90)
+          .onClick(() => this.wrongClick())
+        Image($r('app.media.ic_collect_exercise'))
+          .width(90)
+          .height(90)
+          .onClick(() => this.collectionClick())
+      }
+
+    }.margin({ top: $r('app.float.float_15vp') })
   }
 }
