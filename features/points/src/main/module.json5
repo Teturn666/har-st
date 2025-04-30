@@ -1,0 +1,26 @@
+{
+  "module": {
+    "name": "points",
+    "type": "feature",
+    "description": "$string:module_desc",
+    "mainElement": "PointsAbility",
+    "deviceTypes": [
+      "phone"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "abilities": [
+      {
+        "name": "PointsAbility",
+        "srcEntry": "./ets/pointsability/PointsAbility.ets",
+        "description": "$string:PointsAbility_desc",
+        "icon": "$media:layered_image",
+        "label": "$string:PointsAbility_label",
+        "startWindowIcon": "$media:startIcon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true
+      }
+    ]
+  }
+}

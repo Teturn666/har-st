@@ -10,7 +10,8 @@
     "utils": "file:../../commons/utils",
     "search": "file:../../commons/search",
     "encryption": "file:../../commons/encryption",
-    "db": "file:../../commons/db"
+    "db": "file:../../commons/db",
+    "exercise": "file:../exercise",
   }
 }
 
