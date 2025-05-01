@@ -1,7 +1,16 @@
+import { PayModel } from '../model/PayModel';
+import { PriceInfoRes } from '../model/PriceInfoRes';
+
 @Entry
 @Component
-struct Index {
+export struct PayPage {
   @State message: string = 'Hello World';
+  @State payModel: PayModel = PayModel.getInstance()
+  @State priceList: PriceInfoRes[] = [];
+
+  aboutToAppear(): void {
+    this.loadData()
+  }
 
   build() {
     RelativeContainer() {
@@ -20,4 +29,11 @@ struct Index {
     .height('100%')
     .width('100%')
   }
+
+  async loadData() {
+    let list = await this.payModel.getPayPriceList()
+    this.priceList = list
+  }
 }
+
+
