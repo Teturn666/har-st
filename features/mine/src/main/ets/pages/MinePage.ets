@@ -63,7 +63,7 @@ export struct MinePage {
         url: "https://ti.iksdt.com/static/doc/help/help.html",
         title: "帮助中心"
       }
-    })
+    }, router.RouterMode.Single)
   }
 
   private async share() {

@@ -31,7 +31,7 @@ export struct AboutUsPage {
               url: MainConstants.USER_AGREEMENT_URL,
               title: "用户协议"
             }
-          })
+          },router.RouterMode.Single)
         }).width('100%')
 
         Row() {
@@ -51,7 +51,7 @@ export struct AboutUsPage {
               url: MainConstants.USER_PRIVACY_URL,
               title: "隐私政策"
             }
-          })
+          },router.RouterMode.Single)
         })
       }
       .width('90%')

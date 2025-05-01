@@ -14,6 +14,7 @@
     "web": "file:../../commons/web",
     "photo": "file:../photo",
     "view": "file:../view",
+    "exercise": "file:../exercise",
   }
 }
 

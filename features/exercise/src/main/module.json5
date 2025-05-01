@@ -1,24 +1,11 @@
 {
   "module": {
     "name": "exercise",
-    "type": "feature",
+    "type": "har",
     "description": "$string:module_desc",
     "mainElement": "ExerciseAbility",
-    "deviceTypes":  ["phone"],
-    "deliveryWithInstall": true,
-    "installationFree": false,
-    "pages": "$profile:main_pages",
-    "abilities": [
-    {
-        "name": "ExerciseAbility",
-        "srcEntry": "./ets/exerciseability/ExerciseAbility.ets",
-        "description": "$string:ExerciseAbility_desc",
-          "icon": "$media:layered_image",
-        "label": "$string:ExerciseAbility_label",
-        "startWindowIcon" : "$media:startIcon",
-        "startWindowBackground" : "$color:start_window_background"
-          ,
-        "exported": true
-      }]
+    "deviceTypes": [
+      "phone"
+    ],
   }
 }

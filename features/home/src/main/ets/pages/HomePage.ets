@@ -18,6 +18,7 @@ import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
+import('exercise/src/main/ets/pages/BankListPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
@@ -52,6 +53,12 @@ export struct HomePage {
 
   aboutToAppear(): void {
     this.initLottie()
+    this.homeModel.createTable()
+    this.loadResources()
+  }
+
+  async loadResources(): Promise<void> {
+    await this.homeModel.getBankList()
   }
 
   aboutToDisappear(): void {
@@ -109,13 +116,16 @@ export struct HomePage {
         ListItem() {
           ExerciseHelper({
             bankClick: async () => {
-              //TODO 跳转到flutter的练习页面
+              //跳转练习列表页面
+              this.jumpToBankList(1)
             },
             wrongClick: async () => {
-              //TODO 跳转到flutter的错题练习页面
+              //跳转错题列表练习页面
+              this.jumpToBankList(2)
             },
             collectionClick: async () => {
-              //TODO 跳转到flutter的收藏练习页面
+              //跳转收藏列表练习页面
+              this.jumpToBankList(3)
             },
           })
         }
@@ -138,6 +148,23 @@ export struct HomePage {
     .padding({
       left: $r('app.float.float_15vp'), right: $r('app.float.float_15vp')
     })
+  }
+
+  //跳转到练习列表共用的页面，1=题库练习，2=错题练习，3=收藏练习
+  private jumpToBankList(type: number) {
+    let title = ""
+    if (type === 2) {
+      title = "错题练习"
+    } else if (type === 3) {
+      title = "收藏练习"
+    } else {
+      title = "题库练习"
+    }
+    router.pushNamedRoute({
+      name: HomeConstants.ROUTER_BANK_LIST, params: {
+        title: title
+      }
+    }, router.RouterMode.Single)
   }
 
   //跳转到搜索结果页

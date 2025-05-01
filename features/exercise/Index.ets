@@ -1,0 +1,1 @@
+export {BankListPage} from './src/main/ets/pages/BankListPage';
