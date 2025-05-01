@@ -5,7 +5,8 @@ import { plainToClass } from 'class-transformer'
 import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
-
+import { SearchQuestionRes } from './SearchQuestionRes'
+import { List } from '@kit.ArkTS'
 const TAG = '[BankModel]'
 
 @Observed
@@ -54,6 +55,21 @@ export class BankModel {
   }
 
 
+
+
+  //获取热门搜索列表
+  public async getHotSearchList(): Promise<string[]> {
+    try {
+      let data = await this.bankNet.getHotSearchList()
+      // Logger.info(TAG, '返回数据--------' + data)
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return []
+    }
+  }
+
+
   //获取题库tab类型目录列表
   public async getBankTypeList(): Promise<BankCategory[]> {
     try {
@@ -84,6 +100,19 @@ export class BankModel {
       return []
     }
   }
+
+  //搜索题库
+  public async getSearchBankList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
+    try {
+      const data = await this.bankNet.getSearchBankList(content, pageNo); // pageSize 已固定为 20
+      Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
+      return data;
+    } catch (e) {
+      Logger.error(TAG, `Error in getSearchBankList: ${e}`);
+      return [];
+    }
+  }
+
 
   //点击题库下载的操作
   public async downLoadBank(bankListRes: BankListRes): Promise<boolean> {

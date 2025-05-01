@@ -1,7 +1,7 @@
 import { hilog } from "@kit.PerformanceAnalysisKit"
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
-import { common } from '@kit.AbilityKit';
+import { common ,Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ComponentContent } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
@@ -10,8 +10,64 @@ import MainConstants from "../Constants/MineConstants";
 import { faceDetector } from "@kit.CoreVisionKit";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
+import { productViewManager } from "@kit.StoreKit";
+import { audio } from "@kit.AudioKit";
+
 
 const context = (getContext(this) as common.UIAbilityContext)
+
+
+@Builder
+function buildsupportText() {
+  Column() {
+    Text('支持我们')
+      .fontSize(18)
+      .textAlign(TextAlign.Start)
+      .fontColor(0xFF3E3E3E)
+      .margin({ top: 10, left: 16 })
+      .width('100%');
+    // 定义渐变颜色数组
+    // const gradientColors = ['#9A7013', '#D6B677', '#9E730F', '#FFE083', '#C39118', '#E2B85C'];
+    //
+    // // 使用 map 方法动态生成星星
+    // Row({ space: 10 }) {
+    //   gradientColors.map((color, index) => {
+    //     Text() {
+    //       SymbolSpan($r('sys.symbol.ohos_star'))
+    //     }
+    //     .fontSize(32)
+    //     .textAlign(TextAlign.Start)
+    //     .fontColor(color); // 设置渐变颜色
+    //   });
+    // }
+
+    Text('如果你喜欢我们的应用，请给我们一个五星好评，帮助我们做得更好！')
+      .fontSize(16)
+      .textAlign(TextAlign.Start)
+      .fontColor($r('app.color.c_282828'))
+      .padding({ top: 16, left: 16, right: 16 })
+      .width('100%');
+
+    Button($r('app.string.i_know'))
+      .onClick(() => {
+        const request: Want = {
+          parameters: {
+            bundleName: 'com.chznai.ikst',
+          }
+        };
+        productViewManager.loadProduct(context, request, {
+          onError: (error: BusinessError) => {
+            hilog.info(0, 'Support', `loadProduct onError. code is ${error.code}, message is ${error.message}`);
+          }
+        });
+        OfficialDialog.closeDialog();
+      })
+      .margin({ top: 32, bottom: 32 });
+  }
+  .width('90%')
+  .backgroundColor($r('app.color.start_window_background'))
+  .borderRadius(10);
+}
 
 @Builder
 function buildText() {
@@ -41,11 +97,11 @@ function buildText() {
 
 @Entry
 @Component
-export struct MinePage {
-  @State message: string = "hello"
-  private ctx: UIContext = this.getUIContext();
-  private contentNode: ComponentContent<Object> =
-    new ComponentContent(this.ctx, wrapBuilder(buildText));
+export  struct MinePage {
+    @State message: string = "hello"
+    private ctx: UIContext = this.getUIContext();
+    private contentNode: ComponentContent<Object> =
+      new ComponentContent(this.ctx, wrapBuilder(buildText));
 
   aboutToAppear(): void {
     OfficialDialog.setContext(this.ctx);
@@ -138,42 +194,178 @@ export struct MinePage {
             .padding({ left: 16 })
             .lineHeight(20)
         }.alignItems(HorizontalAlign.Start)
-      }.alignItems(VerticalAlign.Top)
-      .margin({ left: 28, top: 40 }).visibility(Visibility.None)
+        .width('60%') // 限制左侧部分宽度
+
+        Column() {
+          Text("签到+2积分")
+            .fontSize(12)
+            .lineHeight(22)
+            .fontColor($r("app.color.c_F75A23"))
+            .textAlign(TextAlign.Start)
+            .width('100%')
+        }
+        .width('30%')
+        .margin({right:8})
+      }
+      .alignItems(VerticalAlign.Top)
+      .margin({ left: 28, top: 40 ,bottom: 20})
+      .visibility(Visibility.Visible)
+
+
+      // 会员
+      Row() {
+        Stack({ alignContent: Alignment.TopStart }) {
+          Image($r('app.media.rectangle_icon'))
+            .objectFit(ImageFit.Cover)
+            .width('auto')
+            .height(98)
+
+          Button('去充值')
+            .fontSize(10)
+            .fontColor(Color.Black)
+            .backgroundColor('#D4AF37')
+            .borderRadius(50)
+            .width('auto')
+            .height(20)
+            .position({ x: 250, y: 6 })
+          Stack({ alignContent: Alignment.Center }) {
+            Image($r('app.media.subtract_icon'))
+              .objectFit(ImageFit.Cover)
+              .width(146)
+              .height(26)
+            Text('VIP会员中心')
+              .fontSize(12)
+              .fontColor(Color.White)
+              .textAlign(TextAlign.Center)
+              .width(146)
+          }
+          .margin({ top: -8, left: 1 })
+
+          Row({ space: 18 }) {
+            Column() {
+              Image($r('app.media.group_icon'))
+                .objectFit(ImageFit.Cover)
+                .width(28)
+              Text("免广告搜题")
+                .fontSize(10)
+                .fontColor(Color.White)
+                .textAlign(TextAlign.Center)
+                .margin({ top: 10 })
+            }
+            .width('auto')
+            .padding(8)
+            Column() {
+              Image($r('app.media.group_icon'))
+                .objectFit(ImageFit.Cover)
+                .width(28)
+              Text("隐藏悬浮窗")
+                .fontSize(10)
+                .fontColor(Color.White)
+                .textAlign(TextAlign.Center)
+                .margin({ top: 10 })
+            }
+            .width('auto')
+            .padding(8)
+            Column() {
+              Image($r('app.media.group_icon'))
+                .objectFit(ImageFit.Cover)
+                .width(28)
+              Text("指定搜索题库")
+                .fontSize(10)
+                .fontColor(Color.White)
+                .textAlign(TextAlign.Center)
+                .margin({ top: 10 })
+            }
+            .width('auto')
+            .padding(8)
+            Column() {
+              Image($r('app.media.group_icon'))
+                .objectFit(ImageFit.Cover)
+                .width(28)
+              Text("积分会员")
+                .fontSize(10)
+                .fontColor(Color.White)
+                .textAlign(TextAlign.Center)
+                .margin({ top: 10 })
+            }
+            .width('auto')
+            .padding(8)
+          }
+          .width('90%')
+          .justifyContent(FlexAlign.SpaceAround)
+          .margin({ top: 25,left:10 })
+        }
+        .width('90%')
+        .height('auto')
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.Center)
 
       List() {
-        // ListItem() {
-        //   UserListItem({
-        //     name: $r('app.string.share_friend'),
-        //     isShow: true,
-        //     click: () => {
-        //       this.share()
-        //       // hilog.info(0x001, "text", "分享好友")
-        //     }
-        //   })
-        // }
-
+        ListItem() {
+          UserListItem({
+            name: $r('app.string.my_points'),
+            isShow: true,
+            value:"15",
+            click: () => {
+            }
+          })
+        }
+        ListItem() {
+          UserListItem({
+            name: $r('app.string.operation_settings'),
+            isShow: true,
+            click: () => {
+            }
+          })
+        }
+        ListItem() {
+          UserListItem({
+            name: $r('app.string.support_us'),
+            isShow: true,
+            click: () => {
+              // 设置为支持我们内容节点
+              // OfficialDialog.setContentNode(this.supportContentNode);
+              // OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true });
+              // OfficialDialog.openDialog();
+              // onEventObject(MineMobClickConstants.MENU_SUPPORT_US);
+            }
+          })
+        }
+        ListItem() {
+          UserListItem({
+            name: $r('app.string.share_friend'),
+            isShow: true,
+            click: () => {
+              this.share()
+              // hilog.info(0x001, "text", "分享好友")
+            }
+          })
+        }
         ListItem() {
           UserListItem({
             name: $r('app.string.follow_official_account'),
             isShow: true,
             click: () => {
-              OfficialDialog.openDialog()
+              // 设置为关注公众号内容节点
+              OfficialDialog.setContentNode(this.contentNode);
+              OfficialDialog.openDialog();
               onEventObject(MineMobClickConstants.MENU_MY_CODE)
             }
           })
         }
 
-        // ListItem() {
-        //   UserListItem({
-        //     name: $r('app.string.help_center'),
-        //     isShow: true,
-        //     click: () => {
-        //       this.jumpToHelpCenter()
-        //     }
-        //   })
-        // }
-        //
+        ListItem() {
+          UserListItem({
+            name: $r('app.string.help_center'),
+            isShow: true,
+            click: () => {
+              this.jumpToHelpCenter()
+            }
+          })
+        }
+
+
         ListItem() {
           UserListItem({
             name: $r('app.string.feedback'),
@@ -198,30 +390,46 @@ export struct MinePage {
         }
       }.margin({ top: 40 })
       .alignListItem(ListItemAlign.Center)
-    }.alignItems(HorizontalAlign.Start)
+    }
+    .alignItems(HorizontalAlign.Start)
     .height('100%')
     .width('100%')
-
   }
 }
-
 @Component
 struct UserListItem {
   @Prop name: Resource
   isShow: boolean = true
+  @Prop value?: string
   click: () => void = () => {
 
   }
 
   build() {
     Column() {
-      Text(this.name)
-        .fontSize(16)
-        .fontColor($r("app.color.c_3e3e3e"))
-        .textAlign(TextAlign.Start)
-        .padding({ left: 32 })
-        .width('100%')
-        .height(54)
+
+      Row({space:10}){
+        Text(this.name)
+          .fontSize(16)
+          .fontColor($r("app.color.c_3e3e3e"))
+          .textAlign(TextAlign.Start)
+          .padding({ left: 32 })
+          .width('auto')
+          .height(54)
+
+
+        if(this.value){
+          Text(this.value)
+            .fontSize(12)
+            .fontColor($r("app.color.c_3e3e3e"))
+            .textAlign(TextAlign.Start)
+            .padding({ right: 32 })
+            .width('auto')
+            .height(54)
+        }
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceBetween)
       Row() {
 
       }

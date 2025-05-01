@@ -1,20 +1,5 @@
 {
   "app": {
-    "signingConfigs": [
-      {
-        "name": "default",
-        "type": "HarmonyOS",
-        "material": {
-          "certpath": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001B2D1E75BDD974B0598DF0EA1EB60466ABFBA1F57614EB13E556BB1578C34DCCD03B4F71217AA6B1",
-          "profile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p7b",
-          "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p12",
-          "storePassword": "0000001BA95BABF7FECE9D6963C72E259A504FC625D261A093949C66926E32CE566D416F2C9F158E9ABE1F"
-        }
-      }
-    ],
     "products": [
       {
         "name": "default",
@@ -30,10 +15,25 @@
     ],
     "buildModeSet": [
       {
-        "name": "debug",
+        "name": "debug"
       },
       {
         "name": "release"
+      }
+    ],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/chenghui/.ohos/config/default_ksst_-xZyCKvedZS7s_S4XutNJkLl7XidVleubtm4bX3gYM8=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B60F62D8F183165FB93353FE7426D03E8CB9CA85C287211FE168E8FE1A965747AD41DAEC6DB477A",
+          "profile": "/Users/chenghui/.ohos/config/default_ksst_-xZyCKvedZS7s_S4XutNJkLl7XidVleubtm4bX3gYM8=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/chenghui/.ohos/config/default_ksst_-xZyCKvedZS7s_S4XutNJkLl7XidVleubtm4bX3gYM8=.p12",
+          "storePassword": "0000001BC136EF012B681BBD00D39EC493102FE3D24B08A6B513D7CC9F27C7E336B0A5B19AB466B8436675"
+        }
       }
     ]
   },

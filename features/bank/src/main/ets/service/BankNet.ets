@@ -6,10 +6,57 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { BankListRes } from 'db'
 import { Logger } from 'utils'
 import fs, { ReadTextOptions } from '@ohos.file.fs';
-
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { SearchQuestionRes } from '../model/SearchQuestionRes';
+import { List } from '@kit.ArkTS';
 const TAG = '[BankNet]'
 
 export class BankNet {
+
+
+  //搜索题库
+  public getSearchBankList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance()
+        .get(BankTrigger.HOME_SEARCH_BANK_LIST_URL, {
+          params: {
+            "word": content,
+            "pageNum": "10",
+            "pageSize": "20"
+          }
+        })
+        .then((res: AxiosResponse<BaseResponse<SearchQuestionRes[]>>) => {
+          const code = res.data.code;
+          if (code === "0" && res.data.data) {
+            resolve(res.data.data);
+          } else {
+            reject(new Error(`Request failed with code: ${code}`));
+          }
+        })
+        .catch((error: BusinessError) => {
+          reject(error);
+        });
+    });
+  }
+
+
+  //获取热门搜索列表
+  public getHotSearchList(): Promise<string[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(BankTrigger.HOME_HOTSEARCH_LIST_URL)
+        .then((res: AxiosResponse<BaseResponse<BankCategory[]>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
   //获取题库tab类型列表
   public getBankTypeList(): Promise<BankCategory[]> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -48,9 +95,7 @@ export class BankNet {
 
   //获取题库文件内容
   public getDownloadQuestionBank(downloadUrl: string): Promise<string> {
-
     return new Promise((resolve: Function, reject: Function) => {
-
       let filePath = getContext(this).cacheDir + '/import.data'
       // Download the file. If the file already exists, delete the existing one first.
       try {

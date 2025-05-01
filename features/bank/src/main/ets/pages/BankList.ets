@@ -390,7 +390,6 @@ export struct BankList {
         this.loadFeedData()
       }
     })
-
   }
 
   async loadFeedData(): Promise<void> {
