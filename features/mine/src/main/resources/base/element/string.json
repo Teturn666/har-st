@@ -51,6 +51,15 @@
     {
       "name": "internet_reason",
       "value": "Request network data"
+    },
+    {
+      "name": "operation_settings",
+      "value": "操作设置"
+    },
+    {
+      "name": "my_points",
+      "value": "我的积分"
     }
+
   ]
 }

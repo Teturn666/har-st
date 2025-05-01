@@ -5,11 +5,15 @@ import { LoadingStatus, Logger } from 'utils';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
+import router from '@ohos.router'
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import BankConstants from '../Constants/BankConstants';
 
 const context = (getContext(this) as common.UIAbilityContext)
 let jsonData = null
-const TAG = '[BankPage]'
 
+
+@Entry
 @Component
 export struct BankPage {
   @State categoryList: Array<BankCategory> = [];
@@ -35,17 +39,31 @@ export struct BankPage {
     lottie.destroy()
   }
 
+  private jumpTohotBankpage() {
+    router.pushNamedRoute({ name: BankConstants.ROUTER_HOT_Search })
+  }
+
+
   @Builder
   subTabBuilder(tab: BankCategory, tabIndex: number) {
     Row() {
       Text(tab.name)
         .fontSize(16)
         .fontColor(this.selectedCategoryId === tab.aid ? '#F75A23' : '#9D9D9D')
+        .decoration({
+          type: TextDecorationType.None
+        })
+        .border({
+          width: this.selectedCategoryId === tab.aid ? { bottom: 3 } : 0, // 下划线粗细为 3 像素
+          color: this.selectedCategoryId === tab.aid ? '#F75A23' : Color.Transparent, // 下划线颜色
+          style: BorderStyle.Solid
+        })
+        .padding({ bottom: 4 })
         .id(tabIndex.toString())
     }
     .justifyContent(FlexAlign.Center)
     .padding({ left: 12, right: 12 })
-    .height(30)
+    .height('auto')
     .onClick(() => {
       this.selectedCategoryId = tab.aid
       this.subController.changeIndex(tabIndex);
@@ -55,6 +73,40 @@ export struct BankPage {
 
   build() {
     Column() {
+      Stack(){
+        Image($r('app.media.search_bg'))
+          .objectFit(ImageFit.Cover)
+          .width('auto')
+        Stack({alignContent:Alignment.Start}){
+          Image($r('app.media.search'))
+            .objectFit(ImageFit.Cover)
+            .width(340)
+            .height(36)
+          Row(){
+            Image($r('app.media.ic_search'))
+              .objectFit(ImageFit.Cover)
+              .width(24)
+              .height(24)
+              .margin({left:10,right:10})
+
+            Text("请输入题库名称或关键词")
+              .fontSize(14)
+              .fontColor(0XFF9D9D9D)
+          }
+        }
+      }
+      .width(380)
+      .height(130)
+      .onClick(() => {
+        hilog.info(0x0001, 'MyTag', `Variable value: 点击}`);
+
+        this.jumpTohotBankpage()
+      })
+
+
+
+
+      // 数据栏
       if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
         Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
           Canvas(this.controller)
@@ -117,6 +169,7 @@ export struct BankPage {
   async loadResources(): Promise<void> {
     this.loadingStatus = LoadingStatus.LOADING
     let list = await this.bankModel.getBankTypeList()
+
     if (list.length > 0) {
       this.loadingStatus = LoadingStatus.SUCCESS
       this.categoryList = list
