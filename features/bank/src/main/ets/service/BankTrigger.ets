@@ -1,5 +1,13 @@
 export enum BankTrigger {
 
+  //获取搜索题目
+  HOME_SEARCH_TITLE_LIST_URL = "/m/match",
+  //获取搜索题库
+  HOME_SEARCH_BANK_LIST_URL = "/m/search",
+
+  //获取热门搜索
+  HOME_HOTSEARCH_LIST_URL = "/m/hot/word",
+
   //获取题库tab类型列表
   HOME_CATEGORY_LIST_URL = "/m/category/list",
 
