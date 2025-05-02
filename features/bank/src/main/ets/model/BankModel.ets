@@ -9,17 +9,16 @@ import { SearchQuestionRes } from './SearchQuestionRes'
 import { List } from '@kit.ArkTS'
 const TAG = '[BankModel]'
 
+
 @Observed
 export class BankModel {
   private bankNet: BankNet
   private static instance: BankModel
   private questionBankTable = new QuestionBankTable()
   private questionTable = new QuestionTable()
-
   private constructor() {
     this.bankNet = new BankNet()
   }
-
   public static getInstance(): BankModel {
     if (!BankModel.instance) {
       BankModel.instance = new BankModel()
@@ -115,7 +114,7 @@ export class BankModel {
   //搜索题目
   public async getSearchQuestionkList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
     try {
-      let  data = await this.bankNet.getSearchQuestionList(content, pageNo.toString()); // pageSize 已固定为 20
+      let  data = await this.bankNet.getSearchQuestionList(content, pageNo.toString());
       Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
       return data;
     } catch (e) {
@@ -123,7 +122,6 @@ export class BankModel {
       return [];
     }
   }
-
 
 
   //点击题库下载的操作

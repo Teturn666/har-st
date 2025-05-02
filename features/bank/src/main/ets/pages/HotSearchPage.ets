@@ -8,6 +8,7 @@ import { BankList } from './BankList';
 import BankConstants from '../Constants/BankConstants';
 import { SearchQuestionRes } from '../model/SearchQuestionRes';
 import { BankListRes } from 'db';
+import { QuestionList } from './QuestionList';
 
 const TAG = '[HotSearchPage]';
 const context = (getContext(this) as common.UIAbilityContext);
@@ -35,7 +36,6 @@ export struct HotSearchPage {
   private tabsController: TabsController = new TabsController();
   @State questionBankList: SearchQuestionRes[] = [];
   @State aid: string = '';
-
   aboutToAppear(): void {
     this.initLottie();
     this.loadResources();
@@ -65,11 +65,9 @@ export struct HotSearchPage {
       this.aid = '';
       return;
     }
-
     this.loadingStatus = LoadingStatus.LOADING;
     try {
       // const SearchQuestionRes: BankListRes[] = await this.bankModel.getSearchQuestionkList(this.searchText, 1);
-
       // const result: BankListRes[] = await this.bankModel.getSearchBankList(this.searchText, 1);
 
       // if (result && result.length > 0) {
@@ -88,6 +86,11 @@ export struct HotSearchPage {
       //   this.isHotSearchVisible = false;
       //   this.loadingStatus = LoadingStatus.SUCCESS;
       // }
+        this.questionBankList = [];
+        this.aid = '';
+        this.isHotSearchVisible = false;
+        this.loadingStatus = LoadingStatus.SUCCESS;
+
     } catch (e) {
       Logger.error(TAG, `Error searching bank list: ${e}`);
       this.questionBankList = [];
@@ -148,7 +151,6 @@ export struct HotSearchPage {
           .onClick(() => {
             router.back();
           })
-
         Stack({ alignContent: Alignment.Start }) {
           Image($r('app.media.search'))
             .objectFit(ImageFit.Contain)
@@ -161,7 +163,6 @@ export struct HotSearchPage {
               .width(24)
               .height(24)
               .margin({ left: 10 })
-
             TextInput({ placeholder: '请输入题库名称或关键词', controller: this.controller })
               .width('65%')
               .height(36)
@@ -178,7 +179,6 @@ export struct HotSearchPage {
                   this.aid = '';
                 }
               })
-
             Image($r('app.media.ic_del'))
               .width(24)
               .height(24)
@@ -195,7 +195,6 @@ export struct HotSearchPage {
         }
       }
       .height(76)
-
       if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
         Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
           Canvas(this.controllerCanvas)
@@ -228,7 +227,6 @@ export struct HotSearchPage {
           .width('90%')
           .height('auto')
           .padding({ left: 16, top: 16, bottom: 10 })
-
           List({ scroller: this.listScroller }) {
             ForEach(this.hotSearchItems, (item: string, index: number) => {
               ListItem() {
@@ -251,7 +249,7 @@ export struct HotSearchPage {
                   Logger.info(TAG, `Clicked on: ${item}`);
                   this.searchText = item;
                   this.controller.addText(item);
-                  this.getSearchBankList();
+                  // this.getSearchBankList();
                 });
               }
             }, (item: string, index: number) => index.toString())
@@ -274,8 +272,8 @@ export struct HotSearchPage {
 
             Tabs({ barPosition: BarPosition.Start, controller: this.tabsController }) {
               TabContent() {
-                if (this.aid) {
-                  BankList({fromType:1}); // 传递 aid
+                if (this.questionBankList.length > 0) {
+                  // BankList({});
                 } else {
                   Column() {
                     Image($r('app.media.hotsearch'))
@@ -296,54 +294,25 @@ export struct HotSearchPage {
               .margin({ bottom: 30 })
 
               TabContent() {
-                if (this.questionBankList.length > 0) {
-                  List({ scroller: this.listScroller }) {
-                    ForEach(this.questionBankList, (item: SearchQuestionRes, index: number) => {
-                      ListItem() {
-                        Column() {
-                          Text(item.q)
-                            .fontSize(16)
-                            .fontColor('#3E3E3E')
-                            .textAlign(TextAlign.Start)
-                            .margin({ top: 10, left: 16, right: 16 })
-                          ForEach(item.ASlice, (option: string, optIndex: number) => {
-                            Row() {
-                              Text(`${String.fromCharCode(65 + optIndex)}. ${option}`)
-                                .fontSize(14)
-                                .fontColor('#9D9D9D')
-                                .textAlign(TextAlign.Start)
-                            }
-                            .padding({ left: 16, top: 8 })
-                            .width('100%')
-                          }, (option: string, optIndex: number) => optIndex.toString())
-                          Text(`答案: ${item.ans}`)
-                            .fontSize(14)
-                            .fontColor('#F75A23')
-                            .textAlign(TextAlign.Start)
-                            .margin({ top: 8, left: 16, bottom: 10 })
-                        }
-                        .width('100%')
-                        .backgroundColor(Color.White)
-                      }
-                    }, (item: SearchQuestionRes, index: number) => item.id)
-                  }
-                  .width('100%')
-                  .height('auto')
-                } else {
-                  Column() {
-                    Image($r('app.media.hotsearch'))
-                      .objectFit(ImageFit.Contain)
-                      .size({ width: 117, height: 100 })
 
-                    Text('快搜题库中暂无收录该关键词相关题目\n输入更完整的题干关键词试试吧')
-                      .fontColor('#9D9D9D')
-                      .fontSize(14)
-                      .margin({ top: 28 })
-                      .textAlign(TextAlign.Center)
-                  }
-                  .width('100%')
-                  .height('auto')
-                }
+
+                  QuestionList({searchText:this.searchText})
+
+                  //  无数据
+                  // Column() {
+                  //   Image($r('app.media.hotsearch'))
+                  //     .objectFit(ImageFit.Contain)
+                  //     .size({ width: 117, height: 100 })
+                  //
+                  //   Text('快搜题库中暂无收录该关键词相关题目\n输入更完整的题干关键词试试吧')
+                  //     .fontColor('#9D9D9D')
+                  //     .fontSize(14)
+                  //     .margin({ top: 28 })
+                  //     .textAlign(TextAlign.Center)
+                  // }
+                  // .width('100%')
+                  // .height('auto')
+
               }
             }
             .barHeight(0)
