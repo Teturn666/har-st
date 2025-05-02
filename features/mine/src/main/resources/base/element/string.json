@@ -59,7 +59,12 @@
     {
       "name": "my_points",
       "value": "我的积分"
+    },
+    {
+      "name": "Recharge",
+      "value": "去充值"
     }
+
 
   ]
 }

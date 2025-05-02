@@ -1,7 +1,7 @@
 //题库表
 @Observed
 export class BankListRes {
-  id: number = 0
+  // id: number = 0
   qid: number = 0
   name: string = ''
   desc: string = ''
