@@ -164,7 +164,8 @@ export struct BankList {
   @State bankRes: BankRes = new BankRes();
   @State bankModel: BankModel = BankModel.getInstance()
   aid: String = ""
-  fromType: String = ""
+  @State searchText: String = "pufa"
+  @State fromType: number = 0
   @State pageNum: number = 1
   @State loadMore: boolean = false
   private ctx: UIContext = this.getUIContext();
@@ -180,8 +181,6 @@ export struct BankList {
   @State mCurBank: BankListRes = {} as BankListRes;
   dialogDeleteController?: CustomDialogController;
   dialogDownloadController?: CustomDialogController;
-
-
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
@@ -396,14 +395,24 @@ export struct BankList {
   }
 
   async loadFeedData(): Promise<void> {
-    let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
-    if (list === null || list.length < 10) {
-      this.loadMore = false
+    if (this.fromType === 1) {
+      let list = await this.bankModel.getSearchBankList("普法", this.pageNum)
+      if (list === null || list.length < 10) {
+        this.loadMore = false
+      } else {
+        this.pageNum++
+        this.loadMore = true
+      }
+      this.bankRes.newsData = this.bankRes.newsData.concat(list)
     } else {
-      this.pageNum++
-      this.loadMore = true
+      let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
+      if (list === null || list.length < 10) {
+        this.loadMore = false
+      } else {
+        this.pageNum++
+        this.loadMore = true
+      }
+      this.bankRes.newsData = this.bankRes.newsData.concat(list)
     }
-    this.bankRes.newsData = this.bankRes.newsData.concat(list)
   }
-
 }
