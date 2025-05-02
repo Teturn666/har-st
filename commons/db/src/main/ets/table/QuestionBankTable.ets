@@ -65,7 +65,7 @@ export class QuestionBankTable {
           const result: BankListRes[] = [];
           for (let i = 0; i < count; i++) {
             let tmp: BankListRes = {
-              id: 0,
+              // id: 0,
               qid: 0,
               name: '',
               desc: '',
@@ -76,7 +76,7 @@ export class QuestionBankTable {
               position: 0,
               downloadedState: 2
             };
-            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'))
+            // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'))
             tmp.qid = resultSet.getDouble(resultSet.getColumnIndex('qid'))
             tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
             // tmp.num = resultSet.getString(resultSet.getColumnIndex('num'))

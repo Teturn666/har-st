@@ -164,6 +164,7 @@ export struct BankList {
   @State bankRes: BankRes = new BankRes();
   @State bankModel: BankModel = BankModel.getInstance()
   aid: String = ""
+  fromType: String = ""
   @State pageNum: number = 1
   @State loadMore: boolean = false
   private ctx: UIContext = this.getUIContext();
@@ -179,6 +180,8 @@ export struct BankList {
   @State mCurBank: BankListRes = {} as BankListRes;
   dialogDeleteController?: CustomDialogController;
   dialogDownloadController?: CustomDialogController;
+
+
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
@@ -402,4 +405,5 @@ export struct BankList {
     }
     this.bankRes.newsData = this.bankRes.newsData.concat(list)
   }
+
 }

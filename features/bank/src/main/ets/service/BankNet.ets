@@ -15,17 +15,17 @@ export class BankNet {
 
 
   //搜索题库
-  public getSearchBankList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
+  public getSearchBankList(content: string, pageNo: string): Promise<BankListRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
       HttpUtils.getInstance()
         .get(BankTrigger.HOME_SEARCH_BANK_LIST_URL, {
           params: {
             "word": content,
-            "pageNum": "10",
-            "pageSize": "20"
+            "pageNum": pageNo,
+            "pageSize": "10"
           }
         })
-        .then((res: AxiosResponse<BaseResponse<SearchQuestionRes[]>>) => {
+        .then((res: AxiosResponse<BaseResponse<BankListRes[]>>) => {
           const code = res.data.code;
           if (code === "0" && res.data.data) {
             resolve(res.data.data);

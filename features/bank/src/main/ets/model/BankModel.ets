@@ -54,9 +54,6 @@ export class BankModel {
     }
   }
 
-
-
-
   //获取热门搜索列表
   public async getHotSearchList(): Promise<string[]> {
     try {
@@ -93,6 +90,7 @@ export class BankModel {
           bankList.push(result[0])
         } else {
           bankList.push(item)
+          Logger.info(TAG, `Search bank result22: ${JSON.stringify(data)}`);
         }
       }
       return bankList
@@ -102,9 +100,9 @@ export class BankModel {
   }
 
   //搜索题库
-  public async getSearchBankList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
+  public async getSearchBankList(content: string, pageNo: number): Promise<BankListRes[]> {
     try {
-      const data = await this.bankNet.getSearchBankList(content, pageNo); // pageSize 已固定为 20
+      let  data = await this.bankNet.getSearchBankList(content, pageNo.toString()); // pageSize 已固定为 20
       Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
       return data;
     } catch (e) {

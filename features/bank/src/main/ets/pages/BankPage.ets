@@ -98,13 +98,8 @@ export struct BankPage {
       .width(380)
       .height(130)
       .onClick(() => {
-        hilog.info(0x0001, 'MyTag', `Variable value: 点击}`);
-
         this.jumpTohotBankpage()
       })
-
-
-
 
       // 数据栏
       if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
