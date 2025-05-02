@@ -68,7 +68,9 @@ export struct HotSearchPage {
 
     this.loadingStatus = LoadingStatus.LOADING;
     try {
-      const result: BankListRes[] = await this.bankModel.getSearchBankList(this.searchText, 1);
+      // const SearchQuestionRes: BankListRes[] = await this.bankModel.getSearchQuestionkList(this.searchText, 1);
+
+      // const result: BankListRes[] = await this.bankModel.getSearchBankList(this.searchText, 1);
 
       // if (result && result.length > 0) {
       //   this.questionBankList = result;
@@ -273,7 +275,7 @@ export struct HotSearchPage {
             Tabs({ barPosition: BarPosition.Start, controller: this.tabsController }) {
               TabContent() {
                 if (this.aid) {
-                  BankList({fromType:"1"}); // 传递 aid
+                  BankList({fromType:1}); // 传递 aid
                 } else {
                   Column() {
                     Image($r('app.media.hotsearch'))

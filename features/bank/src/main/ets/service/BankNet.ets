@@ -14,15 +14,40 @@ const TAG = '[BankNet]'
 export class BankNet {
 
 
+  //搜索题目
+  public getSearchQuestionList(content: string, pageNo: string): Promise<SearchQuestionRes[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance()
+        .get(BankTrigger.HOME_SEARCH_TITLE_LIST_URL, {
+          params: {
+            "word": content,
+            "pageNum": pageNo,
+            "pageSize": "10"
+          }
+        })
+        .then((res: AxiosResponse<BaseResponse<SearchQuestionRes[]>>) => {
+          const code = res.data.code;
+          if (code === "0" && res.data.data) {
+            resolve(res.data.data);
+          } else {
+            reject(new Error(`Request failed with code: ${code}`));
+          }
+        })
+        .catch((error: BusinessError) => {
+          reject(error);
+        });
+    });
+  }
+
   //搜索题库
-  public getSearchBankList(content: string, pageNo: string): Promise<BankListRes[]> {
+  public getSearchBankList(content: string, pageNo: number): Promise<BankListRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
       HttpUtils.getInstance()
         .get(BankTrigger.HOME_SEARCH_BANK_LIST_URL, {
           params: {
             "word": content,
-            "pageNum": pageNo,
-            "pageSize": "10"
+            "pageNo": pageNo,
+            "pageSize": 10
           }
         })
         .then((res: AxiosResponse<BaseResponse<BankListRes[]>>) => {

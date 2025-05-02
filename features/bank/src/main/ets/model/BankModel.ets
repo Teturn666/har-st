@@ -102,7 +102,7 @@ export class BankModel {
   //搜索题库
   public async getSearchBankList(content: string, pageNo: number): Promise<BankListRes[]> {
     try {
-      let  data = await this.bankNet.getSearchBankList(content, pageNo.toString()); // pageSize 已固定为 20
+      let  data = await this.bankNet.getSearchBankList(content, pageNo); // pageSize 已固定为 20
       Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
       return data;
     } catch (e) {
@@ -110,6 +110,20 @@ export class BankModel {
       return [];
     }
   }
+
+
+  //搜索题目
+  public async getSearchQuestionkList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
+    try {
+      let  data = await this.bankNet.getSearchQuestionList(content, pageNo.toString()); // pageSize 已固定为 20
+      Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
+      return data;
+    } catch (e) {
+      Logger.error(TAG, `Error in getSearchBankList: ${e}`);
+      return [];
+    }
+  }
+
 
 
   //点击题库下载的操作
