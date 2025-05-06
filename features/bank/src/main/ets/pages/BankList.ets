@@ -293,7 +293,6 @@ export struct BankList {
                       .fontSize($r('app.float.font_size_10fp'))
                       .margin({ right: $r('app.float.float_30vp') })
                   }
-
                   Text("题库更新时间：" + item.time)
                     .fontColor($r('app.color.c_9d9d9d'))
                     .fontSize($r('app.float.font_size_10fp'))
@@ -323,7 +322,6 @@ export struct BankList {
                     .fontColor(Color.Black)
                     .fontSize($r('app.float.font_size_10fp'))
                 }
-
               }
               .margin({
                 right: $r('app.float.float_20vp'),
@@ -369,7 +367,6 @@ export struct BankList {
                 }
               )
             }
-
             Divider()
               .strokeWidth(0.5)
               .color($r('app.color.c_ebebeb'))
