@@ -1,7 +1,9 @@
 import { BankListRes } from 'db';
+import { SearchQuestionRes } from './SearchQuestionRes';
 
 @Observed
 export default class BankRes {
+  QuestionData: Array<SearchQuestionRes> = [];
   newsData: Array<BankListRes> = [];
   currentPage: number = 1;
   pageSize: number = 10;
