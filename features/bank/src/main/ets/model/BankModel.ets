@@ -6,7 +6,6 @@ import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
-import { List } from '@kit.ArkTS'
 import { BankInfoRes } from 'db/src/main/ets/model/BankInfoRes'
 
 const TAG = '[BankModel]'
@@ -18,9 +17,11 @@ export class BankModel {
   private static instance: BankModel
   private questionBankTable = new QuestionBankTable()
   private questionTable = new QuestionTable()
+
   private constructor() {
     this.bankNet = new BankNet()
   }
+
   public static getInstance(): BankModel {
     if (!BankModel.instance) {
       BankModel.instance = new BankModel()
@@ -100,7 +101,7 @@ export class BankModel {
           bankList.push(result[0])
         } else {
           bankList.push(item)
-          Logger.info(TAG, `Search bank result22: ${JSON.stringify(data)}`);
+          // Logger.info(TAG, `Search bank result22: ${JSON.stringify(data)}`)
         }
       }
       return bankList
@@ -109,22 +110,33 @@ export class BankModel {
     }
   }
 
-  //搜索题库
+  //搜索题库列表
   public async getSearchBankList(content: string, pageNo: number): Promise<BankListRes[]> {
+    let bankList: BankListRes[] = []
     try {
-      let  data = await this.bankNet.getSearchBankList(content, pageNo); // pageSize 已固定为 20
-      Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
-      return data;
+      let data = await this.bankNet.getSearchBankList(content, pageNo)
+      Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`)
+      for (let item of data) {
+        let result = await this.questionBankTable.querySync(item.qid, false) ?? []
+        Logger.info(TAG, 'result--------' + result)
+        if (result.length > 0) {
+          bankList.push(result[0])
+        } else {
+          bankList.push(item)
+          // Logger.info(TAG, `Search bank result22: ${JSON.stringify(data)}`)
+        }
+      }
+      return bankList
     } catch (e) {
-      Logger.error(TAG, `Error in getSearchBankList: ${e}`);
-      return [];
+      // Logger.error(TAG, `Error in getSearchBankList: ${e}`);
+      return []
     }
   }
 
   //获取题库信息
   public async getBankInfoList(qid: number): Promise<BankInfoRes> {
     try {
-      let  data = await this.bankNet.getBankInfoList(qid);
+      let data = await this.bankNet.getBankInfoList(qid);
       Logger.info(TAG, `Search bank result12: ${JSON.stringify(data)}`);
       return data;
     } catch (e) {
@@ -134,10 +146,10 @@ export class BankModel {
   }
 
 
-  //搜索题目
+  //搜索题目列表
   public async getSearchQuestionkList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
     try {
-      let  data = await this.bankNet.getSearchQuestionList(content, pageNo.toString());
+      let data = await this.bankNet.getSearchQuestionList(content, pageNo.toString());
       Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
       return data;
     } catch (e) {
