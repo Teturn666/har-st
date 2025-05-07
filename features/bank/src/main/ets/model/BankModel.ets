@@ -7,6 +7,8 @@ import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
 import { List } from '@kit.ArkTS'
+import { BankInfoRes } from 'db/src/main/ets/model/BankInfoRes'
+
 const TAG = '[BankModel]'
 
 
@@ -77,6 +79,15 @@ export class BankModel {
     }
   }
 
+  //获取数据库已经下载的题库
+  public async getBankLists():
+    Promise<BankListRes[]> {
+    let bankResultList = await this.questionBankTable.querySync(0) ?? [];
+
+    Logger.info(TAG, '下载的题库--------' + bankResultList.length)
+    return bankResultList
+  }
+
   //获取题库列表
   public async getBankList(aid: string, pageNo: number): Promise<BankListRes[]> {
     let bankList: BankListRes[] = []
@@ -110,6 +121,18 @@ export class BankModel {
     }
   }
 
+  //获取题库信息
+  public async getBankInfoList(qid: number): Promise<BankInfoRes> {
+    try {
+      let  data = await this.bankNet.getBankInfoList(qid);
+      Logger.info(TAG, `Search bank result12: ${JSON.stringify(data)}`);
+      return data;
+    } catch (e) {
+      Logger.error(TAG, `Error in getSearchBankList: ${e}`);
+      return e;
+    }
+  }
+
 
   //搜索题目
   public async getSearchQuestionkList(content: string, pageNo: number): Promise<SearchQuestionRes[]> {
@@ -123,6 +146,48 @@ export class BankModel {
     }
   }
 
+  //点击题目下载的操作
+  public async downLoadQuestion(bankListRes: BankInfoRes): Promise<boolean> {
+    try {
+      let qid = bankListRes.qid
+      let url = bankListRes.url
+      let subTxtName = StringUtils.subUrl(url)
+      // Logger.info(TAG, 'subTxtName--------' + subTxtName)
+      let suffix = StringUtils.subLastIndex(subTxtName, '.')
+      // Logger.info(TAG, 'suffix--------' + suffix)
+
+      let str = await this.bankNet.getDownloadQuestionBank(url)
+      // Logger.info(TAG, 'trStr--------' + str)
+
+      let trStr = await SearchDecryptUtils.getTrText(suffix, str, subTxtName)
+      Logger.info(TAG, 'trStr--------' + trStr)
+      //转换成 题目的对象
+      let lines = trStr.split('\n')
+      for (let line of lines) {
+        if (line !== '') {
+          const questionRes = plainToClass(BankQuestionRes, JSON.parse(line))
+          console.info('instance:', JSON.stringify(questionRes))
+          //题目数据插入存储
+          let questionDb = new QuestionRes()
+          questionDb.qId = qid
+          questionDb.question = questionRes.q
+          questionDb.answer = questionRes.ans
+          questionDb.option = questionRes.a
+          let ret = await this.questionTable.insertDataAwait(questionDb)
+          Logger.info(TAG, 'ret--------' + ret)
+        }
+      }
+      //插入题库表,下载成功后的状态
+      // bankListRes.downloadedState = 1
+      // bankListRes.position = 0
+      let ret = await this.questionBankTable.insertQuestionDataAwait(bankListRes)
+      Logger.info(TAG, 'ret33--------' + ret)
+      return true
+    } catch (e) {
+      Logger.info(TAG, "----->" + e)
+      return false
+    }
+  }
 
   //点击题库下载的操作
   public async downLoadBank(bankListRes: BankListRes): Promise<boolean> {
@@ -159,7 +224,7 @@ export class BankModel {
       bankListRes.downloadedState = 1
       bankListRes.position = 0
       let ret = await this.questionBankTable.insertDataAwait(bankListRes)
-      Logger.info(TAG, 'ret--------' + ret)
+      Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {
       Logger.info(TAG, "----->" + e)

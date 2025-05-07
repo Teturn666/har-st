@@ -142,6 +142,7 @@ export struct HotSearchPage {
 
   build() {
     Column() {
+
       Row() {
         Image($r('sys.media.ohos_ic_public_arrow_left'))
           .width(24)
@@ -294,8 +295,6 @@ export struct HotSearchPage {
               .margin({ bottom: 30 })
 
               TabContent() {
-
-
                   QuestionList({searchText:this.searchText})
 
                   //  无数据

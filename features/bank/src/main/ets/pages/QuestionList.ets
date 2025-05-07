@@ -13,6 +13,8 @@ import { onEventObject } from '@umeng/analytics';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
 import { SearchQuestionRes } from '../model/SearchQuestionRes';
 import { it } from '@ohos/hypium';
+import { BankInfoRes } from 'db/src/main/ets/model/BankInfoRes';
+
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -68,9 +70,9 @@ function buildText(params: Params) {
 struct DownloadOverDialog {
   success: boolean = false
   controller: CustomDialogController;
-  bank: BankListRes = {} as BankListRes;
+  bank: BankInfoRes = {} as BankInfoRes;
 
-  constructor(controller: CustomDialogController, bank: BankListRes) {
+  constructor(controller: CustomDialogController, bank: BankInfoRes) {
     super();
     this.controller = controller;
     this.bank = bank;
@@ -102,64 +104,6 @@ function buildFinishText() {
 
 }
 
-@CustomDialog
-struct DeleteDialog {
-  confirm?: (item: BankListRes) => void
-  controller: CustomDialogController;
-  bank: BankListRes = {} as BankListRes;
-
-  constructor(controller: CustomDialogController, bank: BankListRes) {
-    super();
-    this.controller = controller;
-    this.bank = bank;
-  }
-
-  build() {
-    Column() {
-      Blank()
-      Text("提示").fontSize(18)
-        .fontColor($r("app.color.c_9d9d9d"))
-        .textAlign(TextAlign.Center).margin({ top: 20 })
-      Text('确定删除 “' + this.bank?.name + '” 这个题库吗？').fontSize(18)
-        .fontColor($r("app.color.c_9d9d9d"))
-        .textAlign(TextAlign.Start).margin({ top: 20, left: 20, right: 20 })
-      Row() {
-        Text("确定")
-          .width(80)
-          .height(30)
-          .borderRadius(5)
-          .fontColor($r('app.color.c_2a5089'))
-          .backgroundColor($r('app.color.c_f4f3fb'))
-          .onClick(() => {
-            //删除确定
-            if (this.confirm) {
-              this.confirm(this.bank)
-            }
-            this.controller.close()
-          })
-          .textAlign(TextAlign.Center)
-          .margin({ top: 25, bottom: 15 })
-        Text("取消")
-          .width(80)
-          .height(30)
-          .borderRadius(5)
-          .fontColor($r('app.color.c_f75a23'))
-          .backgroundColor($r('app.color.c_fce8e8'))
-          .onClick(() => {
-            //删除取消
-            this.controller.close()
-          })
-          .textAlign(TextAlign.Center)
-          .margin({ top: 25, bottom: 15 })
-      }
-      .justifyContent(FlexAlign.SpaceAround)
-      .width('100%')
-
-      Blank()
-    }.width('100%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
-  }
-}
-
 
 @Component
 export struct QuestionList {
@@ -178,7 +122,7 @@ export struct QuestionList {
     new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
   @State hasLoadData: boolean = false
-  @State mCurBank: BankListRes = {} as BankListRes;
+  @State mCurBank: BankInfoRes = {} as BankInfoRes;
   dialogDeleteController?: CustomDialogController;
   dialogDownloadController?: CustomDialogController;
 
@@ -189,23 +133,7 @@ export struct QuestionList {
     this.initDialog()
   }
 
-  //删除弹窗
-  showDeleteDialog() {
-    this.dialogDeleteController = new CustomDialogController({
-      builder: DeleteDialog({
-        bank: this.mCurBank, confirm: (item) => {
-          //删除确定
-          //更新状态为未下载
-          item.downloadedState = 2
-          //触发UI重新渲染
-          this.bankRes.newsData = [...this.bankRes.newsData]
-          this.dialogDeleteController?.close()
-          this.bankModel.deleteTable(item.qid)
-        }
-      })
-    });
-    this.dialogDeleteController.open();
-  }
+
 
   showDownloadOverDialog(success: boolean) {
     this.dialogDownloadController = new CustomDialogController({
@@ -256,25 +184,97 @@ export struct QuestionList {
       ForEach(this.bankRes.QuestionData, (item: SearchQuestionRes, index) => {
         ListItem() {
           Column() {
+
+            // Text("Demo")
+            //   .onClick(()=>{
+            //      this.bankModel.getBankLists()
+            //   })
+
             Flex({
               direction: FlexDirection.Row,
               justifyContent: FlexAlign.SpaceAround,
               alignItems: ItemAlign.Center
             }) {
               Column() {
-                Text(item.q)
-                  .fontSize(16)
-                  .fontColor('#3E3E3E')
-                  .textAlign(TextAlign.Start)
-                  .margin({ top: 10, left: 16, right: 16 })
+                Text() {
+                  Span(item.ans.length > 1 ?'【多选题】' :'【单选题】')
+                    .fontSize(14)
+                    .fontColor('#3E3E3E')
+                    .fontWeight(FontWeight.Bold)
 
-                Row(){
-                  Text("所在题库："+item.Name)
-                    .fontSize(12)
-                    .fontColor(Color.Red)
-                    .textAlign(TextAlign.Start)
-                    .margin({ top: 25, left: 16, right: 16 })
+                  Span(item.q)
+                      .fontSize(14)
+                      .fontColor('#3E3E3E')
                 }
+                .textAlign(TextAlign.Start)
+                .margin({ top: 8, left: 8, right: 8 })
+                Row(){
+                  Text(){
+                    Span("所在题库:"+item.Name)
+                      .fontSize(12)
+                      .fontColor(Color.Red)
+
+
+                    Span("    (未下载)")
+                        .fontColor(Color.Grey)
+                        .fontSize($r('app.float.font_size_12fp'))
+                      .margin({left:18})
+
+                  }
+                  .width('85%')
+                  .textAlign(TextAlign.Start)
+                  .margin({right:18})
+
+                    Text("点我下载")
+                      .fontSize(12)
+                      .fontColor(Color.Blue)
+                      .fontSize($r('app.float.font_size_12fp'))
+                      .textAlign(TextAlign.Center)
+                      .decoration({type:TextDecorationType.Underline,color:Color.Blue})
+                  .onClick(
+                  async () => {
+                    //获取题库信息
+                    const items = await this.bankModel.getBankInfoList(Number(item.qid));
+                    this.mCurBank = items
+                    Logger.info(TAG, '题库内容--------' + JSON.stringify(items))
+                    LoadingDialog.openDialog()
+                    try {
+                      const success = await this.bankModel.downLoadQuestion(items);
+                      if (success) {
+                        Logger.info(TAG, '下载成功' + item)
+
+                        //触发UI重新渲染
+                        this.bankRes.newsData = [...this.bankRes.newsData]
+                        LoadingDialog.closeDialog()
+                        this.showDownloadOverDialog(true)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                          "question_bank_id": item.qid
+                        })
+                      } else {
+                        Logger.info(TAG, '下载失败' + item)
+                        LoadingDialog.closeDialog()
+                        this.showDownloadOverDialog(false)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                          "question_bank_id": item.qid
+                        })
+                      }
+                    } catch (error) {
+                      Logger.info(TAG, '下载过程中发生错误' + item)
+                      LoadingDialog.closeDialog()
+                      this.showDownloadOverDialog(false)
+                      onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                        "question_bank_id": item.qid
+                      })
+                    }
+                  }
+                  )
+                }
+                .width('90%')
+                .justifyContent(FlexAlign.SpaceBetween)
+                .margin({ top: 25, left: 8, right: 8 })
+
+
+
 
                 Row() {
                   // Text("题库状态：")
