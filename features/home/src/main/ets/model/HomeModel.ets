@@ -22,6 +22,7 @@ export class HomeModel {
 
   //创建数据库
   createTable() {
+
     this.questionBankTable.getRdbStore()
     this.questionTable.getRdbStore()
   }
@@ -29,7 +30,7 @@ export class HomeModel {
   //获取数据库已经下载的题库
   public async getBankList():
     Promise<BankListRes[]> {
-    let bankResultList = await this.questionBankTable.querySync(0) ?? [];
+    let bankResultList = await this.questionBankTable.querySync(1739957689,false) ?? [];
 
     Logger.info(TAG, '下载的题库--------' + bankResultList.length)
     return bankResultList

@@ -163,8 +163,8 @@ struct DeleteDialog {
 export struct BankList {
   @State bankRes: BankRes = new BankRes();
   @State bankModel: BankModel = BankModel.getInstance()
-  aid: String = ""
-  @State searchText: String = "pufa"
+  aid: string = ""
+  @State searchText: string = ""
   @State fromType: number = 0
   @State pageNum: number = 1
   @State loadMore: boolean = false
@@ -250,150 +250,167 @@ export struct BankList {
   }
 
   build() {
-    List() {
-      ForEach(this.bankRes.newsData, (item: BankListRes, index) => {
-        ListItem() {
-          Column() {
-            Flex({
-              direction: FlexDirection.Row,
-              justifyContent: FlexAlign.SpaceAround,
-              alignItems: ItemAlign.Center
-            }) {
-              Column() {
-                Row() {
-                  // Image($r('app.media.ic_feed'))
-                  //   .objectFit(ImageFit.Contain)
-                  //   .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
-                  Text(item.name)
-                    .fontColor($r('app.color.c_3e3e3e'))
-                    .fontSize($r('app.float.font_size_16fp'))
-                    .fontWeight(FontWeight.Bold)
-                  // .margin({
-                  //   left: $r('app.float.float_5vp'),
-                  // })
-                }
-
-                Text(item.desc)
-                  .fontColor($r('app.color.c_3e3e3e'))
-                  .fontSize($r('app.float.font_size_12fp'))
-                  .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
-
-                Row() {
-                  Text("题库状态：")
-                    .fontColor($r('app.color.c_9d9d9d'))
-                    .fontSize($r('app.float.font_size_10fp'))
-                  if (item.downloadedState === 1) {
-                    Text("已下载")
-                      .fontColor(Color.Blue)
-                      .fontSize($r('app.float.font_size_10fp'))
-                      .margin({ right: $r('app.float.float_30vp') })
-                  } else {
-                    Text("未下载")
-                      .fontColor(Color.Blue)
-                      .fontSize($r('app.float.font_size_10fp'))
-                      .margin({ right: $r('app.float.float_30vp') })
+    if (this.bankRes.newsData.length > 0) {
+      List() {
+        ForEach(this.bankRes.newsData, (item: BankListRes, index) => {
+          ListItem() {
+            Column() {
+              Flex({
+                direction: FlexDirection.Row,
+                justifyContent: FlexAlign.SpaceAround,
+                alignItems: ItemAlign.Center
+              }) {
+                Column() {
+                  Row() {
+                    // Image($r('app.media.ic_feed'))
+                    //   .objectFit(ImageFit.Contain)
+                    //   .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
+                    Text(item.name)
+                      .fontColor($r('app.color.c_3e3e3e'))
+                      .fontSize($r('app.float.font_size_16fp'))
+                      .fontWeight(FontWeight.Bold)
+                    // .margin({
+                    //   left: $r('app.float.float_5vp'),
+                    // })
                   }
-                  Text("题库更新时间：" + item.time)
-                    .fontColor($r('app.color.c_9d9d9d'))
-                    .fontSize($r('app.float.font_size_10fp'))
-                }
-              }
-              .width('85%')
-              .alignItems(HorizontalAlign.Start)
-              .margin({
-                left: $r('app.float.float_20vp'),
-                top: $r('app.float.float_20vp'),
-                right: $r('app.float.float_20vp'),
-              })
 
-              Column() {
-                if (item.downloadedState === 1) {
-                  Image($r('app.media.ic_remove'))
-                    .objectFit(ImageFit.Contain)
-                    .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                  Text("删除")
-                    .fontColor(Color.Black)
-                    .fontSize($r('app.float.font_size_10fp'))
-                } else {
-                  Image($r('app.media.ic_download'))
-                    .objectFit(ImageFit.Contain)
-                    .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                  Text("下载")
-                    .fontColor(Color.Black)
-                    .fontSize($r('app.float.font_size_10fp'))
+                  Text(item.desc)
+                    .fontColor($r('app.color.c_3e3e3e'))
+                    .fontSize($r('app.float.font_size_12fp'))
+                    .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
+
+                  Row() {
+                    Text("题库状态：")
+                      .fontColor($r('app.color.c_9d9d9d'))
+                      .fontSize($r('app.float.font_size_10fp'))
+                    if (item.downloadedState === 1) {
+                      Text("已下载")
+                        .fontColor(Color.Blue)
+                        .fontSize($r('app.float.font_size_10fp'))
+                        .margin({ right: $r('app.float.float_30vp') })
+                    } else {
+                      Text("未下载")
+                        .fontColor(Color.Blue)
+                        .fontSize($r('app.float.font_size_10fp'))
+                        .margin({ right: $r('app.float.float_30vp') })
+                    }
+                    Text("题库更新时间：" + item.time)
+                      .fontColor($r('app.color.c_9d9d9d'))
+                      .fontSize($r('app.float.font_size_10fp'))
+                  }
                 }
-              }
-              .margin({
-                right: $r('app.float.float_20vp'),
-              })
-              .onClick(
-                async () => {
-                  this.mCurBank = item
+                .width('85%')
+                .alignItems(HorizontalAlign.Start)
+                .margin({
+                  left: $r('app.float.float_20vp'),
+                  top: $r('app.float.float_20vp'),
+                  right: $r('app.float.float_20vp'),
+                })
+
+                Column() {
                   if (item.downloadedState === 1) {
-                    this.showDeleteDialog()
+                    Image($r('app.media.ic_remove'))
+                      .objectFit(ImageFit.Contain)
+                      .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
+                    Text("删除")
+                      .fontColor(Color.Black)
+                      .fontSize($r('app.float.font_size_10fp'))
                   } else {
-                    Logger.info(TAG, '题库内容--------' + item)
-                    LoadingDialog.openDialog()
-                    try {
-                      const success = await this.bankModel.downLoadBank(item);
-                      if (success) {
-                        Logger.info(TAG, '下载成功' + item)
-                        //更新状态为已下载
-                        item.downloadedState = 1
-                        //触发UI重新渲染
-                        this.bankRes.newsData = [...this.bankRes.newsData]
-                        LoadingDialog.closeDialog()
-                        this.showDownloadOverDialog(true)
-                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                          "question_bank_id": item.qid
-                        })
-                      } else {
-                        Logger.info(TAG, '下载失败' + item)
+                    Image($r('app.media.ic_download'))
+                      .objectFit(ImageFit.Contain)
+                      .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
+                    Text("下载")
+                      .fontColor(Color.Black)
+                      .fontSize($r('app.float.font_size_10fp'))
+                  }
+                }
+                .margin({
+                  right: $r('app.float.float_20vp'),
+                })
+                .onClick(
+                  async () => {
+                    this.mCurBank = item
+                    if (item.downloadedState === 1) {
+                      this.showDeleteDialog()
+                    } else {
+                      Logger.info(TAG, '题库内容--------' + item)
+                      LoadingDialog.openDialog()
+                      try {
+                        const success = await this.bankModel.downLoadBank(item);
+                        if (success) {
+                          Logger.info(TAG, '下载成功' + item)
+                          //更新状态为已下载
+                          item.downloadedState = 1
+                          //触发UI重新渲染
+                          this.bankRes.newsData = [...this.bankRes.newsData]
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(true)
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                            "question_bank_id": item.qid
+                          })
+                        } else {
+                          Logger.info(TAG, '下载失败' + item)
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(false)
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                            "question_bank_id": item.qid
+                          })
+                        }
+                      } catch (error) {
+                        Logger.info(TAG, '下载过程中发生错误' + item)
                         LoadingDialog.closeDialog()
                         this.showDownloadOverDialog(false)
                         onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
                           "question_bank_id": item.qid
                         })
                       }
-                    } catch (error) {
-                      Logger.info(TAG, '下载过程中发生错误' + item)
-                      LoadingDialog.closeDialog()
-                      this.showDownloadOverDialog(false)
-                      onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                        "question_bank_id": item.qid
-                      })
                     }
                   }
-                }
-              )
-            }
-            Divider()
-              .strokeWidth(0.5)
-              .color($r('app.color.c_ebebeb'))
-              .margin({
-                left: $r('app.float.float_20vp'),
-                top: $r('app.float.float_10vp'),
-                right: $r('app.float.float_20vp'),
-              })
-            if (index === this.bankRes.newsData.length - 1) {
-              Text("没有更多数据了")
-                .fontSize(14)
-                .fontColor($r('app.color.c_9d9d9d'))
-                .margin({ top: 15, bottom: 15 })
+                )
+              }
+
+              Divider()
+                .strokeWidth(0.5)
+                .color($r('app.color.c_ebebeb'))
+                .margin({
+                  left: $r('app.float.float_20vp'),
+                  top: $r('app.float.float_10vp'),
+                  right: $r('app.float.float_20vp'),
+                })
+              if (index === this.bankRes.newsData.length - 1) {
+                Text("没有更多数据了")
+                  .fontSize(14)
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .margin({ top: 15, bottom: 15 })
+              }
             }
           }
+        })
+      }.onReachEnd(() => {
+        if (this.loadMore) {
+          this.loadFeedData()
         }
       })
-    }.onReachEnd(() => {
-      if (this.loadMore) {
-        this.loadFeedData()
+    } else {
+      Column() {
+        Image($r('app.media.hotsearch'))
+          .objectFit(ImageFit.Contain)
+          .size({ width: 117, height: 100 })
+
+        Text('暂无搜索结果\n换个关键词试试吧')
+          .fontColor('#9D9D9D')
+          .fontSize(14)
+          .margin({ top: 28 })
+          .textAlign(TextAlign.Center)
       }
-    })
+      .width('100%')
+      .height('auto')
+    }
   }
 
   async loadFeedData(): Promise<void> {
     if (this.fromType === 1) {
-      let list = await this.bankModel.getSearchBankList("普法", this.pageNum)
+      let list = await this.bankModel.getSearchBankList(this.searchText, this.pageNum)
       if (list === null || list.length < 10) {
         this.loadMore = false
       } else {

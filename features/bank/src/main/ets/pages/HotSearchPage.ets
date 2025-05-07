@@ -5,15 +5,11 @@ import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
 import { BankList } from './BankList';
-import BankConstants from '../Constants/BankConstants';
-import { SearchQuestionRes } from '../model/SearchQuestionRes';
-import { BankListRes } from 'db';
 import { QuestionList } from './QuestionList';
 
 const TAG = '[HotSearchPage]';
 const context = (getContext(this) as common.UIAbilityContext);
 let jsonData = null;
-
 
 
 @Entry({ routeName: 'hotSearchPage' })
@@ -34,8 +30,7 @@ export struct HotSearchPage {
   @State isHotSearchVisible: boolean = true;
   @State selectedTabIndex: number = 0;
   private tabsController: TabsController = new TabsController();
-  @State questionBankList: SearchQuestionRes[] = [];
-  @State aid: string = '';
+
   aboutToAppear(): void {
     this.initLottie();
     this.loadResources();
@@ -61,43 +56,9 @@ export struct HotSearchPage {
     if (!this.searchText.trim()) {
       Logger.info(TAG, 'Search text is empty');
       this.isHotSearchVisible = true;
-      this.questionBankList = [];
-      this.aid = '';
       return;
     }
-    this.loadingStatus = LoadingStatus.LOADING;
-    try {
-      // const SearchQuestionRes: BankListRes[] = await this.bankModel.getSearchQuestionkList(this.searchText, 1);
-      // const result: BankListRes[] = await this.bankModel.getSearchBankList(this.searchText, 1);
-
-      // if (result && result.length > 0) {
-      //   this.questionBankList = result;
-      //   // 假设所有搜索结果的 aid 相同，取第一个的 aid
-      //   console.info("查看数据",this.searchText)
-      //
-      //   this.aid = result[0].aid || '';
-      //   this.isHotSearchVisible = false;
-      //   this.selectedTabIndex = 0;
-      //   this.tabsController.changeIndex(0);
-      //   this.loadingStatus = LoadingStatus.SUCCESS;
-      // } else {
-      //   this.questionBankList = [];
-      //   this.aid = '';
-      //   this.isHotSearchVisible = false;
-      //   this.loadingStatus = LoadingStatus.SUCCESS;
-      // }
-        this.questionBankList = [];
-        this.aid = '';
-        this.isHotSearchVisible = false;
-        this.loadingStatus = LoadingStatus.SUCCESS;
-
-    } catch (e) {
-      Logger.error(TAG, `Error searching bank list: ${e}`);
-      this.questionBankList = [];
-      this.aid = '';
-      this.isHotSearchVisible = false;
-      this.loadingStatus = LoadingStatus.FAILED;
-    }
+    this.isHotSearchVisible = false;
   }
 
   async loadResources(): Promise<void> {
@@ -142,7 +103,6 @@ export struct HotSearchPage {
 
   build() {
     Column() {
-
       Row() {
         Image($r('sys.media.ohos_ic_public_arrow_left'))
           .width(24)
@@ -176,8 +136,6 @@ export struct HotSearchPage {
                   this.getSearchBankList();
                 } else {
                   this.isHotSearchVisible = true;
-                  this.questionBankList = [];
-                  this.aid = '';
                 }
               })
             Image($r('app.media.ic_del'))
@@ -189,13 +147,12 @@ export struct HotSearchPage {
                 this.searchText = '';
                 this.isHotSearchVisible = true;
                 this.selectedTabIndex = 0;
-                this.questionBankList = [];
-                this.aid = '';
               })
           }
         }
       }
       .height(76)
+
       if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
         Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
           Canvas(this.controllerCanvas)
@@ -228,6 +185,7 @@ export struct HotSearchPage {
           .width('90%')
           .height('auto')
           .padding({ left: 16, top: 16, bottom: 10 })
+
           List({ scroller: this.listScroller }) {
             ForEach(this.hotSearchItems, (item: string, index: number) => {
               ListItem() {
@@ -250,7 +208,6 @@ export struct HotSearchPage {
                   Logger.info(TAG, `Clicked on: ${item}`);
                   this.searchText = item;
                   this.controller.addText(item);
-                  // this.getSearchBankList();
                 });
               }
             }, (item: string, index: number) => index.toString())
@@ -273,45 +230,13 @@ export struct HotSearchPage {
 
             Tabs({ barPosition: BarPosition.Start, controller: this.tabsController }) {
               TabContent() {
-                if (this.questionBankList.length > 0) {
-                  // BankList({});
-                } else {
-                  Column() {
-                    Image($r('app.media.hotsearch'))
-                      .objectFit(ImageFit.Contain)
-                      .size({ width: 117, height: 100 })
-
-                    Text('暂无搜索结果\n换个关键词试试吧')
-                      .fontColor('#9D9D9D')
-                      .fontSize(14)
-                      .margin({ top: 28 })
-                      .textAlign(TextAlign.Center)
-                  }
-                  .width('100%')
-                  .height('auto')
-                }
+                BankList({ fromType: 1, searchText: this.searchText });
               }
               .backgroundColor(Color.White)
               .margin({ bottom: 30 })
 
               TabContent() {
-                  QuestionList({searchText:this.searchText})
-
-                  //  无数据
-                  // Column() {
-                  //   Image($r('app.media.hotsearch'))
-                  //     .objectFit(ImageFit.Contain)
-                  //     .size({ width: 117, height: 100 })
-                  //
-                  //   Text('快搜题库中暂无收录该关键词相关题目\n输入更完整的题干关键词试试吧')
-                  //     .fontColor('#9D9D9D')
-                  //     .fontSize(14)
-                  //     .margin({ top: 28 })
-                  //     .textAlign(TextAlign.Center)
-                  // }
-                  // .width('100%')
-                  // .height('auto')
-
+                QuestionList({ searchText: this.searchText })
               }
             }
             .barHeight(0)
