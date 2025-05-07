@@ -12,9 +12,6 @@ import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
 import { SearchQuestionRes } from '../model/SearchQuestionRes';
-import { it } from '@ohos/hypium';
-import { BankInfoRes } from 'db/src/main/ets/model/BankInfoRes';
-
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -70,9 +67,9 @@ function buildText(params: Params) {
 struct DownloadOverDialog {
   success: boolean = false
   controller: CustomDialogController;
-  bank: BankInfoRes = {} as BankInfoRes;
+  bank: BankListRes = {} as BankListRes
 
-  constructor(controller: CustomDialogController, bank: BankInfoRes) {
+  constructor(controller: CustomDialogController, bank: BankListRes) {
     super();
     this.controller = controller;
     this.bank = bank;
@@ -122,9 +119,9 @@ export struct QuestionList {
     new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
   @State hasLoadData: boolean = false
-  @State mCurBank: BankInfoRes = {} as BankInfoRes;
-  dialogDeleteController?: CustomDialogController;
-  dialogDownloadController?: CustomDialogController;
+  @State mCurBank: BankListRes = {} as BankListRes
+  dialogDeleteController?: CustomDialogController
+  dialogDownloadController?: CustomDialogController
 
   aboutToAppear(): void {
 
@@ -132,8 +129,6 @@ export struct QuestionList {
     this.initLottie()
     this.initDialog()
   }
-
-
 
   showDownloadOverDialog(success: boolean) {
     this.dialogDownloadController = new CustomDialogController({
@@ -177,19 +172,11 @@ export struct QuestionList {
     })
   }
 
-
-
   build() {
     List() {
       ForEach(this.bankRes.QuestionData, (item: SearchQuestionRes, index) => {
         ListItem() {
           Column() {
-
-            // Text("Demo")
-            //   .onClick(()=>{
-            //      this.bankModel.getBankLists()
-            //   })
-
             Flex({
               direction: FlexDirection.Row,
               justifyContent: FlexAlign.SpaceAround,
@@ -197,105 +184,76 @@ export struct QuestionList {
             }) {
               Column() {
                 Text() {
-                  Span(item.ans.length > 1 ?'【多选题】' :'【单选题】')
+                  Span(item.ans.length > 1 ? '【多选题】' : '【单选题】')
                     .fontSize(14)
                     .fontColor('#3E3E3E')
                     .fontWeight(FontWeight.Bold)
 
                   Span(item.q)
-                      .fontSize(14)
-                      .fontColor('#3E3E3E')
+                    .fontSize(14)
+                    .fontColor('#3E3E3E')
                 }
                 .textAlign(TextAlign.Start)
                 .margin({ top: 8, left: 8, right: 8 })
-                Row(){
-                  Text(){
-                    Span("所在题库:"+item.Name)
+
+                Row() {
+                  Text() {
+                    Span("所在题库:" + item.Name)
                       .fontSize(12)
                       .fontColor(Color.Red)
-
-
-                    Span("    (未下载)")
-                        .fontColor(Color.Grey)
-                        .fontSize($r('app.float.font_size_12fp'))
-                      .margin({left:18})
+                    Span(item.downloadedState === 1 ? "    (已下载)" : "    (未下载)")
+                      .fontColor(Color.Grey)
+                      .fontSize($r('app.float.font_size_12fp'))
+                      .margin({ left: 18 })
 
                   }
                   .width('85%')
                   .textAlign(TextAlign.Start)
-                  .margin({right:18})
+                  .margin({ right: 18 })
 
-                    Text("点我下载")
-                      .fontSize(12)
-                      .fontColor(Color.Blue)
-                      .fontSize($r('app.float.font_size_12fp'))
-                      .textAlign(TextAlign.Center)
-                      .decoration({type:TextDecorationType.Underline,color:Color.Blue})
-                  .onClick(
-                  async () => {
-                    //获取题库信息
-                    const items = await this.bankModel.getBankInfoList(Number(item.qid));
-                    this.mCurBank = items
-                    Logger.info(TAG, '题库内容--------' + JSON.stringify(items))
-                    LoadingDialog.openDialog()
-                    try {
-                      const success = await this.bankModel.downLoadQuestion(items);
-                      if (success) {
-                        Logger.info(TAG, '下载成功' + item)
+                  Text("点我下载")
+                    .visibility(item.downloadedState === 1 ? Visibility.Hidden : Visibility.Visible)
+                    .fontSize(12)
+                    .fontColor(Color.Blue)
+                    .fontSize($r('app.float.font_size_12fp'))
+                    .textAlign(TextAlign.Center)
+                    .decoration({ type: TextDecorationType.Underline, color: Color.Blue })
+                    .onClick(
+                      async () => {
+                        let bankRes = await this.bankModel.getBankDetail(item.qid)
+                        LoadingDialog.openDialog()
+                        if (bankRes != null) {
+                          try {
+                            const success = await this.bankModel.downLoadBank(bankRes)
+                            if (success) {
+                              //更新状态为已下载
+                              item.downloadedState = 1
+                              //触发UI重新渲染
+                              this.bankRes.newsData = [...this.bankRes.newsData]
+                              LoadingDialog.closeDialog()
+                              this.showDownloadOverDialog(true)
+                              onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                                "question_bank_id": item.qid
+                              })
+                            }
+                          } catch (error) {
+                            Logger.info(TAG, '下载过程中发生错误' + item)
+                            LoadingDialog.closeDialog()
+                            this.showDownloadOverDialog(false)
+                          }
+                        } else {
+                          Logger.info(TAG, '下载过程中发生错误' + item)
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(false)
+                        }
 
-                        //触发UI重新渲染
-                        this.bankRes.newsData = [...this.bankRes.newsData]
-                        LoadingDialog.closeDialog()
-                        this.showDownloadOverDialog(true)
-                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                          "question_bank_id": item.qid
-                        })
-                      } else {
-                        Logger.info(TAG, '下载失败' + item)
-                        LoadingDialog.closeDialog()
-                        this.showDownloadOverDialog(false)
-                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                          "question_bank_id": item.qid
-                        })
                       }
-                    } catch (error) {
-                      Logger.info(TAG, '下载过程中发生错误' + item)
-                      LoadingDialog.closeDialog()
-                      this.showDownloadOverDialog(false)
-                      onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                        "question_bank_id": item.qid
-                      })
-                    }
-                  }
-                  )
+                    )
                 }
                 .width('90%')
                 .justifyContent(FlexAlign.SpaceBetween)
                 .margin({ top: 25, left: 8, right: 8 })
 
-
-
-
-                Row() {
-                  // Text("题库状态：")
-                  //   .fontColor($r('app.color.c_9d9d9d'))
-                  //   .fontSize($r('app.float.font_size_10fp'))
-                  // if (item.downloadedState === 1) {
-                  //   Text("已下载")
-                  //     .fontColor(Color.Blue)
-                  //     .fontSize($r('app.float.font_size_10fp'))
-                  //     .margin({ right: $r('app.float.float_30vp') })
-                  // } else {
-                  //   Text("未下载")
-                  //     .fontColor(Color.Blue)
-                  //     .fontSize($r('app.float.font_size_10fp'))
-                  //     .margin({ right: $r('app.float.float_30vp') })
-                  // }
-                  //
-                  // Text("题库更新时间：" + item.time)
-                  //   .fontColor($r('app.color.c_9d9d9d'))
-                  //   .fontSize($r('app.float.font_size_10fp'))
-                }
               }
               .width('85%')
               .alignItems(HorizontalAlign.Start)
@@ -304,68 +262,6 @@ export struct QuestionList {
                 top: $r('app.float.float_20vp'),
                 right: $r('app.float.float_20vp'),
               })
-
-              Column() {
-                // if (item.downloadedState === 1) {
-                //   Image($r('app.media.ic_remove'))
-                //     .objectFit(ImageFit.Contain)
-                //     .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                //   Text("删除")
-                //     .fontColor(Color.Black)
-                //     .fontSize($r('app.float.font_size_10fp'))
-                // } else {
-                //   Image($r('app.media.ic_download'))
-                //     .objectFit(ImageFit.Contain)
-                //     .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                //   Text("下载")
-                //     .fontColor(Color.Black)
-                //     .fontSize($r('app.float.font_size_10fp'))
-                // }
-
-              }
-              .margin({
-                right: $r('app.float.float_20vp'),
-              })
-              // .onClick(
-                // async () => {
-                //   this.mCurBank = item
-                //   if (item.downloadedState === 1) {
-                //     this.showDeleteDialog()
-                //   } else {
-                //     Logger.info(TAG, '题库内容--------' + item)
-                //     LoadingDialog.openDialog()
-                //     try {
-                //       const success = await this.bankModel.downLoadBank(item);
-                //       if (success) {
-                //         Logger.info(TAG, '下载成功' + item)
-                //         //更新状态为已下载
-                //         item.downloadedState = 1
-                //         //触发UI重新渲染
-                //         this.bankRes.newsData = [...this.bankRes.newsData]
-                //         LoadingDialog.closeDialog()
-                //         this.showDownloadOverDialog(true)
-                //         onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                //           "question_bank_id": item.qid
-                //         })
-                //       } else {
-                //         Logger.info(TAG, '下载失败' + item)
-                //         LoadingDialog.closeDialog()
-                //         this.showDownloadOverDialog(false)
-                //         onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                //           "question_bank_id": item.qid
-                //         })
-                //       }
-                //     } catch (error) {
-                //       Logger.info(TAG, '下载过程中发生错误' + item)
-                //       LoadingDialog.closeDialog()
-                //       this.showDownloadOverDialog(false)
-                //       onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                //         "question_bank_id": item.qid
-                //       })
-                //     }
-                //   }
-                // }
-              // )
             }
 
             Divider()
@@ -393,7 +289,7 @@ export struct QuestionList {
   }
 
   async loadFeedData(): Promise<void> {
-    let list = await this.bankModel.getSearchQuestionkList(this.searchText, this.pageNum)
+    let list = await this.bankModel.getSearchQuestionList(this.searchText, this.pageNum)
     if (list === null || list.length < 10) {
       this.loadMore = false
     } else {
@@ -402,5 +298,4 @@ export struct QuestionList {
     }
     this.bankRes.QuestionData = this.bankRes.QuestionData.concat(list)
   }
-
 }

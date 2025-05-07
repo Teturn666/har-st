@@ -65,8 +65,8 @@ function buildText(params: Params) {
 @CustomDialog
 struct DownloadOverDialog {
   success: boolean = false
-  controller: CustomDialogController;
-  bank: BankListRes = {} as BankListRes;
+  controller: CustomDialogController
+  bank: BankListRes = {} as BankListRes
 
   constructor(controller: CustomDialogController, bank: BankListRes) {
     super();
@@ -178,9 +178,9 @@ export struct BankList {
     new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
   @State hasLoadData: boolean = false
-  @State mCurBank: BankListRes = {} as BankListRes;
-  dialogDeleteController?: CustomDialogController;
-  dialogDownloadController?: CustomDialogController;
+  @State mCurBank: BankListRes = {} as BankListRes
+  dialogDeleteController?: CustomDialogController
+  dialogDownloadController?: CustomDialogController
 
   aboutToAppear(): void {
     this.bankRes.newsData = []

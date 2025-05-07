@@ -3,7 +3,6 @@ import DbConstants from '../constants/DbConstants';
 import { relationalStore } from '@kit.ArkData';
 import { BankListRes } from '../model/BankListRes';
 import { Logger } from 'utils';
-import { BankInfoRes } from  '../model/BankInfoRes'
 
 //题库表
 export class QuestionBankTable {
@@ -28,13 +27,6 @@ export class QuestionBankTable {
   /**
    * 异步插入方法
    */
-
-  //热门题目中题库
-  async insertQuestionDataAwait(account: BankInfoRes): Promise<number> {
-    const valueBucket: relationalStore.ValuesBucket = generateBucketQuestion(account)
-    return await this.accountTable.insertDataAwait(valueBucket)
-  }
-
   async insertDataAwait(account: BankListRes): Promise<number> {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account)
     return await this.accountTable.insertDataAwait(valueBucket)
@@ -105,20 +97,6 @@ export class QuestionBankTable {
       }
     }
   }
-}
-
-function generateBucketQuestion(account: BankInfoRes): relationalStore.ValuesBucket {
-  let obj: relationalStore.ValuesBucket = {}
-  obj.qid = account.qid
-  obj.aid = account.aid
-  obj.num = account.num
-  obj.name = account.name
-  obj.desc = account.desc
-  obj.time = account.time
-  obj.url = account.url
-  obj.version = account.version
-  obj.NewFlag = account.NewFlag
-  return obj;
 }
 
 function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
