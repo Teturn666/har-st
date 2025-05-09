@@ -35,120 +35,35 @@ export struct PayPage {
       console.error(`${TAG} Navigation failed:`, error);
     }
   }
-  async loadData() {
+
+  private async loadData(): Promise<void> {
     try {
-      console.info(`${TAG} Loading price list...`);
       this.isLoading = true;
       this.errorMessage = '';
-      // 使用死数据，直接定义为 PriceInfoRes[]
-      const mockData: PriceInfoRes[] = [
-        {
-          id: "4",
-          name: "快搜搜题周（7天）会员",
-          showtext: "周卡",
-          days: 7,
-          price: 290,
-          amount: 290,
-          priceTr: 290 / 100,
-          priceOrigin: 290 / 100
-        },
-        {
-          id: "1",
-          name: "快搜搜题月（30天）会员",
-          showtext: "月卡",
-          days: 30,
-          price: 1000,
-          amount: 800,
-          priceTr: 800 / 100,
-          priceOrigin: 1000 / 100
-        },
-        {
-          id: "2",
-          name: "快搜搜题季（90天）会员",
-          showtext: "季卡",
-          days: 90,
-          price: 3000,
-          amount: 1800,
-          priceTr: 1800 / 100,
-          priceOrigin: 3000 / 100
-        },
-        {
-          id: "3",
-          name: "快搜搜题年（366天）会员",
-          showtext: "年卡",
-          days: 366,
-          price: 12000,
-          amount: 6000,
-          priceTr: 6000 / 100,
-          priceOrigin: 12000 / 100
-        }
-      ];
-      // 赋值并触发响应式更新
-      this.priceList = [...mockData];
+      const list = await this.payModel.getPayPriceList();
+      console.info(`${TAG} Price list loaded: ${JSON.stringify(list)}`);
+      // PriceInfoRes 实例
+      this.priceList = list.map(item => new PriceInfoRes(item));
       if (this.priceList.length > 0) {
-        const defaultCard = this.priceList.find(card => card.id === this.selectedCard);
-        if (defaultCard) {
-          this.totalPrice = defaultCard.priceTr;
-          this.savePrice = defaultCard.priceOrigin - defaultCard.priceTr;
-          console.info(`${TAG} Default card selected: id=${defaultCard.id}, totalPrice=${this.totalPrice}, savePrice=${this.savePrice}`);
-        }
-        const selectedIndex = this.priceList.findIndex(card => card.id === this.selectedCard);
-        console.info(`${TAG} Selected index: ${selectedIndex}, selectedCard: ${this.selectedCard}`);
-        if (selectedIndex >= 0) {
-          setTimeout(() => {
-            console.info(`${TAG} Scrolling to index: ${selectedIndex}`);
-            this.scroller.scrollToIndex(selectedIndex, true);
-          }, 100);
-        } else {
-          console.warn(`${TAG} Selected card not found: ${this.selectedCard}`);
-        }
+        const defaultCard = this.priceList.find(card => card.id === '3') || this.priceList[0];
+        this.selectCard(defaultCard);
       } else {
-        console.warn(`${TAG} Price list is empty`);
-        this.errorMessage = '无会员卡数据';
+        this.totalPrice = 60.0;
+        this.savePrice = 60.0;
       }
     } catch (e) {
       console.error(`${TAG} loadData failed:`, e);
       this.priceList = [];
       this.errorMessage = '加载失败，请重试';
+      this.totalPrice = 60.0;
+      this.savePrice = 60.0;
     } finally {
       this.isLoading = false;
       console.info(`${TAG} Loading finished, isLoading: ${this.isLoading}, priceList length: ${this.priceList.length}`);
     }
   }
-  // async loadData() {
-  //   try {
-  //     console.info(`${TAG} Loading price list...`);
-  //     const list = await this.payModel.getPayPriceList();
-  //     console.info(`${TAG} Price list loaded: ${JSON.stringify(list)}`);
-  //
-  //     if (list && Array.isArray(list) && list.length > 0) {
-  //       this.priceList = list;
-  //       const defaultCard = this.priceList.find(card => card.id === this.selectedCard);
-  //       if (defaultCard) {
-  //         this.totalPrice = defaultCard.priceTr;
-  //         this.savePrice = defaultCard.priceOrigin - defaultCard.priceTr;
-  //         console.info(`${TAG} Default card selected: id=${defaultCard.id}, totalPrice=${this.totalPrice}, savePrice=${this.savePrice}`);
-  //       }
-  //
-  //       const selectedIndex = this.priceList.findIndex(card => card.id === this.selectedCard);
-  //       if (selectedIndex >= 0) {
-  //         console.info(`${TAG} Scrolling to index: ${selectedIndex}`);
-  //         this.scroller.scrollToIndex(selectedIndex, true);
-  //       } else {
-  //         console.warn(`${TAG} Selected card not found: ${this.selectedCard}`);
-  //       }
-  //     } else {
-  //       console.warn(`${TAG} Price list is empty or invalid`);
-  //       this.priceList = [];
-  //     }
-  //   } catch (e) {
-  //     console.error(`${TAG} loadData failed:`, e);
-  //     this.priceList = [];
-  //   }
-  // }
 
   private selectCard(card: PriceInfoRes): void {
-    console.info(`${TAG} Selecting card: id=${card.id}, priceTr=${card.priceTr}, priceOrigin=${card.priceOrigin}`);
     this.selectedCard = card.id;
     this.totalPrice = card.priceTr;
     this.savePrice = card.priceOrigin - card.priceTr;
