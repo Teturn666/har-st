@@ -1,5 +1,8 @@
 {
   "module": {
+    "querySchemes": [
+      "weixin"
+    ],
     "name": "entry",
     "type": "entry",
     "description": "$string:module_desc",
