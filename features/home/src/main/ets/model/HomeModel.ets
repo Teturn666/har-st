@@ -1,4 +1,4 @@
-import { BankListRes, QuestionBankTable, QuestionTable } from 'db'
+import { BankListRes, questionBankTable, questionTable } from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
 
 const TAG = '[HomeModel]'
@@ -7,8 +7,6 @@ const TAG = '[HomeModel]'
 export class HomeModel {
   private static instance: HomeModel
   loadingStatus: LoadingStatus = LoadingStatus.OFF
-  private questionBankTable = new QuestionBankTable()
-  private questionTable = new QuestionTable()
 
   private constructor() {
   }
@@ -20,17 +18,10 @@ export class HomeModel {
     return HomeModel.instance
   }
 
-  //创建数据库
-  createTable() {
-
-    this.questionBankTable.getRdbStore()
-    this.questionTable.getRdbStore()
-  }
-
   //获取数据库已经下载的题库
   public async getBankList():
     Promise<BankListRes[]> {
-    let bankResultList = await this.questionBankTable.querySync(1739957689,false) ?? [];
+    let bankResultList = await questionBankTable.querySync(0) ?? [];
 
     Logger.info(TAG, '下载的题库--------' + bankResultList.length)
     return bankResultList

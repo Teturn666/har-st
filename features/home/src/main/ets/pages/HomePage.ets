@@ -54,7 +54,6 @@ export struct HomePage {
 
   aboutToAppear(): void {
     this.initLottie()
-    this.homeModel.createTable()
     this.loadResources()
   }
 

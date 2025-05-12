@@ -171,7 +171,6 @@ export struct BankPage {
     } else {
       this.loadingStatus = LoadingStatus.FAILED
     }
-    await this.bankModel.createTable()
   }
 
   //加载 lottie 动画

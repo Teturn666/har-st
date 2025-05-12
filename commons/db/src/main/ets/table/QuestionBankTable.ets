@@ -5,7 +5,7 @@ import { BankListRes } from '../model/BankListRes';
 import { Logger } from 'utils';
 
 //题库表
-export class QuestionBankTable {
+class QuestionBankTable {
   private accountTable = new ChRdb(DbConstants.QUESTION_BANK_TABLE.tableName, DbConstants.QUESTION_BANK_TABLE.sqlCreate,
     DbConstants.QUESTION_BANK_TABLE.columns);
 
@@ -112,3 +112,5 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   obj.downloadedState = account.downloadedState
   return obj;
 }
+
+export const questionBankTable = new QuestionBankTable()

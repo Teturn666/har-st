@@ -5,7 +5,7 @@ import { QuestionRes } from '../model/QuestionRes';
 import { Logger } from 'utils';
 
 //题目表
-export class QuestionTable {
+class QuestionTable {
   private accountTable = new ChRdb(DbConstants.QUESTION_TABLE.tableName, DbConstants.QUESTION_TABLE.sqlCreate,
     DbConstants.QUESTION_TABLE.columns);
 
@@ -128,3 +128,5 @@ function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
   return obj;
 }
+
+export const questionTable = new QuestionTable()

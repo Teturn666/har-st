@@ -1,4 +1,4 @@
-import { QuestionBankTable, QuestionTable, BankListRes, QuestionRes } from 'db'
+import { questionBankTable, questionTable, BankListRes, QuestionRes } from 'db'
 import { SearchDecryptUtils } from 'search'
 import { Logger, StringUtils } from 'utils'
 import { plainToClass } from 'class-transformer'
@@ -14,8 +14,6 @@ const TAG = '[BankModel]'
 export class BankModel {
   private bankNet: BankNet
   private static instance: BankModel
-  private questionBankTable = new QuestionBankTable()
-  private questionTable = new QuestionTable()
 
   private constructor() {
     this.bankNet = new BankNet()
@@ -28,27 +26,21 @@ export class BankModel {
     return BankModel.instance
   }
 
-  //创建数据库
-  createTable() {
-    this.questionBankTable.getRdbStore()
-    this.questionTable.getRdbStore()
-  }
-
   //删除数据库
   async deleteTable(qid: number) {
     //删除相应的题库表
-    let bankResultList = await this.questionBankTable.querySync(qid, false) ?? [];
+    let bankResultList = await questionBankTable.querySync(qid, false) ?? [];
     if (bankResultList.length > 0) {
       let bankRes = bankResultList[0]
-      this.questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
+      questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
         Logger.info(TAG, '题库deleteData--------' + resFlag)
       })
     }
     //删除相应的题目表
-    let bankQaResultList = await this.questionTable.querySync(qid, false) ?? [];
+    let bankQaResultList = await questionTable.querySync(qid, false) ?? [];
     if (bankQaResultList.length > 0) {
       bankQaResultList.forEach((item) => {
-        this.questionTable.deleteData(item, (resFlag: boolean) => {
+        questionTable.deleteData(item, (resFlag: boolean) => {
           Logger.info(TAG, '题目deleteData--------' + resFlag)
         })
       })
@@ -82,7 +74,7 @@ export class BankModel {
   //获取数据库已经下载的题库
   public async getBankLists():
     Promise<BankListRes[]> {
-    let bankResultList = await this.questionBankTable.querySync(0) ?? [];
+    let bankResultList = await questionBankTable.querySync(0) ?? [];
 
     Logger.info(TAG, '下载的题库--------' + bankResultList.length)
     return bankResultList
@@ -94,7 +86,7 @@ export class BankModel {
     try {
       let data = await this.bankNet.getBankList(aid, pageNo)
       for (let item of data) {
-        let result = await this.questionBankTable.querySync(item.qid, false) ?? []
+        let result = await questionBankTable.querySync(item.qid, false) ?? []
         Logger.info(TAG, 'result--------' + result)
         if (result.length > 0) {
           bankList.push(result[0])
@@ -116,7 +108,7 @@ export class BankModel {
       let data = await this.bankNet.getSearchBankList(content, pageNo)
       Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`)
       for (let item of data) {
-        let result = await this.questionBankTable.querySync(item.qid, false) ?? []
+        let result = await questionBankTable.querySync(item.qid, false) ?? []
         Logger.info(TAG, 'result--------' + result)
         if (result.length > 0) {
           bankList.push(result[0])
@@ -139,7 +131,7 @@ export class BankModel {
       let data = await this.bankNet.getSearchQuestionList(content, pageNo.toString());
       Logger.info(TAG, `Search bank result: ${JSON.stringify(data)}`);
       for (let item of data) {
-        let result = await this.questionBankTable.querySync(Number(item.qid), false) ?? []
+        let result = await questionBankTable.querySync(Number(item.qid), false) ?? []
         Logger.info(TAG, 'result--------' + result)
 
         if (result.length > 0) {
@@ -195,14 +187,14 @@ export class BankModel {
           questionDb.question = questionRes.q
           questionDb.answer = questionRes.ans
           questionDb.option = questionRes.a
-          let ret = await this.questionTable.insertDataAwait(questionDb)
+          let ret = await questionTable.insertDataAwait(questionDb)
           Logger.info(TAG, 'ret--------' + ret)
         }
       }
       //插入题库表,下载成功后的状态
       bankListRes.downloadedState = 1
       bankListRes.position = 0
-      let ret = await this.questionBankTable.insertDataAwait(bankListRes)
+      let ret = await questionBankTable.insertDataAwait(bankListRes)
       Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {

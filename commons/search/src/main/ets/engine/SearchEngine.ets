@@ -1,5 +1,5 @@
 import { ArrayList, HashMap, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
-import { QuestionRes, QuestionTable } from 'db/Index'
+import { QuestionRes, questionTable } from 'db/Index'
 import { Logger, StringUtils } from 'utils/Index'
 import { SegmentEngine } from './SegmentEngine'
 import { taskpool } from '@kit.ArkTS';
@@ -24,7 +24,6 @@ export class SearchEngine {
   mIsInitFinish = false
   private mStopWords = "\t1234567890【】，。,.、  ？?_;；：:…'\"\nABCD"
   private static MIN_SCORE = 0.001
-  private mQuestionTable: QuestionTable | null = null
 
   private constructor() {
   }
@@ -39,14 +38,14 @@ export class SearchEngine {
   //   })
   // }
 
-  //获取题目表
-  public setQuestionTable(questionTable: QuestionTable) {
-    this.mQuestionTable = questionTable
-  }
+  // //获取题目表
+  // public setQuestionTable(questionTable: QuestionTable) {
+  //   this.mQuestionTable = questionTable
+  // }
 
   //查找题目表数据库所有的数据
   private findAllQuestionData() {
-    this.mQuestionTable?.query(0, (result: List<QuestionRes>) => {
+    questionTable?.query(0, (result: List<QuestionRes>) => {
       Logger.info('题目表获取到的数据====>' + result.length + "====>" + result[0].id + result[0].questionCase +
         "====>" + result[1].id + result[1].questionCase)
       this.questionList.clear()
@@ -62,7 +61,7 @@ export class SearchEngine {
    * @param callback true-有数据 false-无数据
    */
   private async findAllQuestionDataSync(): Promise<boolean> {
-    let questions = await this.mQuestionTable?.querySync(0, true) ?? []
+    let questions = await questionTable?.querySync(0, true) ?? []
     this.questionList.clear()
 
     questions.forEach((resultElement) => {
@@ -152,7 +151,7 @@ export class SearchEngine {
       if (id === -1) {
         return null
       } else {
-        let result = await this.mQuestionTable?.querySync(id, false) ?? []
+        let result = await questionTable?.querySync(id, false) ?? []
         Logger.info('题目表获取到的数据====>' + result.length)
         if (result.length > 0) {
           return result[0]
@@ -225,7 +224,7 @@ export class SearchEngine {
     let maxLcs = -1
 
     for (let topListElement of topList) {
-      let result = await this.mQuestionTable?.querySync(topListElement.id, false) ?? []
+      let result = await questionTable?.querySync(topListElement.id, false) ?? []
       Logger.info('题目表获取到的数据====>' + result.length)
       let qs: QuestionRes | null = null;
       if (result.length > 0) {
@@ -270,7 +269,7 @@ export class SearchEngine {
     let qStr = StringFilter.formatString(q);
     let id = await this.searchTextWithIndex(qStr);
     let questions = new Array<QuestionBean>()
-    let result = await this.mQuestionTable?.querySync(id, false) ?? []
+    let result = await questionTable?.querySync(id, false) ?? []
     Logger.info('题目表获取到的数据====>' + result.length)
     if (result.length > 0 && result[0] != null) {
       let record: QuestionRes = result[0]
@@ -324,7 +323,7 @@ export class SearchEngine {
     let questions = new Array<QuestionRes>()
 
     for (let idsElement of ids) {
-      let result = await this.mQuestionTable?.querySync(idsElement, false) ?? []
+      let result = await questionTable?.querySync(idsElement, false) ?? []
       Logger.info('题目表获取到的数据====>' + result.length)
       if (result.length > 0) {
         questions.push(result[0])
@@ -397,7 +396,7 @@ export class SearchEngine {
     let resList = new List<TopItem>()
     let qsCache = new TreeSet<string>()
     for (let item of topList) {
-      let result = await this.mQuestionTable?.querySync(item.id, false) ?? [];
+      let result = await questionTable?.querySync(item.id, false) ?? [];
       Logger.info('题目表获取到的数据====>' + result.length)
       if (result.length > 0) {
         let qs: QuestionRes = result[0]
