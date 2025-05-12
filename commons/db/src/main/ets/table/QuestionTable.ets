@@ -62,6 +62,7 @@ class QuestionTable {
             question: '',
             answer: '',
             option: [],
+            wrongAnswer: '',
           };
           // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
           tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
@@ -101,6 +102,7 @@ class QuestionTable {
               question: '',
               answer: '',
               option: [],
+              wrongAnswer: '',
             };
             // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));

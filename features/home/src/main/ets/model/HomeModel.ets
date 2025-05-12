@@ -1,5 +1,4 @@
-import { BankListRes, questionBankTable, questionWrongTable, questionCollectionTable } from 'db'
-import { WrongQuestionRes } from 'db/src/main/ets/model/WrongQuestionRes'
+import { BankListRes, questionBankTable, questionWrongTable, questionCollectionTable, QuestionRes } from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
 
 const TAG = '[HomeModel]'
@@ -44,7 +43,7 @@ export class HomeModel {
   }
 
   //获取数据库错题的题目
-  public async getWrongQuestionList(qId: number): Promise<WrongQuestionRes[]> {
+  public async getWrongQuestionList(qId: number): Promise<QuestionRes[]> {
     let wrongResultList = await questionWrongTable.querySync(qId, false) ?? [];
     return wrongResultList
   }
@@ -66,7 +65,7 @@ export class HomeModel {
   }
 
   //获取数据库收藏的题目
-  public async getCollectionQuestionList(qId: number): Promise<WrongQuestionRes[]> {
+  public async getCollectionQuestionList(qId: number): Promise<QuestionRes[]> {
     let collectionResultList = await questionCollectionTable.querySync(qId, false) ?? [];
     return collectionResultList
   }

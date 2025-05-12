@@ -2,7 +2,7 @@ import ChRdb from '../ChRdb';
 import DbConstants from '../constants/DbConstants';
 import { relationalStore } from '@kit.ArkData';
 import { Logger } from 'utils';
-import { WrongQuestionRes } from '../model/WrongQuestionRes';
+import { QuestionRes } from '../model/QuestionRes';
 
 //收藏题目表
 class QuestionCollectionTable {
@@ -20,30 +20,30 @@ class QuestionCollectionTable {
     this.accountTable.getRdbStore(callback);
   }
 
-  insertData(account: WrongQuestionRes, callback: Function) {
+  insertData(account: QuestionRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     this.accountTable.insertData(valueBucket, callback);
   }
 
-  async insertDataAwait(account: WrongQuestionRes) {
+  async insertDataAwait(account: QuestionRes) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     return await this.accountTable.insertDataAwait(valueBucket);
   }
 
-  deleteData(account: WrongQuestionRes, callback: Function) {
+  deleteData(account: QuestionRes, callback: Function) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_COLLECTION_TABLE.tableName);
     predicates.equalTo('qId', account.qId);
     this.accountTable.deleteData(predicates, callback);
   }
 
-  updateData(account: WrongQuestionRes, callback: Function) {
+  updateData(account: QuestionRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_COLLECTION_TABLE.tableName);
     predicates.equalTo('id', account.qId);
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
-  async querySync(id: number, isAll: boolean = true): Promise<Array<WrongQuestionRes>> {
+  async querySync(id: number, isAll: boolean = true): Promise<Array<QuestionRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_COLLECTION_TABLE.tableName);
     if (!isAll) {
       predicates.equalTo('qId', id);
@@ -60,9 +60,9 @@ class QuestionCollectionTable {
           return []
         } else {
           resultSet.goToFirstRow();
-          const result: WrongQuestionRes[] = [];
+          const result: QuestionRes[] = [];
           for (let i = 0; i < count; i++) {
-            let tmp: WrongQuestionRes = {
+            let tmp: QuestionRes = {
               qId: 0,
               question: '',
               answer: '',
@@ -88,7 +88,7 @@ class QuestionCollectionTable {
   }
 }
 
-function generateBucket(account: WrongQuestionRes): relationalStore.ValuesBucket {
+function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {};
   obj.qId = account.qId;
   obj.question = account.question;
