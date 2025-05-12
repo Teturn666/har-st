@@ -26,6 +26,13 @@ export default class DbConstants {
       'question TEXT, option TEXT, answer TEXT)',
     columns: ['id', 'qId', 'question', 'option', 'answer']
   };
+  //错题题目表
+  static readonly QUESTION_WRONG_TABLE: DbTableBean = {
+    tableName: 'questionWrong',
+    sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
+      'question TEXT, option TEXT, answer TEXT,wrongAnswer TEXT)',
+    columns: ['id', 'qId', 'question', 'option', 'answer', 'wrongAnswer']
+  };
   /**
    * Log tag.
    */
