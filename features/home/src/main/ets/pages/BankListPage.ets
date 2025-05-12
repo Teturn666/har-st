@@ -59,7 +59,7 @@ export struct BankListPage {
                   .margin({ left: 16, right: 16 })
                   .width('80%')
                 Blank()
-                Image($r('app.media.ic_right'))
+                Image($r('app.media.ic_r'))
                   .width(12)
                   .height(12)
                   .fillColor('#666666')
