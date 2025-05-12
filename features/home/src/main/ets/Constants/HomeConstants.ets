@@ -17,6 +17,8 @@ export default class HomeConstants {
   static readonly ROUTER_WEB = 'webPage'
   //练习列表页面(题库练习、错题练习、收藏练习共用)
   static readonly ROUTER_BANK_LIST = 'bankListPage'
+  //题库练习
+  static readonly ROUTER_EXERCISE_LIST = 'exercisePage'
   //解密字符串的正则
   static readonly IMAGE_REGEX = /\$\{.*?\}/g
   //使用教程链接

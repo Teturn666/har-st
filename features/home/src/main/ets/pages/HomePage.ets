@@ -18,7 +18,8 @@ import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
-import('exercise/src/main/ets/pages/BankListPage')
+// import('exercise/src/main/ets/pages/BankListPage')
+import('./BankListPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
