@@ -22,12 +22,14 @@ const questions: QuestionRes[] = [
     question: "根据收费公路车辆通行费减免政策，政府还免公路收费，免除的范围是？",
     option: ["30", "25", "15", "10"],
     answer: "C",
+    wrongAnswer:""
   },
   {
     qId: 2,
     question: "以下哪个选项是正确的？",
     option: ["选项A", "选项B", "选项C", "选项D"],
     answer: "B",
+    wrongAnswer:""
   },
 ];
 
