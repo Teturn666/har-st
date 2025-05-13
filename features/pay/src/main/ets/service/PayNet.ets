@@ -10,7 +10,8 @@ const TAG = '[PayNet]'
 export class PayNet {
   //获取支付结果
   public getBankTypeList(): Promise<PriceInfoRes[]> {
-    let data = "api=products&id=0"
+    let udid = '0'
+    let data = "api=products&id=" + udid
     return new Promise((resolve: Function, reject: Function) => {
       HttpUtils.getVipInstance()
         .post(PayTrigger.PAY_PRICE_URL, data)

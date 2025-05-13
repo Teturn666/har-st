@@ -26,13 +26,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "/Users/chenghui/.ohos/config/default_ksst_-xZyCKvedZS7s_S4XutNJkLl7XidVleubtm4bX3gYM8=.cer",
+          "certpath": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B60F62D8F183165FB93353FE7426D03E8CB9CA85C287211FE168E8FE1A965747AD41DAEC6DB477A",
-          "profile": "/Users/chenghui/.ohos/config/default_ksst_-xZyCKvedZS7s_S4XutNJkLl7XidVleubtm4bX3gYM8=.p7b",
+          "keyPassword": "0000001A410967C2E022638069E8CE34332732C14DC2916A273164EDFB2A528A5B0C7A48E81C60A97478",
+          "profile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/chenghui/.ohos/config/default_ksst_-xZyCKvedZS7s_S4XutNJkLl7XidVleubtm4bX3gYM8=.p12",
-          "storePassword": "0000001BC136EF012B681BBD00D39EC493102FE3D24B08A6B513D7CC9F27C7E336B0A5B19AB466B8436675"
+          "storeFile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p12",
+          "storePassword": "0000001A832EDAD69EC77957E685E9F8337ABCFD16D456B383158A9F3F90986B2943CAFA21535B939C27"
         }
       }
     ]
@@ -185,18 +185,6 @@
     {
       "name": "bank",
       "srcPath": "./features/bank",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "exercise",
-      "srcPath": "./features/exercise",
       "targets": [
         {
           "name": "default",
