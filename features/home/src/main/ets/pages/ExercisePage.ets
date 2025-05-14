@@ -1,6 +1,6 @@
+import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import { QuestionRes } from 'db';
-import { router } from '@kit.ArkUI';
 
 // 根据题目类型返回对应图标
 // private getQuestionIcon(): Resource {
@@ -22,14 +22,14 @@ const questions: QuestionRes[] = [
     question: "根据收费公路车辆通行费减免政策，政府还免公路收费，免除的范围是？",
     option: ["30", "25", "15", "10"],
     answer: "C",
-    wrongAnswer:""
+    wrongAnswer: ""
   },
   {
     qId: 2,
     question: "以下哪个选项是正确的？",
     option: ["选项A", "选项B", "选项C", "选项D"],
     answer: "B",
-    wrongAnswer:""
+    wrongAnswer: ""
   },
 ];
 
@@ -57,7 +57,12 @@ struct OptionItem {
         )
         .textAlign(TextAlign.Center)
         .margin({ right: 18 })
-        .shadow({ radius: 6, color: '#E0E0E0', offsetX: 2, offsetY: 2 })
+        .shadow({
+          radius: 6,
+          color: '#E0E0E0',
+          offsetX: 2,
+          offsetY: 2
+        })
 
       Text(this.text)
         .fontSize(16)
@@ -69,7 +74,12 @@ struct OptionItem {
             ? (this.isCorrect ? '#DFF5E3' : '#FDECEC')
             : '#f2f2f2'
         )
-        .shadow({ radius: 6, color: '#E0E0E0', offsetX: 2, offsetY: 2 })
+        .shadow({
+          radius: 6,
+          color: '#E0E0E0',
+          offsetX: 2,
+          offsetY: 2
+        })
     }
     .width('90%')
     .height(50)
@@ -133,13 +143,13 @@ struct ExercisePage {
       //   }
       // },
     })
-      .then((data =>{
-          if (data.index === 1) { // Confirm button
-            this.currentProgress = 1;
-            this.currentQuestionIndex = 0;
-            this.selectedOption = '';
-            promptAction.showToast({ message: '进度已重置', duration: 1500 });
-          }
+      .then((data => {
+        if (data.index === 1) { // Confirm button
+          this.currentProgress = 1;
+          this.currentQuestionIndex = 0;
+          this.selectedOption = '';
+          promptAction.showToast({ message: '进度已重置', duration: 1500 });
+        }
       }));
   }
 
@@ -309,7 +319,7 @@ struct ExercisePage {
       // 问题描述
       Text('根据收费公路车辆通行费减免政策，政府还免公路收费，免除的免除的范围是免除的范围是范围是？')
         .fontSize(16)
-        .padding({ left: 10, right: 10,top:10 })
+        .padding({ left: 10, right: 10, top: 10 })
         .textAlign(TextAlign.Start)
         .width('90%')
 
@@ -375,7 +385,6 @@ struct ExercisePage {
     .height('100%')
     .backgroundColor(Color.White)
   }
-
 }
 
 

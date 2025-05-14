@@ -1,6 +1,6 @@
+import router from '@ohos.router'
 import { BankListRes } from '../model/BankListRes'
 import HomeConstants from '../Constants/HomeConstants'
-import { router } from '@kit.ArkUI'
 
 import('./ExercisePage')
 

@@ -9,12 +9,12 @@ import { HomeBankListRes } from '../model/HomeBankListRes'
 import { LoadingStatus } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import common from '@ohos.app.ability.common'
+import router from '@ohos.router'
 import { PayView } from 'view/Index'
 import lottie, { AnimationItem } from '@ohos/lottie'
 import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
-import { router } from '@kit.ArkUI'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')

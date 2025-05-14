@@ -4,11 +4,11 @@ import { MinePage } from 'mine/Index';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { AppConstants } from '../constants/AppConstants';
 import { TabBarType } from '../model/TabBarModel';
+import router from '@ohos.router'
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { init, onEventObject } from '@umeng/analytics';
 import { questionBankTable,questionTable } from 'db'
-import { router } from '@kit.ArkUI';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
