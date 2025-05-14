@@ -15,6 +15,7 @@ import lottie, { AnimationItem } from '@ohos/lottie'
 import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
+import { BankListRes } from 'db'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -52,18 +53,35 @@ export struct HomePage {
   private animateItem: AnimationItem | null = null
   @State hasLoadData: boolean = false
 
+  @State questionBanks: BankListRes[] = [];
+  @State wrongBanks: BankListRes[] = [];
+  @State collectionBanks: BankListRes[] = [];
+
+
   aboutToAppear(): void {
     this.initLottie()
     this.loadResources()
   }
 
   async loadResources(): Promise<void> {
-    await this.homeModel.getBankList()
+    console.log("主页面")
+    //获取数据库下载的题库
+    const banks = await this.homeModel.getBankList();
+    this.questionBanks = banks;
+
+    //获取数据库错题的题库
+    const wrongq = await this.homeModel.getWrongBankList()
+    this.wrongBanks = wrongq;
+
+    //获取数据库收藏的题库
+    const collectionBank = await this.homeModel.getCollectionBankList()
+    this.collectionBanks = collectionBank;
   }
 
   aboutToDisappear(): void {
     lottie.destroy()
   }
+
 
   build() {
     Column() {
@@ -152,17 +170,20 @@ export struct HomePage {
 
   //跳转到练习列表共用的页面，1=题库练习，2=错题练习，3=收藏练习
   private jumpToBankList(type: number) {
-    let title = ""
+    let title = ''
     if (type === 2) {
-      title = "错题练习"
+      title = '错题练习'
     } else if (type === 3) {
-      title = "收藏练习"
+      title = '收藏练习'
     } else {
-      title = "题库练习"
+      title = '题库练习'
     }
+
     router.pushNamedRoute({
-      name: HomeConstants.ROUTER_BANK_LIST, params: {
-        title: title
+      name: HomeConstants.ROUTER_BANK_LIST,
+      params: {
+        title,
+        type: String(type)        // ← 只传递 type
       }
     }, router.RouterMode.Single)
   }
