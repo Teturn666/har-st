@@ -10,7 +10,8 @@
     "class-transformer": "^0.5.1",
     "reflect-metadata": "^0.1.13",
     "@umeng/common": "^1.1.3",
-    "@umeng/analytics": "^1.2.4"
+    "@umeng/analytics": "^1.2.4",
+    "@tencent/wechat_open_sdk": "^1.0.14",
   },
   "devDependencies": {
     "@ohos/hypium": "1.0.18",

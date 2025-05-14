@@ -1,10 +1,9 @@
-import router from '@ohos.router';
 import LoginConstants from '../Constants/LoginConstants';
 import bundleManager from '@ohos.bundle.bundleManager';
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
 import { OnWXResp, WXApi, WXEventHandler, APP_ID } from '../model/WXApiWrap';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { promptAction } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
@@ -40,7 +39,6 @@ interface UserInfoResponse {
 export struct LoginPage {
   @State agreementChecked: boolean = false;
   private wxApi = WXApi
-  @State resultText: string = '';
   @State nickname: string = '';
   @State avatarUrl: string = '';
   private wxEventHandler = WXEventHandler
@@ -73,7 +71,6 @@ export struct LoginPage {
       promptAction.showToast({ message: `授权失败: ${resp.errStr || '未知错误'}` });
       hilog.error(0x0000, 'TAG', `授权失败: errCode=${resp.errCode}, errStr=${resp.errStr}`);
     }
-    this.resultText = JSON.stringify(resp ?? {}, null, 2);
   };
 
   async fetchUserInfo(code: string) {
@@ -109,13 +106,21 @@ export struct LoginPage {
         throw new Error('无法获取用户信息');
       }
       let userInfo: UserInfoResponse = JSON.parse(userInfoResponse.result.toString());
-      if (!userInfo.nickname || !userInfo.headimgurl) {
-        throw new Error('用户信息不完整');
+      if (userInfo.nickname) {
+        this.nickname = userInfo.nickname;
       }
-      this.nickname = userInfo.nickname;
-      this.avatarUrl = userInfo.headimgurl;
-      promptAction.showToast({ message: '用户信息获取成功' });
-      hilog.info(0x0000, 'TAG', `用户信息: nickname=${userInfo.nickname}, headimgurl=${userInfo.headimgurl}`);
+      if (userInfo.headimgurl) {
+        this.avatarUrl = userInfo.headimgurl;
+      }
+      router.back({
+        url: '',
+        params: {
+          nickName: this.nickname,
+          avatarUrl: this.avatarUrl
+        }
+      })
+      // promptAction.showToast({ message: '用户信息获取成功' });
+      // hilog.info(0x0000, 'TAG', `用户信息: nickname=${userInfo.nickname}, headimgurl=${userInfo.headimgurl}`);
     } catch (err) {
       throw new Error(String(err));
     } finally {
@@ -268,13 +273,6 @@ export struct LoginPage {
       }
       .width('80%')
       .margin({ top: 40, bottom: 40 })
-
-
-      Text(this.resultText)
-        .width('80%')
-        .fontSize(17)
-        .lineHeight(20)
-
     }
     .height('100%')
     .width('100%')

@@ -1,6 +1,7 @@
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
 
 export type OnWXReq = (req: wxOpenSdk.BaseReq) => void
+
 export type OnWXResp = (resp: wxOpenSdk.BaseResp) => void
 
 export const APP_ID = 'wx4f844b28fe56146f'
@@ -14,6 +15,7 @@ class WXApiEventHandlerImpl implements wxOpenSdk.WXApiEventHandler {
   registerOnWXReqCallback(on: OnWXReq) {
     this.onReqCallbacks.set(on, on)
   }
+
   unregisterOnWXReqCallback(on: OnWXReq) {
     this.onReqCallbacks.delete(on)
   }
@@ -21,6 +23,7 @@ class WXApiEventHandlerImpl implements wxOpenSdk.WXApiEventHandler {
   registerOnWXRespCallback(on: OnWXResp) {
     this.onRespCallbacks.set(on, on)
   }
+
   unregisterOnWXRespCallback(on: OnWXResp) {
     this.onRespCallbacks.delete(on)
   }
@@ -41,5 +44,6 @@ class WXApiEventHandlerImpl implements wxOpenSdk.WXApiEventHandler {
 }
 
 export const WXApi = wxOpenSdk.WXAPIFactory.createWXAPI(APP_ID)
+
 export const WXEventHandler = new WXApiEventHandlerImpl
 

@@ -1,6 +1,6 @@
-import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import { QuestionRes } from 'db';
+import { router } from '@kit.ArkUI';
 
 // 根据题目类型返回对应图标
 // private getQuestionIcon(): Resource {

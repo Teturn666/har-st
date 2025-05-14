@@ -5,9 +5,8 @@ import { LoadingStatus, Logger } from 'utils';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
-import router from '@ohos.router'
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import BankConstants from '../Constants/BankConstants';
+import { router } from '@kit.ArkUI';
 
 const context = (getContext(this) as common.UIAbilityContext)
 let jsonData = null

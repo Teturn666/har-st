@@ -1,6 +1,6 @@
 import web_webview from '@ohos.web.webview'
-import router from '@ohos.router'
 import { TitleBar } from 'widget/Index'
+import { router } from '@kit.ArkUI'
 
 
 @Entry({ routeName: 'webPage' })

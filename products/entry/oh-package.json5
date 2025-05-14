@@ -10,6 +10,7 @@
     "bank": 'file:../../features/bank',
     "mine": 'file:../../features/mine',
     "db": "file:../../commons/db",
+    "login": "file:../../features/login",
   }
 }
 

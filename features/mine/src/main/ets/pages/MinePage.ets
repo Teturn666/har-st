@@ -3,9 +3,8 @@ import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { ComponentContent } from '@kit.ArkUI';
+import { ComponentContent, router } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
-import router from '@ohos.router'
 import MainConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
@@ -102,6 +101,16 @@ export struct MinePage {
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildText));
+  private nickName = ''
+  private avatarUrl = ''
+
+  onPageShow(): void {
+    const params = router.getParams() as Record<string, string>
+    if (params) {
+      this.nickName = params.nickName as string
+      this.avatarUrl = params.avatarUrl as string
+    }
+  }
 
   aboutToAppear(): void {
     OfficialDialog.setContext(this.ctx);
@@ -110,11 +119,11 @@ export struct MinePage {
   }
 
   private jumpToLogin() {
-    router.pushNamedRoute({ name: MainConstants.LOGIN })
+    router.pushNamedRoute({ name: MainConstants.LOGIN }, router.RouterMode.Single)
   }
 
   private jumpToSearchResult() {
-    router.pushNamedRoute({ name: MainConstants.ROUTER_ABOUT_US })
+    router.pushNamedRoute({ name: MainConstants.ROUTER_ABOUT_US }, router.RouterMode.Single)
   }
 
   private jumpToHelpCenter() {

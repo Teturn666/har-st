@@ -11,5 +11,4 @@
   "devDependencies": {
     "web": "file:../../commons/web"
   },
-  "dynamicDependencies": {}
 }

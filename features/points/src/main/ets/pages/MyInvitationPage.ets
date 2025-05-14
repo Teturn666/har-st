@@ -1,10 +1,10 @@
 import { TitleBar } from 'widget/Index'
-import router from '@ohos.router';
+import { router } from '@kit.ArkUI';
 
 @Entry
 @Component
 struct MyInvitationPage {
-  @State title:string = "我的邀请码";
+  @State title: string = "我的邀请码";
 
   build() {
     Column() {

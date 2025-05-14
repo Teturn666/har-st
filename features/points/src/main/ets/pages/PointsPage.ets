@@ -1,8 +1,7 @@
 import { TitleBar } from 'widget/Index'
-import router from '@ohos.router';
 import { PointsModel } from '../model/PointsModel';
-import { LoadingStatus, Logger } from 'utils';
 import CheckDataRes, { showSingle } from '../model/CheckDataRes';
+import { router } from '@kit.ArkUI';
 
 
 @Entry()
