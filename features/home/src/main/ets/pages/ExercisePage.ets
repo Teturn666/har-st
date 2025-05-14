@@ -24,6 +24,7 @@ const questions: QuestionRes[] = [
     answer: "C",
     wrongAnswer:""
   },
+
   {
     qId: 2,
     question: "以下哪个选项是正确的？",
