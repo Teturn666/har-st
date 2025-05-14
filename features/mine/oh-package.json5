@@ -7,7 +7,8 @@
   "license": "",
   "dependencies": {
     "widget": "file:../../commons/widget",
-    "utils": "file:../../commons/utils"
+    "utils": "file:../../commons/utils",
+    "login": "file:../login",
   }
 }
 

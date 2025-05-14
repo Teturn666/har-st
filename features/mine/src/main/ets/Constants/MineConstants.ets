@@ -4,6 +4,9 @@ export default class MainConstants {
    */
   //搜索结果页
   static readonly ROUTER_ABOUT_US = 'aboutUsPage'
+  //登录页面
+  static readonly LOGIN = 'login'
+  //H5页面
   static readonly ROUTER_WEB = 'webPage'
   //隐私政策链接
   static readonly USER_PRIVACY_URL = 'https://ti.iksdt.com/static/doc/yszc.html'

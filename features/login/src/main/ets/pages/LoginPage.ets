@@ -35,16 +35,15 @@ interface UserInfoResponse {
 }
 
 
-@Entry()
+@Entry({ routeName: 'login' })
 @Component
-export struct Index {
+export struct LoginPage {
   @State agreementChecked: boolean = false;
   private wxApi = WXApi
   @State resultText: string = '';
   @State nickname: string = '';
   @State avatarUrl: string = '';
   private wxEventHandler = WXEventHandler
-
 
   aboutToAppear(): void {
     this.wxEventHandler.registerOnWXRespCallback(this.onWXResp);
@@ -80,7 +79,8 @@ export struct Index {
   async fetchUserInfo(code: string) {
     let httpClient = http.createHttp();
     const APP_SECRET = '7c65844efba6af55e632f0145d11962f';
-    let accessTokenUrl = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APP_ID}&secret=${APP_SECRET}&code=${code}&grant_type=authorization_code`;
+    let accessTokenUrl =
+      `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APP_ID}&secret=${APP_SECRET}&code=${code}&grant_type=authorization_code`;
 
     try {
       // 获取 access_token
@@ -98,7 +98,8 @@ export struct Index {
       }
 
       // 获取用户信息
-      let userInfoUrl = `https://api.weixin.qq.com/sns/userinfo?access_token=${tokenData.access_token}&openid=${tokenData.openid}`;
+      let userInfoUrl =
+        `https://api.weixin.qq.com/sns/userinfo?access_token=${tokenData.access_token}&openid=${tokenData.openid}`;
       let userInfoResponse = await httpClient.request(userInfoUrl, {
         method: http.RequestMethod.GET,
         connectTimeout: 10000,
@@ -208,7 +209,7 @@ export struct Index {
         .width('60%')
         .height(48)
         .margin({ top: 12 })
-        .onClick(()=>{
+        .onClick(() => {
           this.wechatLogin()
         })
 
@@ -228,14 +229,14 @@ export struct Index {
         Text('《用户协议》')
           .fontSize(12)
           .fontColor('#007AFF')
-            .onClick(() => {
-                      router.pushNamedRoute({
-                        name: LoginConstants.ROUTER_WEB, params: {
-                          url: LoginConstants.USER_AGREEMENT_URL,
-                          title: "用户协议"
-                        }
-                      },router.RouterMode.Single)
-                    })
+          .onClick(() => {
+            router.pushNamedRoute({
+              name: LoginConstants.ROUTER_WEB, params: {
+                url: LoginConstants.USER_AGREEMENT_URL,
+                title: "用户协议"
+              }
+            }, router.RouterMode.Single)
+          })
           .margin({ right: 4 })
         Text('《隐私政策》')
           .fontSize(12)
@@ -246,7 +247,7 @@ export struct Index {
                 url: LoginConstants.USER_PRIVACY_URL,
                 title: "隐私政策"
               }
-            },router.RouterMode.Single)
+            }, router.RouterMode.Single)
           })
           .margin({ right: 4 })
         Text('和')
@@ -257,17 +258,22 @@ export struct Index {
           .fontSize(12)
           .fontColor('#007AFF')
           .onClick(() => {
-            // router.pushUrl('https://example.com/terms');
+            router.pushNamedRoute({
+              name: LoginConstants.ROUTER_WEB, params: {
+                url: LoginConstants.USER_HUAWEI_URL,
+                title: ""
+              }
+            }, router.RouterMode.Single)
           })
       }
       .width('80%')
       .margin({ top: 40, bottom: 40 })
 
 
-        Text(this.resultText)
-          .width('80%')
-          .fontSize(17)
-          .lineHeight(20)
+      Text(this.resultText)
+        .width('80%')
+        .fontSize(17)
+        .lineHeight(20)
 
     }
     .height('100%')

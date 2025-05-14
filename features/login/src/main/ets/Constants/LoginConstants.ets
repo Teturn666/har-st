@@ -8,7 +8,6 @@ export default class LoginConstants {
   static readonly USER_PRIVACY_URL = 'https://ti.iksdt.com/static/doc/yszc.html'
   //用户协议链接
   static readonly USER_AGREEMENT_URL = 'https://ti.iksdt.com/static/doc/yhxy.html'
-  //意见反馈
-  static readonly FEEDBACK_URL =
-    'https://crmeb.yweiai.com/chat/pc?noCanClose=1&kefu_id=12&token=075774b0dae195a3b971d8f98388d502&openid=harmony&nickName=harmony'
+  //华为账号用户协议链接
+  static readonly USER_HUAWEI_URL = 'https://privacy.consumer.huawei.com/legal/id/authentication-terms.htm?code=CN&language=zh-CN'
 }

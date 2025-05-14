@@ -1,17 +1,17 @@
 import { hilog } from "@kit.PerformanceAnalysisKit"
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
-import { common ,Want } from '@kit.AbilityKit';
+import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ComponentContent } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import router from '@ohos.router'
 import MainConstants from "../Constants/MineConstants";
-import { faceDetector } from "@kit.CoreVisionKit";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { audio } from "@kit.AudioKit";
+
+import('login/src/main/ets/pages/LoginPage')
 
 
 const context = (getContext(this) as common.UIAbilityContext)
@@ -68,6 +68,7 @@ function buildsupportText() {
   .backgroundColor($r('app.color.start_window_background'))
   .borderRadius(10);
 }
+
 @Builder
 function buildText() {
   Column() {
@@ -96,16 +97,20 @@ function buildText() {
 
 @Entry
 @Component
-export  struct MinePage {
-    @State message: string = "hello"
-    private ctx: UIContext = this.getUIContext();
-    private contentNode: ComponentContent<Object> =
-      new ComponentContent(this.ctx, wrapBuilder(buildText));
+export struct MinePage {
+  @State message: string = "hello"
+  private ctx: UIContext = this.getUIContext();
+  private contentNode: ComponentContent<Object> =
+    new ComponentContent(this.ctx, wrapBuilder(buildText));
 
   aboutToAppear(): void {
     OfficialDialog.setContext(this.ctx);
     OfficialDialog.setContentNode(this.contentNode);
     OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true });
+  }
+
+  private jumpToLogin() {
+    router.pushNamedRoute({ name: MainConstants.LOGIN })
   }
 
   private jumpToSearchResult() {
@@ -152,26 +157,6 @@ export  struct MinePage {
       });
   }
 
-  // private async goWeb(){
-  //   let shareData: systemShare.SharedData = new systemShare.SharedData({
-  //     utd: utd.UniformDataType.HYPERLINK,
-  //     content: 'https://crmeb.yweiai.com/chat/pc?noCanClose=1&kefu_id=12&token=075774b0dae195a3b971d8f98388d502&openid=harmony&nickName=harmony', // 仅为示例 使用时请替换为自己的链接
-  //     title: '快搜搜题意见反馈',
-  //     description: '快搜搜题意见反馈',
-  //     // thumbnail: new Uint8Array() // 推荐传入适合的缩略图 不传则显示默认html图标
-  //   });
-  //   let controller: systemShare.ShareController = new systemShare.ShareController(shareData);
-  //   let context = getContext(this) as common.UIAbilityContext;
-  //   controller.show(context, {
-  //     selectionMode: systemShare.SelectionMode.SINGLE,
-  //     previewMode: systemShare.SharePreviewMode.DEFAULT,
-  //   }).then(() => {
-  //     console.info('ShareController show success.');
-  //   }).catch((error: BusinessError) => {
-  //     console.error(`ShareController show error. code: ${error.code}, message: ${error.message}`);
-  //   });
-  // }
-
   build() {
     Column() {
       Row() {
@@ -194,6 +179,10 @@ export  struct MinePage {
             .lineHeight(20)
         }.alignItems(HorizontalAlign.Start)
         .width('60%') // 限制左侧部分宽度
+        .onClick(() => {
+          //跳转登录页面
+          this.jumpToLogin()
+        })
 
         Column() {
           Text("签到+2积分")
@@ -204,10 +193,10 @@ export  struct MinePage {
             .width('100%')
         }
         .width('30%')
-        .margin({right:8})
+        .margin({ right: 8 })
       }
       .alignItems(VerticalAlign.Top)
-      .margin({ left: 28, top: 40 ,bottom: 0})
+      .margin({ left: 28, top: 40, bottom: 0 })
       .visibility(Visibility.Visible)
 
 
@@ -308,15 +297,17 @@ export  struct MinePage {
             }
           })
         }
+
         ListItem() {
           UserListItem({
             name: $r('app.string.my_points'),
             isShow: true,
-            value:"15",
+            value: "15",
             click: () => {
             }
           })
         }
+
         ListItem() {
           UserListItem({
             name: $r('app.string.operation_settings'),
@@ -325,6 +316,7 @@ export  struct MinePage {
             }
           })
         }
+
         ListItem() {
           UserListItem({
             name: $r('app.string.support_us'),
@@ -338,6 +330,7 @@ export  struct MinePage {
             }
           })
         }
+
         ListItem() {
           UserListItem({
             name: $r('app.string.share_friend'),
@@ -348,6 +341,7 @@ export  struct MinePage {
             }
           })
         }
+
         ListItem() {
           UserListItem({
             name: $r('app.string.follow_official_account'),
@@ -402,6 +396,7 @@ export  struct MinePage {
     .width('100%')
   }
 }
+
 @Component
 struct UserListItem {
   @Prop name: Resource
@@ -414,7 +409,7 @@ struct UserListItem {
   build() {
     Column() {
 
-      Row({space:10}){
+      Row({ space: 10 }) {
         Text(this.name)
           .fontSize(16)
           .fontColor($r("app.color.c_3e3e3e"))
@@ -424,7 +419,7 @@ struct UserListItem {
           .height(54)
 
 
-        if(this.value){
+        if (this.value) {
           Text(this.value)
             .fontSize(12)
             .fontColor($r("app.color.c_3e3e3e"))
@@ -436,6 +431,7 @@ struct UserListItem {
       }
       .width('100%')
       .justifyContent(FlexAlign.SpaceBetween)
+
       Row() {
 
       }

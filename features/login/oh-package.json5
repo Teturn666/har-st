@@ -8,6 +8,8 @@
   "dependencies": {
     "@tencent/wechat_open_sdk": "^1.0.14"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "web": "file:../../commons/web"
+  },
   "dynamicDependencies": {}
 }
