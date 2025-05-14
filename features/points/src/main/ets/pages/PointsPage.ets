@@ -138,13 +138,7 @@ struct PointsPage {
                 status: item.type == 1 ? "已领取" : (item.type == 2 ? "点击领取" : "未领取"),
                 isClaimed: item.type == 1 ? true : false,
                 canClaim: item.type == 2 ? true : false,
-                onClaim: this.actionSigning
-              }).onClick(async () => {
-                if (item.type == 2) {
-                  console.log("验证1", 123)
-                  await this.actionSigning()
-                  console.log("验证2", this.toShowList[0].type)
-                }
+                onClaim: item.type == 2 ?  this.actionSigning : ()=>{}
               })
             })
             // PointsCard({
@@ -269,6 +263,9 @@ struct PointsCard {
     }
     .width(41)
     .height(50)
+    .onClick(async () => {
+        await this.onClaim()
+    })
 
   }
 }
