@@ -8,6 +8,8 @@ import common from '@ohos.app.ability.common';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
 import http from '@ohos.net.http';
+import { authentication, loginComponentManager } from '@kit.AccountKit';
+import { util } from '@kit.ArkTS';
 
 
 interface AccessTokenResponse {
@@ -41,11 +43,57 @@ export struct LoginPage {
   private wxApi = WXApi
   @State nickname: string = '';
   @State avatarUrl: string = '';
+  @State quickLoginAnonymousPhone: string = '';
   private wxEventHandler = WXEventHandler
+  logTag: string = 'QuickLoginButtonComponent';
+  domainId: number = 0x0000;
+  // 构造LoginWithHuaweiIDButton组件的控制器
+  controller: loginComponentManager.LoginWithHuaweiIDButtonController =
+    new loginComponentManager.LoginWithHuaweiIDButtonController()
+      /**
+       * 当应用使用自定义的登录页时，如果用户未同意协议，需要设置协议状态为NOT_ACCEPTED，当用户同意协议后再设置
+       * 协议状态为ACCEPTED，才可以使用华为账号一键登录功能
+       */
+      .setAgreementStatus(loginComponentManager.AgreementStatus.NOT_ACCEPTED)
+      .onClickLoginWithHuaweiIDButton((error: BusinessError | undefined,
+        response: loginComponentManager.HuaweiIDCredential) => {
+        this.handleLoginWithHuaweiIDButton(error, response);
+      })
+      .onClickEvent((error: BusinessError, clickEvent: loginComponentManager.ClickEvent) => {
+        if (error) {
+          this.dealAllError(error);
+          return;
+        }
+        hilog.info(this.domainId, this.logTag, `onClickEvent clickEvent: ${clickEvent}`);
+      });
+
+  handleLoginWithHuaweiIDButton(error: BusinessError | undefined,
+    response: loginComponentManager.HuaweiIDCredential) {
+    if (error) {
+      hilog.error(this.domainId, this.logTag,
+        `Failed to login with LoginWithHuaweiIDButton. errCode is ${error.code}, errMessage is ${error.message}`)
+      promptAction.showToast({ message: '服务或网络异常，请稍后重试' })
+      return
+    }
+    try {
+      if (response) {
+        hilog.info(this.domainId, this.logTag, 'Succeeded in clicking LoginWithHuaweiIDButton.');
+        // 开发者根据实际业务情况使用以下信息
+        const authCode = response.authorizationCode;
+        const openID = response.openID;
+        const unionID = response.unionID;
+        const idToken = response.idToken;
+      }
+    } catch (err) {
+      hilog.error(this.domainId, this.logTag,
+        `Failed to login with LoginWithHuaweiIDButton, errCode: ${err.code}, errMessage: ${err.message}`);
+      promptAction.showToast({ message: '服务或网络异常，请稍后重试' })
+    }
+  }
 
   aboutToAppear(): void {
-    this.wxEventHandler.registerOnWXRespCallback(this.onWXResp);
-    hilog.info(0x0000, 'TAG', 'onWXResp callback registered');
+    this.wxEventHandler.registerOnWXRespCallback(this.onWXResp)
+    this.getQuickLoginAnonymousPhone()
   }
 
   aboutToDisappear(): void {
@@ -157,6 +205,60 @@ export struct LoginPage {
     }
   }
 
+  huaweiLogin() {
+    if (!this.agreementChecked) {
+      promptAction.showToast({ message: '请先勾选并同意用户协议和隐私政策' });
+      return;
+    }
+    this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED)
+    this.controller.continueLogin((error: BusinessError) => {
+      if (error) {
+        hilog.error(this.domainId, this.logTag,
+          `Failed to login with agreementDialog. errCode is ${error.code}, errMessage is ${error.message}`);
+      } else {
+        hilog.info(this.domainId, this.logTag,
+          'Succeeded in clicking agreementDialog continueLogin.');
+      }
+    })
+  }
+
+  getQuickLoginAnonymousPhone() {
+    // 创建授权请求，并设置参数
+    const authRequest = new authentication.HuaweiIDProvider().createAuthorizationWithHuaweiIDRequest();
+    // 获取匿名手机号需传quickLoginAnonymousPhone这个scope，传参之前需要先申请“华为账号一键登录”权限
+    authRequest.scopes = ['quickLoginAnonymousPhone'];
+    // 用于防跨站点请求伪造
+    authRequest.state = util.generateRandomUUID();
+    // 一键登录场景该参数必须设置为false
+    authRequest.forceAuthorization = false;
+    const controller = new authentication.AuthenticationController();
+    try {
+      controller.executeRequest(authRequest).then((response: authentication.AuthorizationWithHuaweiIDResponse) => {
+        // 获取到UnionID、OpenID、匿名手机号
+        const unionID = response.data?.unionID;
+        const openID = response.data?.openID;
+        const anonymousPhone = response.data?.extraInfo?.quickLoginAnonymousPhone as string;
+        if (anonymousPhone) {
+          hilog.info(0x0000, 'testTag', 'Succeeded in authentication.');
+          this.quickLoginAnonymousPhone = anonymousPhone;
+          return;
+        }
+        hilog.info(0x0000, 'testTag', 'Succeeded in authentication. AnonymousPhone is empty.');
+        // 未获取到匿名手机号需要跳转到应用自定义的登录页面
+      }).catch((error: BusinessError) => {
+        this.dealAllError(error);
+      })
+    } catch (error) {
+      this.dealAllError(error);
+    }
+  }
+
+  // 错误处理
+  dealAllError(error: BusinessError): void {
+    hilog.error(0x0000, 'testTag',
+      `Failed to get quickLoginAnonymousPhone, errorCode is ${error.code}, errorMessage is ${error.message}`);
+  }
+
   build() {
     Column() {
       Row() {
@@ -189,7 +291,8 @@ export struct LoginPage {
         .height(60)
 
       Blank()
-      Text("195******85")
+      Text(this.quickLoginAnonymousPhone)
+        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
         .width('80%')
         .height(48)
         .margin({ top: 50 })
@@ -197,16 +300,21 @@ export struct LoginPage {
         .textAlign(TextAlign.Center)
         .fontSize(24)
       Text("华为账号绑定号码")
+        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
         .width('80%')
         .textAlign(TextAlign.Center)
         .fontSize(12)
 
       Button('华为账号一键登录', { type: ButtonType.Normal, stateEffect: true })
+        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
         .borderRadius(8)
         .backgroundColor('#f64e4d')
         .width('60%')
         .height(48)
         .margin({ top: 20 })
+        .onClick(() => {
+          this.huaweiLogin()
+        })
 
       Button('微信快捷登录', { type: ButtonType.Normal, stateEffect: true })
         .borderRadius(8)
