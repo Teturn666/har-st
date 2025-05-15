@@ -14,7 +14,8 @@
     "web": "file:../../commons/web",
     "photo": "file:../photo",
     "view": "file:../view",
-    "widget": "file:../../commons/widget"
+    "widget": "file:../../commons/widget",
+    "bank": 'file:../../features/bank',
   }
 }
 

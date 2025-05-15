@@ -72,7 +72,7 @@ export class BankModel {
   }
 
   //获取数据库已经下载的题库
-  public async getBankLists():
+  public async getDownloadBankList():
     Promise<BankListRes[]> {
     let bankResultList = await questionBankTable.querySync(0) ?? [];
 

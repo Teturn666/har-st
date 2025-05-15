@@ -19,8 +19,8 @@ import { BankListRes } from 'db'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
-// import('exercise/src/main/ets/pages/BankListPage')
 import('./BankListPage')
+import('./MyDownloadPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
@@ -52,11 +52,9 @@ export struct HomePage {
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
   private animateItem: AnimationItem | null = null
   @State hasLoadData: boolean = false
-
   @State questionBanks: BankListRes[] = [];
   @State wrongBanks: BankListRes[] = [];
   @State collectionBanks: BankListRes[] = [];
-
 
   aboutToAppear(): void {
     this.initLottie()
@@ -81,7 +79,6 @@ export struct HomePage {
   aboutToDisappear(): void {
     lottie.destroy()
   }
-
 
   build() {
     Column() {
@@ -126,7 +123,8 @@ export struct HomePage {
         ListItem() {
           BankHelper({
             downloadClick: async () => {
-              //跳转到flutter的下载页面
+              //跳转到我的下载页面
+              this.jumpToDownloadResult()
             }
           })
         }
@@ -196,6 +194,13 @@ export struct HomePage {
       }
     })
     onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
+  }
+
+  //跳转到我的下载
+  private jumpToDownloadResult() {
+    router.pushNamedRoute({
+      name: HomeConstants.ROUTER_MY_DOWNLOAD
+    })
   }
 
   //跳转到H5页面

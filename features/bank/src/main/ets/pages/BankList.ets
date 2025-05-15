@@ -163,9 +163,9 @@ struct DeleteDialog {
 export struct BankList {
   @State bankRes: BankRes = new BankRes();
   @State bankModel: BankModel = BankModel.getInstance()
-  aid: string = ""
+  aid: string = "" //目前题库广场需要传这个参数
   @State searchText: string = ""
-  @State fromType: number = 0
+  @State fromType: number = 0 //0=题库广场，1=热门搜索，2=我的下载
   @State pageNum: number = 1
   @State loadMore: boolean = false
   private ctx: UIContext = this.getUIContext();
@@ -397,7 +397,7 @@ export struct BankList {
           .objectFit(ImageFit.Contain)
           .size({ width: 117, height: 100 })
 
-        Text('暂无搜索结果\n换个关键词试试吧')
+        Text(this.fromType === 1 ? '暂无搜索结果\n换个关键词试试吧' : '暂无下载题库，您可以去题库广场下载')
           .fontColor('#9D9D9D')
           .fontSize(14)
           .margin({ top: 28 })
@@ -409,24 +409,52 @@ export struct BankList {
   }
 
   async loadFeedData(): Promise<void> {
-    if (this.fromType === 1) {
-      let list = await this.bankModel.getSearchBankList(this.searchText, this.pageNum)
-      if (list === null || list.length < 10) {
-        this.loadMore = false
-      } else {
-        this.pageNum++
-        this.loadMore = true
-      }
-      this.bankRes.newsData = this.bankRes.newsData.concat(list)
-    } else {
-      let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
-      if (list === null || list.length < 10) {
-        this.loadMore = false
-      } else {
-        this.pageNum++
-        this.loadMore = true
-      }
-      this.bankRes.newsData = this.bankRes.newsData.concat(list)
+    switch (this.fromType) {
+      case 1:
+        let hotList = await this.bankModel.getSearchBankList(this.searchText, this.pageNum)
+        if (hotList === null || hotList.length < 10) {
+          this.loadMore = false
+        } else {
+          this.pageNum++
+          this.loadMore = true
+        }
+        this.bankRes.newsData = this.bankRes.newsData.concat(hotList)
+        break
+      case 2:
+        let downloadList = await this.bankModel.getDownloadBankList()
+        this.bankRes.newsData = downloadList
+        break
+      default:
+        let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
+        if (list === null || list.length < 10) {
+          this.loadMore = false
+        } else {
+          this.pageNum++
+          this.loadMore = true
+        }
+        this.bankRes.newsData = this.bankRes.newsData.concat(list)
+        break
     }
+
+
+    // if (this.fromType === 1) {
+    //   let list = await this.bankModel.getSearchBankList(this.searchText, this.pageNum)
+    //   if (list === null || list.length < 10) {
+    //     this.loadMore = false
+    //   } else {
+    //     this.pageNum++
+    //     this.loadMore = true
+    //   }
+    //   this.bankRes.newsData = this.bankRes.newsData.concat(list)
+    // } else {
+    //   let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
+    //   if (list === null || list.length < 10) {
+    //     this.loadMore = false
+    //   } else {
+    //     this.pageNum++
+    //     this.loadMore = true
+    //   }
+    //   this.bankRes.newsData = this.bankRes.newsData.concat(list)
+    // }
   }
 }

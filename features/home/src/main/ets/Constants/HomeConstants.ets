@@ -13,6 +13,8 @@ export default class HomeConstants {
    */
   //搜索结果页
   static readonly ROUTER_SEARCH_RESULT = 'searchResultPage'
+  //我的下载页
+  static readonly ROUTER_MY_DOWNLOAD = 'myDownloadPage'
   //web页面
   static readonly ROUTER_WEB = 'webPage'
   //练习列表页面(题库练习、错题练习、收藏练习共用)
