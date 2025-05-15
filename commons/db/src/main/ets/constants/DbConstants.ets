@@ -30,14 +30,14 @@ export default class DbConstants {
   static readonly QUESTION_WRONG_TABLE: DbTableBean = {
     tableName: 'questionWrong',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
-      'question TEXT, option TEXT, answer TEXT,wrongAnswer TEXT)',
+      'question TEXT, option TEXT, answer TEXT, wrongAnswer TEXT)',
     columns: ['id', 'qId', 'question', 'option', 'answer', 'wrongAnswer']
   };
   //收藏题目表
   static readonly QUESTION_COLLECTION_TABLE: DbTableBean = {
     tableName: 'questionCollection',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
-      'question TEXT, option TEXT, answer TEXT,wrongAnswer TEXT)',
+      'question TEXT, option TEXT, answer TEXT, wrongAnswer TEXT)',
     columns: ['id', 'qId', 'question', 'option', 'answer', 'wrongAnswer']
   };
   /**
