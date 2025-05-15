@@ -1,5 +1,6 @@
 {
   "src": [
-    "pages/PointsPage"
+    "pages/PointsPage",
+    "pages/MyHistoryPage"
   ]
 }
