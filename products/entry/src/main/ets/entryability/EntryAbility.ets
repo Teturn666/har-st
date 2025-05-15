@@ -1,10 +1,12 @@
 import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { WXApi, WXEventHandler } from 'login/Index';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
+    this.handleWeChatCallIfNeed(want)
   }
 
   onDestroy(): void {
@@ -37,5 +39,13 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
+  }
+
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    this.handleWeChatCallIfNeed(want)
+  }
+
+  private handleWeChatCallIfNeed(want: Want) {
+    WXApi.handleWant(want, WXEventHandler)
   }
 }

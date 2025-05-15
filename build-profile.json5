@@ -26,13 +26,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.cer",
-          "keyAlias": "debugKey",
-          "keyPassword": "0000001A410967C2E022638069E8CE34332732C14DC2916A273164EDFB2A528A5B0C7A48E81C60A97478",
-          "profile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p7b",
+          "storeFile": "/Users/chenghui/Desktop/harmony/ksst_debug.p12",
+          "storePassword": "000000188C4F2AF92B5B3A85098157522DDCCC47F2C7C7BAEEE39D22C83E4CD77D395B9598486913",
+          "keyAlias": "Tl",
+          "keyPassword": "000000185FEEDB987AD9EB2E71799A0C21A92A05575B28C3BE0CD858EC1DBC0FEF623C08B53C4473",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/xinxin/.ohos/config/default_KSST_7ALjhGG5z9-BZ2kjeVSbJJhsJHV7umqOeSUoMv_tVHM=.p12",
-          "storePassword": "0000001A832EDAD69EC77957E685E9F8337ABCFD16D456B383158A9F3F90986B2943CAFA21535B939C27"
+          "profile": "/Users/chenghui/Desktop/harmony/ksst_debug_profileDebug.p7b",
+          "certpath": "/Users/chenghui/Desktop/harmony/ksst_debug_cer.cer"
         }
       }
     ]

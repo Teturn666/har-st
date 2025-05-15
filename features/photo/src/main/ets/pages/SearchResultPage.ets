@@ -1,8 +1,8 @@
 import { CommonConstants, Logger } from 'utils/Index'
 import { TitleBar } from 'widget/Index'
-import router from '@ohos.router'
 import { SearchModel } from '../model/SearchModel'
 import { SearchResultRes } from '../model/SearchResultRes'
+import { router } from '@kit.ArkUI'
 
 
 @Entry({ routeName: 'searchResultPage' })
