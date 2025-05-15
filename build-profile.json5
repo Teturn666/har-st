@@ -26,13 +26,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/xinxin/Documents/key/harmony/ksst_debug.p12",
-          "storePassword": "000000186A6E6238F4B2D3024A95A59C5D457E8FB1E60D1F54A9EDCDFC830BAFA4244A6D509F5F68",
-          "keyAlias": "tl",
-          "keyPassword": "00000018B6D5C63472402F72D7A91F827ADB8C92AF1A2BE9AFAF1152FE42D1AD1FAAB0BDD4E61E4B",
+          "storeFile": "/Users/chenghui/Desktop/harmony/ksst_debug.p12",
+          "storePassword": "000000188C4F2AF92B5B3A85098157522DDCCC47F2C7C7BAEEE39D22C83E4CD77D395B9598486913",
+          "keyAlias": "Tl",
+          "keyPassword": "000000185FEEDB987AD9EB2E71799A0C21A92A05575B28C3BE0CD858EC1DBC0FEF623C08B53C4473",
           "signAlg": "SHA256withECDSA",
-          "profile": "/Users/xinxin/Documents/key/harmony/ksst_debug_profileDebug.p7b",
-          "certpath": "/Users/xinxin/Documents/key/harmony/ksst_debug_cer.cer"
+          "profile": "/Users/chenghui/Desktop/harmony/ksst_debug_profileDebug.p7b",
+          "certpath": "/Users/chenghui/Desktop/harmony/ksst_debug_cer.cer"
         }
       }
     ]
