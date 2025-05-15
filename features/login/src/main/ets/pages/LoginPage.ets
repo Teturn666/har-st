@@ -1,4 +1,3 @@
-import LoginConstants from '../Constants/LoginConstants';
 import bundleManager from '@ohos.bundle.bundleManager';
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
 import { OnWXResp, WXApi, WXEventHandler, APP_ID } from '../model/WXApiWrap';
@@ -10,6 +9,10 @@ import { ErrCode } from '@tencent/wechat_open_sdk';
 import http from '@ohos.net.http';
 import { authentication, loginComponentManager } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
+import { preferences } from '@kit.ArkData';
+import { LoginConstants } from '../Constants/LoginConstants';
+
+// const context = (getContext(this) as common.ApplicationContext)
 
 
 interface AccessTokenResponse {
@@ -160,13 +163,8 @@ export struct LoginPage {
       if (userInfo.headimgurl) {
         this.avatarUrl = userInfo.headimgurl;
       }
-      router.back({
-        url: '',
-        params: {
-          nickName: this.nickname,
-          avatarUrl: this.avatarUrl
-        }
-      })
+
+      this.wxLoginSuccess()
       // promptAction.showToast({ message: '用户信息获取成功' });
       // hilog.info(0x0000, 'TAG', `用户信息: nickname=${userInfo.nickname}, headimgurl=${userInfo.headimgurl}`);
     } catch (err) {
@@ -205,21 +203,40 @@ export struct LoginPage {
     }
   }
 
+  wxLoginSuccess() {
+    // let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
+    // sp.putSync(LoginConstants.IS_LOGIN, '1')
+    let index = Number(router.getLength()) - 1
+    router.back(
+      index, {
+      nickName: this.nickname,
+      avatarUrl: this.avatarUrl,
+      loginState: '1'
+    })
+  }
+
   huaweiLogin() {
     if (!this.agreementChecked) {
       promptAction.showToast({ message: '请先勾选并同意用户协议和隐私政策' });
       return;
     }
     this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED)
-    this.controller.continueLogin((error: BusinessError) => {
-      if (error) {
-        hilog.error(this.domainId, this.logTag,
-          `Failed to login with agreementDialog. errCode is ${error.code}, errMessage is ${error.message}`);
-      } else {
-        hilog.info(this.domainId, this.logTag,
-          'Succeeded in clicking agreementDialog continueLogin.');
-      }
-    })
+
+    try {
+      this.controller.continueLogin(
+        (error: BusinessError) => {
+          if (error) {
+            hilog.error(this.domainId, this.logTag,
+              `Failed to login with agreementDialog. errCode is ${error.code}, errMessage is ${error.message}`);
+          } else {
+            hilog.info(this.domainId, this.logTag,
+              'Succeeded in clicking agreementDialog continueLogin.');
+          }
+        })
+    } catch (e) {
+      hilog.error(this.domainId, this.logTag,
+        `Failed to login with agreementDialog. errCode is ${e}`);
+    }
   }
 
   getQuickLoginAnonymousPhone() {

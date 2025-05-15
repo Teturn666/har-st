@@ -19,6 +19,18 @@ struct MainPage {
   @Provide('appPathStack') appPathStack: NavPathStack = new NavPathStack();
   @State showDialog: boolean = false
   private sp: preferences.Preferences | null = null
+  @Provide nickName: string = ''
+  @Provide avatarUrl: string = ''
+  @Provide loginState: string = '0' //0=未登录
+
+  onPageShow(): void {
+    const params = router.getParams() as Record<string, string>
+    if (params) {
+      this.nickName = params.nickName as string
+      this.avatarUrl = params.avatarUrl as string
+      this.loginState = params.loginState as string
+    }
+  }
 
   private initPreferences() {
     this.sp = preferences.getPreferencesSync(context, AppConstants.SP_OPTIONS)

@@ -1,6 +1,6 @@
 import { hilog } from "@kit.PerformanceAnalysisKit"
 import { systemShare } from '@kit.ShareKit';
-import { uniformTypeDescriptor as utd } from '@kit.ArkData';
+import { preferences, uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ComponentContent, router } from '@kit.ArkUI';
@@ -9,6 +9,7 @@ import MainConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
+import { LoginConstants } from 'login/Index';
 
 import('login/src/main/ets/pages/LoginPage')
 
@@ -101,21 +102,20 @@ export struct MinePage {
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildText));
-  private nickName = ''
-  private avatarUrl = ''
-
-  onPageShow(): void {
-    const params = router.getParams() as Record<string, string>
-    if (params) {
-      this.nickName = params.nickName as string
-      this.avatarUrl = params.avatarUrl as string
-    }
-  }
+  @Consume nickName: string
+  @Consume avatarUrl: string
+  @Consume loginState: string
 
   aboutToAppear(): void {
     OfficialDialog.setContext(this.ctx);
     OfficialDialog.setContentNode(this.contentNode);
     OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true });
+  }
+
+  private isLogin(): boolean {
+    let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
+    let loginStatus = sp.getSync(LoginConstants.IS_LOGIN, '0')
+    return this.loginState === '1' || loginStatus === '1'
   }
 
   private jumpToLogin() {
@@ -169,18 +169,19 @@ export struct MinePage {
   build() {
     Column() {
       Row() {
-        Image($r('app.media.user_icon'))
+        Image(this.avatarUrl)
+          .alt($r('app.media.user_icon'))
           .objectFit(ImageFit.Contain)
           .width(48)
           .height(48)
         Column() {
-          Text("游客")
+          Text(this.isLogin() ? this.nickName : "立即登录")
             .fontSize(14)
             .fontColor($r("app.color.c_3e3e3e"))
             .textAlign(TextAlign.Start)
             .padding({ left: 16 })
             .lineHeight(20)
-          Text("欢迎使用快搜搜题")
+          Text(this.isLogin() ? "欢迎使用快搜搜题" : "考试答题，快人一步")
             .fontSize(12)
             .fontColor($r("app.color.c_9d9d9d"))
             .textAlign(TextAlign.Start)

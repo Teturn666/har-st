@@ -1,4 +1,14 @@
-export default class LoginConstants {
+import dataPreferences from '@ohos.data.preferences';
+
+export class LoginConstants {
+  /**
+   * sp config.
+   */
+  static readonly SP_OPTIONS: dataPreferences.Options = {
+    name: 'isLogin',
+  }
+  static readonly IS_LOGIN = 'isLogin'
+  //隐私政策链接
   /**
    * 路由跳转的页面名称
    */
@@ -9,5 +19,6 @@ export default class LoginConstants {
   //用户协议链接
   static readonly USER_AGREEMENT_URL = 'https://ti.iksdt.com/static/doc/yhxy.html'
   //华为账号用户协议链接
-  static readonly USER_HUAWEI_URL = 'https://privacy.consumer.huawei.com/legal/id/authentication-terms.htm?code=CN&language=zh-CN'
+  static readonly USER_HUAWEI_URL =
+    'https://privacy.consumer.huawei.com/legal/id/authentication-terms.htm?code=CN&language=zh-CN'
 }
