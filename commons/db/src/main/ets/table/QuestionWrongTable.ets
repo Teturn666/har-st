@@ -68,6 +68,7 @@ class QuestionWrongTable {
               answer: '',
               option: [],
               wrongAnswer: '',
+              questionID:0
             };
             // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
@@ -75,6 +76,8 @@ class QuestionWrongTable {
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
             tmp.wrongAnswer = resultSet.getString(resultSet.getColumnIndex('wrongAnswer'));
             tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+            tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
+
             result[i] = tmp;
             resultSet.goToNextRow();
           }

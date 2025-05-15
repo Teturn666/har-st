@@ -1,7 +1,8 @@
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
-import { QuestionRes, questionCollectionTable,questionTable } from 'db';
+import { QuestionRes, questionCollectionTable, questionTable,questionWrongTable } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
+import { BankListRes } from '../model/BankListRes';
 import { HomeModel } from '../model/HomeModel';
 
 import('./ExerciseCommonPage')
@@ -19,21 +20,85 @@ struct ExercisePage {
   @State homeModel: HomeModel = HomeModel.getInstance()
   @State questions: QuestionRes[] = [];
   @State selectedIndex: number = 0; // 0 for 答题, 1 for 背题
-  @State currentQuestionIndex: number = 0; // Current question index
-  @State currentProgress: number = 1; // Current progress
-  @State isStarred: boolean = false; // Starred status
+  @State currentQuestionIndex: number = 0; // 当前问题索引
+  @State currentProgress: number = 1; // 目前进度
+  @State isStarred: boolean = false; //
   @State questionType: string = 'multiple';
   @State hasSubmitted: boolean = false;
   @State selectedOption: string = ''; // 单选
   @State selectedOptions: string[] = []; // 多选
   @State questionSelections: Record<number, questionSelections> = {}; // 记录每题选择
-  // private questions: QuestionRes[] = [
-  //   {"qId":1735007905,"question":"在道路等开阔地带开展训练时，应做好（）。","answer":"A","option":["安全警戒","后勤保障","着装","准备活动"],"wrongAnswer":""},
-  //   {"qId":1735007905,"question":"使用绳索开展高空救援时，绳索应避开（）等高温、尖锐部位。","answer":"AB","option":["墙角","烟火","梁、柱","管线井"],"wrongAnswer":""},
-  //   {"qId":1735007905,"question":"总队、支队安全助理对灭火救援现场安全员实行统一管理。","answer":"A","option":["正确","错误"],"wrongAnswer":""}
-  // ];
-
   @State totalProgress: number = this.questions.length;
+  @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
+
+  // 在 ExercisePage 组件内添加以下方法
+  private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
+    try {
+      let questionDb = new QuestionRes();
+      questionDb.qId = question.qId;
+      questionDb.question = question.question;
+      questionDb.answer = question.answer;
+      questionDb.option = question.option;
+      questionDb.wrongAnswer = wrongAnswer;
+
+      await questionWrongTable.insertDataAwait(questionDb);
+      this.homeModel.getWrongQuestionList(question.qId)
+
+    } catch (err) {
+      console.error('插入错题表失败:', err);
+      promptAction.showToast({ message: '保存错题失败', duration: 1500 });
+    }
+  }
+
+  // 修改 handleOptionClick 方法
+  private async handleOptionClick(optionLabel: string) {
+    if (this.selectedIndex === 0 && !this.hasSubmitted) {
+      const currentQuestion = this.questions[this.currentQuestionIndex];
+      if (this.isMultipleChoice()) {
+        // 多选：切换选项状态
+        if (this.selectedOptions.includes(optionLabel)) {
+          this.selectedOptions = this.selectedOptions.filter(opt => opt !== optionLabel);
+        } else {
+          this.selectedOptions = [...this.selectedOptions, optionLabel];
+          const correctAnswers = currentQuestion.answer.split('');
+
+          // 检查是否选择了错误选项
+          if (!correctAnswers.includes(optionLabel)) {
+            this.hasSubmitted = true;
+            promptAction.showToast({ message: '回答错误', duration: 1500 });
+            // 插入错题表
+            await this.saveToWrongTable(currentQuestion, optionLabel);
+            this.saveQuestionState(); // 记录错误提交状态
+          } else {
+            // 检查是否选中了全部正确答案
+            const allCorrectSelected = correctAnswers.every(ans => this.selectedOptions.includes(ans)) &&
+            this.selectedOptions.every(opt => correctAnswers.includes(opt));
+            if (allCorrectSelected) {
+              this.hasSubmitted = true;
+              promptAction.showToast({ message: '回答正确', duration: 1500 });
+              this.saveQuestionState(); // 记录正确提交状态
+            }
+          }
+        }
+        this.saveQuestionState(); // 记录多选过程中的选择
+      } else {
+        // 单选：设置选项并提交
+        this.selectedOption = optionLabel;
+        this.hasSubmitted = true;
+
+        const isCorrect = optionLabel === currentQuestion.answer;
+        promptAction.showToast({
+          message: isCorrect ? '回答正确' : '回答错误',
+          duration: 1500
+        });
+        if (!isCorrect) {
+          // 插入错题表
+          await this.saveToWrongTable(currentQuestion, optionLabel);
+        }
+        this.saveQuestionState(); // 记录单选提交状态
+      }
+    }
+  }
 
   private isMultipleChoice(): boolean {
     const answer = this.questions[this.currentQuestionIndex].answer;
@@ -46,60 +111,94 @@ struct ExercisePage {
     this.hasSubmitted = false;
   }
 
-  private saveQuestionState() {
-    // 保存当前题目的选择状态
+  private async saveQuestionState() {
+    // 保存当前题目的选择状态到内存
     this.questionSelections[this.currentQuestionIndex] = {
       selectedOption: this.selectedOption,
       selectedOptions: [...this.selectedOptions],
       hasSubmitted: this.hasSubmitted
     };
+    console.log('Saved state for question', this.currentQuestionIndex,
+      this.questionSelections[this.currentQuestionIndex]);
   }
 
   private restoreQuestionState() {
-    // 恢复当前题目的选择状态
     const state = this.questionSelections[this.currentQuestionIndex];
     if (state) {
       this.selectedOption = state.selectedOption;
       this.selectedOptions = [...state.selectedOptions];
       this.hasSubmitted = state.hasSubmitted;
+      console.log('Restored state for question', this.currentQuestionIndex, state);
     } else {
       this.resetQuestionState();
+    }
+    this.checkFavoriteStatus(); // 恢复当前题目的收藏状态
+  }
+
+  private async checkFavoriteStatus() {
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+    const questionID = currentQuestion.questionID;
+    try {
+      const existedList = await this.homeModel.getCollectionQuestionList(currentQuestion.qId);
+      this.favoriteStatus[questionID] = existedList.some(item => item.questionID === questionID);
+    } catch (err) {
+      console.error('检查收藏状态失败:', err);
+      this.favoriteStatus[questionID] = false;
     }
   }
 
   private async toggleFavorite() {
     const currentQuestion: QuestionRes = this.questions[this.currentQuestionIndex];
-    const existedList = await questionCollectionTable.querySync(currentQuestion.qId, false);
-    console.log("查看收藏" + existedList.length)
-    if (existedList.length > 0) {
-      questionCollectionTable.deleteData(currentQuestion, () => {
-        this.isStarred = false;
-        promptAction.showToast({ message: '已取消收藏', duration: 1500 });
-      });
-    } else {
-      let questionDb = new QuestionRes()
-      questionDb.qId = currentQuestion.qId
-      questionDb.question = currentQuestion.question
-      questionDb.answer = currentQuestion.answer
-      questionDb.option = currentQuestion.option
-      questionDb.wrongAnswer = "B"
+    const questionID = currentQuestion.questionID;
 
-      await questionCollectionTable.insertDataAwait(questionDb);
-      this.isStarred = true;
-      promptAction.showToast({ message: '收藏成功', duration: 1500 });
+    try {
+      const existedList = await this.homeModel.getCollectionQuestionList(currentQuestion.qId);
+      const isQuestionInCollection = existedList.some(item => item.questionID === questionID);
+
+      if (isQuestionInCollection) {
+        await questionCollectionTable.deleteData(currentQuestion, () => {
+          this.favoriteStatus[questionID] = false;
+          promptAction.showToast({ message: '已取消收藏', duration: 1500 });
+        });
+      } else {
+        let questionDb = new QuestionRes();
+        questionDb.qId = currentQuestion.qId;
+        questionDb.question = currentQuestion.question;
+        questionDb.answer = currentQuestion.answer;
+        questionDb.option = currentQuestion.option;
+        questionDb.wrongAnswer = "B"; // 如果需要，动态设置
+        questionDb.questionID = questionID;
+
+        await questionCollectionTable.insertDataAwait(questionDb);
+        this.favoriteStatus[questionID] = true;
+        promptAction.showToast({ message: '收藏成功', duration: 1500 });
+      }
+    } catch (err) {
+      console.error('收藏操作失败:', err);
+      promptAction.showToast({ message: '收藏操作失败', duration: 1500 });
     }
   }
 
+
+
+  // 题目列表获取
   async getBankQuestionList(qid: number): Promise<void> {
     try {
-      const fetchedQuestions = await this.homeModel.getBankQuestionList(qid);
-      if (fetchedQuestions && fetchedQuestions.length > 0) {
-        this.questions = fetchedQuestions;
-        this.totalProgress = fetchedQuestions.length;
+      const list = await this.homeModel.getBankQuestionList(qid);
+      if (list.length > 0) {
+        this.questions = list;
+        this.totalProgress = list.length;
         this.currentQuestionIndex = 0;
         this.currentProgress = 1;
-        this.questionSelections = {}; // 清空选择记录
+        this.questionSelections = {};
+        this.favoriteStatus = {};
         this.resetQuestionState();
+
+        // 批量检查收藏状态
+        const existedList = await this.homeModel.getCollectionQuestionList(qid);
+        list.forEach((question) => {
+          this.favoriteStatus[question.questionID] = existedList.some(item => item.questionID === question.questionID);
+        });
       } else {
         promptAction.showToast({ message: '暂无题目数据', duration: 2000 });
       }
@@ -171,46 +270,6 @@ struct ExercisePage {
     }
   }
 
-  private handleOptionClick(optionLabel: string) {
-    if (this.selectedIndex === 0 && !this.hasSubmitted) {
-      if (this.isMultipleChoice()) {
-        // 多选：切换选项状态
-        if (this.selectedOptions.includes(optionLabel)) {
-          this.selectedOptions = this.selectedOptions.filter(opt => opt !== optionLabel);
-        } else {
-          this.selectedOptions = [...this.selectedOptions, optionLabel];
-          const correctAnswers = this.questions[this.currentQuestionIndex].answer.split('');
-
-          // 检查是否选择了错误选项
-          if (!correctAnswers.includes(optionLabel)) {
-            this.hasSubmitted = true;
-            promptAction.showToast({ message: '回答错误', duration: 1500 });
-            this.saveQuestionState(); // 记录错误提交状态
-          } else {
-            // 检查是否选中了全部正确答案
-            const allCorrectSelected = correctAnswers.every(ans => this.selectedOptions.includes(ans)) &&
-            this.selectedOptions.every(opt => correctAnswers.includes(opt));
-            if (allCorrectSelected) {
-              this.hasSubmitted = true;
-              promptAction.showToast({ message: '回答正确', duration: 1500 });
-              this.saveQuestionState(); // 记录正确提交状态
-            }
-          }
-        }
-        this.saveQuestionState(); // 记录多选过程中的选择
-      } else {
-        // 单选：设置选项并提交
-        this.selectedOption = optionLabel;
-        this.hasSubmitted = true;
-        const isCorrect = optionLabel === this.questions[this.currentQuestionIndex].answer;
-        promptAction.showToast({
-          message: isCorrect ? '回答正确' : '回答错误',
-          duration: 1500
-        });
-        this.saveQuestionState(); // 记录单选提交状态
-      }
-    }
-  }
 
   build() {
     if (this.questions.length > 0)
@@ -317,14 +376,14 @@ struct ExercisePage {
           .height(24)
           .objectFit(ImageFit.Cover)
         Blank()
-        Image(this.isStarred ? $r('app.media.stared') : $r('app.media.star'))
+        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') : $r('app.media.star'))
           .width(18)
           .height(18)
           .onClick(() => {
-            this.toggleFavorite()
+            this.toggleFavorite();
           })
           .margin({ right: 5 })
-        Text(this.isStarred ? "已收藏" : "收藏")
+        Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
           .fontSize(12)
       }
       .justifyContent(FlexAlign.SpaceBetween)
@@ -429,13 +488,24 @@ struct ExercisePage {
   }
 
   aboutToAppear(): void {
-    const params = router.getParams() as Record<string, string>
+    const params = router.getParams() as Record<string, string>;
     if (params.qid) {
-      this.qid = parseInt(params.qid, 10)
+      this.qid = parseInt(params.qid, 10);
     }
-    console.log('Received qid =', this.qid)
+    console.log('Received qid =', this.qid);
     if (this.qid > 0) {
-      this.getBankQuestionList(this.qid)
+      this.getBankQuestionList(this.qid).then(() => {
+        this.checkFavoriteStatus(); // 初始化第一题的收藏状态
+      });
     }
   }
+
+
 }
+
+
+// private questions: QuestionRes[] = [
+//   {"qId":1735007905,"question":"在道路等开阔地带开展训练时，应做好（）。","answer":"A","option":["安全警戒","后勤保障","着装","准备活动"],"wrongAnswer":""},
+//   {"qId":1735007905,"question":"使用绳索开展高空救援时，绳索应避开（）等高温、尖锐部位。","answer":"AB","option":["墙角","烟火","梁、柱","管线井"],"wrongAnswer":""},
+//   {"qId":1735007905,"question":"总队、支队安全助理对灭火救援现场安全员实行统一管理。","answer":"A","option":["正确","错误"],"wrongAnswer":""}
+// ];

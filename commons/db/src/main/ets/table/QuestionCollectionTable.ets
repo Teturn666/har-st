@@ -68,6 +68,7 @@ class QuestionCollectionTable {
               answer: '',
               option: [],
               wrongAnswer: '',
+              questionID:0
             };
             // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
@@ -75,6 +76,7 @@ class QuestionCollectionTable {
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
             tmp.wrongAnswer = resultSet.getString(resultSet.getColumnIndex('wrongAnswer'));
             tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+            tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
             result[i] = tmp;
             resultSet.goToNextRow();
           }
@@ -95,6 +97,8 @@ function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   obj.answer = account.answer;
   obj.wrongAnswer = account.wrongAnswer;
   obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
+  obj.questionID = account.questionID;
+
   return obj;
 }
 

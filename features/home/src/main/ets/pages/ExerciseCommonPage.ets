@@ -1,14 +1,17 @@
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
-import { QuestionRes } from 'db';
+import { QuestionRes, questionCollectionTable, questionTable,questionWrongTable } from 'db';
 import { TitleBar } from 'widget/Index'
+import { HomeModel } from '../model/HomeModel';
 
 //模拟考试、错题练习、收藏练习题目共用页面
-interface OptionStyle {
-  bg: string;
-  text: string;
-  border: string;
+
+interface questionSelections {
+  selectedOption: string;
+  selectedOptions: string[];
+  hasSubmitted: boolean;
 }
+
 
 @Entry({routeName:"exerciseCommonPage"})
 @Component
@@ -25,67 +28,20 @@ struct ExerciseCommonPage {
   @State errorpractice: boolean = false; //错题练习
   @State collectexercises: boolean = false;//收藏练习
 
+  @State qid: number = -1
+  @State homeModel: HomeModel = HomeModel.getInstance()
+  @State questionType: string = 'multiple';
+  @State questionSelections: Record<number, questionSelections> = {}; // 记录每题选择
+  @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
+
+
   private questions: QuestionRes[] = [
-    {
-      qId: 1,
-      question: "根据收费公路车辆通行费减免政策，政府还免公路收费，免除的范围是？",
-      option: ["30", "25", "15", "10"],
-      answer: "C",
-      wrongAnswer: ""
-    },
-    {
-      qId: 1004,
-      question: "地球是平的吗？",
-      option: ["是", "不是"],
-      answer: "不是",
-      wrongAnswer: ""
-    },
-    // {
-    //   qId: 1002,
-    //   question: "下列属于常见交通标志的是？",
-    //   option: ["禁令标志", "警告标志", "指示标志", "导航标志"],
-    //   answer: "禁令标志, 警告标志, 指示标志",
-    //   wrongAnswer: ""
-    // },
-    //
-    // // 新增题目
-    // {
-    //   qId: 1005,
-    //   question: "党的最高理想和最终目标是？",
-    //   option: ["实现共产主义", "建设小康社会", "实现现代化", "发展经济"],
-    //   answer: "A",
-    //   wrongAnswer: ""
-    // },
-    // {
-    //   qId: 1006,
-    //   question: "中华人民共和国国歌是？",
-    //   option: ["义勇军进行曲", "没有共产党就没有新中国", "歌唱祖国", "东方红"],
-    //   answer: "A",
-    //   wrongAnswer: ""
-    // },
-    // {
-    //   qId: 1007,
-    //   question: "四个全面战略布局不包括以下哪项？",
-    //   option: ["全面建成小康社会", "全面深化改革", "全面依法治国", "全面发展教育"],
-    //   answer: "D",
-    //   wrongAnswer: ""
-    // },
-    // {
-    //   qId: 1008,
-    //   question: "社会主义核心价值观中的国家层面价值是？",
-    //   option: ["富强、民主、文明、和谐", "自由、平等、公正、法治", "爱国、敬业、诚信、友善", "和平、发展、公平、正义"],
-    //   answer: "A",
-    //   wrongAnswer: ""
-    // },
-    // {
-    //   qId: 1009,
-    //   question: "下列哪项不属于党的十九大提出的新时代中国特色社会主义基本方略？",
-    //   option: ["坚持党的全面领导", "坚持依法治国", "坚持文化自信", "坚持资本主义发展方向"],
-    //   answer: "D",
-    //   wrongAnswer: ""
-    // }
+    {"questionID":1,"qId":1735007905,"question":"在道路等开阔地带开展训练时，应做好（）。","answer":"A","option":["安全警戒","后勤保障","着装","准备活动"],"wrongAnswer":""},
+    {"questionID":2, "qId":1735007905,"question":"使用绳索开展高空救援时，绳索应避开（）等高温、尖锐部位。","answer":"AB","option":["墙角","烟火","梁、柱","管线井"],"wrongAnswer":""},
+    {"questionID":3,"qId":1735007905,"question":"总队、支队安全助理对灭火救援现场安全员实行统一管理。","answer":"A","option":["正确","错误"],"wrongAnswer":""}
   ];
   @State totalProgress: number = this.questions.length;
+
 
 
   // 返回选项对应字母
@@ -118,53 +74,16 @@ struct ExerciseCommonPage {
     }
   }
 
-  private getOptionStyle(label: string): OptionStyle {
-    let question = this.questions[this.currentQuestionIndex];
-    let isCorrect = question.answer.includes(label);
-    let isSelected = this.selectedOptions.indexOf(label) !== -1 || this.selectedOption === label;
-
-    if (this.hasSubmitted) {
-      if (isCorrect) {
-        return {
-          bg: '#DFF5E3',
-          text: '#4CAF50',
-          border: '#4CAF50'
-        };
-      } else if (isSelected) {
-        return {
-          bg: '#FDECEC',
-          text: '#F4336',
-          border: '#F4336'
-        };
-      } else {
-        return {
-          bg: '#F3F3F3',
-          text: '#9E9E9E',
-          border: '#9E9E9E'
-        };
-      }
-    } else {
-      if (isSelected) {
-        return {
-          bg: '#E3F2FD',
-          text: '#42A5F5',
-          border: '#42A5F5'
-        };
-      } else {
-        return {
-          bg: '#F3F3F3',
-          text: '#9E9E9E',
-          border: '#9E9E9E'
-        };
-      }
-    }
-  }
 
   private isMultipleAnswer(question: QuestionRes): boolean {
     return question.answer.includes(',');
   }
 
 
+  private isMultipleChoice(): boolean {
+    const answer = this.questions[this.currentQuestionIndex].answer;
+    return answer.length > 1 && /^[A-D]+$/.test(answer);
+  }
 
   build() {
     Column() {
@@ -295,7 +214,7 @@ struct ExerciseCommonPage {
 
 
       // 选项列表
-      ForEach(this.questions[this.currentQuestionIndex].option, (items: string, idx: number) => {
+      ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
         Row() {
           Text(this.getOptionLabel(idx))
             .width(30)
@@ -304,42 +223,42 @@ struct ExerciseCommonPage {
             .fontSize(16)
             .fontColor('#000000')
             .borderRadius(15)
-            .backgroundColor(this.getOptionStyle(this.getOptionLabel(idx)).bg)
+            .backgroundColor(
+              this.selectedIndex === 1
+                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
+                '#F2F2F2')
+                : (this.hasSubmitted
+                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
+                  ? '#DFF5E3'
+                  : (this.isMultipleChoice()
+                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
+                    : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
+                : (this.isMultipleChoice()
+                  ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
+                  : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
+            )
             .margin({ right: 10 })
-
-          Text(items)
+          Text(item)
             .fontSize(16)
             .padding(10)
             .width('80%')
             .borderRadius(8)
-            .backgroundColor(this.getOptionStyle(this.getOptionLabel(idx)).bg)
+            .backgroundColor(
+              this.selectedIndex === 1
+                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
+                '#F2F2F2')
+                : (this.hasSubmitted
+                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
+                  ? '#DFF5E3'
+                  : (this.isMultipleChoice()
+                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
+                    : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
+                : (this.isMultipleChoice()
+                  ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
+                  : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
+            )
         }
-        .onClick(() => {
-          console.log("查看"+this.questions[this.currentQuestionIndex].option + "---" + items + "===" + idx)
-          if (this.hasSubmitted) {
-            return;
-          }
-          // 多选
-          if (this.isMultipleAnswer(this.questions[this.currentQuestionIndex])) {
-            // 不可变赋值触发渲染
-            if (this.selectedOptions.indexOf(this.getOptionLabel(idx)) !== -1) {
-              this.selectedOptions = this.selectedOptions.filter(l => l !== this.getOptionLabel(idx));
-            } else {
-              this.selectedOptions = [...this.selectedOptions, this.getOptionLabel(idx)];
-            }
-            // 选错后自动提交并跳题
-            if (!this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))) {
-              this.hasSubmitted = true;
-              setTimeout((): void => this.goToNextQuestion(), 2000);
-            }
-          }
-          // 单选
-          else {
-            this.selectedOption = this.getOptionLabel(idx);
-            this.hasSubmitted = true;
-            setTimeout((): void => this.goToNextQuestion(), 2000);
-          }
-        })
+        .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
         .margin({ top: 12, left: 16, right: 16 })
       })
 
@@ -348,6 +267,89 @@ struct ExerciseCommonPage {
     .height('100%')
     .backgroundColor(Color.White)
   }
+
+  private async handleOptionClick(optionLabel: string) {
+
+    if (this.selectedIndex === 0 && !this.hasSubmitted) {
+      const currentQuestion = this.questions[this.currentQuestionIndex];
+      if (this.isMultipleChoice()) {
+        // 多选：切换选项状态
+        if (this.selectedOptions.includes(optionLabel)) {
+          this.selectedOptions = this.selectedOptions.filter(opt => opt !== optionLabel);
+        } else {
+          this.selectedOptions = [...this.selectedOptions, optionLabel];
+          const correctAnswers = currentQuestion.answer.split('');
+
+          // 检查是否选择了错误选项
+          if (!correctAnswers.includes(optionLabel)) {
+            this.hasSubmitted = true;
+            setTimeout((): void => this.goToNextQuestion(), 2000);
+            promptAction.showToast({ message: '回答错误', duration: 1500 });
+            // 插入错题表
+            // await this.saveToWrongTable(currentQuestion, optionLabel);
+            // this.saveQuestionState(); // 记录错误提交状态
+          } else {
+            // 检查是否选中了全部正确答案
+            const allCorrectSelected = correctAnswers.every(ans => this.selectedOptions.includes(ans)) &&
+            this.selectedOptions.every(opt => correctAnswers.includes(opt));
+            if (allCorrectSelected) {
+              this.hasSubmitted = true;
+              setTimeout((): void => this.goToNextQuestion(), 2000);
+              promptAction.showToast({ message: '回答正确', duration: 1500 });
+              this.saveQuestionState(); // 记录正确提交状态
+            }
+          }
+        }
+        this.saveQuestionState(); // 记录多选过程中的选择
+      } else {
+        // 单选：设置选项并提交
+        this.selectedOption = optionLabel;
+        this.hasSubmitted = true;
+        setTimeout((): void => this.goToNextQuestion(), 2000);
+        const isCorrect = optionLabel === currentQuestion.answer;
+        promptAction.showToast({
+          message: isCorrect ? '回答正确' : '回答错误',
+          duration: 1500
+        });
+        if (!isCorrect) {
+          // 插入错题表
+          await this.saveToWrongTable(currentQuestion, optionLabel);
+        }
+        this.saveQuestionState(); // 记录单选提交状态
+      }
+    }
+  }
+
+  // 在 ExercisePage 组件内添加以下方法
+  private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
+    try {
+      let questionDb = new QuestionRes();
+      questionDb.qId = question.qId;
+      questionDb.question = question.question;
+      questionDb.answer = question.answer;
+      questionDb.option = question.option;
+      questionDb.wrongAnswer = wrongAnswer;
+
+      await questionWrongTable.insertDataAwait(questionDb);
+      this.homeModel.getWrongQuestionList(question.qId)
+
+    } catch (err) {
+      console.error('插入错题表失败:', err);
+      promptAction.showToast({ message: '保存错题失败', duration: 1500 });
+    }
+  }
+
+  private async saveQuestionState() {
+    // 保存当前题目的选择状态到内存
+    this.questionSelections[this.currentQuestionIndex] = {
+      selectedOption: this.selectedOption,
+      selectedOptions: [...this.selectedOptions],
+      hasSubmitted: this.hasSubmitted
+    };
+    console.log('Saved state for question', this.currentQuestionIndex,
+      this.questionSelections[this.currentQuestionIndex]);
+  }
+
 
 }
 

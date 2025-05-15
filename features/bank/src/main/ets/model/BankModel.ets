@@ -177,7 +177,10 @@ export class BankModel {
       Logger.info(TAG, 'trStr--------' + trStr)
       //转换成 题目的对象
       let lines = trStr.split('\n')
-      for (let line of lines) {
+      // for (let line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+          let line =  lines[i]
+
         if (line !== '') {
           const questionRes = plainToClass(BankQuestionRes, JSON.parse(line))
           console.info('instance:', JSON.stringify(questionRes))
@@ -187,6 +190,7 @@ export class BankModel {
           questionDb.question = questionRes.q
           questionDb.answer = questionRes.ans
           questionDb.option = questionRes.a
+          questionDb.questionID = qid+i+1
           let ret = await questionTable.insertDataAwait(questionDb)
           Logger.info(TAG, 'ret--------' + ret)
         }
