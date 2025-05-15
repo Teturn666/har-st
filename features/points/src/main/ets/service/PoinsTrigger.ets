@@ -19,7 +19,6 @@ export enum PointsTrigger {
   // 返回已绑定的邀请码 /m/invite/bound
   URL_INVITE_BOUND = "/m/invite/bound",
 
-
   // 积分历史明细 /m/point/history
   URL_POINT_HISTORY = "/m/point/history",
 

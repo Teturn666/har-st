@@ -205,7 +205,7 @@ export struct MyHistoryPage {
       .height('80%')
       .backgroundColor(Color.White)
     }
-    .backgroundColor('#fdcf8d')
+    .backgroundColor('#fffaf6f2')
     .height('100%')
     .width('100%')
   }
@@ -214,7 +214,7 @@ export struct MyHistoryPage {
 @ComponentV2
 struct HistoryCard {
   @Param points: string = ''; // e.g., "1积分", "2积分"
-  @Param name: string = ''; // e.g., "已领取", "点击领取", "未领取"
+  @Param name: string = '';
   @Param time: string = '';
 
   build() {
@@ -244,7 +244,7 @@ struct HistoryCard {
     .borderRadius(12)
     .margin({top:0})
     .padding({ top: 5,bottom:5,})
-    .backgroundColor(Color.Gray)
+    .backgroundColor('#fff8f8f2')
     .width('100%')
     .height(70)
   }

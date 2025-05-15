@@ -110,4 +110,54 @@ export class PointsModel {
       return []
     }
   }
+
+  // 邀请记录
+  public async getMyPeople(): Promise<PointEventRes[]> {
+    try {
+      let data = await this.PointsNet.getMyInvitePeople()
+      // Logger.info(TAG, '返回数据--------' + data)
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return []
+    }
+  }
+
+  // 我的邀请码
+  public async getMyCode(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getMyInviteCode()
+      // Logger.info(TAG, '返回数据--------' + data)
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  // 被绑定邀请码是什么
+  public async getBoundCode(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getBoundCode()
+      // Logger.info(TAG, '返回数据--------' + data)
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  // 绑定邀请码action
+  public async submitBoundCode(code: string): Promise<string> {
+    try {
+      let data = await this.PointsNet.submitBoundCode(code)
+      // Logger.info(TAG, '返回数据--------' + data)
+      if(data == null)
+        return "绑定失败，请检查邀请码是否正确"
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
 }
