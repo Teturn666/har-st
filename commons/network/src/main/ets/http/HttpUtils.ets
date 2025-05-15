@@ -16,7 +16,8 @@ export class HttpUtils {
       baseURL: HttpUtils.mBaseUrl,
       timeout: HttpUtils.READ_TIME_OUT,
       headers: {
-        'union-id': '',
+        'open-id': 'bzhwbHU2VHpQSmhLVzhFcUJwTWJKSUF6MklUWQ==',
+        'union-id': 'bzdRTVQ2V05VWi1aQ3QtdWdRbnl5aWZoTGU3OA==',
         'device-id': '',
         'apk-channel': 'harmony',
         'apk-name': 'harmony',

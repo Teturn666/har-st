@@ -1,11 +1,11 @@
 import { BankModel } from '../model/BankModel';
 import { Logger, LoadingStatus } from 'utils';
-import router from '@ohos.router';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS';
 import { BankList } from './BankList';
 import { QuestionList } from './QuestionList';
+import { router } from '@kit.ArkUI';
 
 const TAG = '[HotSearchPage]';
 const context = (getContext(this) as common.UIAbilityContext);

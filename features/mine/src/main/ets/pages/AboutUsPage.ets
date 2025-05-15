@@ -1,6 +1,6 @@
 import { TitleBar } from 'widget/Index'
-import router from '@ohos.router'
 import MainConstants from "../Constants/MineConstants";
+import { router } from '@kit.ArkUI';
 
 @Entry({ routeName: 'aboutUsPage' })
 @Component

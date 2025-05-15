@@ -1,11 +1,65 @@
 import { TitleBar } from 'widget/Index'
-import router from '@ohos.router';
+import { PointsModel } from '../model/PointsModel';
+import CheckDataRes, { showSingle } from '../model/CheckDataRes';
+import { router } from '@kit.ArkUI';
 
 
 @Entry()
 @Component
 struct PointsPage {
-  @State title:string = "我的积分";
+  @State title: string = "我的积分";
+  @State PointsModel: PointsModel = PointsModel.getInstance()
+  @State myPoints: string = ''
+  @State signDays: string = ''
+  @State toShowList: showSingle[] = []
+  @State toSignToday: boolean = false
+  loadingStatus: string = ''
+
+  aboutToAppear(): void {
+    this.loadResources()
+  }
+
+  async actionSigning(): Promise<void> {
+    let action = await this.PointsModel.getTodayPoint()
+    if (action == true) {
+      await this.gettingPointsInfo()
+    }
+  }
+
+  async loadResources(): Promise<void> {
+    await this.gettingPointsInfo()
+  }
+
+  async gettingPointsInfo(): Promise<void> {
+    // 获得签到天数
+    let sign_days = await this.PointsModel.getSignState()
+    sign_days = Math.round(sign_days)
+    if (sign_days > 0) {
+      this.toSignToday = true
+      this.signDays = String(sign_days - 1)
+    } else {
+      this.signDays = String(Math.abs(sign_days))
+    }
+    // 获得签到展示
+    this.toShowList = []
+    let mapLists = await this.PointsModel.getSignMapList()
+    let cur_day = Math.abs(sign_days)
+    for (let i = 0; i < mapLists.length; i++) {
+      let days = mapLists[i].days
+      let point = mapLists[i].point
+      if (i + 1 <= cur_day) {
+        this.toShowList.push(new showSingle(days, point, 1))
+      } else {
+        this.toShowList.push(new showSingle(days, point, 3))
+      }
+    }
+    if (sign_days > 0) {
+      this.toShowList[cur_day - 1].type = 2
+    }
+
+    // 获得我的积分
+    this.myPoints = await this.PointsModel.getMyNumb()
+  }
 
   build() {
     Column() {
@@ -15,22 +69,21 @@ struct PointsPage {
         }
       })
         .width('100%')
-
-      Stack(){
+      Stack() {
         Image($r('app.media.ic_bu'))
           .width(160)
           .height(60)
-        Text("1688")
+        Text(this.myPoints)
           .fontSize(32)
           .fontColor('#F75A23')
 
         Text("积分明细")
           .fontSize(12)
           .fontColor('#F75A23')
-          .margin({top:100})
-          .decoration({type:TextDecorationType.Underline,color:'#F75A23'})
-        Column(){
-          Stack(){
+          .margin({ top: 100 })
+          .decoration({ type: TextDecorationType.Underline, color: '#F75A23' })
+        Column() {
+          Stack() {
             Image($r('app.media.ic_rectangle'))
               .width(80)
               .height(28)
@@ -38,7 +91,8 @@ struct PointsPage {
               .fontColor('#3E3E3E')
               .fontSize(12)
           }
-          Stack(){
+
+          Stack() {
             Image($r('app.media.ic_rectangls'))
               .width(80)
               .height(28)
@@ -56,8 +110,7 @@ struct PointsPage {
       .width('100%')
       .alignContent(Alignment.Center)
 
-      Column()
-      {
+      Column() {
         Row() {
           Image($r('app.media.ic_gold'))
             .width(18)
@@ -78,81 +131,92 @@ struct PointsPage {
 
           // Points Cards Row
           Row({ space: 5 }) {
-            PointsCard({
-              points: "1积分",
-              status: "已领取",
-              isClaimed: true,
-              canClaim: false,
-              onClaim: () => {}
+            ForEach(this.toShowList, (item: showSingle) => {
+              PointsCard({
+                points: item.point + '积分',
+                status: item.type == 1 ? "已领取" : (item.type == 2 ? "点击领取" : "未领取"),
+                isClaimed: item.type == 1 ? true : false,
+                canClaim: item.type == 2 ? true : false,
+                onClaim: item.type == 2 ?  this.actionSigning : ()=>{}
+              })
             })
-            PointsCard({
-              points: "1积分",
-              status: "点击领取",
-              isClaimed: false,
-              canClaim: true,
-              onClaim: () => {
-                // Update state or backend to mark as claimed
-              }
-            })
-            PointsCard({
-              points: "2积分",
-              status: "未领取",
-              isClaimed: false,
-              canClaim: false,
-              onClaim: () => {}
-            })
-            PointsCard({
-              points: "2积分",
-              status: "未领取",
-              isClaimed: false,
-              canClaim: false,
-              onClaim: () => {}
-            })
-            PointsCard({
-              points: "2积分",
-              status: "未领取",
-              isClaimed: false,
-              canClaim: false,
-              onClaim: () => {}
-            })
-            PointsCard({
-              points: "2积分",
-              status: "未领取",
-              isClaimed: false,
-              canClaim: false,
-              onClaim: () => {}
-            })
-            PointsCard({
-              points: "2积分",
-              status: "未领取",
-              isClaimed: false,
-              canClaim: false,
-              onClaim: () => {}
-            })
+            // PointsCard({
+            //   points: "1积分",
+            //   status: "已领取",
+            //   isClaimed: true,
+            //   canClaim: false,
+            //   onClaim: () => {}
+            // })
+            // PointsCard({
+            //   points: "1积分",
+            //   status: "点击领取",
+            //   isClaimed: false,
+            //   canClaim: true,
+            //   onClaim: () => {
+            //     // Update state or backend to mark as claimed
+            //   }
+            // })
+            // PointsCard({
+            //   points: "2积分",
+            //   status: "未领取",
+            //   isClaimed: false,
+            //   canClaim: false,
+            //   onClaim: () => {}
+            // })
+            // PointsCard({
+            //   points: "2积分",
+            //   status: "未领取",
+            //   isClaimed: false,
+            //   canClaim: false,
+            //   onClaim: () => {}
+            // })
+            // PointsCard({
+            //   points: "2积分",
+            //   status: "未领取",
+            //   isClaimed: false,
+            //   canClaim: false,
+            //   onClaim: () => {}
+            // })
+            // PointsCard({
+            //   points: "2积分",
+            //   status: "未领取",
+            //   isClaimed: false,
+            //   canClaim: false,
+            //   onClaim: () => {}
+            // })
+            // PointsCard({
+            //   points: "2积分",
+            //   status: "未领取",
+            //   isClaimed: false,
+            //   canClaim: false,
+            //   onClaim: () => {}
+            // })
           }
           .height(78)
           .alignItems(VerticalAlign.Top)
 
-         Row() {
-                      Text("说明：连续中断后重新开始计算")
-                        .fontSize(10)
-                        .fontColor('#BABABA')
-
-                      Text("已连续签到1天")
-                        .fontColor(Color.White)
-                        .fontSize(12)
-                        .fontWeight(FontWeight.Medium)
-                    }
-                    .height(98)
-                    .width(313)
-                    .alignItems(VerticalAlign.Bottom)
-                    .justifyContent(FlexAlign.SpaceBetween)
-                    .padding({ bottom: 10 })
+          // Row() {
+          //             Text("说明：连续中断后重新开始计算")
+          //               .fontSize(10)
+          //               .fontColor('#BABABA')
+          //
+          //             Text("已连续签到"+this.signDays+"天")
+          //               .fontColor(Color.White)
+          //               .fontSize(12)
+          //               .fontWeight(FontWeight.Medium)
+          //           }
+          //           .height(12)
+          //           .width(313)
+          //           .alignItems(VerticalAlign.Bottom)
+          //           .justifyContent(FlexAlign.SpaceBetween)
+          //           .padding({ bottom: 10 })
+          // .onClick(()=>{
+          //   console.info('we122',12)
+          // })
         }
-        .margin({top:8})
+        .margin({ top: 8 })
         .width('100%')
         .height('auto')
-
 
       }
       .borderRadius(12)
@@ -170,20 +234,19 @@ struct PointsPage {
   }
 }
 
-@Component
+@ComponentV2
 struct PointsCard {
-  points?: string; // e.g., "1积分", "2积分"
-  status?: string; // e.g., "已领取", "点击领取", "未领取"
-  isClaimed?: boolean; // Determines if the card is claimed
-  canClaim?: boolean; // Determines if the card can be claimed today
-  onClaim?: () => void; // Callback for claiming points
+  @Param points: string = ''; // e.g., "1积分", "2积分"
+  @Param status?: string = ''; // e.g., "已领取", "点击领取", "未领取"
+  @Param isClaimed?: boolean = false; // Determines if the card is claimed
+  @Param canClaim?: boolean = false; // Determines if the card can be claimed today
+  @Event onClaim: () => void; // Callback for claiming points
 
   build() {
     Stack() {
       Image(this.isClaimed ? $r('app.media.ic_pointsbgs') : $r('app.media.ic_pointsbg'))
         .width(41)
         .height(50)
-
       Column() {
         Text(this.points)
           .fontColor('#565656')
@@ -199,11 +262,10 @@ struct PointsCard {
     }
     .width(41)
     .height(50)
-    .onClick(() => {
-      if (this.canClaim) {
-        // this.onClaim();
-        // promptAction.showToast({ message: '积分已领取', duration: 1500 });
-      }
+    .onClick(async () => {
+        await this.onClaim()
     })
+
   }
 }
+

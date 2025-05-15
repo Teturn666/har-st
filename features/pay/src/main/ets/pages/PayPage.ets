@@ -1,6 +1,7 @@
 import { PayModel } from '../model/PayModel';
 import { PriceInfoRes } from '../model/PriceInfoRes';
-import router from '@ohos.router';
+import { router } from '@kit.ArkUI';
+
 const TAG = '[PayPage]';
 
 @Entry
@@ -17,10 +18,12 @@ export struct PayPage {
   @State isLoading: boolean = true;
   @State errorMessage: string = '';
   private scroller: Scroller = new Scroller();
+
   aboutToAppear(): void {
     console.info(`${TAG} aboutToAppear called`);
     this.loadData();
   }
+
   private jumpToHelpCenter() {
     try {
       router.pushNamedRoute({
@@ -73,6 +76,7 @@ export struct PayPage {
       this.scroller.scrollToIndex(selectedIndex, true);
     }
   }
+
   // 获取卡的背景图片
   private getCardBackground(card: PriceInfoRes, isSelected: boolean): string {
     if (isSelected) {
@@ -80,6 +84,7 @@ export struct PayPage {
     }
     return card.id === '3' ? 'ic_yearedbg' : 'ic_bged';
   }
+
   build() {
     Column() {
       // 顶部导航栏
@@ -145,6 +150,7 @@ export struct PayPage {
       .width('100%')
       .height(72)
       .backgroundColor(Color.White)
+
       // 会员卡
       List({ space: 10, scroller: this.scroller }) {
         if (this.isLoading) {
@@ -181,7 +187,8 @@ export struct PayPage {
                   .width(105)
                   .height(78)
                   .onError(() => {
-                    console.error(`${TAG} Failed to load image: app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`);
+                    console.error(`${TAG} Failed to load image: app.media.${this.getCardBackground(card,
+                      this.selectedCard === card.id)}`);
                   })
                 Column() {
                   Text(card.showtext)
@@ -251,7 +258,8 @@ export struct PayPage {
       .width('90%')
       .height(0.8)
       .backgroundColor('#ebebeb')
-      .margin({ left: 32, right: 32 ,top:20})
+      .margin({ left: 32, right: 32, top: 20 })
+
       // 底部支付
       Row() {
         Column() {
@@ -266,6 +274,7 @@ export struct PayPage {
               .fontWeight(600)
               .margin({ left: 0, top: 12 })
           }
+
           if (this.savePrice > 0.0) {
             Text(`已优惠：¥${this.savePrice.toFixed(1)}`)
               .fontSize(12)
@@ -276,6 +285,7 @@ export struct PayPage {
         }
         .justifyContent(FlexAlign.Start)
         .alignItems(HorizontalAlign.Start)
+
         Blank()
         Stack() {
           Image($r('app.media.ic_button'))

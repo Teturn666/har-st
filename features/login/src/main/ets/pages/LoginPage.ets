@@ -1,14 +1,15 @@
-import router from '@ohos.router';
 import LoginConstants from '../Constants/LoginConstants';
 import bundleManager from '@ohos.bundle.bundleManager';
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
 import { OnWXResp, WXApi, WXEventHandler, APP_ID } from '../model/WXApiWrap';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { promptAction } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
 import http from '@ohos.net.http';
+import { authentication, loginComponentManager } from '@kit.AccountKit';
+import { util } from '@kit.ArkTS';
 
 
 interface AccessTokenResponse {
@@ -35,20 +36,64 @@ interface UserInfoResponse {
 }
 
 
-@Entry()
+@Entry({ routeName: 'login' })
 @Component
-export struct Index {
+export struct LoginPage {
   @State agreementChecked: boolean = false;
   private wxApi = WXApi
-  @State resultText: string = '';
   @State nickname: string = '';
   @State avatarUrl: string = '';
+  @State quickLoginAnonymousPhone: string = '';
   private wxEventHandler = WXEventHandler
+  logTag: string = 'QuickLoginButtonComponent';
+  domainId: number = 0x0000;
+  // 构造LoginWithHuaweiIDButton组件的控制器
+  controller: loginComponentManager.LoginWithHuaweiIDButtonController =
+    new loginComponentManager.LoginWithHuaweiIDButtonController()
+      /**
+       * 当应用使用自定义的登录页时，如果用户未同意协议，需要设置协议状态为NOT_ACCEPTED，当用户同意协议后再设置
+       * 协议状态为ACCEPTED，才可以使用华为账号一键登录功能
+       */
+      .setAgreementStatus(loginComponentManager.AgreementStatus.NOT_ACCEPTED)
+      .onClickLoginWithHuaweiIDButton((error: BusinessError | undefined,
+        response: loginComponentManager.HuaweiIDCredential) => {
+        this.handleLoginWithHuaweiIDButton(error, response);
+      })
+      .onClickEvent((error: BusinessError, clickEvent: loginComponentManager.ClickEvent) => {
+        if (error) {
+          this.dealAllError(error);
+          return;
+        }
+        hilog.info(this.domainId, this.logTag, `onClickEvent clickEvent: ${clickEvent}`);
+      });
 
+  handleLoginWithHuaweiIDButton(error: BusinessError | undefined,
+    response: loginComponentManager.HuaweiIDCredential) {
+    if (error) {
+      hilog.error(this.domainId, this.logTag,
+        `Failed to login with LoginWithHuaweiIDButton. errCode is ${error.code}, errMessage is ${error.message}`)
+      promptAction.showToast({ message: '服务或网络异常，请稍后重试' })
+      return
+    }
+    try {
+      if (response) {
+        hilog.info(this.domainId, this.logTag, 'Succeeded in clicking LoginWithHuaweiIDButton.');
+        // 开发者根据实际业务情况使用以下信息
+        const authCode = response.authorizationCode;
+        const openID = response.openID;
+        const unionID = response.unionID;
+        const idToken = response.idToken;
+      }
+    } catch (err) {
+      hilog.error(this.domainId, this.logTag,
+        `Failed to login with LoginWithHuaweiIDButton, errCode: ${err.code}, errMessage: ${err.message}`);
+      promptAction.showToast({ message: '服务或网络异常，请稍后重试' })
+    }
+  }
 
   aboutToAppear(): void {
-    this.wxEventHandler.registerOnWXRespCallback(this.onWXResp);
-    hilog.info(0x0000, 'TAG', 'onWXResp callback registered');
+    this.wxEventHandler.registerOnWXRespCallback(this.onWXResp)
+    this.getQuickLoginAnonymousPhone()
   }
 
   aboutToDisappear(): void {
@@ -74,13 +119,13 @@ export struct Index {
       promptAction.showToast({ message: `授权失败: ${resp.errStr || '未知错误'}` });
       hilog.error(0x0000, 'TAG', `授权失败: errCode=${resp.errCode}, errStr=${resp.errStr}`);
     }
-    this.resultText = JSON.stringify(resp ?? {}, null, 2);
   };
 
   async fetchUserInfo(code: string) {
     let httpClient = http.createHttp();
     const APP_SECRET = '7c65844efba6af55e632f0145d11962f';
-    let accessTokenUrl = `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APP_ID}&secret=${APP_SECRET}&code=${code}&grant_type=authorization_code`;
+    let accessTokenUrl =
+      `https://api.weixin.qq.com/sns/oauth2/access_token?appid=${APP_ID}&secret=${APP_SECRET}&code=${code}&grant_type=authorization_code`;
 
     try {
       // 获取 access_token
@@ -98,7 +143,8 @@ export struct Index {
       }
 
       // 获取用户信息
-      let userInfoUrl = `https://api.weixin.qq.com/sns/userinfo?access_token=${tokenData.access_token}&openid=${tokenData.openid}`;
+      let userInfoUrl =
+        `https://api.weixin.qq.com/sns/userinfo?access_token=${tokenData.access_token}&openid=${tokenData.openid}`;
       let userInfoResponse = await httpClient.request(userInfoUrl, {
         method: http.RequestMethod.GET,
         connectTimeout: 10000,
@@ -108,13 +154,21 @@ export struct Index {
         throw new Error('无法获取用户信息');
       }
       let userInfo: UserInfoResponse = JSON.parse(userInfoResponse.result.toString());
-      if (!userInfo.nickname || !userInfo.headimgurl) {
-        throw new Error('用户信息不完整');
+      if (userInfo.nickname) {
+        this.nickname = userInfo.nickname;
       }
-      this.nickname = userInfo.nickname;
-      this.avatarUrl = userInfo.headimgurl;
-      promptAction.showToast({ message: '用户信息获取成功' });
-      hilog.info(0x0000, 'TAG', `用户信息: nickname=${userInfo.nickname}, headimgurl=${userInfo.headimgurl}`);
+      if (userInfo.headimgurl) {
+        this.avatarUrl = userInfo.headimgurl;
+      }
+      router.back({
+        url: '',
+        params: {
+          nickName: this.nickname,
+          avatarUrl: this.avatarUrl
+        }
+      })
+      // promptAction.showToast({ message: '用户信息获取成功' });
+      // hilog.info(0x0000, 'TAG', `用户信息: nickname=${userInfo.nickname}, headimgurl=${userInfo.headimgurl}`);
     } catch (err) {
       throw new Error(String(err));
     } finally {
@@ -151,6 +205,60 @@ export struct Index {
     }
   }
 
+  huaweiLogin() {
+    if (!this.agreementChecked) {
+      promptAction.showToast({ message: '请先勾选并同意用户协议和隐私政策' });
+      return;
+    }
+    this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED)
+    this.controller.continueLogin((error: BusinessError) => {
+      if (error) {
+        hilog.error(this.domainId, this.logTag,
+          `Failed to login with agreementDialog. errCode is ${error.code}, errMessage is ${error.message}`);
+      } else {
+        hilog.info(this.domainId, this.logTag,
+          'Succeeded in clicking agreementDialog continueLogin.');
+      }
+    })
+  }
+
+  getQuickLoginAnonymousPhone() {
+    // 创建授权请求，并设置参数
+    const authRequest = new authentication.HuaweiIDProvider().createAuthorizationWithHuaweiIDRequest();
+    // 获取匿名手机号需传quickLoginAnonymousPhone这个scope，传参之前需要先申请“华为账号一键登录”权限
+    authRequest.scopes = ['quickLoginAnonymousPhone'];
+    // 用于防跨站点请求伪造
+    authRequest.state = util.generateRandomUUID();
+    // 一键登录场景该参数必须设置为false
+    authRequest.forceAuthorization = false;
+    const controller = new authentication.AuthenticationController();
+    try {
+      controller.executeRequest(authRequest).then((response: authentication.AuthorizationWithHuaweiIDResponse) => {
+        // 获取到UnionID、OpenID、匿名手机号
+        const unionID = response.data?.unionID;
+        const openID = response.data?.openID;
+        const anonymousPhone = response.data?.extraInfo?.quickLoginAnonymousPhone as string;
+        if (anonymousPhone) {
+          hilog.info(0x0000, 'testTag', 'Succeeded in authentication.');
+          this.quickLoginAnonymousPhone = anonymousPhone;
+          return;
+        }
+        hilog.info(0x0000, 'testTag', 'Succeeded in authentication. AnonymousPhone is empty.');
+        // 未获取到匿名手机号需要跳转到应用自定义的登录页面
+      }).catch((error: BusinessError) => {
+        this.dealAllError(error);
+      })
+    } catch (error) {
+      this.dealAllError(error);
+    }
+  }
+
+  // 错误处理
+  dealAllError(error: BusinessError): void {
+    hilog.error(0x0000, 'testTag',
+      `Failed to get quickLoginAnonymousPhone, errorCode is ${error.code}, errorMessage is ${error.message}`);
+  }
+
   build() {
     Column() {
       Row() {
@@ -183,7 +291,8 @@ export struct Index {
         .height(60)
 
       Blank()
-      Text("195******85")
+      Text(this.quickLoginAnonymousPhone)
+        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
         .width('80%')
         .height(48)
         .margin({ top: 50 })
@@ -191,16 +300,21 @@ export struct Index {
         .textAlign(TextAlign.Center)
         .fontSize(24)
       Text("华为账号绑定号码")
+        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
         .width('80%')
         .textAlign(TextAlign.Center)
         .fontSize(12)
 
       Button('华为账号一键登录', { type: ButtonType.Normal, stateEffect: true })
+        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
         .borderRadius(8)
         .backgroundColor('#f64e4d')
         .width('60%')
         .height(48)
         .margin({ top: 20 })
+        .onClick(() => {
+          this.huaweiLogin()
+        })
 
       Button('微信快捷登录', { type: ButtonType.Normal, stateEffect: true })
         .borderRadius(8)
@@ -208,7 +322,7 @@ export struct Index {
         .width('60%')
         .height(48)
         .margin({ top: 12 })
-        .onClick(()=>{
+        .onClick(() => {
           this.wechatLogin()
         })
 
@@ -228,14 +342,14 @@ export struct Index {
         Text('《用户协议》')
           .fontSize(12)
           .fontColor('#007AFF')
-            .onClick(() => {
-                      router.pushNamedRoute({
-                        name: LoginConstants.ROUTER_WEB, params: {
-                          url: LoginConstants.USER_AGREEMENT_URL,
-                          title: "用户协议"
-                        }
-                      },router.RouterMode.Single)
-                    })
+          .onClick(() => {
+            router.pushNamedRoute({
+              name: LoginConstants.ROUTER_WEB, params: {
+                url: LoginConstants.USER_AGREEMENT_URL,
+                title: "用户协议"
+              }
+            }, router.RouterMode.Single)
+          })
           .margin({ right: 4 })
         Text('《隐私政策》')
           .fontSize(12)
@@ -246,7 +360,7 @@ export struct Index {
                 url: LoginConstants.USER_PRIVACY_URL,
                 title: "隐私政策"
               }
-            },router.RouterMode.Single)
+            }, router.RouterMode.Single)
           })
           .margin({ right: 4 })
         Text('和')
@@ -257,18 +371,16 @@ export struct Index {
           .fontSize(12)
           .fontColor('#007AFF')
           .onClick(() => {
-            // router.pushUrl('https://example.com/terms');
+            router.pushNamedRoute({
+              name: LoginConstants.ROUTER_WEB, params: {
+                url: LoginConstants.USER_HUAWEI_URL,
+                title: ""
+              }
+            }, router.RouterMode.Single)
           })
       }
       .width('80%')
       .margin({ top: 40, bottom: 40 })
-
-
-        Text(this.resultText)
-          .width('80%')
-          .fontSize(17)
-          .lineHeight(20)
-
     }
     .height('100%')
     .width('100%')
