@@ -1,6 +1,9 @@
-import router from '@ohos.router'
-import { BankListRes } from '../model/BankListRes'
+import { router } from '@kit.ArkUI'
+import { BankListRes} from 'db'
+import { Logger } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
+import { HomeModel } from '../model/HomeModel'
+import { HomeNet } from '../service/HomeNet'
 
 import('./ExercisePage')
 
@@ -9,24 +12,54 @@ import('./ExercisePage')
 @Component
 export struct BankListPage {
   title = ''
+  @State questionBanks: BankListRes[] = [];
+  @State type: number = 1      // 1=题库练习, 2=错题练习, 3=收藏练习
+  @State homeModel: HomeModel = HomeModel.getInstance()
+
+
+
 
   aboutToAppear(): void {
     const params = router.getParams() as Record<string, string>
-    if (params) {
-      this.title = params.title as string
+    // 解析 title 和 type
+    if (params.title) {
+      this.title = params.title
+    }
+    if (params.type) {
+      this.type = parseInt(params.type, 10) || 1
+    }
+
+    // 根据 type 直接从接口/模型获取数据
+    if (this.type === 1) {
+      this.homeModel.getBankList()
+        .then(banks => { this.questionBanks = banks })
+    } else if (this.type === 2) {
+      this.homeModel.getWrongBankList()
+        .then(banks => { this.questionBanks = banks })
+    } else {
+      this.homeModel.getCollectionBankList()
+        .then(banks => { this.questionBanks = banks })
     }
   }
 
-  @State questionBanks: BankListRes[] = [
-    { qid: 1, name: '数数学题数学题库学题库学题库数学题库数学题库库数学题库数学题库学题库', desc: '高考数学', time: '2025-05-09', url: 'https://example.com/math', num: '100', version: '1.0', position: 1, downloadedState: 1 },
-    { qid: 2, name: '英语题库', desc: 'CET-4', time: '2025-05-09', url: 'https://example.com/english', num: '200', version: '1.1', position: 2, downloadedState: 2 },
-    { qid: 3, name: '物理题库', desc: '高中物理', time: '2025-05-09', url: 'https://example.com/physics', num: '150', version: '1.0', position: 3, downloadedState: 2 }
-  ];
+  // 根据 type 返回不同的空状态文案
+  private getEmptyMessage(): string {
+    switch (this.type) {
+      case 2:
+        return '暂无错题，请先去题库练习做题，或选择题库进行模拟考试'
+      case 3:
+        return '暂无收藏，请先去练习或考试中添加'
+      default:
+        return '暂无可练题库，您可以去题库广场下载'
+    }
+  }
+
 
   // 题库
   private onQuestionBankTap(qid: number): void {
     router.pushNamedRoute({
-      name: HomeConstants.ROUTER_EXERCISE_LIST
+      name: HomeConstants.ROUTER_EXERCISE_LIST,
+      params: { qid: qid }
     }, router.RouterMode.Single)
   }
 
@@ -48,37 +81,61 @@ export struct BankListPage {
       .margin({ top: 15 })
       .width('100%')
 
-      List({ space: 10 }) {
-        ForEach(this.questionBanks, (bank: BankListRes) => {
-          ListItem() {
-            Column() {
-              Row() {
-                Text(bank.name)
-                  .fontSize(12)
-                  .fontColor('#060606')
-                  .margin({ left: 16, right: 16 })
-                  .width('80%')
-                Blank()
-                Image($r('app.media.ic_r'))
-                  .width(12)
-                  .height(12)
-                  .fillColor('#666666')
-                  .margin({ right: 16 })
+
+      if (this.questionBanks.length > 0){
+        List({ space: 10 }) {
+          ForEach(this.questionBanks, (bank: BankListRes) => {
+            ListItem() {
+              Column() {
+                Row() {
+                  Text(bank.name)
+                    .fontSize(12)
+                    .fontColor('#060606')
+                    .margin({ left: 16, right: 16 })
+                    .width('80%')
+                  Blank()
+                  Image($r('app.media.ic_r'))
+                    .width(12)
+                    .height(12)
+                    .fillColor('#666666')
+                    .margin({ right: 16 })
+                }
+                .width('100%')
+                .height(48)
+                .alignItems(VerticalAlign.Center)
               }
-              .width('100%')
-              .height(48)
-              .alignItems(VerticalAlign.Center)
+              .borderRadius(10)
+              .backgroundColor('#F6F6F6')
+              .onClick(() => {
+                // this.selectdemo(bank.qid)
+                this.onQuestionBankTap(bank.qid);
+              })
             }
-            .borderRadius(10)
-            .backgroundColor('#F6F6F6')
-            .onClick(() => {
-              this.onQuestionBankTap(bank.qid);
-            })
-          }
-        }, (bank: BankListRes) => String(bank.qid))
+          }, (bank: BankListRes) => String(bank.qid))
+        }
+        .width('100%')
+        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+      }else {
+        // 无数据，渲染空状态
+        Column() {
+          Image($r('app.media.ic_no'))
+            .width(117)
+            .height(100)
+            // .margin({ top: 50 })
+          Text(this.getEmptyMessage())
+            .fontSize($r('app.float.font_size_16fp'))
+            .fontColor('#9D9D9D')
+            .fontSize(14)
+            .margin({ top: 20 })
+            .textAlign(TextAlign.Center)
+        }
+        .alignItems(HorizontalAlign.Center)
+        .justifyContent(FlexAlign.Center)
+        .padding({ left: 20, right: 20 })
+        .width('100%')
+        .height('100%')
       }
-      .width('100%')
-      .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+
 
 
 
@@ -87,3 +144,4 @@ export struct BankListPage {
     .height('100%')
   }
 }
+

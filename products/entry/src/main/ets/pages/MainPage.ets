@@ -8,7 +8,7 @@ import router from '@ohos.router'
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { init, onEventObject } from '@umeng/analytics';
-import { questionBankTable,questionTable } from 'db'
+import { questionBankTable, questionTable, questionWrongTable, questionCollectionTable } from 'db'
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -48,6 +48,8 @@ struct MainPage {
   initDB() {
     questionBankTable.getRdbStore()
     questionTable.getRdbStore()
+    questionWrongTable.getRdbStore()
+    questionCollectionTable.getRdbStore()
   }
 
   build() {

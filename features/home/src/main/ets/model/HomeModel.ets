@@ -1,4 +1,4 @@
-import { BankListRes, questionBankTable, questionWrongTable, questionCollectionTable, QuestionRes } from 'db'
+import { BankListRes, questionBankTable, questionWrongTable, questionCollectionTable,questionTable, QuestionRes } from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
 
 const TAG = '[HomeModel]'
@@ -18,12 +18,21 @@ export class HomeModel {
     return HomeModel.instance
   }
 
+
+
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
     let bankResultList = await questionBankTable.querySync(0) ?? [];
 
     Logger.info(TAG, '下载的题库--------' + bankResultList.length)
     return bankResultList
+  }
+  //获取题库中的题目
+  public async getBankQuestionList(qid:number): Promise<QuestionRes[]> {
+    let resultList = await questionTable.querySync(qid,false) ?? [];
+
+    Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
+    return resultList
   }
 
   //获取数据库错题的题库
