@@ -6,7 +6,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { BankListRes } from 'db'
 import { Logger } from 'utils'
 import fs, { ReadTextOptions } from '@ohos.file.fs';
-import CheckDataRes from '../model/CheckDataRes';
+import CheckDataRes, { PointEventRes } from '../model/CheckDataRes';
 
 
 const TAG = '[PointsNet]'
@@ -127,6 +127,55 @@ export class PointsNet {
           let code = res.data.code
           if (code === "0") {
             resolve(0);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  // 积分历史明细
+  public getHistoryPointDetail(): Promise<PointEventRes[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_HISTORY)
+        .then((res: AxiosResponse<BaseResponse<PointEventRes[]>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+  // 积分历史增加
+  public getHistoryPointIncrease(): Promise<PointEventRes[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_HISTORY_INCREASE)
+        .then((res: AxiosResponse<BaseResponse<PointEventRes[]>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+  // 积分历史消耗
+  public getHistoryPointConsumer(): Promise<PointEventRes[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_HISTORY_REDUCE)
+        .then((res: AxiosResponse<BaseResponse<PointEventRes[]>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
           } else {
             reject("data is null");
           }
