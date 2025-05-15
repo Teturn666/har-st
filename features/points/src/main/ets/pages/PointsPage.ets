@@ -4,7 +4,7 @@ import CheckDataRes, { showSingle } from '../model/CheckDataRes';
 import { router } from '@kit.ArkUI';
 import PointsConstants from '../../../Constants/PointsConstants';
 import ('./MyHistoryPage')
-
+import ('./MyInvitationPage')
 @Entry()
 @Component
 export struct PointsPage {
@@ -74,6 +74,10 @@ export struct PointsPage {
       myPoints: this.myPoints }})
   }
 
+  private jumpToMyInvitation() {
+    router.pushNamedRoute({ name: PointsConstants.ROUTE_DETAILS_INVITATION})
+  }
+
   build() {
     Column() {
       TitleBar({
@@ -104,7 +108,10 @@ export struct PointsPage {
             Text("我的邀请码")
               .fontColor('#3E3E3E')
               .fontSize(12)
-          }
+
+          }.onClick(()=>{
+            this.jumpToMyInvitation()
+          })
 
           Stack() {
             Image($r('app.media.ic_rectangls'))
@@ -163,6 +170,23 @@ export struct PointsPage {
             }
             .height(78)
             .alignItems(VerticalAlign.Top)
+
+            Row() {
+              Text("说明：连续中断后重新开始计算")
+                          .fontSize(10)
+                          .fontColor('#BABABA')
+
+              Text("已连续签到"+this.signDays+"天")
+                          .fontColor(Color.White)
+                          .fontSize(12)
+                          .fontWeight(FontWeight.Medium)
+            }
+            .height(12)
+            .width(313)
+            .margin({top:60})
+            .alignItems(VerticalAlign.Bottom)
+            .justifyContent(FlexAlign.SpaceBetween)
+            .padding({ bottom: 10 })
           }
           .margin({ top: 8 })
           .width('100%')
