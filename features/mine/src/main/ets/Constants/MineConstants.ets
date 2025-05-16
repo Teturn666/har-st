@@ -5,7 +5,9 @@ export default class MainConstants {
   //搜索结果页
   static readonly ROUTER_ABOUT_US = 'aboutUsPage'
   //登录页面
-  static readonly LOGIN = 'login'
+  static readonly ROUTER_LOGIN = 'login'
+  //积分页面
+  static readonly ROUTER_POINTS = 'pointsPage'
   //H5页面
   static readonly ROUTER_WEB = 'webPage'
   //隐私政策链接

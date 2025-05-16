@@ -3,9 +3,11 @@ import { PointsModel } from '../model/PointsModel';
 import CheckDataRes, { showSingle } from '../model/CheckDataRes';
 import { router } from '@kit.ArkUI';
 import PointsConstants from '../../../Constants/PointsConstants';
-import ('./MyHistoryPage')
-import ('./MyInvitationPage')
-@Entry()
+
+import('./MyHistoryPage')
+import('./MyInvitationPage')
+
+@Entry({ routeName: 'pointsPage' })
 @Component
 export struct PointsPage {
   @State title: string = "我的积分";
@@ -31,6 +33,7 @@ export struct PointsPage {
   async loadResources(): Promise<void> {
     await this.gettingPointsInfo()
   }
+
   async gettingPointsInfo(): Promise<boolean> {
     this.loadingStatus = false
     try {
@@ -70,12 +73,15 @@ export struct PointsPage {
   }
 
   private jumpToHistoryPoints() {
-    router.pushNamedRoute({ name: PointsConstants.ROUTE_DETAILS_POINTS_HISTORY, params: {
-      myPoints: this.myPoints }})
+    router.pushNamedRoute({
+      name: PointsConstants.ROUTE_DETAILS_POINTS_HISTORY, params: {
+        myPoints: this.myPoints
+      }
+    })
   }
 
   private jumpToMyInvitation() {
-    router.pushNamedRoute({ name: PointsConstants.ROUTE_DETAILS_INVITATION})
+    router.pushNamedRoute({ name: PointsConstants.ROUTE_DETAILS_INVITATION })
   }
 
   build() {
@@ -109,7 +115,7 @@ export struct PointsPage {
               .fontColor('#3E3E3E')
               .fontSize(12)
 
-          }.onClick(()=>{
+          }.onClick(() => {
             this.jumpToMyInvitation()
           })
 
@@ -144,9 +150,10 @@ export struct PointsPage {
             .margin({ left: 8 })
         }
         .margin({ left: 15, top: 10 })
-        if(this.loadingStatus == false){
 
-        }else{
+        if (this.loadingStatus == false) {
+
+        } else {
           Stack() {
             Image($r('app.media.ic_bg'))
               .width(330)
@@ -157,14 +164,16 @@ export struct PointsPage {
               ForEach(this.toShowList, (item: showSingle) => {
                 PointsCard({
                   points: item.point + '积分',
-                  status: item.type == PointsConstants.POINTS_DAYS_STATUS_GOT ? "已领取" : (item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? "点击领取" : "未领取"),
+                  status: item.type == PointsConstants.POINTS_DAYS_STATUS_GOT ? "已领取" :
+                    (item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? "点击领取" : "未领取"),
                   isClaimed: item.type == PointsConstants.POINTS_DAYS_STATUS_GOT ? true : false,
                   canClaim: item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? true : false,
                   onClaim: item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? this.actionSigning : () => {
                   }
-                }) .onClick(async () => {
-                  if(item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION)
-                      await this.actionSigning()
+                }).onClick(async () => {
+                  if (item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION) {
+                    await this.actionSigning()
+                  }
                 })
               })
             }
@@ -173,17 +182,17 @@ export struct PointsPage {
 
             Row() {
               Text("说明：连续中断后重新开始计算")
-                          .fontSize(10)
-                          .fontColor('#BABABA')
+                .fontSize(10)
+                .fontColor('#BABABA')
 
-              Text("已连续签到"+this.signDays+"天")
-                          .fontColor(Color.White)
-                          .fontSize(12)
-                          .fontWeight(FontWeight.Medium)
+              Text("已连续签到" + this.signDays + "天")
+                .fontColor(Color.White)
+                .fontSize(12)
+                .fontWeight(FontWeight.Medium)
             }
             .height(12)
             .width(313)
-            .margin({top:60})
+            .margin({ top: 60 })
             .alignItems(VerticalAlign.Bottom)
             .justifyContent(FlexAlign.SpaceBetween)
             .padding({ bottom: 10 })

@@ -12,6 +12,7 @@ import { productViewManager } from "@kit.StoreKit";
 import { LoginConstants } from 'login/Index';
 
 import('login/src/main/ets/pages/LoginPage')
+import('points/src/main/ets/pages/PointsPage')
 
 
 const context = (getContext(this) as common.UIAbilityContext)
@@ -119,11 +120,15 @@ export struct MinePage {
   }
 
   private jumpToLogin() {
-    router.pushNamedRoute({ name: MainConstants.LOGIN }, router.RouterMode.Single)
+    router.pushNamedRoute({ name: MainConstants.ROUTER_LOGIN }, router.RouterMode.Single)
   }
 
   private jumpToSearchResult() {
     router.pushNamedRoute({ name: MainConstants.ROUTER_ABOUT_US }, router.RouterMode.Single)
+  }
+
+  private jumpToPoints() {
+    router.pushNamedRoute({ name: MainConstants.ROUTER_POINTS }, router.RouterMode.Single)
   }
 
   private jumpToHelpCenter() {
@@ -138,9 +143,9 @@ export struct MinePage {
   private async share() {
     let shareData: systemShare.SharedData = new systemShare.SharedData({
       utd: utd.UniformDataType.TEXT,
-      content: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧！官方下载链接：http://app.iksdt.com',
+      content: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧!官方下载链接：https://appgallery.huawei.com/app/detail?id=com.chznai.ikst&channelId=SHARE',
       title: '快搜搜题',
-      description: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧！官方下载链接：http://app.iksdt.com',
+      description: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧！',
       thumbnail: new Uint8Array()
     });
 
@@ -201,6 +206,9 @@ export struct MinePage {
             .fontColor($r("app.color.c_F75A23"))
             .textAlign(TextAlign.Start)
             .width('100%')
+            .onClick(() => {
+              this.jumpToPoints()
+            })
         }
         .width('30%')
         .margin({ right: 8 })
@@ -314,6 +322,7 @@ export struct MinePage {
             isShow: true,
             value: "15",
             click: () => {
+              this.jumpToPoints()
             }
           })
         }
@@ -323,6 +332,7 @@ export struct MinePage {
             name: $r('app.string.operation_settings'),
             isShow: true,
             click: () => {
+
             }
           })
         }
