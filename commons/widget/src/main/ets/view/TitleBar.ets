@@ -18,6 +18,8 @@ export struct TitleBar {
         .fontColor($r('app.color.c_black'))
         .textAlign(TextAlign.Center)
         .width('60%')
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
     }
     .margin({ top: 15 })
 

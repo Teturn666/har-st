@@ -179,8 +179,6 @@ struct ExercisePage {
     }
   }
 
-
-
   // 题目列表获取
   async getBankQuestionList(qid: number): Promise<void> {
     try {
@@ -193,7 +191,6 @@ struct ExercisePage {
         this.questionSelections = {};
         this.favoriteStatus = {};
         this.resetQuestionState();
-
         // 批量检查收藏状态
         const existedList = await this.homeModel.getCollectionQuestionList(qid);
         list.forEach((question) => {
@@ -325,7 +322,6 @@ struct ExercisePage {
             .alignItems(VerticalAlign.Center)
           }
           .backgroundColor('#d2a129')
-
           Blank()
           Button('模拟考试')
             .width(70)
@@ -336,7 +332,11 @@ struct ExercisePage {
             .margin({ right: 12 })
             .onClick(() => {
               router.pushNamedRoute({
-                name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST
+                name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
+                params:{
+                  practiceMode:1,
+                  qid:this.qid
+                }
               }, router.RouterMode.Single)
             })
         }

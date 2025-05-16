@@ -23,6 +23,8 @@ export default class HomeConstants {
   static readonly ROUTER_EXERCISE_LIST = 'exercisePage'
   //模拟考试
   static readonly ROUTER_EXERCISE_COMMON_LIST = 'exerciseCommonPage'
+  //练习详情
+  static readonly ROUTER_EXERCISE_DETAILS_LIST = 'exerciseDetailsPage'
   //解密字符串的正则
   static readonly IMAGE_REGEX = /\$\{.*?\}/g
   //使用教程链接

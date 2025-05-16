@@ -78,4 +78,10 @@ export class HomeModel {
     let collectionResultList = await questionCollectionTable.querySync(qId, false) ?? [];
     return collectionResultList
   }
+
+  //查询题库信息
+  public async queryQuestionBankList(qId:number): Promise<BankListRes[]> {
+    let QuestionBankList = await questionBankTable.querySync(qId, false) ?? [];
+    return QuestionBankList
+  }
 }
