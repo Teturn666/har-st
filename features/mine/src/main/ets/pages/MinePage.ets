@@ -318,13 +318,13 @@ export struct MinePage {
       // .justifyContent(FlexAlign.Center)
 
       List() {
-        ListItem() {
-          UserListItem({
-            name: $r('app.string.Recharge'),
-            click: () => {
-            }
-          })
-        }
+        // ListItem() {
+        //   UserListItem({
+        //     name: $r('app.string.Recharge'),
+        //     click: () => {
+        //     }
+        //   })
+        // }
 
         ListItem() {
           UserListItem({
