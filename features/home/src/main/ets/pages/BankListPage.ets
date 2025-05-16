@@ -16,9 +16,6 @@ export struct BankListPage {
   @State type: number = 1      // 1=题库练习, 2=错题练习, 3=收藏练习
   @State homeModel: HomeModel = HomeModel.getInstance()
 
-
-
-
   aboutToAppear(): void {
     const params = router.getParams() as Record<string, string>
     // 解析 title 和 type
@@ -28,7 +25,6 @@ export struct BankListPage {
     if (params.type) {
       this.type = parseInt(params.type, 10) || 1
     }
-
     // 根据 type 直接从接口/模型获取数据
     if (this.type === 1) {
       this.homeModel.getBankList()
@@ -57,10 +53,22 @@ export struct BankListPage {
 
   // 题库
   private onQuestionBankTap(qid: number): void {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_EXERCISE_LIST,
-      params: { qid: qid }
-    }, router.RouterMode.Single)
+    if(this.type ===1 ){
+      router.pushNamedRoute({
+        name: HomeConstants.ROUTER_EXERCISE_LIST,
+        params: { qid: qid }
+      }, router.RouterMode.Single)
+    }else if (this.type === 2 || this.type ===3 ){
+
+      router.pushNamedRoute({
+        name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
+        params:{
+          practiceMode:this.type,
+          qid:qid
+        }
+      }, router.RouterMode.Single)
+    }
+
   }
 
   build() {

@@ -23,22 +23,22 @@ export default class DbConstants {
   static readonly QUESTION_TABLE: DbTableBean = {
     tableName: 'question',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
-      'question TEXT, option TEXT, answer TEXT)',
-    columns: ['id', 'qId', 'question', 'option', 'answer']
+      'question TEXT, option TEXT, answer TEXT , questionID INTEGER)',
+    columns: ['id', 'qId', 'question', 'option', 'answer','questionID']
   };
   //错题题目表
   static readonly QUESTION_WRONG_TABLE: DbTableBean = {
     tableName: 'questionWrong',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS questionWrong(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
-      'question TEXT, option TEXT, answer TEXT, wrongAnswer TEXT)',
-    columns: ['id', 'qId', 'question', 'option', 'answer', 'wrongAnswer']
+      'question TEXT, option TEXT, answer TEXT, wrongAnswer TEXT , questionID INTEGER)',
+    columns: ['id', 'qId', 'question', 'option', 'answer', 'wrongAnswer','questionID']
   };
   //收藏题目表
   static readonly QUESTION_COLLECTION_TABLE: DbTableBean = {
     tableName: 'questionCollection',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS questionCollection(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
-      'question TEXT, option TEXT, answer TEXT, wrongAnswer TEXT)',
-    columns: ['id', 'qId', 'question', 'option', 'answer', 'wrongAnswer']
+      'question TEXT, option TEXT, answer TEXT, wrongAnswer TEXT,questionID INTEGER)',
+    columns: ['id', 'qId', 'question', 'option', 'answer', 'wrongAnswer,questionID']
   };
   /**
    * Log tag.

@@ -9,7 +9,7 @@ export class BankListRes {
   url: string = ''
   num: string = ''
   version: string = ''
-  position: number = 0
+  position: number = 0 //
   //1=已下载，2=未下载
   downloadedState: number = 2
 }

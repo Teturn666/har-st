@@ -10,4 +10,6 @@ export class QuestionRes {
   answer: string = ""
   //错误答案
   wrongAnswer: string = ""
+  //题目id
+  questionID: number = 0
 }

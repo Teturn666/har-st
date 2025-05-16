@@ -181,7 +181,7 @@ export struct HomePage {
       name: HomeConstants.ROUTER_BANK_LIST,
       params: {
         title,
-        type: String(type)        // ← 只传递 type
+        type: String(type)
       }
     }, router.RouterMode.Single)
   }

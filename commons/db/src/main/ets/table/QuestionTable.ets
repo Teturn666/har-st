@@ -63,12 +63,14 @@ class QuestionTable {
             answer: '',
             option: [],
             wrongAnswer: '',
+            questionID:0,
           };
           // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
           tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
           tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
           tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
           tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+          tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
           result[i] = tmp;
           resultSet.goToNextRow();
         }
@@ -103,12 +105,14 @@ class QuestionTable {
               answer: '',
               option: [],
               wrongAnswer: '',
+              questionID:0
             };
             // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
             tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+            tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
             result[i] = tmp;
             resultSet.goToNextRow();
           }
@@ -128,6 +132,7 @@ function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   obj.question = account.question;
   obj.answer = account.answer;
   obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
+  obj.questionID = account.questionID;
   return obj;
 }
 
