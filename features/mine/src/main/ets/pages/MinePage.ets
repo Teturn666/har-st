@@ -103,6 +103,7 @@ export struct MinePage {
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildText));
+  //@Consume 配合 @Provide 使用，只是只读的状态
   @Consume nickName: string
   @Consume avatarUrl: string
   @Consume loginState: string
@@ -115,8 +116,19 @@ export struct MinePage {
 
   private isLogin(): boolean {
     let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
-    let loginStatus = sp.getSync(LoginConstants.IS_LOGIN, '0')
-    return this.loginState === '1' || loginStatus === '1'
+    let loginStatus = sp.getSync(LoginConstants.SP_IS_LOGIN, '0')
+    if (typeof loginStatus === 'string') {
+      this.loginState = loginStatus
+    }
+    let name = sp.getSync(LoginConstants.SP_NICK_NAME, '')
+    if (typeof name === 'string') {
+      this.nickName = name
+    }
+    let avatar = sp.getSync(LoginConstants.SP_AVATAR_URL, '')
+    if (typeof avatar === 'string') {
+      this.avatarUrl = avatar
+    }
+    return this.loginState === '1'
   }
 
   private jumpToLogin() {

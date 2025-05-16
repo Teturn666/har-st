@@ -9,10 +9,8 @@ import { ErrCode } from '@tencent/wechat_open_sdk';
 import http from '@ohos.net.http';
 import { authentication, loginComponentManager } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
-import { preferences } from '@kit.ArkData';
 import { LoginConstants } from '../Constants/LoginConstants';
-
-// const context = (getContext(this) as common.ApplicationContext)
+import { preferences } from '@kit.ArkData';
 
 
 interface AccessTokenResponse {
@@ -46,7 +44,10 @@ export struct LoginPage {
   private wxApi = WXApi
   @State nickname: string = '';
   @State avatarUrl: string = '';
+  @State unionId: string = '';
+  @State openId: string = '';
   @State quickLoginAnonymousPhone: string = '';
+  private context = (getContext(this) as common.UIAbilityContext)
   private wxEventHandler = WXEventHandler
   logTag: string = 'QuickLoginButtonComponent';
   domainId: number = 0x0000;
@@ -163,6 +164,12 @@ export struct LoginPage {
       if (userInfo.headimgurl) {
         this.avatarUrl = userInfo.headimgurl;
       }
+      if (userInfo.unionid) {
+        this.unionId = userInfo.unionid
+      }
+      if (userInfo.openid) {
+        this.openId = userInfo.openid
+      }
 
       this.wxLoginSuccess()
       // promptAction.showToast({ message: '用户信息获取成功' });
@@ -204,8 +211,14 @@ export struct LoginPage {
   }
 
   wxLoginSuccess() {
-    // let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
-    // sp.putSync(LoginConstants.IS_LOGIN, '1')
+    let sp = preferences.getPreferencesSync(this.context, LoginConstants.SP_OPTIONS)
+    sp.putSync(LoginConstants.SP_IS_LOGIN, '1')
+    sp.putSync(LoginConstants.SP_NICK_NAME, this.nickname)
+    sp.putSync(LoginConstants.SP_AVATAR_URL, this.avatarUrl)
+    sp.putSync(LoginConstants.SP_UNION_ID, this.unionId)
+    sp.putSync(LoginConstants.SP_OPEN_ID, this.openId)
+    sp.flushSync()
+
     let index = Number(router.getLength()) - 1
     router.back(
       index, {

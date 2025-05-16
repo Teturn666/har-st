@@ -7,7 +7,16 @@ export class LoginConstants {
   static readonly SP_OPTIONS: dataPreferences.Options = {
     name: 'isLogin',
   }
-  static readonly IS_LOGIN = 'isLogin'
+  //1=已登录
+  static readonly SP_IS_LOGIN = 'isLogin'
+  //用户昵称
+  static readonly SP_NICK_NAME = 'nickName'
+  //用户头像
+  static readonly SP_AVATAR_URL = 'avatarUrl'
+  //union-id
+  static readonly SP_UNION_ID = 'union-id'
+  //open-id
+  static readonly SP_OPEN_ID = 'open-id'
   //隐私政策链接
   /**
    * 路由跳转的页面名称
