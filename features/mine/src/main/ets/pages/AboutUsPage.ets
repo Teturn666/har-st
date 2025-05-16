@@ -1,5 +1,5 @@
 import { TitleBar } from 'widget/Index'
-import MainConstants from "../Constants/MineConstants";
+import MineConstants from "../Constants/MineConstants";
 import { router } from '@kit.ArkUI';
 
 @Entry({ routeName: 'aboutUsPage' })
@@ -27,8 +27,8 @@ export struct AboutUsPage {
             .margin({ right: 12 })
         }.width('100%').onClick(() => {
           router.pushNamedRoute({
-            name: MainConstants.ROUTER_WEB, params: {
-              url: MainConstants.USER_AGREEMENT_URL,
+            name: MineConstants.ROUTER_WEB, params: {
+              url: MineConstants.USER_AGREEMENT_URL,
               title: "用户协议"
             }
           },router.RouterMode.Single)
@@ -47,8 +47,8 @@ export struct AboutUsPage {
             .margin({ right: 12 })
         }.width('100%').onClick(() => {
           router.pushNamedRoute({
-            name: MainConstants.ROUTER_WEB, params: {
-              url: MainConstants.USER_PRIVACY_URL,
+            name: MineConstants.ROUTER_WEB, params: {
+              url: MineConstants.USER_PRIVACY_URL,
               title: "隐私政策"
             }
           },router.RouterMode.Single)

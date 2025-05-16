@@ -5,7 +5,7 @@ import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ComponentContent, router } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
-import MainConstants from "../Constants/MineConstants";
+import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
@@ -120,30 +120,40 @@ export struct MinePage {
   }
 
   private jumpToLogin() {
-    router.pushNamedRoute({ name: MainConstants.ROUTER_LOGIN }, router.RouterMode.Single)
+    router.pushNamedRoute({ name: MineConstants.ROUTER_LOGIN }, router.RouterMode.Single)
   }
 
   private jumpToSearchResult() {
-    router.pushNamedRoute({ name: MainConstants.ROUTER_ABOUT_US }, router.RouterMode.Single)
+    router.pushNamedRoute({ name: MineConstants.ROUTER_ABOUT_US }, router.RouterMode.Single)
   }
 
   private jumpToPoints() {
-    router.pushNamedRoute({ name: MainConstants.ROUTER_POINTS }, router.RouterMode.Single)
+    router.pushNamedRoute({ name: MineConstants.ROUTER_POINTS }, router.RouterMode.Single)
   }
 
   private jumpToHelpCenter() {
     router.pushNamedRoute({
-      name: MainConstants.ROUTER_WEB, params: {
-        url: "https://ti.iksdt.com/static/doc/help/help.html",
+      name: MineConstants.ROUTER_WEB, params: {
+        url: MineConstants.USER_HELP_URL,
         title: "帮助中心"
       }
     }, router.RouterMode.Single)
   }
 
+  private jumpToAppStore() {
+    context.openLink(MineConstants.APP_STORE_URL, { appLinkingOnly: false })
+      .then(() => {
+        console.info('Link opened successfully');
+      })
+      .catch((error: BusinessError) => {
+        console.error('Failed to open link:', error);
+      })
+  }
+
   private async share() {
     let shareData: systemShare.SharedData = new systemShare.SharedData({
       utd: utd.UniformDataType.TEXT,
-      content: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧!官方下载链接：https://appgallery.huawei.com/app/detail?id=com.chznai.ikst&channelId=SHARE',
+      content: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧!官方下载链接:' + MineConstants.APP_STORE_URL,
       title: '快搜搜题',
       description: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧！',
       thumbnail: new Uint8Array()
@@ -161,14 +171,14 @@ export struct MinePage {
     });
   }
 
-  private async goFeedback() {
-    context.openLink(MainConstants.FEEDBACK_URL, { appLinkingOnly: false })
+  private goFeedback() {
+    context.openLink(MineConstants.FEEDBACK_URL, { appLinkingOnly: false })
       .then(() => {
         console.info('Link opened successfully');
       })
       .catch((error: BusinessError) => {
         console.error('Failed to open link:', error);
-      });
+      })
   }
 
   build() {
@@ -347,6 +357,7 @@ export struct MinePage {
               // OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true });
               // OfficialDialog.openDialog();
               // onEventObject(MineMobClickConstants.MENU_SUPPORT_US);
+              this.jumpToAppStore()
             }
           })
         }
@@ -357,7 +368,6 @@ export struct MinePage {
             isShow: true,
             click: () => {
               this.share()
-              // hilog.info(0x001, "text", "分享好友")
             }
           })
         }
@@ -392,7 +402,6 @@ export struct MinePage {
             isShow: true,
             click: () => {
               this.goFeedback()
-              // hilog.info(0x0001, "text", "意见反馈")
             }
           })
         }
@@ -403,7 +412,6 @@ export struct MinePage {
             isShow: false,
             click: () => {
               this.jumpToSearchResult()
-              // hilog.info(0x0001, "text", "关于我们")
               onEventObject(MineMobClickConstants.MENU_ABOUT)
             }
           })
