@@ -209,19 +209,19 @@ export struct MinePage {
           this.jumpToLogin()
         })
 
-        Column() {
-          Text("签到+2积分")
-            .fontSize(12)
-            .lineHeight(22)
-            .fontColor($r("app.color.c_F75A23"))
-            .textAlign(TextAlign.Start)
-            .width('100%')
-            .onClick(() => {
-              this.jumpToPoints()
-            })
-        }
-        .width('30%')
-        .margin({ right: 8 })
+        // Column() {
+        //   Text("签到+2积分")
+        //     .fontSize(12)
+        //     .lineHeight(22)
+        //     .fontColor($r("app.color.c_F75A23"))
+        //     .textAlign(TextAlign.Start)
+        //     .width('100%')
+        //     .onClick(() => {
+        //       this.jumpToPoints()
+        //     })
+        // }
+        // .width('30%')
+        // .margin({ right: 8 })
       }
       .alignItems(VerticalAlign.Top)
       .margin({ left: 28, top: 40, bottom: 0 })
@@ -330,7 +330,7 @@ export struct MinePage {
           UserListItem({
             name: $r('app.string.my_points'),
             isShow: true,
-            value: "15",
+            // value: "15",
             click: () => {
               this.jumpToPoints()
             }
