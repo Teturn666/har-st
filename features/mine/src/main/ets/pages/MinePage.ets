@@ -128,7 +128,11 @@ export struct MinePage {
   }
 
   private jumpToPoints() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_POINTS }, router.RouterMode.Single)
+    if (this.isLogin()) {
+      router.pushNamedRoute({ name: MineConstants.ROUTER_POINTS }, router.RouterMode.Single)
+    } else {
+      this.jumpToLogin()
+    }
   }
 
   private jumpToHelpCenter() {
