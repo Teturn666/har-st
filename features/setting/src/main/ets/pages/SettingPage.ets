@@ -1,10 +1,14 @@
 import { TitleBar } from 'widget/Index'
 import SettingConstants from "../Constants/SettingConstants";
-import { router } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import PreferencesUtils from '../Constants/PreferencesUtil'
+import { preferences } from '@kit.ArkData';
+import { LoginConstants } from 'login/Index';
+import { common } from '@kit.AbilityKit';
 
-
+const context = (getContext(this) as common.UIAbilityContext)
 let perFer: PreferencesUtils = new PreferencesUtils();
+let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
 
 @Entry({ routeName: 'settingPage' })
 @Component
@@ -15,10 +19,16 @@ export struct SettingPage {
   @State questionCounts: string[] = SettingConstants.ROUTER_SETTING_NUMBERS_QUESTIONS;
   @State v: string = SettingConstants.ROUTER_SETTING_NUMBERS_QUESTIONS[0];
   private select: number | number[] = 0;
+  @State loginState: string = "0"
 
   // 初始化时加载保存的题目数量
   aboutToAppear() {
     this.loadResource()
+    sp.getSync(LoginConstants.SP_IS_LOGIN, '0')
+    let loginStatus = sp.getSync(LoginConstants.SP_IS_LOGIN, '0')
+    if (typeof loginStatus === 'string') {
+      this.loginState = loginStatus
+    }
   }
 
   loadResource() {
@@ -37,6 +47,27 @@ export struct SettingPage {
     perFer.write(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS_GLOBAL, this.v)
   }
 
+  private isLogin() {
+    return this.loginState === '1'
+  }
+
+  private loginOut() {
+    sp.putSync(LoginConstants.SP_IS_LOGIN, '0')
+    sp.putSync(LoginConstants.SP_NICK_NAME, '')
+    sp.putSync(LoginConstants.SP_AVATAR_URL, '')
+    sp.putSync(LoginConstants.SP_UNION_ID, '')
+    sp.putSync(LoginConstants.SP_OPEN_ID, '')
+    sp.flushSync()
+    let index = Number(router.getLength()) - 1
+    router.back(
+      index, {
+      nickName: '',
+      avatarUrl: '',
+      loginState: '0'
+    })
+
+  }
+
   build() {
     Column() {
       // 标题栏
@@ -48,6 +79,7 @@ export struct SettingPage {
       // 考试设置标题
       Column() {
         Text('考试设置')
+          .fontWeight(FontWeight.Bold)
           .fontSize(18)
           .fontColor("#3e3e3e")
           .textAlign(TextAlign.Start)
@@ -63,7 +95,7 @@ export struct SettingPage {
       // 用户协议行（显示当前题目数量）
       Column() {
         Row() {
-          Text("一轮题目数量")
+          Text("考试一轮题目数量")
             .fontSize(16)
             .fontColor("#3e3e3e")
             .textAlign(TextAlign.Start)
@@ -131,6 +163,71 @@ export struct SettingPage {
       .alignItems(HorizontalAlign.Start)
       .backgroundColor('#f9f9f9')
       .borderRadius(5)
+
+      // 登录设置标题
+      Column() {
+        Text('登录设置')
+          .fontWeight(FontWeight.Bold)
+          .fontSize(18)
+          .fontColor("#3e3e3e")
+          .textAlign(TextAlign.Start)
+          .padding({ left: 16, top: 16, bottom: 16 })
+          .lineHeight(20)
+          .margin({ left: 20 })
+      }
+      .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+      .margin({ top: 5 })
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+      .justifyContent(FlexAlign.Start)
+
+      Column() {
+        Row() {
+          Text("退出登录")
+            .fontSize(16)
+            .fontColor("#3e3e3e")
+            .textAlign(TextAlign.Start)
+            .padding({ left: 16, top: 16, bottom: 16 })
+            .lineHeight(20)
+          Blank()
+          Image($r('app.media.ic_enter')).width(6).height(10)
+            .margin({ right: 12 })
+        }
+        .width('100%')
+      }
+      .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+      .width('90%')
+      .margin({ top: 1, left: 20 })
+      .alignItems(HorizontalAlign.Start)
+      .backgroundColor('#f9f9f9')
+      .borderRadius(5)
+      .onClick(() => {
+        this.loginDialog('退出登录', '你确定要退出登录吗？')
+      })
+
+      Column() {
+        Row() {
+          Text("注销登录")
+            .fontSize(16)
+            .fontColor("#3e3e3e")
+            .textAlign(TextAlign.Start)
+            .padding({ left: 16, top: 16, bottom: 16 })
+            .lineHeight(20)
+          Blank()
+          Image($r('app.media.ic_enter')).width(6).height(10)
+            .margin({ right: 12 })
+        }
+        .width('100%')
+      }
+      .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+      .width('90%')
+      .margin({ top: 1, left: 20 })
+      .alignItems(HorizontalAlign.Start)
+      .backgroundColor('#f9f9f9')
+      .borderRadius(5)
+      .onClick(() => {
+        this.loginDialog('注销登录', '你确定要注销登录吗？')
+      })
 
       /* // 弹窗组件（使用半透明遮罩）
        if (this.isDialogVisible) {
@@ -214,5 +311,21 @@ export struct SettingPage {
     .alignItems(HorizontalAlign.Center)
     .width('100%')
     .height('100%')
+  }
+
+  //退出弹窗
+  private loginDialog(title: string, content: string) {
+    promptAction.showDialog({
+      title: title,
+      message: content,
+      buttons: [
+        { text: '取消', color: '#666666' },
+        { text: '确定', color: '#d2a129' },
+      ],
+    }).then(async (data) => {
+      if (data.index === 1) {
+        this.loginOut()
+      }
+    })
   }
 }

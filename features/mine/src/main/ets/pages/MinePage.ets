@@ -205,7 +205,7 @@ export struct MinePage {
   build() {
     Column() {
       Row() {
-        Image(this.avatarUrl)
+        Image(this.isLogin() ? this.avatarUrl : $r('app.media.user_icon'))
           .alt($r('app.media.user_icon'))
           .objectFit(ImageFit.Contain)
           .width(48)
