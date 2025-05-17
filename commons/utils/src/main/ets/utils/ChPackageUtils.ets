@@ -1,6 +1,10 @@
 import bundleManager from '@ohos.bundle.bundleManager';
 import Logger from './Logger';
-import { util } from '@kit.ArkTS';
+import { buffer, util } from '@kit.ArkTS';
+import { preferences } from '@kit.ArkData';
+import { CommonConstants } from '../common/CommonConstants';
+
+let context = getContext()
 
 export class ChPackageUtils {
   static getPackage() {
@@ -17,15 +21,39 @@ export class ChPackageUtils {
   }
 
   static getDeviceId(): string {
-    let uuId = util.generateRandomUUID(true)
+    let uuId: string = util.generateRandomUUID(true)
     let base64 = new util.Base64Helper()
-    let deviceId = base64.encodeToStringSync(base64.decodeSync(uuId))
+    let uint8Array = new Uint8Array(buffer.from(uuId).buffer)
+    let deviceId = base64.encodeToStringSync(uint8Array)
     return deviceId
   }
 
   static getChannel(): string {
     let base64 = new util.Base64Helper()
-    let deviceId = base64.encodeToStringSync(base64.decodeSync("harmony"))
-    return deviceId
+    let uint8Array = new Uint8Array(buffer.from("harmony").buffer)
+    let channel = base64.encodeToStringSync(uint8Array)
+    return channel
+  }
+
+  static getUnionId(): string {
+    let base64 = new util.Base64Helper()
+    let sp = preferences.getPreferencesSync(context, CommonConstants.SP_OPTIONS)
+    let unionId = sp.getSync(CommonConstants.SP_UNION_ID, '')
+    if (typeof unionId === 'string' && unionId != '') {
+      let uint8Array = new Uint8Array(buffer.from(unionId).buffer)
+      return base64.encodeToStringSync(uint8Array)
+    }
+    return ""
+  }
+
+  static getOpenId(): string {
+    let base64 = new util.Base64Helper()
+    let sp = preferences.getPreferencesSync(context, CommonConstants.SP_OPTIONS)
+    let openId = sp.getSync(CommonConstants.SP_OPEN_ID, '')
+    if (typeof openId === 'string' && openId != '') {
+      let uint8Array = new Uint8Array(buffer.from(openId).buffer)
+      return base64.encodeToStringSync(uint8Array)
+    }
+    return ""
   }
 }

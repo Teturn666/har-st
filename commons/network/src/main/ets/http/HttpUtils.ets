@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from '@ohos/axios'
+import { ChPackageUtils, Logger } from 'utils'
 
 export class HttpUtils {
   public static readonly Success_code: number = 0
@@ -12,15 +13,20 @@ export class HttpUtils {
 
   //通用接口链接
   public static getInstance(): AxiosInstance {
+    let deviceId = ChPackageUtils.getDeviceId()
+    let unionId = ChPackageUtils.getUnionId()
+    let openId = ChPackageUtils.getOpenId()
+    let channel = ChPackageUtils.getChannel()
     return axios.create({
       baseURL: HttpUtils.mBaseUrl,
       timeout: HttpUtils.READ_TIME_OUT,
       headers: {
-        'open-id': 'bzhwbHU2VHpQSmhLVzhFcUJwTWJKSUF6MklUWQ==',
-        'union-id': 'bzdRTVQ2V05VWi1aQ3QtdWdRbnl5aWZoTGU3OA==',
-        'device-id': '',
-        'apk-channel': 'harmony',
-        'apk-name': 'harmony',
+        'open-id': openId,
+        'union-id': unionId,
+        'device-id': deviceId,
+        'device-model': "",
+        'apk-channel': channel,
+        'apk-name': channel,
         'apk-version': '1.0.0'
       }
     })
