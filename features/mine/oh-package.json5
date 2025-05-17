@@ -10,6 +10,7 @@
     "utils": "file:../../commons/utils",
     "login": "file:../login",
     "points": "file:../points",
+    "setting": "file:../setting",
   }
 }
 

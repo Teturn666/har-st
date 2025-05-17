@@ -1,26 +1,11 @@
 {
   "module": {
     "name": "setting",
-    "type": "feature",
+    "type": "har",
     "description": "$string:module_desc",
     "mainElement": "SettingAbility",
     "deviceTypes": [
       "phone"
-    ],
-    "deliveryWithInstall": true,
-    "installationFree": false,
-    "pages": "$profile:main_pages",
-    "abilities": [
-      {
-        "name": "SettingAbility",
-        "srcEntry": "./ets/settingability/SettingAbility.ets",
-        "description": "$string:SettingAbility_desc",
-        "icon": "$media:layered_image",
-        "label": "$string:SettingAbility_label",
-        "startWindowIcon": "$media:startIcon",
-        "startWindowBackground": "$color:start_window_background",
-        "exported": true
-      }
     ]
   }
 }

@@ -8,6 +8,8 @@ export default class MineConstants {
   static readonly ROUTER_LOGIN = 'login'
   //积分页面
   static readonly ROUTER_POINTS = 'pointsPage'
+  //设置页
+  static readonly ROUTER_SETTING = 'settingPage'
   //H5页面
   static readonly ROUTER_WEB = 'webPage'
   //隐私政策链接

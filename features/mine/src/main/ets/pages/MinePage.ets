@@ -13,6 +13,7 @@ import { LoginConstants } from 'login/Index';
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
+import('setting/src/main/ets/pages/SettingPage')
 
 
 const context = (getContext(this) as common.UIAbilityContext)
@@ -137,6 +138,10 @@ export struct MinePage {
 
   private jumpToSearchResult() {
     router.pushNamedRoute({ name: MineConstants.ROUTER_ABOUT_US }, router.RouterMode.Single)
+  }
+
+  private jumpToSetting() {
+    router.pushNamedRoute({ name: MineConstants.ROUTER_SETTING }, router.RouterMode.Single)
   }
 
   private jumpToPoints() {
@@ -358,7 +363,7 @@ export struct MinePage {
             name: $r('app.string.operation_settings'),
             isShow: true,
             click: () => {
-
+              this.jumpToSetting()
             }
           })
         }
