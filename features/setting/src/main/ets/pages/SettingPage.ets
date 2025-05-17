@@ -1,13 +1,12 @@
 import { TitleBar } from 'widget/Index'
-import SettingConstants from "../Constants/SettingConstants";
+import { SettingConstants } from "../Constants/SettingConstants";
 import { promptAction, router } from '@kit.ArkUI';
-import PreferencesUtils from '../Constants/PreferencesUtil'
+import { preferencesUtils } from '../Constants/PreferencesUtil'
 import { preferences } from '@kit.ArkData';
 import { LoginConstants } from 'login/Index';
 import { common } from '@kit.AbilityKit';
 
 const context = (getContext(this) as common.UIAbilityContext)
-let perFer: PreferencesUtils = new PreferencesUtils();
 let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
 
 @Entry({ routeName: 'settingPage' })
@@ -32,9 +31,9 @@ export struct SettingPage {
   }
 
   loadResource() {
-    perFer.getPreferences()
+    preferencesUtils.getPreferences()
     this.questionCounts = SettingConstants.ROUTER_SETTING_NUMBERS_QUESTIONS
-    let count = perFer.read(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS, 0)
+    let count = preferencesUtils.read(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS, 0)
     if (count != undefined) {
       this.v = this.questionCounts[Number(count)]
       this.select = Number(count)
@@ -43,8 +42,8 @@ export struct SettingPage {
 
   // 保存题目数量设置
   saveQuestionCount() {
-    perFer.write(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS, String(this.select))
-    perFer.write(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS_GLOBAL, this.v)
+    preferencesUtils.write(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS, String(this.select))
+    preferencesUtils.write(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS_GLOBAL, this.v)
   }
 
   private isLogin() {
