@@ -28,7 +28,7 @@ export class PointsModel {
   //获取签到积分list
   public async getSignMapList(): Promise<CheckDataRes[]> {
     try {
-      let data = await this.PointsNet.getListSignMap(true)
+      let data = await this.PointsNet.getListSignMap(false)
       // Logger.info(TAG, '返回数据--------' + data)
       return data
     } catch (e) {
@@ -53,7 +53,7 @@ export class PointsModel {
   public async getMyNumb(): Promise<string> {
     try {
       let data = await this.PointsNet.getMyNumb()
-      // Logger.info(TAG, '返回数据--------' + data)
+      Logger.info(TAG, '返回数据--------' + data)
       return String(data)
     } catch (e) {
       Logger.info(TAG, 'err--------' + e)
@@ -88,6 +88,7 @@ export class PointsModel {
       return []
     }
   }
+
   // 历史增长细节
   public async getHistoryPsIncrease(): Promise<PointEventRes[]> {
     try {
@@ -99,6 +100,7 @@ export class PointsModel {
       return []
     }
   }
+
   // 历史消耗细节
   public async getHistoryPsConsumer(): Promise<PointEventRes[]> {
     try {
@@ -152,8 +154,9 @@ export class PointsModel {
     try {
       let data = await this.PointsNet.submitBoundCode(code)
       // Logger.info(TAG, '返回数据--------' + data)
-      if(data == null)
+      if (data == null) {
         return "绑定失败，请检查邀请码是否正确"
+      }
       return data
     } catch (e) {
       Logger.info(TAG, 'err--------' + e)
