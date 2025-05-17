@@ -9,6 +9,7 @@ interface DetailParams {
   wrongCount: number;
   timeSpent: string;
   questions: QuestionRes[];
+  typepage:number;
 }
 
 @Entry({ routeName: "exerciseDetailsPage" })
@@ -20,10 +21,12 @@ struct ExerciseDetailsPage {
   @State timeSpent: string = '00:00'; // 花费时间
   @State isLoading: boolean = true;
   @State questions: QuestionRes[] = [];
+  @State typepage:number = -1;  //模拟考试 1 错题练习 2 收藏练习 3
 
   aboutToAppear(): void {
     const params = router.getParams() as DetailParams | undefined;
     if (params) {
+      this.typepage = params.typepage;
       this.title = params.title || '未知题库';
       this.correctCount = params.correctCount || 0;
       this.wrongCount = params.wrongCount || 0;
@@ -32,7 +35,7 @@ struct ExerciseDetailsPage {
       setTimeout(() => {
         console.log('两秒后执行');
         this.isLoading = false;
-        }, 2000);
+      }, 2000);
     } else {
       setTimeout(() => {
         console.log('两秒后执行');
@@ -53,6 +56,10 @@ struct ExerciseDetailsPage {
           .width(155)
           .height(155)
           .margin({ top: 68 });
+        Text("即将进入练习详情...")
+          .fontColor(Color.Grey)
+          .fontSize(16)
+          .margin({top:28})
       }
       .width('100%')
       .height('100%')
@@ -199,7 +206,7 @@ struct ExerciseDetailsPage {
               router.pushNamedRoute({
                 name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
                 params: {
-                  practiceMode: 1,
+                  practiceMode: this.typepage,
                   qid: this.questions[0]?.qId || -1,
                 }
               });
@@ -208,7 +215,8 @@ struct ExerciseDetailsPage {
             .width(122)
             .height(40)
             .onClick(() => {
-              router.back()
+              let index = Number(router.getLength()) - 2
+              router.back(index,router.RouterMode.Single)
             });
         }
         .justifyContent(FlexAlign.SpaceEvenly)

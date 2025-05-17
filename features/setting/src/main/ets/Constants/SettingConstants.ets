@@ -1,4 +1,4 @@
-export default class SettingConstants {
+export class SettingConstants {
   /**
    * 路由跳转的页面名称
    */
@@ -11,5 +11,5 @@ export default class SettingConstants {
   // setting 持久化数据名称，题的数量-全局使用
   static readonly ROUTER_SETTING_NAME_NUMBERS_QUESTIONS_GLOBAL = 'countQuestion_global'
   // setting 题数量
-  static readonly ROUTER_SETTING_NUMBERS_QUESTIONS = ['5', '10', '15', '20', '25'];
+  static readonly ROUTER_SETTING_NUMBERS_QUESTIONS = ['10', '20', '30', '40', '50','100','150','200'];
 }

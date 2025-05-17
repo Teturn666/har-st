@@ -1,10 +1,10 @@
 import { common } from '@kit.AbilityKit'
 import { preferences } from '@kit.ArkData';
-import SettingConstants from './SettingConstants';
+import { SettingConstants } from './SettingConstants';
 
 let dataPreferences: preferences.Preferences | null = null;
 
-export default class PreferencesUtils {
+class PreferencesUtils {
   private context = getContext(this) as common.UIAbilityContext
 
   getPreferences() {
@@ -59,3 +59,5 @@ export default class PreferencesUtils {
     return value as string | undefined //返回的是string | undefined
   }
 }
+
+export const preferencesUtils=new PreferencesUtils()

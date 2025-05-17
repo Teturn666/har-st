@@ -40,7 +40,7 @@ struct ExercisePage {
       questionDb.answer = question.answer;
       questionDb.option = question.option;
       questionDb.wrongAnswer = wrongAnswer;
-
+      questionDb.questionID = question.questionID;
       await questionWrongTable.insertDataAwait(questionDb);
       this.homeModel.getWrongQuestionList(question.qId)
 
