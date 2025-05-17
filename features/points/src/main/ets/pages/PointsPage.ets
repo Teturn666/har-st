@@ -119,14 +119,14 @@ export struct PointsPage {
             this.jumpToMyInvitation()
           })
 
-          Stack() {
-            Image($r('app.media.ic_rectangls'))
-              .width(80)
-              .height(28)
-            Text("积分兑换")
-              .fontColor('#3E3E3E')
-              .fontSize(12)
-          }
+          // Stack() {
+          //   Image($r('app.media.ic_rectangls'))
+          //     .width(80)
+          //     .height(28)
+          //   Text("积分兑换")
+          //     .fontColor('#3E3E3E')
+          //     .fontSize(12)
+          // }
         }
         .height('70')
         .width('100%')
