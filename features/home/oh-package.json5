@@ -16,6 +16,7 @@
     "view": "file:../view",
     "widget": "file:../../commons/widget",
     "bank": 'file:../../features/bank',
+    "setting": 'file:../setting/'
   }
 }
 
