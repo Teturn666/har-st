@@ -3,7 +3,7 @@
     "products": [
       {
         "name": "default",
-        "signingConfig": "default",
+        "signingConfig": "lianxing",
         "compatibleSdkVersion": "5.0.3(15)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
@@ -22,17 +22,30 @@
       }
     ],
     "signingConfigs": [
+            {
+              "name": "default",
+              "type": "HarmonyOS",
+              "material": {
+                "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
+                "storePassword": "000000181BD2E79489912C543F33CEDF5DB746F05DF2E8140AF5EC3F55417854CEF624D1C318F495",
+                "keyAlias": "Tl",
+                "keyPassword": "0000001873D3735AA4A7846DAD1B8DA3B065E1D5D08FF6DE1F23C46E6B671D5CA4F30D04A13F33E3",
+                "signAlg": "SHA256withECDSA",
+                "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
+                "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
+              }
+            },
       {
-        "name": "default",
+        "name": "lianxing",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/chenghui/Desktop/harmony/ksst_debug.p12",
-          "storePassword": "000000188C4F2AF92B5B3A85098157522DDCCC47F2C7C7BAEEE39D22C83E4CD77D395B9598486913",
-          "keyAlias": "Tl",
-          "keyPassword": "000000185FEEDB987AD9EB2E71799A0C21A92A05575B28C3BE0CD858EC1DBC0FEF623C08B53C4473",
+          "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
+          "storePassword": "00000018DD2413AD9D37A53B023C8EE0E3334FBB7E4D3DED80AD61D55F0A7CF861DCF20D065AE60F",
+          "keyAlias": "tl",
+          "keyPassword": "00000018F6BA91D36B6391267E5E28B47C9B45D1279EC26571915FB454987318684C63B271A3D0AF",
           "signAlg": "SHA256withECDSA",
-          "profile": "/Users/chenghui/Desktop/harmony/ksst_debug_profileDebug.p7b",
-          "certpath": "/Users/chenghui/Desktop/harmony/ksst_debug_cer.cer"
+          "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
+          "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
         }
       }
     ]
