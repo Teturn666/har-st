@@ -11,3 +11,4 @@ export { ChPackageUtils } from './src/main/ets/utils/ChPackageUtils';
 export {
   LoadingStatus
 } from './src/main/ets/common/CommonEnums';
+export  * from "./src/main/ets/utils"

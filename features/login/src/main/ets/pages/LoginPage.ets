@@ -7,10 +7,12 @@ import common from '@ohos.app.ability.common';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
 import http from '@ohos.net.http';
-import { authentication, loginComponentManager } from '@kit.AccountKit';
+import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
 import { preferences } from '@kit.ArkData';
+import { huaweiAuthManager } from 'utils';
+import json from '@ohos.util.json';
 
 
 interface AccessTokenResponse {
@@ -59,9 +61,16 @@ export struct LoginPage {
        * 协议状态为ACCEPTED，才可以使用华为账号一键登录功能
        */
       .setAgreementStatus(loginComponentManager.AgreementStatus.NOT_ACCEPTED)
-      .onClickLoginWithHuaweiIDButton((error: BusinessError | undefined,
+      .onClickLoginWithHuaweiIDButton(async (error: BusinessError | undefined,
         response: loginComponentManager.HuaweiIDCredential) => {
-        this.handleLoginWithHuaweiIDButton(error, response);
+        // promptAction.showToast({
+        //   message:'111'
+        // })
+         const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
+        promptAction.showToast({
+          message:code
+        })
+        //   this.handleLoginWithHuaweiIDButton(error, response);
       })
       .onClickEvent((error: BusinessError, clickEvent: loginComponentManager.ClickEvent) => {
         if (error) {
@@ -71,14 +80,16 @@ export struct LoginPage {
         hilog.info(this.domainId, this.logTag, `onClickEvent clickEvent: ${clickEvent}`);
       });
 
-  handleLoginWithHuaweiIDButton(error: BusinessError | undefined,
+  async handleLoginWithHuaweiIDButton(error: BusinessError | undefined,
     response: loginComponentManager.HuaweiIDCredential) {
+
     if (error) {
       hilog.error(this.domainId, this.logTag,
         `Failed to login with LoginWithHuaweiIDButton. errCode is ${error.code}, errMessage is ${error.message}`)
       promptAction.showToast({ message: '服务或网络异常，请稍后重试' })
       return
     }
+
     try {
       if (response) {
         hilog.info(this.domainId, this.logTag, 'Succeeded in clicking LoginWithHuaweiIDButton.');
@@ -255,13 +266,14 @@ export struct LoginPage {
   getQuickLoginAnonymousPhone() {
     // 创建授权请求，并设置参数
     const authRequest = new authentication.HuaweiIDProvider().createAuthorizationWithHuaweiIDRequest();
-    // 获取匿名手机号需传quickLoginAnonymousPhone这个scope，传参之前需要先申请“华为账号一键登录”权限
+    // 获取匿名手机号需传quickLoginAnonymousPhone这个scope，传参之前需要先申请"华为账号一键登录"权限
     authRequest.scopes = ['quickLoginAnonymousPhone'];
     // 用于防跨站点请求伪造
     authRequest.state = util.generateRandomUUID();
     // 一键登录场景该参数必须设置为false
     authRequest.forceAuthorization = false;
     const controller = new authentication.AuthenticationController();
+
     try {
       controller.executeRequest(authRequest).then((response: authentication.AuthorizationWithHuaweiIDResponse) => {
         // 获取到UnionID、OpenID、匿名手机号
@@ -335,16 +347,67 @@ export struct LoginPage {
         .textAlign(TextAlign.Center)
         .fontSize(12)
 
-      Button('华为账号一键登录', { type: ButtonType.Normal, stateEffect: true })
-        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
-        .borderRadius(8)
-        .backgroundColor('#f64e4d')
+      // Button('华为账号一键登录', { type: ButtonType.Normal, stateEffect: true })
+      //   .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
+      //   .borderRadius(8)
+      //   .backgroundColor('#f64e4d')
+      //   .width('60%')
+      //   .height(48)
+      //   .margin({ top: 20 })
+      //
+      //   .onClick(async () => {
+      //     //Todo
+      //     promptAction.showToast({
+      //       message:'111'
+      //     })
+      //     const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
+      //
+      //    })
+
+      LoginWithHuaweiIDButton({
+        params: {
+          // LoginWithHuaweiIDButton支持的样式
+          style: loginComponentManager.Style.BUTTON_RED,
+          // 账号登录按钮在登录过程中展示加载态
+          extraStyle: {
+            buttonStyle: new loginComponentManager.ButtonStyle().loadingStyle({
+              show: true
+            })
+          },
+          // LoginWithHuaweiIDButton的边框圆角半径
+          borderRadius: 24,
+          // LoginWithHuaweiIDButton支持的登录类型
+          loginType: loginComponentManager.LoginType.QUICK_LOGIN,
+          // LoginWithHuaweiIDButton支持按钮的样式跟随系统深浅色模式切换
+          supportDarkMode: true,
+          // verifyPhoneNumber：如果华为账号用户在过去90天内未进行短信验证，是否拉起Account Kit提供的短信验证码页面
+          verifyPhoneNumber: true
+        },
+        controller: this.controller
+      })
         .width('60%')
         .height(48)
+        .backgroundColor('#eb5555')
+        .borderRadius(24)
         .margin({ top: 20 })
-        .onClick(() => {
-          this.huaweiLogin()
-        })
+
+Button("华为账号一键登录")
+  .borderRadius(8)
+  .backgroundColor('#f64e4d')
+  .width('60%')
+  .height(48)
+  .margin({ top: 20 })
+        .onClick(async () => {
+          //Todo
+          // promptAction.showToast({
+          //   message:'111'
+          // })
+         const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
+promptAction.showToast({
+  message:code
+})
+         })
+
 
       Button('微信快捷登录', { type: ButtonType.Normal, stateEffect: true })
         .borderRadius(8)
@@ -364,6 +427,11 @@ export struct LoginPage {
           .margin({ right: 4 })
           .onClick(() => {
             this.agreementChecked = !this.agreementChecked;
+            if (this.agreementChecked) {
+              this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED);
+            } else {
+              this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.NOT_ACCEPTED);
+            }
           })
         Text('我已阅读并同意')
           .fontSize(12)
