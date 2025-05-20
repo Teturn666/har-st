@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
-import { QuestionRes, questionCollectionTable, questionTable,questionWrongTable } from 'db';
+import { QuestionRes, questionCollectionTable, questionTable, questionWrongTable } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
 import { BankListRes } from '../model/BankListRes';
 import { HomeModel } from '../model/HomeModel';
@@ -267,7 +267,6 @@ struct ExercisePage {
     }
   }
 
-
   build() {
     if (this.questions.length > 0)
     Column() {
@@ -276,18 +275,10 @@ struct ExercisePage {
         Image($r('app.media.ic_back'))
           .objectFit(ImageFit.Contain)
           .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
-          .margin({ left: 15, right: 15 })
+          .margin({ left: 15, right: 75 })
           .align(Alignment.TopStart)
           .onClick(() => router.back())
-        Button($r('app.media.ic_back'))
-          .width(50)
-          .height(50)
-          .backgroundColor('#FFFFFF')
-          .borderRadius(6)
-          .onClick(() => {
-            router.back();
-          })
-          .margin({ right: 20 })
+
         Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
           Button() {
             Row() {
@@ -322,6 +313,7 @@ struct ExercisePage {
             .alignItems(VerticalAlign.Center)
           }
           .backgroundColor('#d2a129')
+
           Blank()
           Button('模拟考试')
             .width(70)
@@ -333,14 +325,15 @@ struct ExercisePage {
             .onClick(() => {
               router.pushNamedRoute({
                 name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-                params:{
-                  practiceMode:1,
-                  qid:this.qid
+                params: {
+                  practiceMode: 1,
+                  qid: this.qid
                 }
               }, router.RouterMode.Single)
             })
         }
       }
+
 
       // 进度条部分
       Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
@@ -376,7 +369,8 @@ struct ExercisePage {
           .height(24)
           .objectFit(ImageFit.Cover)
         Blank()
-        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') : $r('app.media.star'))
+        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
+        $r('app.media.star'))
           .width(18)
           .height(18)
           .onClick(() => {
@@ -499,8 +493,6 @@ struct ExercisePage {
       });
     }
   }
-
-
 }
 
 

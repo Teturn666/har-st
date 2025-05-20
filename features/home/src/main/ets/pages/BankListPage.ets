@@ -1,5 +1,5 @@
 import { router } from '@kit.ArkUI'
-import { BankListRes} from 'db'
+import { BankListRes } from 'db'
 import { Logger } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import { HomeModel } from '../model/HomeModel'
@@ -13,8 +13,47 @@ import('./ExercisePage')
 export struct BankListPage {
   title = ''
   @State questionBanks: BankListRes[] = [];
-  @State type: number = 1      // 1=题库练习, 2=错题练习, 3=收藏练习
+  @State type: number = 1 // 1=题库练习, 2=错题练习, 3=收藏练习
   @State homeModel: HomeModel = HomeModel.getInstance()
+
+  //刷新数据
+  onPageShow(): void {
+    const params = router.getParams() as Record<string, string>;
+
+    // 检查 params 是否存在且 refresh 为 "1"
+    if (params && params.refresh === "1") {
+      // 检查 type 是否存在
+      if (params.type) {
+        this.type = parseInt(params.type, 10) || 1;
+
+        if (this.type === 1) {
+          this.homeModel.getBankList()
+            .then(banks => {
+              this.questionBanks = banks;
+            })
+            .catch((error:Error) => {
+              console.error("Error fetching bank list:", error);
+            });
+        } else if (this.type === 2) {
+          this.homeModel.getWrongBankList()
+            .then(banks => {
+              this.questionBanks = banks;
+            })
+            .catch((error:Error) => {
+              console.error("Error fetching wrong bank list:", error);
+            });
+        } else {
+          this.homeModel.getCollectionBankList()
+            .then(banks => {
+              this.questionBanks = banks;
+            })
+            .catch((error:Error) => {
+              console.error("Error fetching collection bank list:", error);
+            });
+        }
+      }
+    }
+  }
 
   aboutToAppear(): void {
     const params = router.getParams() as Record<string, string>
@@ -28,13 +67,19 @@ export struct BankListPage {
     // 根据 type 直接从接口/模型获取数据
     if (this.type === 1) {
       this.homeModel.getBankList()
-        .then(banks => { this.questionBanks = banks })
+        .then(banks => {
+          this.questionBanks = banks
+        })
     } else if (this.type === 2) {
       this.homeModel.getWrongBankList()
-        .then(banks => { this.questionBanks = banks })
+        .then(banks => {
+          this.questionBanks = banks
+        })
     } else {
       this.homeModel.getCollectionBankList()
-        .then(banks => { this.questionBanks = banks })
+        .then(banks => {
+          this.questionBanks = banks
+        })
     }
   }
 
@@ -50,21 +95,19 @@ export struct BankListPage {
     }
   }
 
-
   // 题库
   private onQuestionBankTap(qid: number): void {
-    if(this.type ===1 ){
+    if (this.type === 1) {
       router.pushNamedRoute({
         name: HomeConstants.ROUTER_EXERCISE_LIST,
         params: { qid: qid }
       }, router.RouterMode.Single)
-    }else if (this.type === 2 || this.type ===3 ){
-
+    } else if (this.type === 2 || this.type === 3) {
       router.pushNamedRoute({
         name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-        params:{
-          practiceMode:this.type,
-          qid:qid
+        params: {
+          practiceMode: this.type,
+          qid: qid
         }
       }, router.RouterMode.Single)
     }
@@ -79,7 +122,7 @@ export struct BankListPage {
           .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
           .margin({ left: 15, right: 15 })
           .align(Alignment.TopStart)
-          .onClick(() =>  router.back())
+          .onClick(() => router.back())
         Text(this.title)
           .fontSize($r('app.float.font_size_18fp'))
           .fontColor($r('app.color.c_black'))
@@ -90,7 +133,7 @@ export struct BankListPage {
       .width('100%')
 
 
-      if (this.questionBanks.length > 0){
+      if (this.questionBanks.length > 0) {
         List({ space: 10 }) {
           ForEach(this.questionBanks, (bank: BankListRes) => {
             ListItem() {
@@ -122,14 +165,19 @@ export struct BankListPage {
           }, (bank: BankListRes) => String(bank.qid))
         }
         .width('100%')
-        .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-      }else {
+        .padding({
+          left: 12,
+          right: 12,
+          top: 8,
+          bottom: 8
+        })
+      } else {
         // 无数据，渲染空状态
         Column() {
           Image($r('app.media.ic_no'))
             .width(117)
             .height(100)
-            // .margin({ top: 50 })
+          // .margin({ top: 50 })
           Text(this.getEmptyMessage())
             .fontSize($r('app.float.font_size_16fp'))
             .fontColor('#9D9D9D')
@@ -143,8 +191,6 @@ export struct BankListPage {
         .width('100%')
         .height('100%')
       }
-
-
 
 
     }.alignItems(HorizontalAlign.Center)

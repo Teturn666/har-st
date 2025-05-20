@@ -9,7 +9,8 @@ interface DetailParams {
   wrongCount: number;
   timeSpent: string;
   questions: QuestionRes[];
-  typepage:number;
+  typepage: number;
+  backindex: number;
 }
 
 @Entry({ routeName: "exerciseDetailsPage" })
@@ -21,17 +22,22 @@ struct ExerciseDetailsPage {
   @State timeSpent: string = '00:00'; // 花费时间
   @State isLoading: boolean = true;
   @State questions: QuestionRes[] = [];
-  @State typepage:number = -1;  //模拟考试 1 错题练习 2 收藏练习 3
+  @State typepage: number = -1; //模拟考试 1 错题练习 2 收藏练习 3
+  @State backindex: number = 2; //返回的页数
 
   aboutToAppear(): void {
     const params = router.getParams() as DetailParams | undefined;
     if (params) {
+      this.backindex = params.backindex || 2;
       this.typepage = params.typepage;
       this.title = params.title || '未知题库';
       this.correctCount = params.correctCount || 0;
       this.wrongCount = params.wrongCount || 0;
       this.timeSpent = params.timeSpent || '00:00';
       this.questions = params.questions || [];
+
+      console.log("返回的backindex：" + this.backindex)
+
       setTimeout(() => {
         console.log('两秒后执行');
         this.isLoading = false;
@@ -59,7 +65,7 @@ struct ExerciseDetailsPage {
         Text("即将进入练习详情...")
           .fontColor(Color.Grey)
           .fontSize(16)
-          .margin({top:28})
+          .margin({ top: 28 })
       }
       .width('100%')
       .height('100%')
@@ -72,7 +78,12 @@ struct ExerciseDetailsPage {
         TitleBar({
           title: "练习详情",
           backClick: () => {
-            router.back();
+            let index = Number(router.getLength()) - this.backindex
+            router.back(
+              index, {
+              refresh: "1",
+              type: this.typepage.toString()
+            })
           }
         })
           .width('100%');
@@ -133,7 +144,7 @@ struct ExerciseDetailsPage {
           Column() {
             ForEach(this.questions, (item: QuestionRes, index: number) => {
               Column() {
-                Text(item.question + item.question) // 重复以模拟长文本
+                Text(item.question + item.question)// 重复以模拟长文本
                   .fontColor('#333333')
                   .fontSize(12)
                   .margin({ top: 8 });
@@ -159,6 +170,7 @@ struct ExerciseDetailsPage {
                       .fontSize(14);
                   }
                   .margin({ right: 20 });
+
                   Row() {
                     Text('您的答案：')
                       .fontColor('#333333')
@@ -208,6 +220,7 @@ struct ExerciseDetailsPage {
                 params: {
                   practiceMode: this.typepage,
                   qid: this.questions[0]?.qId || -1,
+                  backindex: this.backindex += 2
                 }
               });
             });
@@ -215,8 +228,13 @@ struct ExerciseDetailsPage {
             .width(122)
             .height(40)
             .onClick(() => {
-              let index = Number(router.getLength()) - 2
-              router.back(index,router.RouterMode.Single)
+              let index = Number(router.getLength()) - this.backindex
+              router.back(
+                index, {
+                refresh: "1",
+                type: this.typepage.toString()
+              })
+
             });
         }
         .justifyContent(FlexAlign.SpaceEvenly)
