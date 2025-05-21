@@ -3,7 +3,7 @@
     "products": [
       {
         "name": "default",
-        "signingConfig": "lianxing",
+        "signingConfig": "default",
         "compatibleSdkVersion": "5.0.3(15)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
@@ -22,30 +22,17 @@
       }
     ],
     "signingConfigs": [
-            {
-              "name": "default",
-              "type": "HarmonyOS",
-              "material": {
-                "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
-                "storePassword": "000000181BD2E79489912C543F33CEDF5DB746F05DF2E8140AF5EC3F55417854CEF624D1C318F495",
-                "keyAlias": "Tl",
-                "keyPassword": "0000001873D3735AA4A7846DAD1B8DA3B065E1D5D08FF6DE1F23C46E6B671D5CA4F30D04A13F33E3",
-                "signAlg": "SHA256withECDSA",
-                "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
-                "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
-              }
-            },
       {
-        "name": "lianxing",
+        "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
-          "storePassword": "00000018DD2413AD9D37A53B023C8EE0E3334FBB7E4D3DED80AD61D55F0A7CF861DCF20D065AE60F",
-          "keyAlias": "tl",
-          "keyPassword": "00000018F6BA91D36B6391267E5E28B47C9B45D1279EC26571915FB454987318684C63B271A3D0AF",
+          "storeFile": "/Users/xinxin/Documents/key/harmony/ksst/debugSign/ksstDbug.p12",
+          "storePassword": "00000018146E5A13A64D31FC8FE1F0EE0FB109984BA99AF99C19E6336BB763C7BA96829097E3231F",
+          "keyAlias": "Tl",
+          "keyPassword": "0000001872D3E4BED16FDC4529AB7C49CB4FE6A512DDEC4D6466A5191074853BDD85BB37DD2B741D",
           "signAlg": "SHA256withECDSA",
-          "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
-          "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
+          "profile": "/Users/xinxin/Documents/key/harmony/ksst/debugSign/ksstProfileDebug.p7b",
+          "certpath": "/Users/xinxin/Documents/key/harmony/ksst/debugSign/ksstDebugCer.cer"
         }
       }
     ]
@@ -234,18 +221,6 @@
     {
       "name": "login",
       "srcPath": "./features/login",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "share",
-      "srcPath": "./features/share",
       "targets": [
         {
           "name": "default",

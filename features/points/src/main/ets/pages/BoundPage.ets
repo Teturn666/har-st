@@ -1,6 +1,7 @@
 import { router } from '@kit.ArkUI';
-import { PointsModel } from '../model/PointsModel';
+
 import promptAction from '@ohos.promptAction';
+import { PointsModel } from '../model/PointsModel';
 
 @Entry({ routeName: 'myBoundPage' })
 @Component
@@ -52,30 +53,55 @@ struct BoundPage {
           Image($r('app.media.hand'))
             .width(150)
             .height(150)
+            .margin({ bottom: 70, top: 10 })
+          Row() {
+            TextInput({ placeholder: '好友邀请码你和好友都可获得',text:$$this.inputValue})
+              .height(40)
+              .fontSize(16)
+              .placeholderColor('#ffcbcac6')
+              .backgroundColor(Color.Transparent)
+              .borderRadius(20)
+              .padding({ left: 12, })
+              .layoutWeight(1)
 
-          TextInput()
-            .width('90%') // 宽度
-            .height('70')
-            .margin({top:50})
-            .onChange((value)=>{
-              this.inputValue = value
-            })
+            Text('20积分')
+              .width(100)
+              .fontSize(23)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#F1CAC2')
+
+          }
+          .width('90%')
+          .height(50)
+          .border({ width: 1, color: '#E6C97A' })
+          .borderRadius(20)
+          .alignItems(VerticalAlign.Center)
+          .backgroundColor(Color.White)
+          .padding({ left: 10, right: 0 })
 
           Column(){
             Text("绑定邀请码")
-              .fontSize(25)
+              .fontSize(22)
               .fontWeight(FontWeight.Bold)
-              .fontColor('#ffb7771d')
-              .margin({ left: 8, top:5 })
+              .fontColor('#7B6008')
+              .margin({ top: 16, bottom: 4 })
             Text("绑定后不可更改和解绑")
-              .fontSize(17)
-              .fontWeight(FontWeight.Bold)
-              .fontColor('#fdcf8d')
-              .margin({ left: 8, top:5 })
+              .fontSize(15)
+              .fontColor('#B8860B')
+              .margin({ bottom: 16 })
           }
-          .backgroundColor('#ffeae6df')
-          .margin({top:20})
-          .width("80%")
+          .width('90%')
+          .height(80)
+          .linearGradient({
+            angle: 90, // 横向渐变
+            colors: [
+              ['#EDCF8F', 0.1],   // 左
+              ['#FFFFD6', 0.4],   // 中
+              ['#F1D691', 0.7]    // 右
+            ]
+          })
+          .borderRadius(16)
+          .margin({ top: 20 })
           .justifyContent(FlexAlign.Center)
           .alignItems(HorizontalAlign.Center)
           .onClick(async ()=>{
@@ -104,27 +130,54 @@ struct BoundPage {
 
           Text("暂不填写/无邀请码")
             .fontSize(15)
-            .fontColor('#F75A23')
+            .fontColor('#9F9E9C')
             .margin({ top: 25 })
-            .decoration({ type: TextDecorationType.Underline, color: '#F75A23' })
+            .decoration({ type: TextDecorationType.Underline, color: '#9F9E9C' })
             .onClick(() => {
               router.back()
             })
+          Row(){
+            Text("积分可用于兑换会员权益")
+              .fontSize(12)
+              .fontColor('#ff0c0c0c')
+              .margin({ top: 130 })
 
-          Text("积分可用于兑换会员权益")
-            .fontSize(12)
-            .fontColor('#ff0c0c0c')
-            .margin({ top: 130 })
-            .onClick(() => {
-              router.back()
-            })
-          Text("30天内可到我的积分-我的邀请码页面进行绑定")
-            .fontSize(12)
-            .fontColor('#ff131211')
-            .margin({ top: 1 })
-            .onClick(() => {
-              router.back()
-            })
+            Text("会员权益")
+              .fontSize(12)
+              .fontColor('#B77558')
+              .margin({ top: 130 })
+              .onClick(() => {
+                router.back()
+              })
+          }
+
+          Row(){
+            Text("30天内")
+              .fontSize(12)
+              .fontColor('#B77558')
+              .margin({ top: 1 })
+              .onClick(() => {
+                router.back()
+              })
+            Text("可到")
+              .fontSize(12)
+              .fontColor('#ff131211')
+              .margin({ top: 1 })
+
+            Text("我的积分-我的邀请码")
+              .fontSize(12)
+              .fontColor('#B77558')
+              .margin({ top: 1 })
+              .onClick(() => {
+                router.back()
+              })
+            Text("页面进行绑定")
+              .fontSize(12)
+              .fontColor('#ff131211')
+              .margin({ top: 1 })
+
+          }
+
 
         }.alignItems(HorizontalAlign.Center)
 
@@ -164,7 +217,13 @@ struct BoundPage {
         }.alignItems(HorizontalAlign.Center)
       }
     }
-    .backgroundColor('#fff5f4f2')
+    .linearGradient({
+      angle: 90,
+      colors: [
+        ['#FFFBEF', 0.0],
+        ['#FFF5F4F2', 1.0]
+      ]
+    })
     .height('100%')
     .width('100%')
   }
