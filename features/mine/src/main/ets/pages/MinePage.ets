@@ -3,7 +3,7 @@ import { systemShare } from '@kit.ShareKit';
 import { preferences, uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { ComponentContent, router } from '@kit.ArkUI';
+import { ComponentContent, promptAction, router } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
@@ -17,7 +17,7 @@ import('setting/src/main/ets/pages/SettingPage')
 
 
 const context = (getContext(this) as common.UIAbilityContext)
-
+let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
 
 @Builder
 function buildsupportText() {
@@ -133,7 +133,9 @@ export struct MinePage {
   }
 
   private jumpToLogin() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_LOGIN }, router.RouterMode.Single)
+    if (!this.isLogin()) {
+      router.pushNamedRoute({ name: MineConstants.ROUTER_LOGIN }, router.RouterMode.Single)
+    }
   }
 
   private jumpToSearchResult() {
@@ -499,3 +501,4 @@ struct UserListItem {
     }.onClick(() => this.click()).width('100%')
   }
 }
+
