@@ -98,6 +98,7 @@ function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   obj.answer = account.answer;
   obj.wrongAnswer = account.wrongAnswer;
   obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
+  obj.questionID = account.questionID;
   return obj;
 }
 

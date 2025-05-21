@@ -15,7 +15,6 @@ import HomeConstants from '../Constants/HomeConstants'
 
 
 import('./ExerciseDetailsPage')
-
 // 模拟考试、错题练习、收藏练习题目共用页面
 interface questionSelections {
   selectedOption: string;
@@ -27,6 +26,7 @@ interface questionSelections {
 interface RouteParams {
   practiceMode?: number;
   qid?: number;
+  backindex?: number;
 }
 
 @Entry({ routeName: "exerciseCommonPage" })
@@ -53,6 +53,7 @@ struct ExerciseCommonPage {
   @State elapsedSeconds: number = 0; // 经过的秒数
   @State timerText: string = '00:00'; // 格式化时间
   private timerId: number | null = null; // 计时器 ID
+  @State backindex: number = -1;
 
   // 格式化时间为 MM:SS
   private formatTime(seconds: number): string {
@@ -72,15 +73,11 @@ struct ExerciseCommonPage {
     }, 1000);
   }
 
-  // 清理计时器
-  async aboutToDisappear(): Promise<void> {
-    if (this.timerId !== null) {
-      clearInterval(this.timerId);
-      this.timerId = null;
-    }
-    // 在错题练习模式下，退出页面时同步数据库
+  //错题练习同步数据库
+  private async refreshErrordata() {
     if (this.practiceMode === 2) {
       try {
+        //先删除question列表
         const wrongQuestions = await questionWrongTable.querySync(this.qid, false);
         if (wrongQuestions.length > 0) {
           for (const question of wrongQuestions) {
@@ -93,17 +90,28 @@ struct ExerciseCommonPage {
               });
             });
           }
+          // 将当前的 questions 列表重新插入数据库
+          for (const question of this.questions) {
+            await questionWrongTable.insertDataAwait(question);
+            console.log(`插入错题到数据库: questionID: ${question.questionID}`);
+          }
+          console.log('数据库同步完成');
         }
-        // 将当前的 questions 列表重新插入数据库
-        for (const question of this.questions) {
-          await questionWrongTable.insertDataAwait(question);
-          console.log(`插入错题到数据库: questionID: ${question.questionID}`);
-        }
-        console.log('数据库同步完成');
+        console.log("查看当前question列表：" + JSON.stringify(this.questions))
+
+
       } catch (err) {
         console.error('同步数据库时发生错误:', err);
         promptAction.showToast({ message: '数据库同步失败', duration: 1500 });
       }
+    }
+  }
+
+  // 销毁页面调用
+  async aboutToDisappear(): Promise<void> {
+    if (this.timerId !== null) {
+      clearInterval(this.timerId);
+      this.timerId = null;
     }
   }
 
@@ -127,7 +135,7 @@ struct ExerciseCommonPage {
       const list = await this.homeModel.getBankQuestionList(qid);
       console.log("题目: " + JSON.stringify(list));
       if (list.length > 0) {
-        // 模拟考试模式：随机抽取30条题目
+        // 模拟考试模式：随机抽取题目
         if (this.practiceMode === 1) {
           // 读取 Preferences 中的题目数量
           const count = preferencesUtils.read(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS_GLOBAL, 10)
@@ -135,13 +143,10 @@ struct ExerciseCommonPage {
             let countNum = Number(count)
             if (list.length < countNum) {
               this.getQuestionCount = list.length
-
             } else {
               this.getQuestionCount = countNum
             }
           }
-
-
           this.questions = this.getRandomQuestions(list, this.getQuestionCount);
           console.log("模拟考试随机抽取题目: ", this.questions.length);
         } else {
@@ -152,8 +157,6 @@ struct ExerciseCommonPage {
         this.currentProgress = 1;
         this.questionSelections = {};
         this.favoriteStatus = {};
-
-
       } else {
         promptAction.showToast({ message: '暂无题目数据', duration: 2000 });
       }
@@ -192,7 +195,7 @@ struct ExerciseCommonPage {
       this.currentQuestionIndex--;
       this.currentProgress = this.currentQuestionIndex + 1;
       this.restoreQuestionState(); // 恢复上一题的选择
-      promptAction.showToast({ message: '已切换到上一题', duration: 1000 });
+      // promptAction.showToast({ message: '已切换到上一题', duration: 1000 });
     } else {
       promptAction.showToast({ message: '已经是第一题', duration: 1500 });
     }
@@ -203,7 +206,7 @@ struct ExerciseCommonPage {
       this.currentQuestionIndex++;
       this.currentProgress = this.currentQuestionIndex + 1;
       this.restoreQuestionState(); // 恢复下一题的选择
-      promptAction.showToast({ message: '已切换到下一题', duration: 1000 });
+      // promptAction.showToast({ message: '已切换到下一题', duration: 1000 });
     } else {
       // 停止计时器
       if (this.timerId !== null) {
@@ -232,10 +235,12 @@ struct ExerciseCommonPage {
         }
       });
       const wrongCount = this.questions.length - correctCount;
+      this.refreshErrordata()
       // 跳转到详情页面
       router.pushNamedRoute({
         name: HomeConstants.ROUTER_EXERCISE_DETAILS_LIST,
         params: {
+          backindex: this.backindex,
           typepage: this.practiceMode,
           title: this.questionBankName,
           correctCount: correctCount,
@@ -282,7 +287,34 @@ struct ExerciseCommonPage {
           title: this.practiceMode === 1 ? this.questionBankName :
             this.practiceMode === 2 ? "错题练习" : "收藏练习",
           backClick: () => {
-            router.back();
+            if (this.practiceMode === 1) {
+              promptAction.showDialog({
+                title: '提示',
+                message: '你还未完成考试，确认退出吗？',
+                buttons: [
+                  { text: '取消', color: '#666666' },
+                  { text: '确定', color: '#d2a129' },
+                ],
+              }).then((data) => {
+                if (data.index === 1) {
+                  let index = Number(router.getLength()) - 2
+                  router.back(
+                    index, {
+                    refresh: "1",
+                    type: this.practiceMode.toString()
+                  })
+                }
+              });
+            } else {
+              this.refreshErrordata()
+              this.backindex -= 1
+              let index = Number(router.getLength()) - this.backindex
+              router.back(
+                index, {
+                refresh: "1",
+                type: this.practiceMode.toString()
+              })
+            }
           }
         })
           .width('100%');
@@ -311,7 +343,6 @@ struct ExerciseCommonPage {
                   } else {
                     this.colletionQuestion()
                   }
-
                 });
             }
           }
@@ -347,7 +378,6 @@ struct ExerciseCommonPage {
           Image(this.getQuestionTypeImage())
             .height(24)
             .objectFit(ImageFit.Cover)
-
           Blank();
 
           if (this.practiceMode === 1 || this.practiceMode === 3) {
@@ -364,8 +394,6 @@ struct ExerciseCommonPage {
             Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
               .fontSize(12)
           }
-
-
           if (this.practiceMode === 2) {
             Image($r('app.media.ic_del'))
               .width(18)
@@ -445,9 +473,40 @@ struct ExerciseCommonPage {
           .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
           .margin({ top: 12, left: 16, right: 16 });
         });
+        //按钮
+        if ((this.practiceMode === 3 || this.practiceMode === 2 && this.hasSubmitted)) {
+          Row() {
+            Button() {
+              Text('上一题')
+                .fontSize(16)
+                .fontColor('#F2B771')
+            }
+            .width(100)
+            .height(30)
+            .backgroundColor(Color.White)
+            .borderRadius(20)
+            .border({ width: 1, color: '#F2B771' })
+            .onClick(() => this.goToPreviousQuestion())
+
+            Button() {
+              Text('下一题')
+                .fontSize(16)
+                .fontColor('#F2B771')
+            }
+            .backgroundColor(Color.White)
+            .width(100)
+            .height(30)
+            .borderRadius(20)
+            .border({ width: 1, color: '#F2B771' })
+            .onClick(() => this.goToNextQuestion())
+          }
+          .justifyContent(FlexAlign.SpaceAround)
+          .alignItems(VerticalAlign.Center)
+          .padding(10)
+          .width('80%')
+          .margin({ top: 18 })
+        }
       }
-
-
     }
     .width('100%')
     .height('100%')
@@ -465,14 +524,21 @@ struct ExerciseCommonPage {
         } else {
           this.selectedOptions = [...this.selectedOptions, optionLabel];
           const correctAnswers = currentQuestion.answer.split('');
-
           // 检查是否选择了错误选项
           if (!correctAnswers.includes(optionLabel)) {
             this.hasSubmitted = true;
-            setTimeout((): void => this.goToNextQuestion(), 2000);
-            promptAction.showToast({ message: '回答错误', duration: 1500 });
+            if (this.practiceMode === 1) {
+              setTimeout((): void => this.goToNextQuestion(), 2000);
+            }
+            //最后一题提交自动跳转
+            if (this.practiceMode != 1 && !(this.currentQuestionIndex < this.questions.length - 1)) {
+              setTimeout((): void => this.goToNextQuestion(), 2000);
+            }
+            // promptAction.showToast({ message: '回答错误', duration: 1500 });
             // 插入错题表
-            await this.saveToWrongTable(currentQuestion, optionLabel);
+            if (this.practiceMode != 2) {
+              await this.saveToWrongTable(currentQuestion, optionLabel);
+            }
             this.saveQuestionState(); // 记录错误提交状态
           } else {
             // 检查是否选中了全部正确答案
@@ -480,8 +546,14 @@ struct ExerciseCommonPage {
             this.selectedOptions.every(opt => correctAnswers.includes(opt));
             if (allCorrectSelected) {
               this.hasSubmitted = true;
-              setTimeout((): void => this.goToNextQuestion(), 2000);
-              promptAction.showToast({ message: '回答正确', duration: 1500 });
+              if (this.practiceMode === 1) {
+                setTimeout((): void => this.goToNextQuestion(), 2000);
+              }
+              //最后一题提交自动跳转
+              if (this.practiceMode != 1 && !(this.currentQuestionIndex < this.questions.length - 1)) {
+                setTimeout((): void => this.goToNextQuestion(), 2000);
+              }
+              // promptAction.showToast({ message: '回答正确', duration: 1500 });
               this.saveQuestionState(); // 记录正确提交状态
             }
           }
@@ -491,15 +563,23 @@ struct ExerciseCommonPage {
         // 单选：设置选项并提交
         this.selectedOption = optionLabel;
         this.hasSubmitted = true;
-        setTimeout((): void => this.goToNextQuestion(), 2000);
+        if (this.practiceMode === 1) {
+          setTimeout((): void => this.goToNextQuestion(), 2000);
+        }
+        //最后一题提交自动跳转
+        if (this.practiceMode != 1 && !(this.currentQuestionIndex < this.questions.length - 1)) {
+          setTimeout((): void => this.goToNextQuestion(), 2000);
+        }
         const isCorrect = optionLabel === currentQuestion.answer;
-        promptAction.showToast({
-          message: isCorrect ? '回答正确' : '回答错误',
-          duration: 1500
-        });
+        // promptAction.showToast({
+        //   message: isCorrect ? '回答正确' : '回答错误',
+        //   duration: 1500
+        // });
         if (!isCorrect) {
           // 插入错题表
-          await this.saveToWrongTable(currentQuestion, optionLabel);
+          if (this.practiceMode != 2) {
+            await this.saveToWrongTable(currentQuestion, optionLabel);
+          }
         }
         this.saveQuestionState(); // 记录单选提交状态
       }
@@ -508,15 +588,27 @@ struct ExerciseCommonPage {
 
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
+      // 检查题目是否已存在于错题表
+      const existingWrongQuestions = await this.homeModel.getWrongQuestionList(question.qId);
+      const isAlreadyInWrongTable = existingWrongQuestions.some(item => item.questionID === question.questionID);
+
+      if (isAlreadyInWrongTable) {
+        console.log(`题目 ${question.questionID} 已存在于错题表中`);
+        return;
+      }
+
+      // 如果题目不在错题表中，继续插入
       let questionDb = new QuestionRes();
       questionDb.qId = question.qId;
       questionDb.question = question.question;
       questionDb.answer = question.answer;
       questionDb.option = question.option;
       questionDb.wrongAnswer = wrongAnswer;
-
+      questionDb.questionID = question.questionID;
       await questionWrongTable.insertDataAwait(questionDb);
       this.homeModel.getWrongQuestionList(question.qId);
+      console.log(`题目 ${question.questionID} 已添加到错题表`);
+
     } catch (err) {
       console.error('插入错题表失败:', err);
       promptAction.showToast({ message: '保存错题失败', duration: 1500 });
@@ -621,6 +713,7 @@ struct ExerciseCommonPage {
   // 获取错题列表
   async getWrongQuestionList(qid: number): Promise<void> {
     this.isLoading = true;
+    // this.questions = [];
     try {
       const list = await this.homeModel.getWrongQuestionList(qid);
       console.log("错题: " + JSON.stringify(list));
@@ -672,8 +765,14 @@ struct ExerciseCommonPage {
           this.currentProgress = this.questions.length > 0 ? 1 : 0;
           this.questionSelections = {};
           this.favoriteStatus = {};
-
-          router.back()
+          this.refreshErrordata()
+          let index = Number(router.getLength()) - 1
+          router.back(
+            index, {
+            refresh: "1",
+            type: this.practiceMode.toString()
+          }
+          )
         } else {
           promptAction.showToast({ message: '没有错题可清空', duration: 1500 });
         }
@@ -711,8 +810,13 @@ struct ExerciseCommonPage {
           this.currentProgress = this.questions.length > 0 ? 1 : 0;
           this.questionSelections = {};
           this.favoriteStatus = {};
-
-          router.back()
+          let index = Number(router.getLength()) - 1
+          router.back(
+            index, {
+            refresh: "1",
+            type: this.practiceMode.toString()
+          }
+          )
         } else {
           promptAction.showToast({ message: '没有收藏题目可清空', duration: 1500 });
         }
@@ -727,7 +831,6 @@ struct ExerciseCommonPage {
       promptAction.showToast({ message: '没有题目可移除', duration: 1500 });
       return;
     }
-
     try {
       console.log(`准备移除题目: questionID: ${currentQuestion.questionID}`);
       // 从本地 questions 数组中移除当前题目
@@ -759,7 +862,14 @@ struct ExerciseCommonPage {
             ],
           }).then(async (data) => {
             if (data.index === 0) { // 修正：按钮索引为 0
-              router.back();
+              await this.refreshErrordata()
+              let index = Number(router.getLength()) - 1
+              router.back(
+                index, {
+                refresh: "1",
+                type: this.practiceMode.toString()
+              }
+              )
             }
           });
         }
@@ -806,6 +916,12 @@ struct ExerciseCommonPage {
     if (params && typeof params.practiceMode === 'number' && typeof params.qid === 'number') {
       this.practiceMode = params.practiceMode;
       this.qid = params.qid;
+      if (this.practiceMode === 1) {
+        this.backindex = params.backindex || 3;
+      } else {
+        this.backindex = params.backindex || 2;
+      }
+
       // console.log('aboutToAppear: qid=', this.qid, 'practiceMode=', this.practiceMode);
       if ([1, 2, 3].includes(this.practiceMode)) {
         if (this.practiceMode === 1) {
@@ -827,7 +943,6 @@ struct ExerciseCommonPage {
         } else if (this.practiceMode === 2) {
           // 错题练习
           this.isLoading = true;
-          // this.questionBankName = '错题练习';
           Promise.all([
             this.getQuestionBankList(),
             this.getWrongQuestionList(this.qid)

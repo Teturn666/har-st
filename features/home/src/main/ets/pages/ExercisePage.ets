@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
-import { QuestionRes, questionCollectionTable, questionTable,questionWrongTable } from 'db';
+import { QuestionRes, questionCollectionTable, questionTable, questionWrongTable } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
 import { BankListRes } from '../model/BankListRes';
 import { HomeModel } from '../model/HomeModel';
@@ -34,6 +34,16 @@ struct ExercisePage {
   // 在 ExercisePage 组件内添加以下方法
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
+      // 检查题目是否已存在于错题表
+      const existingWrongQuestions = await this.homeModel.getWrongQuestionList(question.qId);
+      const isAlreadyInWrongTable = existingWrongQuestions.some(item => item.questionID === question.questionID);
+
+      if (isAlreadyInWrongTable) {
+        console.log(`题目 ${question.questionID} 已存在于错题表中`);
+        return;
+      }
+
+      // 如果题目不在错题表中，继续插入
       let questionDb = new QuestionRes();
       questionDb.qId = question.qId;
       questionDb.question = question.question;
@@ -42,13 +52,15 @@ struct ExercisePage {
       questionDb.wrongAnswer = wrongAnswer;
       questionDb.questionID = question.questionID;
       await questionWrongTable.insertDataAwait(questionDb);
-      this.homeModel.getWrongQuestionList(question.qId)
+      this.homeModel.getWrongQuestionList(question.qId);
+      console.log(`题目 ${question.questionID} 已添加到错题表`);
 
     } catch (err) {
       console.error('插入错题表失败:', err);
       promptAction.showToast({ message: '保存错题失败', duration: 1500 });
     }
   }
+
 
   // 修改 handleOptionClick 方法
   private async handleOptionClick(optionLabel: string) {
@@ -65,7 +77,7 @@ struct ExercisePage {
           // 检查是否选择了错误选项
           if (!correctAnswers.includes(optionLabel)) {
             this.hasSubmitted = true;
-            promptAction.showToast({ message: '回答错误', duration: 1500 });
+            // promptAction.showToast({ message: '回答错误', duration: 1500 });
             // 插入错题表
             await this.saveToWrongTable(currentQuestion, optionLabel);
             this.saveQuestionState(); // 记录错误提交状态
@@ -75,7 +87,7 @@ struct ExercisePage {
             this.selectedOptions.every(opt => correctAnswers.includes(opt));
             if (allCorrectSelected) {
               this.hasSubmitted = true;
-              promptAction.showToast({ message: '回答正确', duration: 1500 });
+              // promptAction.showToast({ message: '回答正确', duration: 1500 });
               this.saveQuestionState(); // 记录正确提交状态
             }
           }
@@ -87,10 +99,10 @@ struct ExercisePage {
         this.hasSubmitted = true;
 
         const isCorrect = optionLabel === currentQuestion.answer;
-        promptAction.showToast({
-          message: isCorrect ? '回答正确' : '回答错误',
-          duration: 1500
-        });
+        // promptAction.showToast({
+        //   message: isCorrect ? '回答正确' : '回答错误',
+        //   duration: 1500
+        // });
         if (!isCorrect) {
           // 插入错题表
           await this.saveToWrongTable(currentQuestion, optionLabel);
@@ -233,7 +245,7 @@ struct ExercisePage {
       this.currentQuestionIndex--;
       this.currentProgress = this.currentQuestionIndex + 1;
       this.restoreQuestionState(); // 恢复上一题的选择
-      promptAction.showToast({ message: '已切换到上一题', duration: 1000 });
+      // promptAction.showToast({ message: '已切换到上一题', duration: 1000 });
     } else {
       promptAction.showToast({ message: '已经是第一题', duration: 1500 });
     }
@@ -244,7 +256,7 @@ struct ExercisePage {
       this.currentQuestionIndex++;
       this.currentProgress = this.currentQuestionIndex + 1;
       this.restoreQuestionState(); // 恢复下一题的选择
-      promptAction.showToast({ message: '已切换到下一题', duration: 1000 });
+      // promptAction.showToast({ message: '已切换到下一题', duration: 1000 });
     } else {
       promptAction.showToast({ message: '已经是最后一题', duration: 1500 });
     }
@@ -267,7 +279,6 @@ struct ExercisePage {
     }
   }
 
-
   build() {
     if (this.questions.length > 0)
     Column() {
@@ -276,18 +287,10 @@ struct ExercisePage {
         Image($r('app.media.ic_back'))
           .objectFit(ImageFit.Contain)
           .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
-          .margin({ left: 15, right: 15 })
+          .margin({ left: 15, right: 75 })
           .align(Alignment.TopStart)
           .onClick(() => router.back())
-        Button($r('app.media.ic_back'))
-          .width(50)
-          .height(50)
-          .backgroundColor('#FFFFFF')
-          .borderRadius(6)
-          .onClick(() => {
-            router.back();
-          })
-          .margin({ right: 20 })
+
         Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
           Button() {
             Row() {
@@ -322,6 +325,7 @@ struct ExercisePage {
             .alignItems(VerticalAlign.Center)
           }
           .backgroundColor('#d2a129')
+
           Blank()
           Button('模拟考试')
             .width(70)
@@ -333,14 +337,15 @@ struct ExercisePage {
             .onClick(() => {
               router.pushNamedRoute({
                 name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-                params:{
-                  practiceMode:1,
-                  qid:this.qid
+                params: {
+                  practiceMode: 1,
+                  qid: this.qid
                 }
               }, router.RouterMode.Single)
             })
         }
       }
+
 
       // 进度条部分
       Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
@@ -376,7 +381,8 @@ struct ExercisePage {
           .height(24)
           .objectFit(ImageFit.Cover)
         Blank()
-        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') : $r('app.media.star'))
+        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
+        $r('app.media.star'))
           .width(18)
           .height(18)
           .onClick(() => {
@@ -499,8 +505,6 @@ struct ExercisePage {
       });
     }
   }
-
-
 }
 
 
