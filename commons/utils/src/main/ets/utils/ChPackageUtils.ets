@@ -3,10 +3,12 @@ import Logger from './Logger';
 import { buffer, util } from '@kit.ArkTS';
 import { preferences } from '@kit.ArkData';
 import { CommonConstants } from '../common/CommonConstants';
-
+import { Context } from '@kit.AbilityKit';
 let context = getContext()
-
 export class ChPackageUtils {
+  // static ctx？: Context
+
+  static  ctx?:Context
   static getPackage() {
     bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION)
       .then(bundleInfo => {
@@ -37,7 +39,7 @@ export class ChPackageUtils {
 
   static getUnionId(): string {
     let base64 = new util.Base64Helper()
-    let sp = preferences.getPreferencesSync(context, CommonConstants.SP_OPTIONS)
+    let sp = preferences.getPreferencesSync(context||ChPackageUtils.ctx, CommonConstants.SP_OPTIONS)
     let unionId = sp.getSync(CommonConstants.SP_UNION_ID, '')
     if (typeof unionId === 'string' && unionId != '') {
       let uint8Array = new Uint8Array(buffer.from(unionId).buffer)
@@ -48,7 +50,7 @@ export class ChPackageUtils {
 
   static getOpenId(): string {
     let base64 = new util.Base64Helper()
-    let sp = preferences.getPreferencesSync(context, CommonConstants.SP_OPTIONS)
+    let sp = preferences.getPreferencesSync(context||ChPackageUtils.ctx, CommonConstants.SP_OPTIONS)
     let openId = sp.getSync(CommonConstants.SP_OPEN_ID, '')
     if (typeof openId === 'string' && openId != '') {
       let uint8Array = new Uint8Array(buffer.from(openId).buffer)
