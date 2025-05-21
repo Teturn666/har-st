@@ -4,7 +4,6 @@ import { Logger } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import { HomeModel } from '../model/HomeModel'
 import { HomeNet } from '../service/HomeNet'
-
 import('./ExercisePage')
 
 //我的下载、题库练习、错题练习、收藏练习列表共用的页面
@@ -19,7 +18,6 @@ export struct BankListPage {
   //刷新数据
   onPageShow(): void {
     const params = router.getParams() as Record<string, string>;
-
     // 检查 params 是否存在且 refresh 为 "1"
     if (params && params.refresh === "1") {
       // 检查 type 是否存在
@@ -134,42 +132,9 @@ export struct BankListPage {
 
 
       if (this.questionBanks.length > 0) {
-        List({ space: 10 }) {
-          ForEach(this.questionBanks, (bank: BankListRes) => {
-            ListItem() {
-              Column() {
-                Row() {
-                  Text(bank.name)
-                    .fontSize(12)
-                    .fontColor('#060606')
-                    .margin({ left: 16, right: 16 })
-                    .width('80%')
-                  Blank()
-                  Image($r('app.media.ic_r'))
-                    .width(12)
-                    .height(12)
-                    .fillColor('#666666')
-                    .margin({ right: 16 })
-                }
-                .width('100%')
-                .height(48)
-                .alignItems(VerticalAlign.Center)
-              }
-              .borderRadius(10)
-              .backgroundColor('#F6F6F6')
-              .onClick(() => {
-                // this.selectdemo(bank.qid)
-                this.onQuestionBankTap(bank.qid);
-              })
-            }
-          }, (bank: BankListRes) => String(bank.qid))
-        }
-        .width('100%')
-        .padding({
-          left: 12,
-          right: 12,
-          top: 8,
-          bottom: 8
+        BankList({
+          banks: this.questionBanks,
+          onItemTap: (qid) => this.onQuestionBankTap(qid)
         })
       } else {
         // 无数据，渲染空状态
@@ -196,6 +161,52 @@ export struct BankListPage {
     }.alignItems(HorizontalAlign.Center)
     .width('100%')
     .height('100%')
+  }
+}
+
+
+@Component
+struct BankList {
+   banks: BankListRes[] = []
+   onItemTap: (qid: number) => void = () => {}
+
+  build() {
+    List({ space: 10 }) {
+      ForEach(this.banks, (bank: BankListRes) => {
+        ListItem() {
+          Column() {
+            Row() {
+              Text(bank.name)
+                .fontSize(12)
+                .fontColor('#060606')
+                .margin({ left: 16, right: 16 })
+                .width('80%')
+
+              Blank()
+
+              Image($r('app.media.ic_r'))
+                .width(12)
+                .height(12)
+                .fillColor('#666666')
+                .margin({ right: 16 })
+            }
+            .width('100%')
+            .height(48)
+            .alignItems(VerticalAlign.Center)
+          }
+          .borderRadius(10)
+          .backgroundColor('#F6F6F6')
+          .onClick(() => this.onItemTap(bank.qid))
+        }
+      }, (bank: BankListRes) => String(bank.qid))
+    }
+    .width('100%')
+    .padding({
+      left: 12,
+      right: 12,
+      top: 8,
+      bottom: 8
+    })
   }
 }
 
