@@ -1,13 +1,14 @@
 import { router } from '@kit.ArkUI';
 
 import promptAction from '@ohos.promptAction';
+import { PointsModel } from '../model/PointsModel';
 
 @Entry({ routeName: 'myBoundPage' })
 @Component
 struct BoundPage {
   @State title: string = "绑定邀请码";
   @State boundCode: string = "";
-  //@State PointsModel: PointsModel = PointsModel.getInstance()
+  @State PointsModel: PointsModel = PointsModel.getInstance()
   @State imageWidth: number = 200; // 固定宽度
   @State imageHeight: number = 200; // 自动计算高度
   @State inputValue: string = ''
@@ -19,12 +20,12 @@ struct BoundPage {
   }
   async loadResource(): Promise<void>{
     // 获取数据
-    // this.boundCode = await this.PointsModel.getBoundCode()
+    this.boundCode = await this.PointsModel.getBoundCode()
     this.boundCode = ''
   }
 
   async submitBoundCode(code:string):Promise<void>{
-    // this.promptText = await this.PointsModel.submitBoundCode(code)
+    this.promptText = await this.PointsModel.submitBoundCode(code)
     if(this.promptText == "done"){
       this.boundCode = code
     }else{
@@ -54,21 +55,21 @@ struct BoundPage {
             .height(150)
             .margin({ bottom: 70, top: 10 })
           Row() {
-            TextInput({ placeholder: '好友邀请码你和好友都可获得' })
+            TextInput({ placeholder: '好友邀请码你和好友都可获得',text:$$this.inputValue})
               .height(40)
               .fontSize(16)
               .placeholderColor('#ffcbcac6')
               .backgroundColor(Color.Transparent)
               .borderRadius(20)
-              .padding({ left: 12, right: 4 })
+              .padding({ left: 12, })
               .layoutWeight(1)
 
             Text('20积分')
-              .width(110)
+              .width(100)
               .fontSize(23)
               .fontWeight(FontWeight.Bold)
               .fontColor('#F1CAC2')
-              .margin({ right: 0, left: 0 })
+
           }
           .width('90%')
           .height(50)
