@@ -4,6 +4,7 @@ import { Logger } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import { HomeModel } from '../model/HomeModel'
 import { HomeNet } from '../service/HomeNet'
+
 import('./ExercisePage')
 
 //我的下载、题库练习、错题练习、收藏练习列表共用的页面
@@ -20,16 +21,14 @@ export struct BankListPage {
     const params = router.getParams() as Record<string, string>;
     // 检查 params 是否存在且 refresh 为 "1"
     if (params && params.refresh === "1") {
-      // 检查 type 是否存在
       if (params.type) {
         this.type = parseInt(params.type, 10) || 1;
-
         if (this.type === 1) {
           this.homeModel.getBankList()
             .then(banks => {
               this.questionBanks = banks;
             })
-            .catch((error:Error) => {
+            .catch((error: Error) => {
               console.error("Error fetching bank list:", error);
             });
         } else if (this.type === 2) {
@@ -37,7 +36,7 @@ export struct BankListPage {
             .then(banks => {
               this.questionBanks = banks;
             })
-            .catch((error:Error) => {
+            .catch((error: Error) => {
               console.error("Error fetching wrong bank list:", error);
             });
         } else {
@@ -45,7 +44,7 @@ export struct BankListPage {
             .then(banks => {
               this.questionBanks = banks;
             })
-            .catch((error:Error) => {
+            .catch((error: Error) => {
               console.error("Error fetching collection bank list:", error);
             });
         }
@@ -62,7 +61,6 @@ export struct BankListPage {
     if (params.type) {
       this.type = parseInt(params.type, 10) || 1
     }
-    // 根据 type 直接从接口/模型获取数据
     if (this.type === 1) {
       this.homeModel.getBankList()
         .then(banks => {
@@ -78,18 +76,6 @@ export struct BankListPage {
         .then(banks => {
           this.questionBanks = banks
         })
-    }
-  }
-
-  // 根据 type 返回不同的空状态文案
-  private getEmptyMessage(): string {
-    switch (this.type) {
-      case 2:
-        return '暂无错题，请先去题库练习做题，或选择题库进行模拟考试'
-      case 3:
-        return '暂无收藏，请先去练习或考试中添加'
-      default:
-        return '暂无可练题库，您可以去题库广场下载'
     }
   }
 
@@ -114,22 +100,10 @@ export struct BankListPage {
 
   build() {
     Column() {
-      Row() {
-        Image($r('app.media.ic_back'))
-          .objectFit(ImageFit.Contain)
-          .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
-          .margin({ left: 15, right: 15 })
-          .align(Alignment.TopStart)
-          .onClick(() => router.back())
-        Text(this.title)
-          .fontSize($r('app.float.font_size_18fp'))
-          .fontColor($r('app.color.c_black'))
-          .textAlign(TextAlign.Center)
-          .width('60%')
-      }
-      .margin({ top: 15 })
-      .width('100%')
-
+      PageHeader({
+        title: this.title,
+        onBack: () => router.back()
+      })
 
       if (this.questionBanks.length > 0) {
         BankList({
@@ -138,23 +112,7 @@ export struct BankListPage {
         })
       } else {
         // 无数据，渲染空状态
-        Column() {
-          Image($r('app.media.ic_no'))
-            .width(117)
-            .height(100)
-          // .margin({ top: 50 })
-          Text(this.getEmptyMessage())
-            .fontSize($r('app.float.font_size_16fp'))
-            .fontColor('#9D9D9D')
-            .fontSize(14)
-            .margin({ top: 20 })
-            .textAlign(TextAlign.Center)
-        }
-        .alignItems(HorizontalAlign.Center)
-        .justifyContent(FlexAlign.Center)
-        .padding({ left: 20, right: 20 })
-        .width('100%')
-        .height('100%')
+        EmptyState({ type: this.type })
       }
 
 
@@ -164,11 +122,73 @@ export struct BankListPage {
   }
 }
 
+@Component
+struct PageHeader {
+  title: string = ''
+  onBack: () => void = () => {
+  }
+
+  build() {
+    Row() {
+      Image($r('app.media.ic_back'))
+        .objectFit(ImageFit.Contain)
+        .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
+        .margin({ left: 15, right: 15 })
+        .align(Alignment.TopStart)
+        .onClick(() => this.onBack())
+
+      Text(this.title)
+        .fontSize($r('app.float.font_size_18fp'))
+        .fontColor($r('app.color.c_black'))
+        .textAlign(TextAlign.Center)
+        .width('60%')
+    }
+    .margin({ top: 15 })
+    .width('100%')
+  }
+}
+
+@Component
+struct EmptyState {
+  type: number = 1
+
+  private getEmptyMessage(): string {
+    switch (this.type) {
+      case 2:
+        return '暂无错题，请先去题库练习做题，或选择题库进行模拟考试'
+      case 3:
+        return '暂无收藏，请先去练习或考试中添加'
+      default:
+        return '暂无可练题库，您可以去题库广场下载'
+    }
+  }
+
+  build() {
+    Column() {
+      Image($r('app.media.ic_no'))
+        .width(117)
+        .height(100)
+
+      Text(this.getEmptyMessage())
+        .fontSize($r('app.float.font_size_16fp'))
+        .fontColor('#9D9D9D')
+        .fontSize(14)
+        .margin({ top: 20 })
+        .textAlign(TextAlign.Center)
+    }
+    .alignItems(HorizontalAlign.Center)
+    .justifyContent(FlexAlign.Center)
+    .padding({ left: 20, right: 20 })
+    .width('100%')
+    .height('100%')
+  }
+}
 
 @Component
 struct BankList {
-   banks: BankListRes[] = []
-   onItemTap: (qid: number) => void = () => {}
+  banks: BankListRes[] = []
+  onItemTap: (qid: number) => void = () => {
+  }
 
   build() {
     List({ space: 10 }) {
