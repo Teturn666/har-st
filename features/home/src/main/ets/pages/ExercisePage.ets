@@ -31,6 +31,8 @@ struct ExercisePage {
   @State totalProgress: number = this.questions.length;
   @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
 
+
+
   // 在 ExercisePage 组件内添加以下方法
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
@@ -60,7 +62,6 @@ struct ExercisePage {
       promptAction.showToast({ message: '保存错题失败', duration: 1500 });
     }
   }
-
 
   // 修改 handleOptionClick 方法
   private async handleOptionClick(optionLabel: string) {
@@ -147,12 +148,15 @@ struct ExercisePage {
     this.checkFavoriteStatus(); // 恢复当前题目的收藏状态
   }
 
+
+  // 检查收藏状态
   private async checkFavoriteStatus() {
     const currentQuestion = this.questions[this.currentQuestionIndex];
     const questionID = currentQuestion.questionID;
     try {
       const existedList = await this.homeModel.getCollectionQuestionList(currentQuestion.qId);
-      this.favoriteStatus[questionID] = existedList.some(item => item.questionID === questionID);
+      const isCollected = existedList.some(item => item.questionID === questionID)
+      this.favoriteStatus[questionID] = isCollected;
     } catch (err) {
       console.error('检查收藏状态失败:', err);
       this.favoriteStatus[questionID] = false;
@@ -162,27 +166,28 @@ struct ExercisePage {
   private async toggleFavorite() {
     const currentQuestion: QuestionRes = this.questions[this.currentQuestionIndex];
     const questionID = currentQuestion.questionID;
-
     try {
-      const existedList = await this.homeModel.getCollectionQuestionList(currentQuestion.qId);
-      const isQuestionInCollection = existedList.some(item => item.questionID === questionID);
+      const result = await questionCollectionTable.querySync(currentQuestion.qId, false);
+      const isFavorited = result.some(item => item.questionID === questionID);
 
-      if (isQuestionInCollection) {
-        await questionCollectionTable.deleteData(currentQuestion, () => {
-          this.favoriteStatus[questionID] = false;
-          promptAction.showToast({ message: '已取消收藏', duration: 1500 });
-        });
+      if (isFavorited) {
+        // 取消收藏
+        await questionCollectionTable.deleteDataByQuestionID(questionID);
+        this.favoriteStatus[questionID] = false;
+        console.log(`取消收藏，题目 ${questionID} 已从收藏表移除`);
+        promptAction.showToast({ message: '已取消收藏', duration: 1500 });
       } else {
+        // 添加收藏
         let questionDb = new QuestionRes();
         questionDb.qId = currentQuestion.qId;
         questionDb.question = currentQuestion.question;
         questionDb.answer = currentQuestion.answer;
         questionDb.option = currentQuestion.option;
-        questionDb.wrongAnswer = "B"; // 如果需要，动态设置
+        questionDb.wrongAnswer = currentQuestion.wrongAnswer || '';
         questionDb.questionID = questionID;
-
         await questionCollectionTable.insertDataAwait(questionDb);
         this.favoriteStatus[questionID] = true;
+        console.log(`添加收藏，题目 ${questionID} 已添加到收藏表`);
         promptAction.showToast({ message: '收藏成功', duration: 1500 });
       }
     } catch (err) {
@@ -289,7 +294,9 @@ struct ExercisePage {
           .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
           .margin({ left: 15, right: 75 })
           .align(Alignment.TopStart)
-          .onClick(() => router.back())
+          .onClick(() =>{
+            router.back()
+          })
 
         Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
           Button() {
@@ -506,10 +513,3 @@ struct ExercisePage {
     }
   }
 }
-
-
-// private questions: QuestionRes[] = [
-//   {"qId":1735007905,"question":"在道路等开阔地带开展训练时，应做好（）。","answer":"A","option":["安全警戒","后勤保障","着装","准备活动"],"wrongAnswer":""},
-//   {"qId":1735007905,"question":"使用绳索开展高空救援时，绳索应避开（）等高温、尖锐部位。","answer":"AB","option":["墙角","烟火","梁、柱","管线井"],"wrongAnswer":""},
-//   {"qId":1735007905,"question":"总队、支队安全助理对灭火救援现场安全员实行统一管理。","answer":"A","option":["正确","错误"],"wrongAnswer":""}
-// ];
