@@ -6,8 +6,6 @@
     "mainElement": "SearchAbility",
     "deviceTypes": [
       "phone",
-      "tablet",
-      "2in1"
     ],
   }
 }

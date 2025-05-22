@@ -7,8 +7,6 @@
     "routerMap": "$profile:route_map",
     "deviceTypes": [
       "phone",
-      "tablet",
-      "2in1"
     ],
     "requestPermissions": [
       {
