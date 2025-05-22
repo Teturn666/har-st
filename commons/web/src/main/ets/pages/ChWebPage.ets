@@ -25,7 +25,9 @@ export struct ChWebPage {
           router.back()
         }
       })
+        .width('100%')
       Web({ src: this.webUrl, controller: this.controller })
+        .layoutWeight(1)
     }
   }
 }

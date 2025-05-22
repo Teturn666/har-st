@@ -10,6 +10,8 @@ export class CommonConstants {
   static readonly TWENTY_PERCENT: string = '20%';
   // space
   static readonly SPACE_16: number = 16;
+  static readonly SPACE_5: number = 5;
+  static readonly SPACE_4: number = 4;
   //height
   static readonly HEIGHT_160: number = 160;
   static readonly HEIGHT_30: number = 30;
