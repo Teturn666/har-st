@@ -54,6 +54,7 @@ struct ExerciseCommonPage {
   @State timerText: string = '00:00'; // 格式化时间
   private timerId: number | null = null; // 计时器 ID
   @State backindex: number = -1;  //路由页数
+  @State isBankData: boolean = false;
 
   // 格式化时间为 MM:SS
   private formatTime(seconds: number): string {
@@ -79,6 +80,7 @@ struct ExerciseCommonPage {
       clearInterval(this.timerId);
       this.timerId = null;
     }
+
   }
 
   // 随机抽取题目
@@ -167,7 +169,9 @@ struct ExerciseCommonPage {
     }
   }
 
-  private goToNextQuestion() {
+
+
+  private async  goToNextQuestion() {
     if (this.currentQuestionIndex < this.questions.length - 1) {
       this.currentQuestionIndex++;
       this.currentProgress = this.currentQuestionIndex + 1;
@@ -202,10 +206,21 @@ struct ExerciseCommonPage {
       });
       const wrongCount = this.questions.length - correctCount;
 
+
+      // 检查是否有剩余的错题或收藏题目
+      if (this.practiceMode === 2) {
+        this.isBankData = await this.hasWrongQuestions();
+      } else if (this.practiceMode === 3) {
+        this.isBankData = await this.hasCollectionQuestions();
+      } else {
+        this.isBankData = true; // 模拟考试模式默认有数据
+      }
+
       // 跳转到详情页面
       router.pushNamedRoute({
         name: HomeConstants.ROUTER_EXERCISE_DETAILS_LIST,
         params: {
+          isBankData: this.isBankData,
           backindex: this.backindex,
           typepage: this.practiceMode,
           title: this.questionBankName,
@@ -502,7 +517,7 @@ struct ExerciseCommonPage {
             if (isLastQuestion) {
               this.goToNextQuestion();
             } else if (this.practiceMode === 1) {
-              setTimeout((): void => this.goToNextQuestion(), 2000);
+              setTimeout((): Promise<void> => this.goToNextQuestion(), 2000);
             }
           } else {
             // 检查是否选中了全部正确答案
@@ -510,11 +525,15 @@ struct ExerciseCommonPage {
             this.selectedOptions.every(opt => correctAnswers.includes(opt));
             if (allCorrectSelected) {
               this.hasSubmitted = true;
+              if (this.practiceMode === 2) {
+                // 在错题练习模式下，如果答对，从错题表中移除
+                await this.deleteFromWrongTable(currentQuestion);
+              }
               this.saveQuestionState(); // 记录正确提交状态
               if (isLastQuestion) {
                 this.goToNextQuestion();
               } else if (this.practiceMode === 1) {
-                setTimeout((): void => this.goToNextQuestion(), 2000);
+                setTimeout((): Promise<void> => this.goToNextQuestion(), 2000);
               }
             }
           }
@@ -525,18 +544,32 @@ struct ExerciseCommonPage {
         this.selectedOption = optionLabel;
         this.hasSubmitted = true;
         const isCorrect = optionLabel === currentQuestion.answer;
-        if (!isCorrect && this.practiceMode !== 2) {
+        if (isCorrect && this.practiceMode === 2) {
+          // 在错题练习模式下，如果答对，从错题表中移除
+          await this.deleteFromWrongTable(currentQuestion);
+        } else if (!isCorrect && this.practiceMode !== 2) {
           await this.saveToWrongTable(currentQuestion, optionLabel);
         }
         this.saveQuestionState(); // 记录单选提交状态
         if (isLastQuestion) {
           this.goToNextQuestion();
         } else if (this.practiceMode === 1) {
-          setTimeout((): void => this.goToNextQuestion(), 2000);
+          setTimeout((): Promise<void> => this.goToNextQuestion(), 2000);
         }
       }
     }
   }
+
+
+  private async deleteFromWrongTable(question: QuestionRes) {
+    try {
+      console.log(`准备从错题表移除题目: questionID=${question.questionID}`);
+      await questionWrongTable.deleteDataByQuestionID(question.questionID);
+    } catch (err) {
+      console.error('从错题表移除失败:', err);
+    }
+  }
+
 
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
@@ -665,10 +698,29 @@ struct ExerciseCommonPage {
     this.hasSubmitted = false;
   }
 
+  async hasWrongQuestions() {
+  try {
+    const list = await this.homeModel.getWrongQuestionList(this.qid);
+    return Array.isArray(list) && list.length > 0; // 直接返回布尔值
+  } catch (error) {
+    console.error('获取错题列表失败:', error);
+    return false; // 出错时返回false
+  }
+}
+
+  async  hasCollectionQuestions() {
+  try {
+    const list = await this.homeModel.getCollectionQuestionList(this.qid);
+    return Array.isArray(list) && list.length > 0;
+  } catch (error) {
+    console.error('获取收藏题目列表失败:', error);
+    return false;
+  }
+}
+
   // 获取错题列表
   async getWrongQuestionList(qid: number): Promise<void> {
     this.isLoading = true;
-    // this.questions = [];
     try {
       const list = await this.homeModel.getWrongQuestionList(qid);
       console.log("错题: " + JSON.stringify(list));
@@ -778,6 +830,8 @@ struct ExerciseCommonPage {
       }
     });
   }
+
+
 
   private async removeCurrentQuestion() {
     const currentQuestion = this.questions[this.currentQuestionIndex];
