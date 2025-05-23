@@ -33,6 +33,10 @@
       "value": "剩余次数"
     },
     {
+      "name": "scan_search",
+      "value": "扫描搜题"
+    },
+    {
       "name": "photo_search",
       "value": "拍照搜题"
     },

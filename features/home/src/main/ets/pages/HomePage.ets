@@ -1,4 +1,4 @@
-import { CommonConstants, Logger } from 'utils/Index'
+import { CommonConstants as Const, Logger } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { fileIo, picker } from '@kit.CoreFileKit'
@@ -21,6 +21,7 @@ import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
 import('./BankListPage')
 import('./MyDownloadPage')
+import('./CustomQuestionPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
@@ -101,7 +102,7 @@ export struct HomePage {
       //   }
       //
       // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-      List({ space: CommonConstants.SPACE_16 }) {
+      List({ space: Const.SPACE_16 }) {
         ListItem() {
           Banner({
             swiperData: arr,
@@ -110,6 +111,10 @@ export struct HomePage {
               this.jumpToWeb()
             }
           })
+        }
+
+        ListItem() {
+          SearchList()
         }
 
         ListItem() {
@@ -125,6 +130,10 @@ export struct HomePage {
             downloadClick: async () => {
               //跳转到我的下载页面
               this.jumpToDownloadResult()
+            },
+            customQuestionClick: async () => {
+              //跳转到自定义题库
+              this.jumpToCustomResult()
             }
           })
         }
@@ -159,8 +168,8 @@ export struct HomePage {
       //   Text('数据插入失败').fontSize(18)
       // }
     }
-    .height(CommonConstants.FULL_PERCENT)
-    .width(CommonConstants.FULL_PERCENT)
+    .height(Const.FULL_PERCENT)
+    .width(Const.FULL_PERCENT)
     .padding({
       left: $r('app.float.float_15vp'), right: $r('app.float.float_15vp')
     })
@@ -200,6 +209,13 @@ export struct HomePage {
   private jumpToDownloadResult() {
     router.pushNamedRoute({
       name: HomeConstants.ROUTER_MY_DOWNLOAD
+    })
+  }
+
+  //跳转到自定义题库
+  private jumpToCustomResult() {
+    router.pushNamedRoute({
+      name: HomeConstants.ROUTER_CUSTOM_QUESTION
     })
   }
 
@@ -289,7 +305,6 @@ export struct HomePage {
   }
 }
 
-
 //搜题助手
 @Component
 struct SearchHelper {
@@ -312,7 +327,7 @@ struct SearchHelper {
         Text($r('app.string.almighty_search'))
           .fontSize($r('app.float.font_size_24fp'))
           .fontColor($r('app.color.c_white'))
-      }.margin({ top: $r('app.float.float_10vp') }).onClick(() => this.handleClick())
+      }.onClick(() => this.handleClick())
     }
   }
 }
@@ -330,17 +345,17 @@ struct Banner {
       ForEach(this.swiperData, (item: number) => {
         Row() {
           Image($r('app.media.bg_banner'))
-            .width(CommonConstants.FULL_PERCENT)
-            .height(CommonConstants.FULL_PERCENT)
+            .width(Const.FULL_PERCENT)
+            .height(Const.FULL_PERCENT)
             .borderRadius($r('app.float.float_16vp'))
             .onClick(() => this.handleClick(item))
         }
-        .width(CommonConstants.FULL_PERCENT)
+        .width(Const.FULL_PERCENT)
         .aspectRatio(SWIPER_ASPECT_RATIO)
         .padding({ right: $r('app.float.float_12vp') })
       }, (item: number) => item + "")
     }
-    .width(CommonConstants.FULL_PERCENT)
+    .width(Const.FULL_PERCENT)
     .displayCount(1)
     .displayMode(SwiperDisplayMode.AUTO_LINEAR)
     .nextMargin(SWIPER_MARGIN)
@@ -352,29 +367,66 @@ struct Banner {
   }
 }
 
+@Component
+struct SearchList {
+  build() {
+    Row() {
+      Column() {
+        Image($r('app.media.ic_scan_search'))
+          .width(82)
+          .height(82)
+        Text($r('app.string.scan_search'))
+          .fontColor($r('app.color.c_8a8a8a'))
+          .fontSize(14)
+          .margin({
+            top: 4
+          })
+
+      }
+    }
+    .margin({
+      left: 15
+    })
+    .width(Const.FULL_PERCENT)
+  }
+}
+
 //题库
 @Component
 struct BankHelper {
   downloadClick: () => void = () => {
   }
+  customQuestionClick: () => void = () => {
+  }
 
   build() {
     Column() {
-      Row() {
+      Row({ space: Const.SPACE_4 }) {
         Image($r('app.media.ic_question_bank'))
           .width(18)
           .height(18)
         Image($r('app.media.ic_question_bank_txt'))
           .height(15)
       }
+      .width(Const.FULL_PERCENT)
       .alignItems(VerticalAlign.Top)
+      .justifyContent(FlexAlign.Start)
 
-      Image($r('app.media.ic_my_download'))
-        .width(90)
-        .height(90)
-        .onClick(() => this.downloadClick())
-
-    }.margin({ top: $r('app.float.float_15vp') })
+      Row({ space: Const.SPACE_5 }) {
+        Image($r('app.media.ic_my_download'))
+          .width(90)
+          .height(90)
+          .onClick(() => this.downloadClick())
+        Image($r('app.media.ic_custom_question'))
+          .width(90)
+          .height(90)
+          .onClick(() => this.customQuestionClick())
+      }
+      .width(Const.FULL_PERCENT)
+      .margin(15)
+    }
+    .width(Const.FULL_PERCENT)
+    .margin({ top: $r('app.float.float_10vp') })
   }
 }
 
@@ -390,7 +442,7 @@ struct ExerciseHelper {
 
   build() {
     Column() {
-      Row() {
+      Row({ space: Const.SPACE_4 }) {
         Image($r('app.media.ic_exercise'))
           .width(18)
           .height(18)
@@ -398,8 +450,10 @@ struct ExerciseHelper {
           .height(15)
       }
       .alignItems(VerticalAlign.Top)
+      .justifyContent(FlexAlign.Start)
+      .width(Const.FULL_PERCENT)
 
-      Row() {
+      Row({ space: Const.SPACE_5 }) {
         Image($r('app.media.ic_question_bank_exercise'))
           .width(90)
           .height(90)
@@ -413,7 +467,9 @@ struct ExerciseHelper {
           .height(90)
           .onClick(() => this.collectionClick())
       }
-
-    }.margin({ top: $r('app.float.float_15vp') })
+      .width(Const.FULL_PERCENT)
+      .margin(15)
+    }
+    .width(Const.FULL_PERCENT)
   }
 }
