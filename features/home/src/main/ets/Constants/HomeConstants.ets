@@ -11,8 +11,9 @@ export default class HomeConstants {
   /**
    * 路由跳转的页面名称
    */
-
   //扫描搜题
+  static readonly ROUTER_SEARCH_INTRODUCTION = 'searchIntroductionPage'
+  //开始扫描
   static readonly ROUTER_SEARCH_QUESTIONS = 'searchQuestionsPage'
   //搜索结果页
   static readonly ROUTER_SEARCH_RESULT = 'searchResultPage'

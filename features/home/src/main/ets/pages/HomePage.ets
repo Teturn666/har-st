@@ -24,7 +24,7 @@ import('./BankListPage')
 import('./MyDownloadPage')
 import('./CustomQuestionPage')
 import ('./SearchQuestions')
-
+import ('./SearchIntroductionPage')
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
 let arr: number[] = [1]
@@ -388,7 +388,7 @@ struct SearchList {
       }
       .onClick(()=>{
         router.pushNamedRoute({
-          name: HomeConstants.ROUTER_SEARCH_QUESTIONS
+          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION
         })
       })
     }

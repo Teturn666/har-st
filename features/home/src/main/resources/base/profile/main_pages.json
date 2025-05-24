@@ -1,6 +1,7 @@
 {
   "src": [
     "pages/HomePage",
-    "pages/SearchQuestions"
+    "pages/SearchQuestions",
+    "pages/SearchIntroductionPage"
   ]
 }
