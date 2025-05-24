@@ -16,12 +16,14 @@ import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 import { BankListRes } from 'db'
+import { promptAction } from '@kit.ArkUI'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
 import('./BankListPage')
 import('./MyDownloadPage')
 import('./CustomQuestionPage')
+import ('./SearchQuestions')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
@@ -115,6 +117,7 @@ export struct HomePage {
 
         ListItem() {
           SearchList()
+
         }
 
         ListItem() {
@@ -383,7 +386,13 @@ struct SearchList {
           })
 
       }
+      .onClick(()=>{
+        router.pushNamedRoute({
+          name: HomeConstants.ROUTER_SEARCH_QUESTIONS
+        })
+      })
     }
+
     .margin({
       left: 15
     })
