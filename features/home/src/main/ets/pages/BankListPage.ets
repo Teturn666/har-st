@@ -124,7 +124,7 @@ export struct BankListPage {
 
 @Component
 struct PageHeader {
-  title: string = ''
+  @Prop title: string = ''
   onBack: () => void = () => {
   }
 
@@ -150,7 +150,7 @@ struct PageHeader {
 
 @Component
 struct EmptyState {
-  type: number = 1
+  @Prop type: number = 1
 
   private getEmptyMessage(): string {
     switch (this.type) {
@@ -186,7 +186,7 @@ struct EmptyState {
 
 @Component
 struct BankList {
-  banks: BankListRes[] = []
+  @Prop banks: BankListRes[] = []
   onItemTap: (qid: number) => void = () => {
   }
 
