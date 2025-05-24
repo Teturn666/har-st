@@ -26,13 +26,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
-          "storePassword": "00000018C23531FFDAEA2CC8A520C35C4668165453D8A7DA2179F7CFB9D2D471BB12EBB74BB0128E",
+          "storeFile": "/Users/xinxin/Documents/key/harmony/ksst/debugSign/ksstDbug.p12",
+          "storePassword": "00000018146E5A13A64D31FC8FE1F0EE0FB109984BA99AF99C19E6336BB763C7BA96829097E3231F",
           "keyAlias": "Tl",
-          "keyPassword": "00000018B560BB1B444F55EC337F96991A18AE6A86E5C955F54B80AB88CC7FA535E1C4622205A511",
+          "keyPassword": "0000001872D3E4BED16FDC4529AB7C49CB4FE6A512DDEC4D6466A5191074853BDD85BB37DD2B741D",
           "signAlg": "SHA256withECDSA",
-          "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
-          "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
+          "profile": "/Users/xinxin/Documents/key/harmony/ksst/debugSign/ksstProfileDebug.p7b",
+          "certpath": "/Users/xinxin/Documents/key/harmony/ksst/debugSign/ksstDebugCer.cer"
         }
       }
     ]
