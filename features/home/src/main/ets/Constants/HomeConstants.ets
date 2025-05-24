@@ -31,4 +31,9 @@ export default class HomeConstants {
   static readonly IMAGE_REGEX = /\$\{.*?\}/g
   //使用教程链接
   static readonly USE_TEACH_URL = 'https://ti.iksdt.com/static/doc/stjc.webm'
+  //帮助页面
+  static readonly ROUTER_HELP_PAGE = 'helpPage'
+  //自定义题库
+  static readonly ROUTER_CUSTOMIZED_BANK_PAGE ='customizedBankPage'
+
 }
