@@ -57,15 +57,15 @@ class QuestionTable {
         const result: QuestionRes[] = [];
         for (let i = 0; i < count; i++) {
           let tmp: QuestionRes = {
-            // id: 0,
+            id: -1,
             qId: 0,
             question: '',
             answer: '',
             option: [],
             wrongAnswer: '',
-            questionID:0,
+            questionID: 0,
           };
-          // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+          tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
           tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
           tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
           tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
@@ -99,15 +99,15 @@ class QuestionTable {
           const result: QuestionRes[] = [];
           for (let i = 0; i < count; i++) {
             let tmp: QuestionRes = {
-              // id: 0,
+              id: -1,
               qId: 0,
               question: '',
               answer: '',
               option: [],
               wrongAnswer: '',
-              questionID:0
+              questionID: 0
             };
-            // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
