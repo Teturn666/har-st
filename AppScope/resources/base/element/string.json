@@ -3,6 +3,10 @@
     {
       "name": "app_name",
       "value": "KSST"
+    },
+    {
+      "name": "app_camera",
+      "value": "获取相机"
     }
   ]
 }
