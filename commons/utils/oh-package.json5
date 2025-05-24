@@ -6,7 +6,8 @@
   "author": "",
   "license": "",
   "dependencies": {
-
+    "home": "file:../../features/home",
+    "home1": "file:../../features/home"
   }
 }
 

@@ -1,22 +1,23 @@
 import { camera } from "@kit.CameraKit"
 import { image } from "@kit.ImageKit"
 import json from "@ohos.util.json"
-import { emitter } from "@kit.BasicServicesKit"
+
+import { ocrToText } from "./OcrToText"
 
 
 export class CameraManager{
-  cameraManager: camera.CameraManager | null = null
-  cameraDevice: camera.CameraDevice | null = null
-  cameraInput: camera.CameraInput | null = null // 相机输入流
-  cameraOutput: camera.CameraOutput | null = null
-  imageOutput: camera.CameraOutput | null = null
-  cameraProfile: camera.Profile | null = null
-  session: camera.Session | null = null
-  imageReceiver: image.ImageReceiver | null = null
-  imgSurfaceId: string = ""
+  private cameraManager: camera.CameraManager | null = null
+  private cameraDevice: camera.CameraDevice | null = null
+  private cameraInput: camera.CameraInput | null = null // 相机输入流
+  private cameraOutput: camera.CameraOutput | null = null
+  private  imageOutput: camera.CameraOutput | null = null
+  private cameraProfile: camera.Profile | null = null
+  private  session: camera.Session | null = null
+  private  imageReceiver: image.ImageReceiver | null = null
+  private imgSurfaceId: string = ""
   // map: image.PixelMap | null = null   //emit 传递存在问题
-  imgWidth: number = 1920
-  imgHeight: number = 1080
+  private imgWidth: number = 1920
+  private imgHeight: number = 1080
   // callback:(imp:image.PixelMap)=>void=()=>{}
 
 
@@ -55,7 +56,8 @@ export class CameraManager{
           }, async (err, pixelMap) => {
 
             pixelMap.rotateSync(90)
-            emitter.emit("upPix", { data: { "map": pixelMap } })
+            // emitter.emit("upPix", { data: { "map": pixelMap } })
+            ocrToText.loadImage(pixelMap)
             // this.map=pixelMap
             // this.callback(pixelMap)
           })
@@ -121,7 +123,7 @@ export class CameraManager{
 
   }
 
-  // 释放相
+  // 释放
   releaseCamera() {
     this.session?.stop()
     this.cameraInput?.close()

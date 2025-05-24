@@ -123,7 +123,7 @@ export struct HomePage {
         ListItem() {
           SearchHelper({
             handleClick: async () => {
-              this.selectImage()
+
             }
           })
         }
@@ -199,14 +199,14 @@ export struct HomePage {
   }
 
   //跳转到搜索结果页
-  private jumpToSearchResult(ocrTxt: string) {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
-        ocrTxt: ocrTxt
-      }
-    })
-    onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
-  }
+  // private jumpToSearchResult(ocrTxt: string) {
+  //   router.pushNamedRoute({
+  //     name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
+  //       ocrTxt: ocrTxt
+  //     }
+  //   })
+  //   onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
+  // }
 
   //跳转到我的下载
   private jumpToDownloadResult() {
@@ -233,42 +233,42 @@ export struct HomePage {
     onEventObject(HomeMobClickConstants.PLAY_GUIDE_VIDEO)
   }
 
-  private async ocrToText() {
-    if (!this.chooseImage) {
-      return
-    }
-    // 调用文本识别接口
-    let visionInfo: textRecognition.VisionInfo = {
-      pixelMap: this.chooseImage
-    };
-    let textConfiguration: textRecognition.TextRecognitionConfiguration = {
-      isDirectionDetectionSupported: false
-    };
-    textRecognition.recognizeText(visionInfo, textConfiguration,
-      (error: BusinessError, data: textRecognition.TextRecognitionResult) => {
-        // 识别成功，获取对应的结果
-        if (error.code == 0) {
-          let recognitionString = data.toString()
-          hilog.info(0x0000, 'OCRDemo', `Succeeded in recognizing text：${recognitionString}`)
-          // 将结果更新到Text中显示
-          this.dataValues = data.value
-          this.jumpToSearchResult(data.value)
-        }
-        if (this.chooseImage && this.imageSource) {
-          this.chooseImage.release()
-          this.imageSource.release()
-        }
-      })
-  }
+  // private async ocrToText() {
+  //   if (!this.chooseImage) {
+  //     return
+  //   }
+  //   // 调用文本识别接口
+  //   let visionInfo: textRecognition.VisionInfo = {
+  //     pixelMap: this.chooseImage
+  //   };
+  //   let textConfiguration: textRecognition.TextRecognitionConfiguration = {
+  //     isDirectionDetectionSupported: false
+  //   };
+  //   textRecognition.recognizeText(visionInfo, textConfiguration,
+  //     (error: BusinessError, data: textRecognition.TextRecognitionResult) => {
+  //       // 识别成功，获取对应的结果
+  //       if (error.code == 0) {
+  //         let recognitionString = data.toString()
+  //         hilog.info(0x0000, 'OCRDemo', `Succeeded in recognizing text：${recognitionString}`)
+  //         // 将结果更新到Text中显示
+  //         this.dataValues = data.value
+  //         this.jumpToSearchResult(data.value)
+  //       }
+  //       if (this.chooseImage && this.imageSource) {
+  //         this.chooseImage.release()
+  //         this.imageSource.release()
+  //       }
+  //     })
+  // }
 
-  private async selectImage() {
-    let uri = await this.openPhoto()
-    if (uri === undefined) {
-      hilog.error(0x0000, 'OCRDemo', "Failed to get uri.")
-      return
-    }
-    this.loadImage(uri)
-  }
+  // private async selectImage() {
+  //   let uri = await this.openPhoto()
+  //   if (uri === undefined) {
+  //     hilog.error(0x0000, 'OCRDemo', "Failed to get uri.")
+  //     return
+  //   }
+  //   this.loadImage(uri)
+  // }
 
   private openPhoto(): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -285,14 +285,14 @@ export struct HomePage {
     })
   }
 
-  private loadImage(name: string) {
-    setTimeout(async () => {
-      let fileSource = await fileIo.open(name, fileIo.OpenMode.READ_ONLY)
-      this.imageSource = image.createImageSource(fileSource.fd)
-      this.chooseImage = await this.imageSource.createPixelMap()
-      this.ocrToText()
-    }, 100)
-  }
+  // private loadImage(name: string) {
+  //   setTimeout(async () => {
+  //     let fileSource = await fileIo.open(name, fileIo.OpenMode.READ_ONLY)
+  //     this.imageSource = image.createImageSource(fileSource.fd)
+  //     this.chooseImage = await this.imageSource.createPixelMap()
+  //     this.ocrToText()
+  //   }, 100)
+  // }
 
   //加载 lottie 动画
   private initLottie() {
