@@ -47,7 +47,6 @@ class QuestionCollectionTable {
     }
   }
 
-
   updateData(account: QuestionRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_COLLECTION_TABLE.tableName);
@@ -73,26 +72,26 @@ class QuestionCollectionTable {
         } else {
           resultSet.goToFirstRow();
           const result: QuestionRes[] = [];
-          //Todo    自面量类型 报错
-          // for (let i = 0; i < count; i++) {
-          //   let tmp: QuestionRes = {
-          //     qId: 0,
-          //     question: '',
-          //     answer: '',
-          //     option: [],
-          //     wrongAnswer: '',
-          //     questionID:0
-          //   };
-          //   // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-          //   tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
-          //   tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
-          //   tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
-          //   tmp.wrongAnswer = resultSet.getString(resultSet.getColumnIndex('wrongAnswer'));
-          //   tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
-          //   tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
-          //   result[i] = tmp;
-          //   resultSet.goToNextRow();
-          // }
+          for (let i = 0; i < count; i++) {
+            let tmp: QuestionRes = {
+              id: -1,
+              qId: 0,
+              question: '',
+              answer: '',
+              option: [],
+              wrongAnswer: '',
+              questionID: 0
+            };
+            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+            tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+            tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
+            tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
+            tmp.wrongAnswer = resultSet.getString(resultSet.getColumnIndex('wrongAnswer'));
+            tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+            tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
+            result[i] = tmp;
+            resultSet.goToNextRow();
+          }
           return result
         }
       } catch (e) {

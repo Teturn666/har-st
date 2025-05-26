@@ -79,10 +79,17 @@ class QuestionTable {
     });
   }
 
-  async querySync(id: number, isAll: boolean = true): Promise<Array<QuestionRes>> {
+  async querySync(id: number, isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
     if (!isAll) {
-      predicates.equalTo('qId', id);
+
+      if (isSearch) {
+        //搜索走的是找索引的位置
+        predicates.equalTo('id', id);
+      } else {
+        //这块暂时没用到，需替换成题目的ID
+        predicates.equalTo('qId', id);
+      }
     }
 
     let resultSet = await this.accountTable.querySync(predicates)
