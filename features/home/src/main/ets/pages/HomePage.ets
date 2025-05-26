@@ -16,7 +16,10 @@ import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 import { BankListRes } from 'db'
-import { promptAction } from '@kit.ArkUI'
+import { promptAction, window } from '@kit.ArkUI'
+import { selectImage } from '../utils/SelectImage'
+import { ProgressLoading } from '../components/ProgressLoading'
+import { screenManager, ScreenManager } from '../utils/ScreenManager'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -58,10 +61,13 @@ export struct HomePage {
   @State questionBanks: BankListRes[] = [];
   @State wrongBanks: BankListRes[] = [];
   @State collectionBanks: BankListRes[] = [];
-
+  @State loading:boolean=false
+  @State TopHeight:number=0
+  win:window.Window|null=null
   aboutToAppear(): void {
     this.initLottie()
     this.loadResources()
+
   }
 
   async loadResources(): Promise<void> {
@@ -81,103 +87,138 @@ export struct HomePage {
 
   aboutToDisappear(): void {
     lottie.destroy()
+    screenManager.exitFull(getContext())
+    this.TopHeight=0
   }
 
   build() {
-    Column() {
-      // if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
-      //   Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
-      //     Canvas(this.controller)
-      //       .width('30%')
-      //       .height('20%')
-      //       .onReady(() => {
-      //         this.animateItem = lottie.loadAnimation({
-      //           container: this.controller,
-      //           renderer: 'canvas',
-      //           loop: true,
-      //           autoplay: true,
-      //           context: context,
-      //           name: this.animateName,
-      //           animationData: jsonData,
-      //         })
-      //       })
-      //   }
-      //
-      // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-      List({ space: Const.SPACE_16 }) {
-        ListItem() {
-          Banner({
-            swiperData: arr,
-            handleClick: (item: number) => {
-              hilog.info(0x0001, "testTag", "---->" + item);
-              this.jumpToWeb()
-            }
-          })
-        }
+    RelativeContainer() {
 
-        ListItem() {
-          SearchList()
 
-        }
+      Column() {
+        // if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
+        //   Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
+        //     Canvas(this.controller)
+        //       .width('30%')
+        //       .height('20%')
+        //       .onReady(() => {
+        //         this.animateItem = lottie.loadAnimation({
+        //           container: this.controller,
+        //           renderer: 'canvas',
+        //           loop: true,
+        //           autoplay: true,
+        //           context: context,
+        //           name: this.animateName,
+        //           animationData: jsonData,
+        //         })
+        //       })
+        //   }
+        //
+        // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
 
-        ListItem() {
-          SearchHelper({
-            handleClick: async () => {
 
-            }
-          })
-        }
+        List({ space: Const.SPACE_16 }) {
+          ListItem() {
+            Banner({
+              swiperData: arr,
+              handleClick: (item: number) => {
+                hilog.info(0x0001, "testTag", "---->" + item);
+                this.jumpToWeb()
+              }
+            })
+          }
 
-        ListItem() {
-          BankHelper({
-            downloadClick: async () => {
-              //跳转到我的下载页面
-              this.jumpToDownloadResult()
-            },
-            customQuestionClick: async () => {
-              //跳转到自定义题库
-              this.jumpToCustomResult()
-            }
-          })
-        }
+          ListItem() {
+            SearchList()
 
-        ListItem() {
-          ExerciseHelper({
-            bankClick: async () => {
-              //跳转练习列表页面
-              this.jumpToBankList(1)
-            },
-            wrongClick: async () => {
-              //跳转错题列表练习页面
-              this.jumpToBankList(2)
-            },
-            collectionClick: async () => {
-              //跳转收藏列表练习页面
-              this.jumpToBankList(3)
-            },
-          })
-        }
+          }
 
-        //测试显示ocr的文本
-        // ListItem() {
-        //   Text(this.dataValues)
-        //     .fontSize($r('app.float.font_size_10fp'))
-        //     .fontColor($r('app.color.c_black'))
-        // }
-      }
-      .scrollBar(BarState.Off)
+          ListItem() {
+            SearchHelper({
+              handleClick: async () => {
+                // this.selectImage()
+             this.loading = true
 
-      // } else if (this.loadingStatus === LoadingStatus.FAILED) {
-      //   Text('数据插入失败').fontSize(18)
-      // }
-    }
-    .height(Const.FULL_PERCENT)
-    .width(Const.FULL_PERCENT)
-    .padding({
-      left: $r('app.float.float_15vp'), right: $r('app.float.float_15vp')
-    })
+             selectImage.selectImg().then(()=>{
+               this.loading = false
+             })
+
+
   }
+            })
+          }
 
+          ListItem() {
+            BankHelper({
+              downloadClick: async () => {
+                //跳转到我的下载页面
+                this.jumpToDownloadResult()
+              },
+              customQuestionClick: async () => {
+                //跳转到自定义题库
+                this.jumpToCustomResult()
+              }
+            })
+          }
+
+          ListItem() {
+            ExerciseHelper({
+              bankClick: async () => {
+                //跳转练习列表页面
+                this.jumpToBankList(1)
+              },
+              wrongClick: async () => {
+                //跳转错题列表练习页面
+                this.jumpToBankList(2)
+              },
+              collectionClick: async () => {
+                //跳转收藏列表练习页面
+                this.jumpToBankList(3)
+              },
+            })
+          }
+
+          //测试显示ocr的文本
+          // ListItem() {
+          //   Text(this.dataValues)
+          //     .fontSize($r('app.float.font_size_10fp'))
+          //     .fontColor($r('app.color.c_black'))
+          // }
+        }
+        .scrollBar(BarState.Off)
+
+        // } else if (this.loadingStatus === LoadingStatus.FAILED) {
+        //   Text('数据插入失败').fontSize(18)
+        // }
+
+        .height(Const.FULL_PERCENT)
+        .width(Const.FULL_PERCENT)
+        .padding({
+          left: $r('app.float.float_15vp'), right: $r('app.float.float_15vp')
+        })
+
+      }
+      Column(){
+        if (this.loading){
+          Row(){
+            ProgressLoading()
+          }
+
+          .width("100%")
+          .height("100%")
+
+        }
+
+      }
+      .alignRules({
+        center: { anchor: '__container__', align: VerticalAlign.Center },
+        middle: { anchor: '__container__', align: HorizontalAlign.Center }
+      })
+    }
+    .margin({
+      top:this.TopHeight
+    })
+}
   //跳转到练习列表共用的页面，1=题库练习，2=错题练习，3=收藏练习
   private jumpToBankList(type: number) {
     let title = ''
@@ -198,15 +239,15 @@ export struct HomePage {
     }, router.RouterMode.Single)
   }
 
-  //跳转到搜索结果页
-  // private jumpToSearchResult(ocrTxt: string) {
-  //   router.pushNamedRoute({
-  //     name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
-  //       ocrTxt: ocrTxt
-  //     }
-  //   })
-  //   onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
-  // }
+  // 跳转到搜索结果页
+  private jumpToSearchResult(ocrTxt: string) {
+    router.pushNamedRoute({
+      name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
+        ocrTxt: ocrTxt
+      }
+    })
+    onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
+  }
 
   //跳转到我的下载
   private jumpToDownloadResult() {
@@ -260,7 +301,7 @@ export struct HomePage {
   //       }
   //     })
   // }
-
+  //
   // private async selectImage() {
   //   let uri = await this.openPhoto()
   //   if (uri === undefined) {
@@ -270,20 +311,20 @@ export struct HomePage {
   //   this.loadImage(uri)
   // }
 
-  private openPhoto(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      let photoPicker = new picker.PhotoViewPicker()
-      photoPicker.select({
-        MIMEType: picker.PhotoViewMIMETypes.IMAGE_TYPE, maxSelectNumber: 1
-      }).then((res: picker.PhotoSelectResult) => {
-        resolve(res.photoUris[0])
-      }).catch((err: BusinessError) => {
-
-        hilog.error(0x0000, 'OCRDemo', `Failed to get photo image uri. code：${err.code}，message：${err.message}`)
-        resolve('')
-      })
-    })
-  }
+  // private openPhoto(): Promise<string> {
+  //   return new Promise<string>((resolve, reject) => {
+  //     let photoPicker = new picker.PhotoViewPicker()
+  //     photoPicker.select({
+  //       MIMEType: picker.PhotoViewMIMETypes.IMAGE_TYPE, maxSelectNumber: 1
+  //     }).then((res: picker.PhotoSelectResult) => {
+  //       resolve(res.photoUris[0])
+  //     }).catch((err: BusinessError) => {
+  //
+  //       hilog.error(0x0000, 'OCRDemo', `Failed to get photo image uri. code：${err.code}，message：${err.message}`)
+  //       resolve('')
+  //     })
+  //   })
+  // }
 
   // private loadImage(name: string) {
   //   setTimeout(async () => {
