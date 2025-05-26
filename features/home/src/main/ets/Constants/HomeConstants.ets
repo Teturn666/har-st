@@ -38,6 +38,5 @@ export default class HomeConstants {
   //帮助页面
   static readonly ROUTER_HELP_PAGE = 'helpPage'
   //自定义题库
-  static readonly ROUTER_CUSTOMIZED_BANK_PAGE ='customizedBankPage'
-
+  static readonly ROUTER_CUSTOMIZED_BANK_PAGE = 'customizedBankPage'
 }

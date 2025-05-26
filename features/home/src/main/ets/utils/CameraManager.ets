@@ -55,7 +55,7 @@ export class CameraManager{
             srcPixelFormat: 8,
           }, async (err, pixelMap) => {
 
-            pixelMap.rotateSync(90)
+            pixelMap.rotateSync(180)
             // emitter.emit("upPix", { data: { "map": pixelMap } })
             ocrToText.loadImage(pixelMap)
             // this.map=pixelMap

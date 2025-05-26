@@ -1,28 +1,72 @@
 import { TitleBar } from 'widget'
 import { router } from '@kit.ArkUI'
+import { selectFile } from '../manage/SelectFileManage';
+import { WebClass } from '../components/WebParseExcel';
+import { BankListRes, questionBankTable, QuestionRes, questionTable } from 'db';
 
-@Entry({routeName:"customizedBankPage"})
+interface ExcelDataObj {
+  quizBank: BankListRes,
+  questions: Array<QuestionRes>
+}
+
+const TAG = 'CustomizedBankPage'
+
+@Entry({ routeName: "customizedBankPage" })
 @Component
 struct CustomizedBankPage {
   @State textValue: string = '';
-  @State isRemarkBank:boolean = false;
-  @State textContent:string = '';
+  @State isRemarkBank: boolean = false;
+  @State textContent: string = '';
   dialogController: CustomDialogController | null = new CustomDialogController({
     builder: CustomDialogExample({
       confirm: () => {
         this.onAccept()
       },
       textValue: this.textValue,
-      isRemarkBank:this.isRemarkBank,
-      textContent:this.textContent
+      isRemarkBank: this.isRemarkBank,
+      textContent: this.textContent
     })
   });
 
-  // 在自定义组件即将析构销毁时将dialogController置空
-  aboutToDisappear() {
-    this.dialogController = null;
+  async questionImport() {
+    const fileArray = await selectFile();
+    const fileName = fileArray[0]
+    const excelBase64Str = fileArray[1]
+
+    if (fileArray[2] === 'xlsx' || fileArray[2] === 'xls') {
+      WebClass.webviewController.runJavaScript(`parseExcelQuizBank(${JSON.stringify(fileName)},${JSON.stringify(excelBase64Str)})`,
+        async (error, excelData) => {
+          if (error) {
+            console.error(`run Excel error, ErrorCode: ${error.code}`);
+          }
+          try {
+            if (excelData) {
+              let excelDataObj = JSON.parse(excelData) as ExcelDataObj;
+              // 存储进题库表
+              questionBankTable.insertDataAwait(excelDataObj.quizBank)
+              // 存储进题目表
+              excelDataObj.questions.forEach((item) => {
+                questionTable.insertDataAwait(item)
+              })
+            }
+          } catch (error) {
+            console.error(TAG, 'excelData error:' + error)
+          }
+        });
+    } else if (fileArray[2] === 'txt') {
+    }
   }
 
+  aboutToAppear(): void {
+    this.questionImport()
+    console.log(TAG, 'aboutToAppear: aboutToAppear')
+  }
+
+  // 在自定义组件即将析构销毁时将dialogController置空
+  aboutToDisappear() {
+    console.log(TAG, 'aboutToDisappear: aboutToDisappear')
+    this.dialogController = null;
+  }
 
   onPageShow() {
     const params = this.getUIContext().getRouter().getParams() as Record<string, string>; // 获取传递过来的参数对象
@@ -37,7 +81,7 @@ struct CustomizedBankPage {
   }
 
   build() {
-    Column(){
+    Column() {
       TitleBar({
         title: '自定义题库',
         backClick: () => {
@@ -49,10 +93,10 @@ struct CustomizedBankPage {
         },
       }).width('100%')
 
-      Column(){
-      Text("个人制作和导入题库遇到问题\n请联系QQ：2885403085")
-        .fontSize($r('app.float.float_12vp'))
-        .fontColor($r('app.color.c_f2f7ff'))
+      Column() {
+        Text("个人制作和导入题库遇到问题\n请联系QQ：2885403085")
+          .fontSize($r('app.float.float_12vp'))
+          .fontColor($r('app.color.c_f2f7ff'))
       }
       .justifyContent(FlexAlign.Center)
       .width('100%')
@@ -63,7 +107,12 @@ struct CustomizedBankPage {
       Text("开始解析Excel文件：/storage/emulated/0/Android/data/com.questions.tcache/importxlsx")
         .fontSize(12)
         .fontColor($r('app.color.c_9d9d9d'))
-        .margin({ top: 10, bottom: 10,left:20,right:20})
+        .margin({
+          top: 10,
+          bottom: 10,
+          left: 20,
+          right: 20
+        })
         .textAlign(TextAlign.Start)
 
       List({ space: 5 }) {
@@ -97,7 +146,7 @@ struct CustomizedBankPage {
               Text(item)
                 .fontSize(12)
                 .fontColor($r('app.color.c_9d9d9d'))
-                .margin({bottom: 10 ,left:20,right:20})
+                .margin({ bottom: 10, left: 20, right: 20 })
                 .textAlign(TextAlign.Start)
             }
           },
@@ -118,47 +167,47 @@ struct CustomizedBankPage {
 struct CustomDialogExample {
   @Link textValue: string;
   @Link textContent: string;
-  @Prop isRemarkBank : boolean;
+  @Prop isRemarkBank: boolean;
   controller?: CustomDialogController;
   confirm: () => void = () => {
   }
 
   build() {
     Column({ space: 20 }) {
-      if(this.isRemarkBank){
-        Row(){
+      if (this.isRemarkBank) {
+        Row() {
           Text(`${this.textValue}`)
             .fontSize($r('app.float.font_size_18fp'))
             .fontColor($r('app.color.c_9d9d9d'))
           Image($r('app.media.ic_cha'))
-            .size({width:$r('app.float.font_size_16fp'),height:$r('app.float.font_size_16fp')})
-            .onClick(() =>{
+            .size({ width: $r('app.float.font_size_16fp'), height: $r('app.float.font_size_16fp') })
+            .onClick(() => {
               this.controller?.close()
             })
         }
-        .padding({left:18,top:8,right:18})
+        .padding({ left: 18, top: 8, right: 18 })
         .width('100%')
         .justifyContent(FlexAlign.SpaceBetween)
-      }else {
-        Row(){
+      } else {
+        Row() {
           Text(`${this.textValue}`)
             .fontSize($r('app.float.font_size_18fp'))
             .fontColor($r('app.color.c_9d9d9d'))
         }
-        .padding({left:18,top:8,right:18})
+        .padding({ left: 18, top: 8, right: 18 })
         .width('100%')
         .justifyContent(FlexAlign.SpaceBetween)
       }
 
-      if(this.isRemarkBank){
-        TextInput({ placeholder: '215051451510251'})
+      if (this.isRemarkBank) {
+        TextInput({ placeholder: '215051451510251' })
           .height(50)
           .fontSize($r('app.float.font_size_14fp'))
           .placeholderColor('#ffcbcac6')
           .backgroundColor($r('app.color.c_f3f3f3'))
           .borderRadius(5)
-          .margin({left:25,right:25})
-      }else {
+          .margin({ left: 25, right: 25 })
+      } else {
         Text(`${this.textContent}`)
           .fontSize($r('app.float.font_size_18fp'))
           .fontColor($r('app.color.c_3f3f3f'))
@@ -168,7 +217,7 @@ struct CustomDialogExample {
       }
 
 
-      if(!this.isRemarkBank){
+      if (!this.isRemarkBank) {
         Blank()
       }
 
@@ -180,7 +229,8 @@ struct CustomDialogExample {
             this.controller?.close();
           })
       }
-      if(!this.isRemarkBank){
+
+      if (!this.isRemarkBank) {
         Blank()
       }
 
