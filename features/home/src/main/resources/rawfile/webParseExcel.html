@@ -1,0 +1,116 @@
+<!--index.html-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebView Message Port Demo</title>
+    <script src="./xlsx.full.min.js"></script>
+  </head>
+  <body></body>
+  <script>
+    /**
+     * 解析 Excel 数据并返回题库结构
+     * @param {ArrayBuffer|string} excelData - Excel 文件的 ArrayBuffer 或 Base64 字符串
+     * @param {string} [fileName="题库"] - 题库名称（用于生成 name 和 desc）
+     * @returns {{quizBank: object, questions: Array<object>}}
+     * 举例 const base64Data = "UEsDBBQABgAIAAAAIQ..."; // 省略完整 Base64
+     * const result = parseExcelQuizBank(base64Data, "myQuiz.xlsx");
+     */
+
+    function generateShortTimestampNumber() {
+      const now = new Date();
+      return (
+        now.getFullYear() * 10000000000 +
+        (now.getMonth() + 1) * 100000000 +
+        now.getDate() * 1000000 +
+        now.getHours() * 10000 +
+        now.getMinutes() * 100 +
+        now.getSeconds()
+      );
+    }
+
+    function parseExcelQuizBank(fileName, excelData) {
+      // console.log("excelData:", excelData);
+      try {
+        let data;
+
+        // 判断是否是 Base64 字符串，如果是则转换为 binary string
+        if (typeof excelData === "string") {
+          const binStr = atob(excelData);
+          const buf = new Uint8Array(binStr.length);
+          for (let i = 0; i < binStr.length; i++) {
+            buf[i] = binStr.charCodeAt(i);
+          }
+          data = buf;
+        } else {
+          data = excelData;
+        }
+
+        const workbook = XLSX.read(data, { type: "array" });
+
+        const qid = generateShortTimestampNumber();
+
+        const quizBank = {
+          qid: qid,
+          name: fileName.replace(/\.[^/.]+$/, ""),
+          desc: fileName.replace(/\.[^/.]+$/, ""),
+          time: new Date().toISOString().split("T")[0],
+          url: "",
+          num: "0",
+          version: "1.0",
+          position: 0,
+          downloadedState: 1,
+          bankType: 2,
+        };
+
+        const questions = [];
+        let globalQuestionIndex = 0;
+
+        for (const sheetName of workbook.SheetNames) {
+          const worksheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+          // 验证表头
+          if (
+            !rows[0] ||
+            rows[0].slice(0, 6).join(",") !==
+              "题干,答案,选项A,选项B,选项C,选项D"
+          ) {
+            console.warn(`工作表 "${sheetName}" 表头格式不正确，已跳过`);
+            continue;
+          }
+
+          // 处理每一行数据
+          rows.slice(1).forEach((row) => {
+            const paddedRow = row.concat(Array(6 - row.length).fill(""));
+            const [question, answer, optionA, optionB, optionC, optionD] =
+              paddedRow;
+
+            if (String(question).trim() || String(answer).trim()) {
+              questions.push({
+                qId: qid,
+                question: question || "",
+                option: [optionA, optionB, optionC, optionD].filter(
+                  (opt) => opt !== ""
+                ),
+                answer: answer || "",
+                wrongAnswer: "",
+                questionID: globalQuestionIndex + 1,
+              });
+
+              globalQuestionIndex++;
+            }
+          });
+        }
+
+        quizBank.num = questions.length.toString();
+
+        return { quizBank, questions };
+        // WebClassObj.acceptData(dataStr);
+      } catch (error) {
+        console.error("解析失败:", error);
+        throw error;
+      }
+    }
+  </script>
+</html>
