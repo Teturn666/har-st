@@ -1,35 +1,32 @@
-import { router, window } from "@kit.ArkUI";
+import { router, } from "@kit.ArkUI";
+import { TitleBar } from "widget";
 import HomeConstants from "../Constants/HomeConstants";
+
 
 @Entry({ routeName: "searchIntroductionPage" })
 @Component
 export struct SearchIntroductionPage {
-
-  @State message: string = 'Hello World';
-  win:window.Window|null=null
-  onPageShow(): void {
-    this.getWindow()
-  }
-  aboutToDisappear(): void {
-    this.getWindow()
-  }
-  async getWindow(){
-    this.win =  await  window.getLastWindow(getContext())
-
-
-    this.win.setWindowLayoutFullScreen(false)
-  }
-  build() {
+     build() {
     RelativeContainer() {
       // 标题
-      Text("扫描搜题")
-        .id("title")
-        .fontSize(20)
-        .fontWeight(FontWeight.Bold)
-        .alignRules({
-          top: { anchor: '__container__', align: VerticalAlign.Top },
-          middle: { anchor: '__container__', align: HorizontalAlign.Center }
-        })
+      TitleBar({
+        title: '扫描搜题',
+        backClick: () => {
+          router.back()
+          // this.textValue = "备注导入的题库名称"
+          // this.textContent = "导入成功：导入数据129条"
+          // this.isRemarkBank = true
+          // this.dialogController?.open();
+        },
+      }).width('100%')
+      // Text("扫描搜题")
+      //   .id("title")
+      //   .fontSize(20)
+      //   .fontWeight(FontWeight.Bold)
+      //   .alignRules({
+      //     top: { anchor: '__container__', align: VerticalAlign.Top },
+      //     middle: { anchor: '__container__', align: HorizontalAlign.Center }
+      //   })
 
 
       // 使用说明行
@@ -47,7 +44,7 @@ export struct SearchIntroductionPage {
         top: { anchor: 'title', align: VerticalAlign.Bottom },
         left: { anchor: '__container__', align: HorizontalAlign.Start }
       })
-      .margin({ top: 18, left: 18 })
+      .margin({ top: 68, left: 26 })
 
       // 说明内容
       Column({ space: 8 }) {
@@ -140,6 +137,7 @@ export struct SearchIntroductionPage {
           })
         })
     }
+
     .width('100%')
     .height('100%')
 

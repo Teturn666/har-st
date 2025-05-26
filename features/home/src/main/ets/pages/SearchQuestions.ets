@@ -9,7 +9,7 @@ import window from '@ohos.window';
 @Entry({ routeName: "searchQuestionsPage" })
 @Component
 export struct SearchQuestions {
-  @State TopHeight:number=0
+
   @State dataValue:string=""
   @State CameraChange:boolean=false
   @State isPortrait: boolean = true;
@@ -23,30 +23,8 @@ export struct SearchQuestions {
       this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
     })
 
-    this.getWindow()
-
   }
 
-  aboutToDisappear(): void {
-  this.win?.setWindowLayoutFullScreen(false)
-    cameraManager.releaseCamera()
-  }
-
-
-  async getWindow(){
-    this.win =  await  window.getLastWindow(getContext())
-
-    this.TopHeight=this.win.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM).topRect.height
-    this.win.setWindowLayoutFullScreen(true)
-  }
-
-  // async setScreenOrientation(isPortrait: boolean) {
-  //   if (this.win) {
-  //     await this.win.setPreferredOrientation(
-  //       isPortrait ? window.Orientation.PORTRAIT : window.Orientation.LANDSCAPE
-  //     );
-  //   }
-  // }
   build() {
     Column() {
 
@@ -55,8 +33,9 @@ Column(){
   XComponent({
     type: XComponentType.SURFACE,
     controller: this.controller
-  }).width("100%")
-    .height('100%')
+  })
+    .width("100%")
+    .height("100%")
     // .transform({ rotate: 90 })
 
     .onLoad(() => {
@@ -108,7 +87,7 @@ Column(){
           top: { anchor: '__container__', align: VerticalAlign.Top },
 
         })
-        .margin({top:px2vp(this.TopHeight)+10})
+         .margin({top:20})
         .justifyContent(FlexAlign.SpaceBetween)
         Column() {
           if (this.dataValue) {
@@ -244,10 +223,11 @@ Column(){
         )
 
       }
+
       .width("100%")
       .height("100%")
-
     }
+
     .width("100%")
     .height("100%")
   }

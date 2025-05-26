@@ -16,9 +16,10 @@ import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 import { BankListRes } from 'db'
-import { promptAction } from '@kit.ArkUI'
+import { promptAction, window } from '@kit.ArkUI'
 import { selectImage } from '../utils/SelectImage'
 import { ProgressLoading } from '../components/ProgressLoading'
+import { screenManager, ScreenManager } from '../utils/ScreenManager'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -61,9 +62,12 @@ export struct HomePage {
   @State wrongBanks: BankListRes[] = [];
   @State collectionBanks: BankListRes[] = [];
   @State loading:boolean=false
+  @State TopHeight:number=0
+  win:window.Window|null=null
   aboutToAppear(): void {
     this.initLottie()
     this.loadResources()
+
   }
 
   async loadResources(): Promise<void> {
@@ -83,6 +87,8 @@ export struct HomePage {
 
   aboutToDisappear(): void {
     lottie.destroy()
+    screenManager.exitFull(getContext())
+    this.TopHeight=0
   }
 
   build() {
@@ -209,6 +215,9 @@ export struct HomePage {
         middle: { anchor: '__container__', align: HorizontalAlign.Center }
       })
     }
+    .margin({
+      top:this.TopHeight
+    })
 }
   //跳转到练习列表共用的页面，1=题库练习，2=错题练习，3=收藏练习
   private jumpToBankList(type: number) {
