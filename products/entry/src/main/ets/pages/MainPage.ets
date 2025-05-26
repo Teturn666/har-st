@@ -8,6 +8,7 @@ import router from '@ohos.router'
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { init, onEventObject } from '@umeng/analytics';
+import { MainModel } from '../model/MainModel';
 import { questionBankTable, questionTable, questionWrongTable, questionCollectionTable } from 'db'
 
 const context = (getContext(this) as common.UIAbilityContext)
@@ -22,6 +23,7 @@ struct MainPage {
   @Provide nickName: string = ''
   @Provide avatarUrl: string = ''
   @Provide loginState: string = '0' //0=未登录
+  @State mainModel: MainModel = MainModel.getInstance()
 
   onPageShow(): void {
     const params = router.getParams() as Record<string, string>
@@ -54,14 +56,7 @@ struct MainPage {
 
   aboutToAppear(): void {
     this.initPreferences()
-    this.initDB()
-  }
-
-  initDB() {
-    questionBankTable.getRdbStore()
-    questionTable.getRdbStore()
-    questionWrongTable.getRdbStore()
-    questionCollectionTable.getRdbStore()
+    this.mainModel.initDb()
   }
 
   build() {
