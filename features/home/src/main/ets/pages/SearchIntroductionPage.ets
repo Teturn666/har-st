@@ -6,13 +6,18 @@ import HomeConstants from "../Constants/HomeConstants";
 export struct SearchIntroductionPage {
 
   @State message: string = 'Hello World';
-  aboutToAppear() {
-this.getWindow()
+  win:window.Window|null=null
+  onPageShow(): void {
+    this.getWindow()
+  }
+  aboutToDisappear(): void {
+    this.getWindow()
   }
   async getWindow(){
-      const  win= await window.getLastWindow(getContext())
+    this.win =  await  window.getLastWindow(getContext())
 
-    win.setWindowLayoutFullScreen(false)
+
+    this.win.setWindowLayoutFullScreen(false)
   }
   build() {
     RelativeContainer() {
