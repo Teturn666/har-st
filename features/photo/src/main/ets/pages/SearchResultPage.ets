@@ -3,14 +3,17 @@ import { TitleBar } from 'widget/Index'
 import { SearchModel } from '../model/SearchModel'
 import { SearchResultRes } from '../model/SearchResultRes'
 import { router } from '@kit.ArkUI'
+import { BankListRes } from 'db'
 
 
 @Entry({ routeName: 'searchResultPage' })
 @Component
 export struct SearchResultPage {
   controller: TabsController = new TabsController()
-  list: string[] = ["在线", "本地"]
+  list: string[] = ["题库广场", "本地题库"]
   @State activeTabIndex: number = 0 // 当前激活的 tab 索引
+
+
   @Builder
   getTabItemBuilder(item: string, index: number) {
     Column() {
@@ -41,14 +44,21 @@ export struct SearchResultPage {
               Column() {
                 ListView()
               }
+              .height("100%")
+              .justifyContent(FlexAlign.Start)
             } else {
-              Text(item)
+
+              Column(){
+                LocalView()
+              }
+              .height("100%")
+              .justifyContent(FlexAlign.Start)
             }
           }
           .tabBar(this.getTabItemBuilder(item, index))
         })
       }
-      .barMode(BarMode.Fixed)
+      // .barMode(BarMode.Fixed)
       .onChange((index: number) => {
         this.activeTabIndex = index
       })
@@ -56,9 +66,112 @@ export struct SearchResultPage {
   }
 }
 
+
+//本地题库
+@Component
+struct LocalView {
+  @State resultData: BankListRes[] = [{
+    id: -1,
+    qid:1,
+    name:"安全驾驶100题",
+    desc:"开车不喝酒喝酒不开车",
+    time:"2025.12",
+    url:'xxxxx',
+    num:'1',
+    version:"1.0",
+    position:1,
+    downloadedState:1,
+    bankType:1
+ }]
+  aboutToAppear(): void {
+
+  }
+
+  build() {
+    if (this.resultData.length > 0) {
+
+        List() {
+
+          ForEach(this.resultData,
+            (item: BankListRes) => {
+              ListItem() {
+                Column() {
+                  Text("答案: " + 'C')
+                    .fontSize(16)
+                    .fontColor($r('app.color.c_f75a23'))
+                    .margin({ bottom: 15 })
+                    .align(Alignment.Start)
+                  Text("开车不喝酒喝酒不开车")
+                    .fontSize(16)
+                    .align(Alignment.Start)
+
+                  Flex({
+                    direction: FlexDirection.Row,
+                    justifyContent: FlexAlign.SpaceBetween,
+                    alignItems: ItemAlign.Center,
+                    wrap: FlexWrap.Wrap
+                  }) {
+                    Text("A、 正确")
+                      .fontSize(16)
+                      .fontColor($r('app.color.c_3e3e3e'))
+                      .margin({ top: 12 })
+                      .align(Alignment.Start)
+                      .width('100%')
+                    Text("B、 正确")
+                      .fontSize(16)
+                      .fontColor($r('app.color.c_3e3e3e'))
+                      .margin({ top: 12 })
+                      .align(Alignment.Start)
+                      .width('100%')
+                    Text("B、 正确")
+                      .fontSize(16)
+                      .fontColor($r('app.color.c_3e3e3e'))
+                      .margin({ top: 12 })
+                      .align(Alignment.Start)
+                      .width('100%')
+                    Text(item.name)
+                      .fontSize(14)
+                      .fontColor($r('app.color.c_3e3e3e'))
+                      .margin({ top: 30 })
+                      .align(Alignment.Start)
+                      .width('100%')
+                  }
+                }
+                .padding(15)
+                .alignItems(HorizontalAlign.Start)
+
+              }
+              .width('92%')
+              .shadow({
+                radius: 15,
+                color: $r('app.color.c_d3d3d3'),
+              })
+              .borderRadius(10)
+              .margin({ left: 15, top: 15 })
+              .align(Alignment.Start)
+            }
+          )
+          ListItem() {
+            BottomBar({
+              searchClick: () => {
+                router.back()
+              }
+            })
+          }
+        }
+        .cachedCount(5)
+       } else {
+      Text($r('app.string.search_nodata'))
+        .fontSize(16)
+        .align(Alignment.Start)
+        .fontColor($r('app.color.c_f75a23'))
+    }
+  }
+}
 @Component
 struct ListView {
   @State resultData: SearchResultRes[] = []
+
   ocrTxt = '驾驶人'
 
   aboutToAppear(): void {

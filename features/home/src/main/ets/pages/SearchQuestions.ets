@@ -27,7 +27,9 @@ export struct SearchQuestions {
       await this.searchResult()
     })
   }
-
+aboutToDisappear(): void {
+  cameraManager.releaseCamera()
+}
   private async searchResult() {
     this.resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(this.dataValue)
   }
