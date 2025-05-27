@@ -201,6 +201,7 @@ export struct BankList {
           this.bankRes.newsData = [...this.bankRes.newsData]
           this.dialogDeleteController?.close()
           this.bankModel.deleteTable(item.qid)
+          this.bankModel.initSearchEngin()
         }
       })
     });
