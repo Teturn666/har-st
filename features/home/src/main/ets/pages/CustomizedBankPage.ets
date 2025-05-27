@@ -1,17 +1,17 @@
+import fs from '@ohos.file.fs';
 import { TitleBar } from 'widget'
 import { promptAction, router } from '@kit.ArkUI'
 import { getFileExtension, getPrefix, selectFile } from '../manage/SelectFileManage';
 import { WebClass } from '../components/WebParseExcel';
 import { questionBankTable, questionTable } from 'db';
 import picker from '@ohos.file.picker';
-import fs from '@ohos.file.fs';
 import { util } from '@kit.ArkTS';
 import { ExcelDataObj, QuestionError } from '../model/CustomizedBankModel';
 import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
 import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { TimeUtils } from 'utils';
+import { TimeUtils } from 'utils/src/main/ets/utils/TimeUtils'
 
 const TAG = 'CustomizedBankPage'
 
@@ -23,6 +23,7 @@ struct CustomizedBankPage {
   private resultDialogController: CustomDialogController | null = null;
   @State message: string = '等待解析文件...';
   private parser: ParseTxtManage = new ParseTxtManage();
+  @State importStatus: string = '未完成'; //'成功'、'失败'、'未完成'
 
   // 显示结果逻辑
   private showImportResult(result: ImportWithLog) {
@@ -75,6 +76,7 @@ struct CustomizedBankPage {
   private async parseTxt(file: fs.File, filePreName: string) {
     try {
       const result = await this.parser.parseTxtFile(file.path);
+      this.message = `开始处理TXT文件：${file.path}`;
       if (!result) {
         this.message = '解析失败';
         promptAction.showToast({ message: '解析失败', duration: 2000 });
@@ -82,7 +84,6 @@ struct CustomizedBankPage {
       }
 
       const bankName = await this.getInputDialogName(filePreName)
-
       // 创建BankListRes
       const bank: BankListRes = {
         id: -1,
@@ -103,12 +104,11 @@ struct CustomizedBankPage {
       // 插入题库
       try {
         await questionBankTable.insertDataAwait(bank);
-        console.info(`成功插入题库: ${JSON.stringify(bank)}`);
         output += `题库名称: ${bank.name}\n题目数量: ${bank.num}\n创建时间: ${bank.time}\n\n`;
       } catch (error) {
         const err: BusinessError = error as BusinessError;
-        console.error(`插入题库失败: ${err.message}`);
         result.logs.push(`插入题库失败: ${err.message}`);
+        this.importStatus = '失败';
         this.message = `插入题库失败: ${err.message}`;
         promptAction.showToast({ message: '插入题库失败', duration: 2000 });
         return;
@@ -126,15 +126,31 @@ struct CustomizedBankPage {
         }
       }
 
+      // 将 result.logs 转换为 QuestionError 格式并存储到 questionErrorList
+      this.questionErrorList = result.logs.map((log: string): QuestionError => {
+        const match = log.match(/第(\d+)行/);
+        const row = match ? parseInt(match[1]) : 0;
+        const errorObj: QuestionError = {
+          sheetName: 'TXT',
+          row: row,
+          error: log
+        };
+        return errorObj;
+      });
+
       await this.importSuccess(successCount)
 
       result.logs.forEach((log: string) => {
         output += `错误: ${log}\n`;
       });
 
-
-      this.message = `成功插入题库: ${bank.name}\n成功导入 ${successCount} 道题目\n\n${output}`;
-      promptAction.showToast({ message: `成功导入 ${successCount} 道题目`, duration: 2000 });
+      if (successCount > 0 && this.questionErrorList.length > 0) {
+        this.importStatus = '成功';
+        promptAction.showToast({ message: `成功导入 ${successCount} 道题目`, duration: 2000 });
+      } else {
+        this.importStatus = '失败';
+        promptAction.showToast({ message: '导入失败', duration: 2000 });
+      }
     } catch (error) {
       const err: BusinessError = error as BusinessError;
       console.error(`读取文件失败: code=${err.code}, message=${err.message}`);
@@ -155,6 +171,7 @@ struct CustomizedBankPage {
     WebClass.webviewController.runJavaScript(`parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
       async (error, excelData) => {
         if (error) {
+          this.importStatus = '失败';
           console.error(`run Excel error, ErrorCode: ${error.code}`);
         }
         try {
@@ -173,8 +190,10 @@ struct CustomizedBankPage {
             });
             // 显示导入结果
             this.questionErrorList = excelDataObj.questionErrorList;
+            this.importStatus = '成功';
           }
         } catch (error) {
+          this.importStatus = '失败';
           console.error(TAG, 'excelData error:' + error);
           promptAction.showToast({ message: '文件解析失败', duration: 2000 });
         }
@@ -182,22 +201,29 @@ struct CustomizedBankPage {
   }
 
   async getInputDialogName(defaultName: string): Promise<string> {
-    let name: string = '';
+    let bankName: string = defaultName;
     let isConfirmed: boolean = false;
     await new Promise<void>((resolve) => {
       this.dialogController = new CustomDialogController({
         builder: InputDialog({
+          initialText: defaultName,
           confirm: (value: string) => {
-            console.info(`确认输入: ${value}`);
-            name = value.trim() || '自定义题库';
+            if (!value.trim()) {
+              promptAction.showToast({
+                message: "请输入题库名称",
+                duration: 2000
+              });
+              return;
+            }
+            bankName = value.trim();
             isConfirmed = true;
             resolve();
+            this.dialogController?.close();
           },
           cancel: () => {
             console.info('取消输入');
             resolve();
           },
-          initialText: defaultName
         })
       });
       this.dialogController?.open();
@@ -205,11 +231,12 @@ struct CustomizedBankPage {
 
     if (!isConfirmed) {
       this.message = '取消导入';
+      this.importStatus = '失败';
       promptAction.showToast({ message: '取消导入', duration: 2000 });
       return '';
     }
 
-    return name;
+    return bankName;
   }
 
   async importSuccess(count: number) {
@@ -228,20 +255,12 @@ struct CustomizedBankPage {
     });
   }
 
-  aboutToAppear(): void {
+  async aboutToAppear() {
     this.questionImport()
-    console.log(TAG, 'aboutToAppear: aboutToAppear')
   }
 
-  // 在自定义组件即将析构销毁时将dialogController置空
   aboutToDisappear() {
-    console.log(TAG, 'aboutToDisappear: aboutToDisappear')
     this.dialogController = null;
-    this.resultDialogController = null;
-  }
-
-  onAccept() {
-    console.info('Callback when the second button is clicked');
     this.resultDialogController = null;
   }
 
@@ -251,10 +270,6 @@ struct CustomizedBankPage {
         title: '自定义题库',
         backClick: () => {
           router.back()
-          // this.textValue = "备注导入的题库名称"
-          // this.textContent = "导入成功：导入数据129条"
-          // this.isRemarkBank = true
-          // this.dialogController?.open();
         },
       }).width('100%')
 
@@ -269,7 +284,7 @@ struct CustomizedBankPage {
       .backgroundColor($r('app.color.c_F75A23'))
 
       // 文件路径信息
-      Text("开始解析Excel文件：/storage/emulated/0/Android/data/com.questions.tcache/importxlsx")
+      Text(this.message)
         .fontSize(12)
         .fontColor($r('app.color.c_9d9d9d'))
         .margin({
@@ -285,7 +300,7 @@ struct CustomizedBankPage {
           this.questionErrorList,
           (item: QuestionError) => {
             ListItem() {
-              Text(`${item.sheetName} : 第${item.row}行, 无法提取题目`)
+              Text(`第${item.row}行, ${item.error}`)
                 .fontSize(12)
                 .fontColor($r('app.color.c_9d9d9d'))
                 .margin({ bottom: 10, left: 20, right: 20 })
@@ -294,8 +309,23 @@ struct CustomizedBankPage {
           },
         )
       }
-      .height("80%")
+      .height("auto")
       .width("100%")
+
+      // 动态显示导入结果
+      if (this.importStatus === '成功') {
+        Text('导入完成')
+          .fontSize(12)
+          .fontColor($r('app.color.c_9d9d9d'))
+          .margin({ bottom: 10, left: 20, right: 20 })
+          .textAlign(TextAlign.Start)
+      } else if (this.importStatus === '失败') {
+        Text('导入失败')
+          .fontSize(12)
+          .fontColor($r('app.color.c_9d9d9d'))
+          .margin({ bottom: 10, left: 20, right: 20 })
+          .textAlign(TextAlign.Start)
+      }
 
     }
 
@@ -307,7 +337,7 @@ struct CustomizedBankPage {
 struct InputDialog {
   @State inputText: string = '';
   controller?: CustomDialogController;
-  @Prop initialText: string; // 新增 Prop 接收默认文件名
+  @Prop initialText: string; // 接收默认文件名
   confirm: (value: string) => void = () => {
   };
   cancel: () => void = () => {
@@ -356,7 +386,6 @@ struct InputDialog {
           .onClick(() => {
             console.info(`InputDialog: Confirm clicked, input: ${this.inputText}`);
             this.confirm(this.inputText);
-            this.controller?.close();
           })
       }
 

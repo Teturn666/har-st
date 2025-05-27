@@ -26,6 +26,29 @@ export class HomeModel {
   }
 
 
+  //删除数据库
+  async deleteTable(qid: number) {
+    //删除相应的题库表
+    let bankResultList = await questionBankTable.querySync(qid, false) ?? [];
+    if (bankResultList.length > 0) {
+      let bankRes = bankResultList[0]
+      questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
+        Logger.info(TAG, '题库deleteData--------' + resFlag)
+      })
+    }
+    //删除相应的题目表
+    let bankQaResultList = await questionTable.querySync(qid, false) ?? [];
+    if (bankQaResultList.length > 0) {
+      bankQaResultList.forEach((item) => {
+        questionTable.deleteData(item, (resFlag: boolean) => {
+          Logger.info(TAG, '题目deleteData--------' + resFlag)
+        })
+      })
+    }
+  }
+
+
+
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
     let bankResultList = await questionBankTable.querySync(0) ?? [];
