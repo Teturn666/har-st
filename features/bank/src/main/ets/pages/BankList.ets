@@ -426,7 +426,7 @@ export struct BankList {
         break
       case 2:
         let downloadList = await this.bankModel.getDownloadBankList()
-        this.bankRes.newsData = downloadList
+        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 1);
         break
       default:
         let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
