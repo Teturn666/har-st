@@ -60,7 +60,10 @@ export  class  OcrToText {
           hilog.info(0x0000, 'OCRDemo', `Succeeded in recognizing text：${recognitionString}`)
           // 将结果更新到Text中显示
           // this.dataValues = data.value
-          emitter.emit("dataText", { data: { "text": data.value } })
+          setTimeout(()=>{
+            emitter.emit("dataText", { data: { "text": data.value } })
+          },1000)
+
           if (search){
             this.jumpToSearchResult()
           }
