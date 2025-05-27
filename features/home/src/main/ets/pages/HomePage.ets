@@ -363,7 +363,8 @@ struct SearchHelper {
           .objectFit(ImageFit.Contain)
         Text($r('app.string.almighty_search'))
           .fontSize($r('app.float.font_size_24fp'))
-          .fontColor($r('app.color.c_white'))
+          .fontColor('#7B6008')
+
       }.onClick(() => this.handleClick())
 
     }
