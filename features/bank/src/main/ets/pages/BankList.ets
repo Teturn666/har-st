@@ -201,6 +201,7 @@ export struct BankList {
           this.bankRes.newsData = [...this.bankRes.newsData]
           this.dialogDeleteController?.close()
           this.bankModel.deleteTable(item.qid)
+          this.bankModel.initSearchEngin()
         }
       })
     });
@@ -309,19 +310,20 @@ export struct BankList {
 
                 Column() {
                   if (item.downloadedState === 1) {
-                    Image($r('app.media.ic_remove'))
+                    Image(this.fromType === 2 ? $r('app.media.ic_remove') : $r('app.media.ic_download_pre'))
                       .objectFit(ImageFit.Contain)
-                      .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
+                      .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
                     Text("删除")
+                      .visibility(this.fromType === 2 ? Visibility.Visible : Visibility.Hidden)
                       .fontColor(Color.Black)
                       .fontSize($r('app.float.font_size_10fp'))
                   } else {
                     Image($r('app.media.ic_download'))
                       .objectFit(ImageFit.Contain)
-                      .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                    Text("下载")
-                      .fontColor(Color.Black)
-                      .fontSize($r('app.float.font_size_10fp'))
+                      .size({ width: $r("app.float.float_60vp"), height: $r("app.float.float_60vp") })
+                    // Text("下载")
+                    //   .fontColor(Color.Black)
+                    //   .fontSize($r('app.float.font_size_10fp'))
                   }
                 }
                 .margin({
@@ -331,7 +333,9 @@ export struct BankList {
                   async () => {
                     this.mCurBank = item
                     if (item.downloadedState === 1) {
-                      this.showDeleteDialog()
+                      if (this.fromType === 2) {
+                        this.showDeleteDialog()
+                      }
                     } else {
                       Logger.info(TAG, '题库内容--------' + item)
                       LoadingDialog.openDialog()
@@ -435,26 +439,5 @@ export struct BankList {
         this.bankRes.newsData = this.bankRes.newsData.concat(list)
         break
     }
-
-
-    // if (this.fromType === 1) {
-    //   let list = await this.bankModel.getSearchBankList(this.searchText, this.pageNum)
-    //   if (list === null || list.length < 10) {
-    //     this.loadMore = false
-    //   } else {
-    //     this.pageNum++
-    //     this.loadMore = true
-    //   }
-    //   this.bankRes.newsData = this.bankRes.newsData.concat(list)
-    // } else {
-    //   let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
-    //   if (list === null || list.length < 10) {
-    //     this.loadMore = false
-    //   } else {
-    //     this.pageNum++
-    //     this.loadMore = true
-    //   }
-    //   this.bankRes.newsData = this.bankRes.newsData.concat(list)
-    // }
   }
 }

@@ -104,18 +104,9 @@ export class SearchEngine {
   }
 
   //TODO 这个方法还得完善，差单线程
-  private initWithThread() {
+  private async initWithThread() {
     //TODO 开启单线程
-    // let task = new taskpool.Task(this.initWithThreadTask())
-    // taskpool.execute(task, taskpool.Priority.HIGH).then(() => {
-    //
-    // })
-    //
-    // taskpool.execute(1,5).then((value:Object)=>{
-    //
-    // })
-
-    this.initWithThreadTask()
+    await this.initWithThreadTask()
   }
 
   async initWithThreadTask(): Promise<boolean> {

@@ -3,7 +3,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { fileIo, picker } from '@kit.CoreFileKit'
 import { image } from '@kit.ImageKit'
-import { textRecognition } from '@kit.CoreVisionKit'
+import { faceDetector, textRecognition } from '@kit.CoreVisionKit'
 import { HomeModel } from '../model/HomeModel'
 import { HomeBankListRes } from '../model/HomeBankListRes'
 import { LoadingStatus } from 'utils'
@@ -135,6 +135,7 @@ export struct HomePage {
 
           ListItem() {
             SearchHelper({
+              isLoading: this.loading,
               handleClick: async () => {
                 // this.selectImage()
              this.loading = true
@@ -239,15 +240,6 @@ export struct HomePage {
     }, router.RouterMode.Single)
   }
 
-  // 跳转到搜索结果页
-  private jumpToSearchResult(ocrTxt: string) {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
-        ocrTxt: ocrTxt
-      }
-    })
-    onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
-  }
 
   //跳转到我的下载
   private jumpToDownloadResult() {
@@ -353,6 +345,7 @@ export struct HomePage {
 @Component
 struct SearchHelper {
   @State isShow: boolean = false
+  @Prop isLoading:boolean =false
   handleClick: () => void = () => {
   }
 
@@ -372,7 +365,9 @@ struct SearchHelper {
           .fontSize($r('app.float.font_size_24fp'))
           .fontColor($r('app.color.c_white'))
       }.onClick(() => this.handleClick())
+
     }
+    .enabled(!this.isLoading)
   }
 }
 
