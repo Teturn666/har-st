@@ -8,18 +8,49 @@ import { router } from '@kit.ArkUI'
 @Entry({ routeName: 'searchResultPage' })
 @Component
 export struct SearchResultPage {
+  controller: TabsController = new TabsController()
+  list: string[] = ["在线", "本地"]
+  @State activeTabIndex: number = 0 // 当前激活的 tab 索引
+  @Builder
+  getTabItemBuilder(item: string, index: number) {
+    Column() {
+      Text(item)
+        .fontColor(this.activeTabIndex === index ? $r('app.color.c_f75a23') : Color.Black)
+    }
+    .justifyContent(FlexAlign.SpaceEvenly)
+
+  }
+
   build() {
     Flex({ direction: FlexDirection.Column }) {
       TitleBar({
-        title: '搜索结果', backClick: () => {
+        title: '搜索结果',
+        backClick: () => {
           router.back()
         }
       })
-      ListView()
-      BottomBar({
-        searchClick: () => {
-          router.back()
-        }
+
+      Tabs({
+        controller: this.controller,
+        index: this.activeTabIndex
+      }) {
+        ForEach(this.list, (item: string, index: number) => {
+          TabContent() {
+            // 根据索引切换内容
+            if (index === 0) {
+              Column() {
+                ListView()
+              }
+            } else {
+              Text(item)
+            }
+          }
+          .tabBar(this.getTabItemBuilder(item, index))
+        })
+      }
+      .barMode(BarMode.Fixed)
+      .onChange((index: number) => {
+        this.activeTabIndex = index
       })
     }
   }
@@ -120,6 +151,7 @@ struct ListView {
               }
               .padding(15)
               .alignItems(HorizontalAlign.Start)
+
             }
             .width('92%')
             .shadow({
@@ -131,8 +163,16 @@ struct ListView {
             .align(Alignment.Start)
           }
         )
+        ListItem() {
+          BottomBar({
+            searchClick: () => {
+              router.back()
+            }
+          })
+        }
       }
       .cachedCount(5)
+
     } else {
       Text($r('app.string.search_nodata'))
         .fontSize(16)

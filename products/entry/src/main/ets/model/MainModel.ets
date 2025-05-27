@@ -1,6 +1,6 @@
 import { LogUtil } from '@umeng/common';
 import { questionBankTable, questionTable, questionWrongTable, questionCollectionTable } from 'db'
-import { SearchEngine } from 'search/Index';
+//import { SearchEngine } from 'search/Index';
 import { Logger } from 'utils';
 
 export class MainModel {
@@ -30,7 +30,8 @@ export class MainModel {
   }
 
   public async initSearchEngin() {
-    let result = await SearchEngine.getInstance().initWithThreadTask()
-    Logger.debug('result---' + result)
+    //TODO 报错
+   // let result = await SearchEngine.getInstance().initWithThreadTask()
+   //  Logger.debug('result---' + result)
   }
 }
