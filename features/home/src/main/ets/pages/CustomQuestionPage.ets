@@ -23,7 +23,7 @@ struct CustomQuestionPage {
     this.isLoading = true;
     try {
       const banks = await this.homeModel.getBankList();
-      this.questionBanks = banks || [];
+      this.questionBanks = (banks || []).filter(bank => bank.bankType === 2);
       console.log(`Updated questionBanks: ${JSON.stringify(this.questionBanks)}`);
     } catch (error) {
       console.error(`getimportList error: ${error}`);
