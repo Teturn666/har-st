@@ -1,4 +1,11 @@
-import { BankListRes, questionBankTable, questionWrongTable, questionCollectionTable,questionTable, QuestionRes } from 'db'
+import {
+  BankListRes,
+  questionBankTable,
+  questionWrongTable,
+  questionCollectionTable,
+  questionTable,
+  QuestionRes
+} from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
 
 const TAG = '[HomeModel]'
@@ -19,7 +26,6 @@ export class HomeModel {
   }
 
 
-
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
     let bankResultList = await questionBankTable.querySync(0) ?? [];
@@ -27,9 +33,10 @@ export class HomeModel {
     Logger.info(TAG, '下载的题库--------' + bankResultList.length)
     return bankResultList
   }
+
   //获取题库中的题目
-  public async getBankQuestionList(qid:number): Promise<QuestionRes[]> {
-    let resultList = await questionTable.querySync(qid,false) ?? [];
+  public async getBankQuestionList(qid: number): Promise<QuestionRes[]> {
+    let resultList = await questionTable.querySync(qid, false, false) ?? [];
 
     Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
     return resultList
@@ -80,7 +87,7 @@ export class HomeModel {
   }
 
   //查询题库信息
-  public async queryQuestionBankList(qId:number): Promise<BankListRes[]> {
+  public async queryQuestionBankList(qId: number): Promise<BankListRes[]> {
     let QuestionBankList = await questionBankTable.querySync(qId, false) ?? [];
     return QuestionBankList
   }

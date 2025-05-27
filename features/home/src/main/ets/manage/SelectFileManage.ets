@@ -42,3 +42,8 @@ export function getFileExtension(fileName: string) {
   const extension = fileName.slice(lastDotIndex + 1).toLowerCase();
   return extension;
 }
+
+export function getPrefix(fileName: string) {
+  const dotIndex = fileName.lastIndexOf('.');
+  return dotIndex === -1 ? fileName : fileName.substring(0, dotIndex);
+}

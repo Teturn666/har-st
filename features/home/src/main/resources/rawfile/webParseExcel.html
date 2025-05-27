@@ -64,6 +64,7 @@
         };
 
         const questions = [];
+        const questionErrorList = [];
         let globalQuestionIndex = 0;
 
         for (const sheetName of workbook.SheetNames) {
@@ -80,33 +81,56 @@
             continue;
           }
 
+          // 新增：过滤掉空行（关键修改！）
+          const validRows = rows.slice(1).filter((row) => {
+            // 判断行是否为空：所有单元格都是空字符串或undefined
+            return !row.every(
+              (cell) => cell === undefined || String(cell).trim() === ""
+            );
+          });
+
           // 处理每一行数据
-          rows.slice(1).forEach((row) => {
+          validRows.slice(1).forEach((row, rowIndex) => {
+            const actualRowNumber = rowIndex + 2; // 实际Excel行号（表头是第1行）
             const paddedRow = row.concat(Array(6 - row.length).fill(""));
             const [question, answer, optionA, optionB, optionC, optionD] =
               paddedRow;
 
-            if (String(question).trim() || String(answer).trim()) {
-              questions.push({
-                qId: qid,
-                question: question || "",
-                option: [optionA, optionB, optionC, optionD].filter(
-                  (opt) => opt !== ""
-                ),
-                answer: answer || "",
-                wrongAnswer: "",
-                questionID: globalQuestionIndex + 1,
+            // 题干和答案均为空时记录错误
+            if (
+              !String(question).trim() ||
+              !String(answer).trim() ||
+              (!String(optionA).trim() &&
+                !String(optionB).trim() &&
+                !String(optionC).trim() &&
+                !String(optionD).trim())
+            ) {
+              questionErrorList.push({
+                sheetName: sheetName,
+                row: actualRowNumber,
+                error: "题干和答案均为空",
               });
-
-              globalQuestionIndex++;
+              return; // 跳过当前行
             }
+
+            questions.push({
+              qId: qid,
+              question: question || "",
+              option: [optionA, optionB, optionC, optionD].filter(
+                (opt) => opt !== ""
+              ),
+              answer: answer || "",
+              wrongAnswer: "",
+              questionID: globalQuestionIndex + 1,
+            });
+
+            globalQuestionIndex++;
           });
         }
 
         quizBank.num = questions.length.toString();
 
-        return { quizBank, questions };
-        // WebClassObj.acceptData(dataStr);
+        return { quizBank, questions, questionErrorList };
       } catch (error) {
         console.error("解析失败:", error);
         throw error;
