@@ -19,14 +19,7 @@ export struct SearchIntroductionPage {
           // this.dialogController?.open();
         },
       }).width('100%')
-      // Text("扫描搜题")
-      //   .id("title")
-      //   .fontSize(20)
-      //   .fontWeight(FontWeight.Bold)
-      //   .alignRules({
-      //     top: { anchor: '__container__', align: VerticalAlign.Top },
-      //     middle: { anchor: '__container__', align: HorizontalAlign.Center }
-      //   })
+
 
 
       // 使用说明行

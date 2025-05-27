@@ -3,7 +3,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit'
 import { BusinessError } from '@kit.BasicServicesKit'
 import { fileIo, picker } from '@kit.CoreFileKit'
 import { image } from '@kit.ImageKit'
-import { textRecognition } from '@kit.CoreVisionKit'
+import { faceDetector, textRecognition } from '@kit.CoreVisionKit'
 import { HomeModel } from '../model/HomeModel'
 import { HomeBankListRes } from '../model/HomeBankListRes'
 import { LoadingStatus } from 'utils'
@@ -135,6 +135,7 @@ export struct HomePage {
 
           ListItem() {
             SearchHelper({
+              isLoading: this.loading,
               handleClick: async () => {
                 // this.selectImage()
              this.loading = true
@@ -344,6 +345,7 @@ export struct HomePage {
 @Component
 struct SearchHelper {
   @State isShow: boolean = false
+  @Prop isLoading:boolean =false
   handleClick: () => void = () => {
   }
 
@@ -365,6 +367,7 @@ struct SearchHelper {
       }.onClick(() => this.handleClick())
 
     }
+    .enabled(!this.isLoading)
   }
 }
 
