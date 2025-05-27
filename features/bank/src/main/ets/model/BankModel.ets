@@ -1,5 +1,5 @@
 import { questionBankTable, questionTable, BankListRes, QuestionRes } from 'db'
-import { SearchDecryptUtils } from 'search'
+import { SearchDecryptUtils, SearchEngine } from 'search'
 import { Logger, StringUtils } from 'utils'
 import { plainToClass } from 'class-transformer'
 import { BankNet } from '../service/BankNet'
@@ -177,9 +177,8 @@ export class BankModel {
       Logger.info(TAG, 'trStr--------' + trStr)
       //转换成 题目的对象
       let lines = trStr.split('\n')
-      // for (let line of lines) {
-        for (let i = 0; i < lines.length; i++) {
-          let line =  lines[i]
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i]
 
         if (line !== '') {
           const questionRes = plainToClass(BankQuestionRes, JSON.parse(line))
@@ -190,7 +189,7 @@ export class BankModel {
           questionDb.question = questionRes.q
           questionDb.answer = questionRes.ans
           questionDb.option = questionRes.a
-          questionDb.questionID = qid+i+1
+          questionDb.questionID = qid + i + 1
           let ret = await questionTable.insertDataAwait(questionDb)
           Logger.info(TAG, 'ret--------' + ret)
         }
@@ -199,11 +198,18 @@ export class BankModel {
       bankListRes.downloadedState = 1
       bankListRes.position = 0
       let ret = await questionBankTable.insertDataAwait(bankListRes)
+      this.initSearchEngin()
       Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {
       Logger.info(TAG, "----->" + e)
       return false
     }
+  }
+
+  //初始化搜索引擎,更新查询数据
+  public async initSearchEngin() {
+    let result = await SearchEngine.getInstance().initWithThreadTask()
+    Logger.debug('result---' + result)
   }
 }

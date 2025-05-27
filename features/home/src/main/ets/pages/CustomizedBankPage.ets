@@ -1,60 +1,231 @@
 import { TitleBar } from 'widget'
-import { router } from '@kit.ArkUI'
-import { selectFile } from '../manage/SelectFileManage';
+import { promptAction, router } from '@kit.ArkUI'
+import { getFileExtension, getPrefix, selectFile } from '../manage/SelectFileManage';
 import { WebClass } from '../components/WebParseExcel';
-import { BankListRes, questionBankTable, QuestionRes, questionTable } from 'db';
-
-interface ExcelDataObj {
-  quizBank: BankListRes,
-  questions: Array<QuestionRes>
-}
+import { questionBankTable, questionTable } from 'db';
+import picker from '@ohos.file.picker';
+import fs from '@ohos.file.fs';
+import { util } from '@kit.ArkTS';
+import { ExcelDataObj, QuestionError } from '../model/CustomizedBankModel';
+import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
+import { QuestionModel } from '../manage/ParseTxtManage';
+import { BankListRes, QuestionRes } from 'db';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { TimeUtils } from 'utils';
 
 const TAG = 'CustomizedBankPage'
 
 @Entry({ routeName: "customizedBankPage" })
 @Component
 struct CustomizedBankPage {
-  @State textValue: string = '';
-  @State isRemarkBank: boolean = false;
-  @State textContent: string = '';
-  dialogController: CustomDialogController | null = new CustomDialogController({
-    builder: CustomDialogExample({
-      confirm: () => {
-        this.onAccept()
-      },
-      textValue: this.textValue,
-      isRemarkBank: this.isRemarkBank,
-      textContent: this.textContent
-    })
-  });
+  @State questionErrorList: QuestionError[] = []
+  private dialogController: CustomDialogController | null = null;
+  private resultDialogController: CustomDialogController | null = null;
+  @State message: string = '等待解析文件...';
+  private parser: ParseTxtManage = new ParseTxtManage();
+
+  // 显示结果逻辑
+  private showImportResult(result: ImportWithLog) {
+    promptAction.showToast({
+      message: `成功导入 ${result.items.length} 道题目，${result.logs.length} 条警告`,
+      duration: 3000
+    });
+  }
+
+  // 将QuestionModel列表转换为QuestionRes列表
+  private toQuestionResList(importResult: ImportWithLog): QuestionRes[] {
+    const questionResList: QuestionRes[] = [];
+    importResult.items.forEach((item: QuestionModel, index: number) => {
+      const questionRes = new QuestionRes();
+      questionRes.question = item.q;
+      questionRes.option = item.a;
+      questionRes.answer = item.ans;
+      questionRes.questionID = item.questionID;
+      questionRes.qId = item.qid;
+      questionRes.wrongAnswer = "";
+      questionResList.push(questionRes);
+      console.log("查看questionResList：" + JSON.stringify(questionResList));
+    });
+    return questionResList;
+  }
 
   async questionImport() {
-    const fileArray = await selectFile();
-    const fileName = fileArray[0]
-    const excelBase64Str = fileArray[1]
-
-    if (fileArray[2] === 'xlsx' || fileArray[2] === 'xls') {
-      WebClass.webviewController.runJavaScript(`parseExcelQuizBank(${JSON.stringify(fileName)},${JSON.stringify(excelBase64Str)})`,
-        async (error, excelData) => {
-          if (error) {
-            console.error(`run Excel error, ErrorCode: ${error.code}`);
-          }
-          try {
-            if (excelData) {
-              let excelDataObj = JSON.parse(excelData) as ExcelDataObj;
-              // 存储进题库表
-              questionBankTable.insertDataAwait(excelDataObj.quizBank)
-              // 存储进题目表
-              excelDataObj.questions.forEach((item) => {
-                questionTable.insertDataAwait(item)
-              })
-            }
-          } catch (error) {
-            console.error(TAG, 'excelData error:' + error)
-          }
-        });
-    } else if (fileArray[2] === 'txt') {
+    const documentPicker = new picker.DocumentViewPicker();
+    const result = await documentPicker.select({
+      fileSuffixFilters: ['.xlsx', '.xls', '.txt'],
+      maxSelectNumber: 1
+    });
+    if (result.length === 0) {
+      promptAction.showToast({ message: '未选择文件', duration: 2000 });
+      router.back()
+      return;
     }
+    let file = fs.openSync(result[0], fs.OpenMode.READ_ONLY);
+    // 获取文件扩展名
+    const fileTypeName = getFileExtension(file.name)
+    const filePreName = getPrefix(file.name)
+    if (fileTypeName === 'xlsx' || fileTypeName === 'xls') {
+      this.parseExcel(file, filePreName);
+    } else if (fileTypeName === 'txt') {
+      this.parseTxt(file, filePreName);
+
+    }
+  }
+
+  private async parseTxt(file: fs.File, filePreName: string) {
+    try {
+      const result = await this.parser.parseTxtFile(file.path);
+      if (!result) {
+        this.message = '解析失败';
+        promptAction.showToast({ message: '解析失败', duration: 2000 });
+        return;
+      }
+
+      const bankName = await this.getInputDialogName(filePreName)
+
+      // 创建BankListRes
+      const bank: BankListRes = {
+        id: -1,
+        qid: result.items[0]?.qid || 0,
+        name: bankName,
+        desc: bankName,
+        time: TimeUtils.getFormattedTime(),
+        url: '',
+        num: result.items.length.toString(),
+        version: '1.0',
+        position: 0,
+        downloadedState: 1,
+        bankType: 2
+      };
+      let output: string = '';
+      let successCount = 0;
+
+      // 插入题库
+      try {
+        await questionBankTable.insertDataAwait(bank);
+        console.info(`成功插入题库: ${JSON.stringify(bank)}`);
+        output += `题库名称: ${bank.name}\n题目数量: ${bank.num}\n创建时间: ${bank.time}\n\n`;
+      } catch (error) {
+        const err: BusinessError = error as BusinessError;
+        console.error(`插入题库失败: ${err.message}`);
+        result.logs.push(`插入题库失败: ${err.message}`);
+        this.message = `插入题库失败: ${err.message}`;
+        promptAction.showToast({ message: '插入题库失败', duration: 2000 });
+        return;
+      }
+      // 插入题目
+      let questionResList: QuestionRes[] = this.toQuestionResList(result);
+      for (let item of questionResList) {
+        try {
+          await questionTable.insertDataAwait(item);
+          successCount++;
+        } catch (error) {
+          const err: BusinessError = error as BusinessError;
+          console.error(`插入题目失败: questionID=${item.questionID}, error=${err.message}`);
+          result.logs.push(`插入题目失败: questionID=${item.questionID}, 错误: ${err.message}`);
+        }
+      }
+
+      await this.importSuccess(successCount)
+
+      result.logs.forEach((log: string) => {
+        output += `错误: ${log}\n`;
+      });
+
+
+      this.message = `成功插入题库: ${bank.name}\n成功导入 ${successCount} 道题目\n\n${output}`;
+      promptAction.showToast({ message: `成功导入 ${successCount} 道题目`, duration: 2000 });
+    } catch (error) {
+      const err: BusinessError = error as BusinessError;
+      console.error(`读取文件失败: code=${err.code}, message=${err.message}`);
+      this.message = `文件读取失败: ${err.message} (错误码: ${err.code})`;
+      promptAction.showToast({ message: '文件读取失败', duration: 2000 });
+    }
+  }
+
+  private async parseExcel(file: fs.File, filePreName: string) {
+    const stat = fs.statSync(file.fd);
+    let buffer = new ArrayBuffer(stat.size);
+    fs.readSync(file.fd, buffer);
+    // 获取文件名
+    fs.closeSync(file.fd);
+    // 转成base64编码的字符串
+    const helper = new util.Base64Helper();
+    const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
+    WebClass.webviewController.runJavaScript(`parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
+      async (error, excelData) => {
+        if (error) {
+          console.error(`run Excel error, ErrorCode: ${error.code}`);
+        }
+        try {
+          if (excelData) {
+            let excelDataObj = JSON.parse(excelData) as ExcelDataObj;
+            // 显示弹窗，获取题库名称
+            const bankName = await this.getInputDialogName(filePreName);
+            await this.importSuccess(Number(excelDataObj.quizBank.num));
+            excelDataObj.quizBank.name = bankName;
+            excelDataObj.quizBank.desc = bankName;
+            // 存储进题库表
+            questionBankTable.insertDataAwait(excelDataObj.quizBank);
+            // 存储进题目表
+            excelDataObj.questions.forEach((item) => {
+              questionTable.insertDataAwait(item);
+            });
+            // 显示导入结果
+            this.questionErrorList = excelDataObj.questionErrorList;
+          }
+        } catch (error) {
+          console.error(TAG, 'excelData error:' + error);
+          promptAction.showToast({ message: '文件解析失败', duration: 2000 });
+        }
+      });
+  }
+
+  async getInputDialogName(defaultName: string): Promise<string> {
+    let name: string = '';
+    let isConfirmed: boolean = false;
+    await new Promise<void>((resolve) => {
+      this.dialogController = new CustomDialogController({
+        builder: InputDialog({
+          confirm: (value: string) => {
+            console.info(`确认输入: ${value}`);
+            name = value.trim() || '自定义题库';
+            isConfirmed = true;
+            resolve();
+          },
+          cancel: () => {
+            console.info('取消输入');
+            resolve();
+          },
+          initialText: defaultName
+        })
+      });
+      this.dialogController?.open();
+    });
+
+    if (!isConfirmed) {
+      this.message = '取消导入';
+      promptAction.showToast({ message: '取消导入', duration: 2000 });
+      return '';
+    }
+
+    return name;
+  }
+
+  async importSuccess(count: number) {
+    // 显示成功提示
+    await new Promise<void>((resolve) => {
+      this.resultDialogController = new CustomDialogController({
+        builder: ResultDialog({
+          message: `成功导入 ${count} 道题目`,
+          confirm: () => {
+            console.info('确认成功提示');
+            resolve();
+          }
+        })
+      });
+      this.resultDialogController?.open();
+    });
   }
 
   aboutToAppear(): void {
@@ -66,18 +237,12 @@ struct CustomizedBankPage {
   aboutToDisappear() {
     console.log(TAG, 'aboutToDisappear: aboutToDisappear')
     this.dialogController = null;
-  }
-
-  onPageShow() {
-    const params = this.getUIContext().getRouter().getParams() as Record<string, string>; // 获取传递过来的参数对象
-    if (params) {
-      this.dialogController?.open();
-      this.textValue = params.info as string; // 获取info属性的值
-    }
+    this.resultDialogController = null;
   }
 
   onAccept() {
     console.info('Callback when the second button is clicked');
+    this.resultDialogController = null;
   }
 
   build() {
@@ -117,40 +282,16 @@ struct CustomizedBankPage {
 
       List({ space: 5 }) {
         ForEach(
-          [
-            "Sheet 1: 第2行，元数据取数目录",
-            "Sheet 1: 第3行，元数据取数目录",
-            "Sheet 1: 第4行，元数据取数目录",
-            "Sheet 1: 第5行，元数据取数目录",
-            "Sheet 1: 第6行，元数据取数目录",
-            "Sheet 1: 第7行，元数据取数目录",
-            "Sheet 1: 第8行，元数据取数目录",
-            "Sheet 1: 第9行，元数据取数目录",
-            "Sheet 1: 第10行，元数据取数目录",
-            "Sheet 1: 第11行，元数据取数目录",
-            "Sheet 1: 第12行，元数据取数目录",
-            "Sheet 1: 第13行，元数据取数目录",
-            "Sheet 1: 第14行，元数据取数目录",
-            "Sheet 1: 第15行，元数据取数目录",
-            "Sheet 1: 第16行，元数据取数目录",
-            "Sheet 1: 第17行，元数据取数目录",
-            "Sheet 1: 第18行，元数据取数目录",
-            "Sheet 1: 第19行，元数据取数目录",
-            "Sheet 1: 第20行，元数据取数目录",
-            "Sheet 1: 第21行，元数据取数目录",
-            "Sheet 1: 第22行，元数据取数目录",
-            "Sheet 1: 第23行，元数据取数目录"
-          ],
-          (item: string) => {
+          this.questionErrorList,
+          (item: QuestionError) => {
             ListItem() {
-              Text(item)
+              Text(`${item.sheetName} : 第${item.row}行, 无法提取题目`)
                 .fontSize(12)
                 .fontColor($r('app.color.c_9d9d9d'))
                 .margin({ bottom: 10, left: 20, right: 20 })
                 .textAlign(TextAlign.Start)
             }
           },
-          (item: string) => item
         )
       }
       .height("80%")
@@ -162,80 +303,117 @@ struct CustomizedBankPage {
   }
 }
 
-
 @CustomDialog
-struct CustomDialogExample {
-  @Link textValue: string;
-  @Link textContent: string;
-  @Prop isRemarkBank: boolean;
+struct InputDialog {
+  @State inputText: string = '';
   controller?: CustomDialogController;
-  confirm: () => void = () => {
+  @Prop initialText: string; // 新增 Prop 接收默认文件名
+  confirm: (value: string) => void = () => {
+  };
+  cancel: () => void = () => {
+  };
+
+  aboutToAppear() {
+    this.inputText = this.initialText; // 在对话框出现时设置默认值
   }
 
   build() {
     Column({ space: 20 }) {
-      if (this.isRemarkBank) {
-        Row() {
-          Text(`${this.textValue}`)
-            .fontSize($r('app.float.font_size_18fp'))
-            .fontColor($r('app.color.c_9d9d9d'))
-          Image($r('app.media.ic_cha'))
-            .size({ width: $r('app.float.font_size_16fp'), height: $r('app.float.font_size_16fp') })
-            .onClick(() => {
-              this.controller?.close()
-            })
-        }
-        .padding({ left: 18, top: 8, right: 18 })
-        .width('100%')
-        .justifyContent(FlexAlign.SpaceBetween)
-      } else {
-        Row() {
-          Text(`${this.textValue}`)
-            .fontSize($r('app.float.font_size_18fp'))
-            .fontColor($r('app.color.c_9d9d9d'))
-        }
-        .padding({ left: 18, top: 8, right: 18 })
-        .width('100%')
-        .justifyContent(FlexAlign.SpaceBetween)
+      Row() {
+        Text('备注导入的题库名称')
+          .fontSize(18)
+          .fontColor('#9d9d9d')
+        Image($r('app.media.ic_cha'))
+          .width(16)
+          .height(16)
+          .onClick(() => {
+            console.info('InputDialog: Cancel clicked');
+            this.cancel();
+            this.controller?.close();
+          })
       }
+      .padding({ left: 18, top: 8, right: 18 })
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceBetween)
 
-      if (this.isRemarkBank) {
-        TextInput({ placeholder: '215051451510251' })
-          .height(50)
-          .fontSize($r('app.float.font_size_14fp'))
-          .placeholderColor('#ffcbcac6')
-          .backgroundColor($r('app.color.c_f3f3f3'))
-          .borderRadius(5)
-          .margin({ left: 25, right: 25 })
-      } else {
-        Text(`${this.textContent}`)
-          .fontSize($r('app.float.font_size_18fp'))
-          .fontColor($r('app.color.c_3f3f3f'))
-          .width('90%')
-          .align(Alignment.Start)
+      TextInput({ placeholder: '请输入题库名称', text: this.inputText })
+        .height(50)
+        .fontSize(14)
+        .placeholderColor('#cbcac6')
+        .backgroundColor('#f3f3f3')
+        .borderRadius(10)
+        .margin({ left: 25, right: 25 })
+        .onChange((value: string) => {
+          console.info(`InputDialog: Text changed to ${value}`);
+          this.inputText = value;
+        })
 
-      }
-
-
-      if (!this.isRemarkBank) {
-        Blank()
-      }
-
+      Blank()
 
       Flex({ justifyContent: FlexAlign.Center }) {
         Image($r('app.media.ic_confirm'))
           .size({ width: $r('app.float.float_106vp'), height: $r('app.float.float_40vp') })
           .onClick(() => {
+            console.info(`InputDialog: Confirm clicked, input: ${this.inputText}`);
+            this.confirm(this.inputText);
             this.controller?.close();
           })
       }
 
-      if (!this.isRemarkBank) {
-        Blank()
+      Blank()
+    }
+    .width('90%')
+    .height(250)
+    .padding({ top: 20, bottom: 20 })
+    .backgroundColor(Color.White)
+    .borderRadius(12)
+  }
+}
+
+@CustomDialog
+struct ResultDialog {
+  @Prop message: string;
+  controller?: CustomDialogController;
+  confirm: () => void = () => {
+  };
+
+  build() {
+    Column({ space: 20 }) {
+      Row() {
+        Text('导入结果')
+          .fontSize(18)
+          .fontColor('#9d9d9d')
+      }
+      .padding({ left: 18, top: 8, right: 18 })
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceBetween)
+
+      Text(this.message)
+        .fontSize(18)
+        .fontColor('black')
+        .width('90%')
+        .align(Alignment.Start)
+        .padding({ left: 25, right: 25 })
+
+      Blank()
+
+      Flex({ justifyContent: FlexAlign.Center }) {
+        Image($r('app.media.ic_confirm'))
+          .width(106)
+          .height(40)
+          .onClick(() => {
+            console.info('ResultDialog: Confirm clicked');
+            this.confirm();
+            this.controller?.close();
+          })
       }
 
+      Blank()
     }
-    .height(200)
-    .padding({ top: 20 })
+    .width('90%')
+    .height(250)
+    .padding({ top: 20, bottom: 20 })
+    .backgroundColor(Color.White)
+    .borderRadius(12)
   }
 }

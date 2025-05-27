@@ -82,14 +82,8 @@ class QuestionTable {
   async querySync(id: number, isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
     if (!isAll) {
-
-      if (isSearch) {
-        //搜索走的是找索引的位置
-        predicates.equalTo('id', id);
-      } else {
-        //这块暂时没用到，需替换成题目的ID
-        predicates.equalTo('qId', id);
-      }
+      //搜索走的是找id的位置；题库练习走的是根据题库qId找关联的题目
+      predicates.equalTo(isSearch ? 'id' : 'qId', id);
     }
 
     let resultSet = await this.accountTable.querySync(predicates)

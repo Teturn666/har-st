@@ -104,18 +104,9 @@ export class SearchEngine {
   }
 
   //TODO 这个方法还得完善，差单线程
-  private initWithThread() {
+  private async initWithThread() {
     //TODO 开启单线程
-    // let task = new taskpool.Task(this.initWithThreadTask())
-    // taskpool.execute(task, taskpool.Priority.HIGH).then(() => {
-    //
-    // })
-    //
-    // taskpool.execute(1,5).then((value:Object)=>{
-    //
-    // })
-
-    this.initWithThreadTask()
+    await this.initWithThreadTask()
   }
 
   async initWithThreadTask(): Promise<boolean> {
@@ -259,7 +250,7 @@ export class SearchEngine {
     let qStr = StringFilter.formatString(q);
     let id = await this.searchTextWithIndex(qStr);
     let questions = new Array<QuestionBean>()
-    let result = await questionTable?.querySync(id, false) ?? []
+    let result = await questionTable?.querySync(id, true, false) ?? []
     Logger.info('题目表获取到的数据====>' + result.length)
     if (result.length > 0 && result[0] != null) {
       let record: QuestionRes = result[0]
@@ -313,7 +304,7 @@ export class SearchEngine {
     let questions = new Array<QuestionRes>()
 
     for (let idsElement of ids) {
-      let result = await questionTable?.querySync(idsElement, false) ?? []
+      let result = await questionTable?.querySync(idsElement, true, false) ?? []
       Logger.info('题目表获取到的数据====>' + result.length)
       if (result.length > 0) {
         questions.push(result[0])
@@ -386,7 +377,7 @@ export class SearchEngine {
     let resList = new List<TopItem>()
     let qsCache = new TreeSet<string>()
     for (let item of topList) {
-      let result = await questionTable?.querySync(item.id, false) ?? [];
+      let result = await questionTable?.querySync(item.id, true, false) ?? [];
       Logger.info('题目表获取到的数据====>' + result.length)
       if (result.length > 0) {
         let qs: QuestionRes = result[0]
@@ -402,7 +393,7 @@ export class SearchEngine {
         let lcsVal = this.lcs(q, ss)
         let score = item.score * lcsVal * 1.0 / ss.length
         let topItem = new TopItem()
-        // topItem.id = qs.id
+        topItem.id = qs.id
         topItem.score = score
         resList.add(item)
       }
