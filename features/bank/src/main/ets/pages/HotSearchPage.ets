@@ -154,6 +154,7 @@ export struct HotSearchPage {
       .height(76)
 
       if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
+
         Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
           Canvas(this.controllerCanvas)
             .width('30%')
@@ -214,6 +215,7 @@ export struct HotSearchPage {
           }
           .width('100%')
           .height('auto')
+
         } else {
           Column() {
             Row() {
@@ -245,7 +247,9 @@ export struct HotSearchPage {
               this.selectedTabIndex = index;
               this.listScroller.scrollToIndex(index, true, ScrollAlign.START);
             })
+
           }
+
         }
       } else if (this.loadingStatus === LoadingStatus.FAILED) {
         Text('数据请求失败')
