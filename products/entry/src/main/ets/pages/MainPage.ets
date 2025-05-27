@@ -85,7 +85,7 @@ struct MainPage {
             this.currentIndex = index
           })
 
-          CustomTabBar({ currentIndex: $currentIndex })
+           CustomTabBar({ currentIndex: $currentIndex })
         }
         .width(AppConstants.FULL_PERCENT)
         .height(AppConstants.FULL_PERCENT)

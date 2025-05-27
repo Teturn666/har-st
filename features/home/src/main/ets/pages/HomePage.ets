@@ -239,15 +239,6 @@ export struct HomePage {
     }, router.RouterMode.Single)
   }
 
-  // 跳转到搜索结果页
-  private jumpToSearchResult(ocrTxt: string) {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
-        ocrTxt: ocrTxt
-      }
-    })
-    onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
-  }
 
   //跳转到我的下载
   private jumpToDownloadResult() {
@@ -372,6 +363,7 @@ struct SearchHelper {
           .fontSize($r('app.float.font_size_24fp'))
           .fontColor($r('app.color.c_white'))
       }.onClick(() => this.handleClick())
+
     }
   }
 }
