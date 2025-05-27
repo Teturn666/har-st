@@ -104,10 +104,13 @@ struct LocalView {
                     .fontSize(16)
                     .align(Alignment.Start)
                   ForEach(item.option, (optionTxt: string, index: number) => {
-
                     Text(`${String.fromCharCode(65 + index)}、${optionTxt}`)
                       .fontSize(16)
-                      .fontColor($r('app.color.c_f75a23'))
+                      .fontColor(
+                        item.answer.toLowerCase().includes(String.fromCharCode(97 + index))
+                          ? $r('app.color.c_f75a23')
+                          : $r('app.color.c_3e3e3e')
+                      )
                       .margin({ top: 10 })
                   })
                   Flex({
@@ -307,10 +310,4 @@ struct BottomBar {
     .alignContent(Alignment.Center)
   }
 }
-enum TextColor{
-"A"=0,
-"B"=1,
-"C"=2,
-"D"=3,
 
-}
