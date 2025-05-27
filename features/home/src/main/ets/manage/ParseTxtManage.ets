@@ -411,6 +411,12 @@ export class ParseTxtManage {
 
   // 解析TXT文件
   async parseTxtFile(filePath: string): Promise<ImportWithLog | null> {
+    if (!filePath || typeof filePath !== 'string') {
+      console.error('文件路径无效');
+      promptAction.showToast({ message: '文件路径无效', duration: 2000 });
+      return null;
+    }
+
     let file: fs.File | null = null;
     try {
       file = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
@@ -425,7 +431,7 @@ export class ParseTxtManage {
         let bytesRead: number = fs.readSync(file.fd, buffer);
 
         let decoder = util.TextDecoder.create('utf-8', { ignoreBOM: true });
-        let text: string = decoder.decodeToString(new Uint8Array(buffer).slice(0, bytesRead));
+        let text: string = decoder.decodeWithStream(new Uint8Array(buffer).slice(0, bytesRead));
         let lines: string[] =
           text.split('\n').map((line: string) => line.trim()).filter((line: string) => line.length > 0);
 
