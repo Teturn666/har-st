@@ -13,6 +13,8 @@ interface questionSelections {
   hasSubmitted: boolean;
 }
 
+const TAG = 'ExercisePage';
+
 @Entry({ routeName: 'exercisePage' })
 @Component
 struct ExercisePage {
@@ -30,8 +32,6 @@ struct ExercisePage {
   @State questionSelections: Record<number, questionSelections> = {}; // 记录每题选择
   @State totalProgress: number = this.questions.length;
   @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
-
-
 
   // 在 ExercisePage 组件内添加以下方法
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
@@ -147,7 +147,6 @@ struct ExercisePage {
     }
     this.checkFavoriteStatus(); // 恢复当前题目的收藏状态
   }
-
 
   // 检查收藏状态
   private async checkFavoriteStatus() {
@@ -294,7 +293,7 @@ struct ExercisePage {
           .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
           .margin({ left: 15, right: 75 })
           .align(Alignment.TopStart)
-          .onClick(() =>{
+          .onClick(() => {
             router.back()
           })
 
@@ -505,7 +504,7 @@ struct ExercisePage {
     if (params.qid) {
       this.qid = parseInt(params.qid, 10);
     }
-    console.log('Received qid =', this.qid);
+    console.log(TAG, 'Received qid =' + this.qid);
     if (this.qid > 0) {
       this.getBankQuestionList(this.qid).then(() => {
         this.checkFavoriteStatus(); // 初始化第一题的收藏状态

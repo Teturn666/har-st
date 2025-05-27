@@ -220,6 +220,7 @@ struct BankList {
         }
       }, (bank: BankListRes) => String(bank.qid))
     }
+    .layoutWeight(1)
     .width('100%')
     .padding({
       left: 12,
