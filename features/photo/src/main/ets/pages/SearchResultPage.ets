@@ -3,7 +3,9 @@ import { TitleBar } from 'widget/Index'
 import { SearchModel } from '../model/SearchModel'
 import { SearchResultRes } from '../model/SearchResultRes'
 import { router } from '@kit.ArkUI'
-import { BankListRes } from 'db'
+import { BankListRes, QuestionRes } from 'db'
+import { SearchEngine } from 'search'
+import { emitter } from '@kit.BasicServicesKit'
 
 
 @Entry({ routeName: 'searchResultPage' })
@@ -70,71 +72,57 @@ export struct SearchResultPage {
 //本地题库
 @Component
 struct LocalView {
-  @State resultData: BankListRes[] = [{
-    id: -1,
-    qid:1,
-    name:"安全驾驶100题",
-    desc:"开车不喝酒喝酒不开车",
-    time:"2025.12",
-    url:'xxxxx',
-    num:'1',
-    version:"1.0",
-    position:1,
-    downloadedState:1,
-    bankType:1
- }]
+  @State dataValue: string = ""
+  @State resultData: QuestionRes[] = []
   aboutToAppear(): void {
+    emitter.on("dataText", async (event) => {
+      this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
+      // this.dataValue = "1415A 模拟考试 重置进度 0/119 ☆ 保守国家秘密法》自 G 2010年1月1日 2010年4月29日 2010年5月1日 2010年10月1日"
 
+    })
+    this.getLocal()
   }
 
+  async getLocal(){
+   this.resultData=  await SearchEngine.getInstance().queryQuestionsWithText("表示化工管道公称直径的是")
+}
   build() {
     if (this.resultData.length > 0) {
 
         List() {
 
           ForEach(this.resultData,
-            (item: BankListRes) => {
+            (item: QuestionRes) => {
               ListItem() {
                 Column() {
-                  Text("答案: " + 'C')
+                  Text("答案: " + item.answer)
                     .fontSize(16)
                     .fontColor($r('app.color.c_f75a23'))
                     .margin({ bottom: 15 })
                     .align(Alignment.Start)
-                  Text("开车不喝酒喝酒不开车")
+                  Text(item.question)
                     .fontSize(16)
                     .align(Alignment.Start)
+                  ForEach(item.option, (optionTxt: string, index: number) => {
 
+                    Text(`${String.fromCharCode(65 + index)}、${optionTxt}`)
+                      .fontSize(16)
+                      .fontColor($r('app.color.c_f75a23'))
+                      .margin({ top: 10 })
+                  })
                   Flex({
                     direction: FlexDirection.Row,
                     justifyContent: FlexAlign.SpaceBetween,
                     alignItems: ItemAlign.Center,
                     wrap: FlexWrap.Wrap
                   }) {
-                    Text("A、 正确")
-                      .fontSize(16)
-                      .fontColor($r('app.color.c_3e3e3e'))
-                      .margin({ top: 12 })
-                      .align(Alignment.Start)
-                      .width('100%')
-                    Text("B、 正确")
-                      .fontSize(16)
-                      .fontColor($r('app.color.c_3e3e3e'))
-                      .margin({ top: 12 })
-                      .align(Alignment.Start)
-                      .width('100%')
-                    Text("B、 正确")
-                      .fontSize(16)
-                      .fontColor($r('app.color.c_3e3e3e'))
-                      .margin({ top: 12 })
-                      .align(Alignment.Start)
-                      .width('100%')
-                    Text(item.name)
-                      .fontSize(14)
-                      .fontColor($r('app.color.c_3e3e3e'))
-                      .margin({ top: 30 })
-                      .align(Alignment.Start)
-                      .width('100%')
+
+                    // Text(item.name)
+                    //   .fontSize(14)
+                    //   .fontColor($r('app.color.c_3e3e3e'))
+                    //   .margin({ top: 30 })
+                    //   .align(Alignment.Start)
+                    //   .width('100%')
                   }
                 }
                 .padding(15)
@@ -318,4 +306,11 @@ struct BottomBar {
     .align(Alignment.BottomStart)
     .alignContent(Alignment.Center)
   }
+}
+enum TextColor{
+"A"=0,
+"B"=1,
+"C"=2,
+"D"=3,
+
 }
