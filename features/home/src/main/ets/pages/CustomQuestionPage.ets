@@ -184,8 +184,6 @@ struct CustomQuestionPage {
           });
         }
         .layoutWeight(1)
-
-        WebParseExcel();
       } else {
         Column() {
           Image($r('app.media.hotsearch'))
@@ -202,6 +200,8 @@ struct CustomQuestionPage {
         .width('100%')
         .height('auto');
       }
+
+      WebParseExcel();
     }
   }
 }

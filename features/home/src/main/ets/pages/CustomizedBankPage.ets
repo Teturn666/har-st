@@ -11,7 +11,7 @@ import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
 import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { TimeUtils } from 'utils/src/main/ets/utils/TimeUtils'
+import { TimeUtils } from 'utils';
 
 const TAG = 'CustomizedBankPage'
 
@@ -132,7 +132,7 @@ struct CustomizedBankPage {
         const match = log.match(/第(\d+)行/);
         const row = match ? parseInt(match[1]) : 0;
         const errorObj: QuestionError = {
-          sheetName: 'TXT',
+          sheetName: '',
           row: row,
           error: log
         };
@@ -172,8 +172,10 @@ struct CustomizedBankPage {
     WebClass.webviewController.runJavaScript(`parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
       async (error, excelData) => {
         if (error) {
+          console.error(TAG, `run Excel error, ErrorCode: ${error.code}`);
           this.importStatus = '失败';
-          console.error(`run Excel error, ErrorCode: ${error.code}`);
+          this.message = `导入失败`;
+          return
         }
         try {
           if (excelData) {
@@ -193,10 +195,12 @@ struct CustomizedBankPage {
             // 显示导入结果
             this.questionErrorList = excelDataObj.questionErrorList;
             this.importStatus = '成功';
+            this.message = `开始处理Excel文件: ${file.path}`;
           }
         } catch (error) {
-          this.importStatus = '失败';
           console.error(TAG, 'excelData error:' + error);
+          this.importStatus = '失败';
+          this.message = `导入失败`;
           promptAction.showToast({ message: '文件解析失败', duration: 2000 });
         }
       });
@@ -302,7 +306,7 @@ struct CustomizedBankPage {
           this.questionErrorList,
           (item: QuestionError) => {
             ListItem() {
-              Text(`第${item.row}行, ${item.error}`)
+              Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
                 .fontSize(12)
                 .fontColor($r('app.color.c_9d9d9d'))
                 .margin({ bottom: 10, left: 20, right: 20 })
