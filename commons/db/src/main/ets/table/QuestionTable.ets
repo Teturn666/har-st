@@ -59,6 +59,7 @@ class QuestionTable {
           let tmp: QuestionRes = {
             id: -1,
             qId: 0,
+            qName: '',
             question: '',
             answer: '',
             option: [],
@@ -67,6 +68,7 @@ class QuestionTable {
           };
           tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
           tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+          tmp.qName = resultSet.getString(resultSet.getColumnIndex('qName'));
           tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
           tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
           tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
@@ -102,6 +104,7 @@ class QuestionTable {
             let tmp: QuestionRes = {
               id: -1,
               qId: 0,
+              qName: '',
               question: '',
               answer: '',
               option: [],
@@ -110,6 +113,7 @@ class QuestionTable {
             };
             tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+            tmp.qName = resultSet.getString(resultSet.getColumnIndex('qName'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
             tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
@@ -130,6 +134,7 @@ class QuestionTable {
 function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {};
   obj.qId = account.qId;
+  obj.qName = account.qName;
   obj.question = account.question;
   obj.answer = account.answer;
   obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)

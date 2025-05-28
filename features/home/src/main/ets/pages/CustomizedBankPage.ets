@@ -117,6 +117,7 @@ struct CustomizedBankPage {
       let questionResList: QuestionRes[] = this.toQuestionResList(result);
       for (let item of questionResList) {
         try {
+          item.qName = bank.name
           await questionTable.insertDataAwait(item);
           successCount++;
         } catch (error) {
@@ -183,10 +184,11 @@ struct CustomizedBankPage {
             excelDataObj.quizBank.name = bankName;
             excelDataObj.quizBank.desc = bankName;
             // 存储进题库表
-            questionBankTable.insertDataAwait(excelDataObj.quizBank);
+            await questionBankTable.insertDataAwait(excelDataObj.quizBank);
             // 存储进题目表
-            excelDataObj.questions.forEach((item) => {
-              questionTable.insertDataAwait(item);
+            excelDataObj.questions.forEach(async (item) => {
+              item.qName = bankName
+              await questionTable.insertDataAwait(item);
             });
             // 显示导入结果
             this.questionErrorList = excelDataObj.questionErrorList;

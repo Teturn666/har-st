@@ -17,15 +17,15 @@ export default class DbConstants {
     tableName: 'questionBank',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS questionBank(id INTEGER PRIMARY KEY AUTOINCREMENT, qid INTEGER, ' +
       'name TEXT,desc TEXT,time TEXT, url TEXT,version TEXT,position INTEGER,downloadedState INTEGER,' +
-      'bankType INTEGER)',
-    columns: ['id', 'qid', 'name', 'desc', 'time', 'url', 'version', 'position', 'downloadedState', 'bankType']
+      'bankType INTEGER,num TEXT)',
+    columns: ['id', 'qid', 'name', 'desc', 'time', 'url', 'version', 'position', 'downloadedState', 'bankType', 'num']
   };
   //题目表
   static readonly QUESTION_TABLE: DbTableBean = {
     tableName: 'question',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
-      'question TEXT, option TEXT, answer TEXT , questionID INTEGER)',
-    columns: ['id', 'qId', 'question', 'option', 'answer', 'questionID']
+      'qName TEXT,question TEXT, option TEXT, answer TEXT , questionID INTEGER)',
+    columns: ['id', 'qId', 'qName', 'question', 'option', 'answer', 'questionID']
   };
   //错题题目表
   static readonly QUESTION_WRONG_TABLE: DbTableBean = {

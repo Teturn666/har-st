@@ -77,6 +77,7 @@ class QuestionWrongTable {
             let tmp: QuestionRes = {
               id: -1,
               qId: 0,
+              qName: '',
               question: '',
               answer: '',
               option: [],

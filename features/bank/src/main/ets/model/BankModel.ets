@@ -186,6 +186,7 @@ export class BankModel {
           //题目数据插入存储
           let questionDb = new QuestionRes()
           questionDb.qId = qid
+          questionDb.qName = bankListRes.name
           questionDb.question = questionRes.q
           questionDb.answer = questionRes.ans
           questionDb.option = questionRes.a
