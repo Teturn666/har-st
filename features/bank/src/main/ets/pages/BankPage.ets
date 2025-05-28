@@ -23,6 +23,7 @@ export struct BankPage {
   @State loadingStatus: LoadingStatus = LoadingStatus.OFF
   private subController: TabsController = new TabsController();
   @State hasLoadData: boolean = false
+  @State ShowText: boolean = true
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
   private animateItem: AnimationItem | null = null
@@ -117,6 +118,7 @@ export struct BankPage {
                 animationData: jsonData,
               })
             })
+
         }
 
       } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
@@ -132,6 +134,33 @@ export struct BankPage {
           .width('100%')
           .friction(0.6)
         }
+
+    if (this.ShowText){
+      Row() {
+        Text("搜题前请先下载对应题库")
+          .fontSize(14)
+          .fontColor(Color.White)
+          .textAlign(TextAlign.Center)
+          .layoutWeight(1)
+          .margin({
+            left: 20
+          })
+        Row() {
+          Image($r("sys.media.ohos_ic_public_cancel"))
+            .fillColor(Color.White)
+            .width(15)
+            .aspectRatio(1)
+        }
+        .onClick(() => {
+          this.ShowText =false
+        })
+        .width(40)
+      }
+
+      .height(30)
+      .width('100%')
+      .backgroundColor('#F2B772')
+    }
 
         Tabs({ barPosition: BarPosition.Start, controller: this.subController }) {
           ForEach(this.categoryList, (item: BankCategory) => {
@@ -152,6 +181,7 @@ export struct BankPage {
           this.focusIndex = targetIndex;
           this.listScroller.scrollToIndex(targetIndex, true, ScrollAlign.CENTER);
         })
+
       } else if (this.loadingStatus === LoadingStatus.FAILED) {
         Text('数据请求失败').fontSize(18)
       }

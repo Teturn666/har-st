@@ -11,7 +11,8 @@
     "mine": 'file:../../features/mine',
     "db": "file:../../commons/db",
     "login": "file:../../features/login",
-    "utils": "file:../../commons/utils"
+    "utils": "file:../../commons/utils",
+    "search": 'file:../../commons/search'
   }
 }
 

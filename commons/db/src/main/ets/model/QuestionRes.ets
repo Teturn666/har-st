@@ -1,5 +1,7 @@
 //题目表
 export class QuestionRes {
+  //数据库主键，自增
+  id: number = 0
   //题库ID
   qId: number = 0
   //问题

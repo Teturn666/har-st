@@ -96,6 +96,22 @@ export default class ChRdb {
     }
   }
 
+  async deleteDataAwait(predicates: relationalStore.RdbPredicates): Promise<number> {
+    if (this.rdbStore) {
+      try {
+        let ret = await this.rdbStore.delete(predicates);
+        Logger.info(`deleteDataAwait() finished: ${ret} rows affected`);
+        return ret;
+      } catch (e) {
+        Logger.error(`deleteDataAwait() failed, err: ${e}`);
+      }
+    }
+    Logger.error(`deleteDataAwait() failed, rdbStore is null`);
+    return 0;
+  }
+
+
+
   updateData(predicates: relationalStore.RdbPredicates, data: relationalStore.ValuesBucket, callback: Function = () => {
   }) {
     if (!callback || typeof callback === 'undefined' || callback === undefined) {

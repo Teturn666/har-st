@@ -2,6 +2,7 @@ import { TitleBar } from 'widget/Index';
 import { promptAction, router } from '@kit.ArkUI';
 import { QuestionRes } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
+import { HomeModel } from '../model/HomeModel';
 
 interface DetailParams {
   title: string;
@@ -9,7 +10,9 @@ interface DetailParams {
   wrongCount: number;
   timeSpent: string;
   questions: QuestionRes[];
-  typepage:number;
+  typepage: number;
+  backindex: number;
+  isBankData: boolean;
 }
 
 @Entry({ routeName: "exerciseDetailsPage" })
@@ -21,17 +24,24 @@ struct ExerciseDetailsPage {
   @State timeSpent: string = '00:00'; // 花费时间
   @State isLoading: boolean = true;
   @State questions: QuestionRes[] = [];
-  @State typepage:number = -1;  //模拟考试 1 错题练习 2 收藏练习 3
+  @State typepage: number = -1; //模拟考试 1 错题练习 2 收藏练习 3
+  @State backindex: number = 2; //返回的页数
+  @State isBankData: boolean = false;
 
   aboutToAppear(): void {
     const params = router.getParams() as DetailParams | undefined;
     if (params) {
+      this.backindex = params.backindex || 2;
       this.typepage = params.typepage;
       this.title = params.title || '未知题库';
       this.correctCount = params.correctCount || 0;
       this.wrongCount = params.wrongCount || 0;
       this.timeSpent = params.timeSpent || '00:00';
       this.questions = params.questions || [];
+      this.isBankData = params.isBankData;
+
+      console.log("返回的backindex：" + JSON.stringify(this.isBankData))
+
       setTimeout(() => {
         console.log('两秒后执行');
         this.isLoading = false;
@@ -46,6 +56,41 @@ struct ExerciseDetailsPage {
     }
   }
 
+ private continueRouter(){
+    router.pushNamedRoute({
+      name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
+      params: {
+        practiceMode: this.typepage,
+        qid: this.questions[0]?.qId || -1,
+        backindex: this.backindex += 2
+      }
+    });
+  }
+  
+  quitRouter(){
+    let index = Number(router.getLength()) - this.backindex;
+    router.back(index, {
+      refresh: "1",
+      type: this.typepage.toString()
+    });
+  }
+
+
+  private showDialog(tContent:string) {
+    promptAction.showDialog({
+      title: '温馨提示',
+      message: `${tContent}`,
+      buttons: [
+        { text: '我知道了', color: '#d2a129' },
+      ],
+    }).then((data) => {
+      this.quitRouter()
+    });
+  }
+
+
+
+
   build() {
     if (this.isLoading) {
       Column() {
@@ -59,7 +104,7 @@ struct ExerciseDetailsPage {
         Text("即将进入练习详情...")
           .fontColor(Color.Grey)
           .fontSize(16)
-          .margin({top:28})
+          .margin({ top: 28 });
       }
       .width('100%')
       .height('100%')
@@ -72,7 +117,11 @@ struct ExerciseDetailsPage {
         TitleBar({
           title: "练习详情",
           backClick: () => {
-            router.back();
+            let index = Number(router.getLength()) - this.backindex;
+            router.back(index, {
+              refresh: "1",
+              type: this.typepage.toString()
+            });
           }
         })
           .width('100%');
@@ -159,6 +208,7 @@ struct ExerciseDetailsPage {
                       .fontSize(14);
                   }
                   .margin({ right: 20 });
+
                   Row() {
                     Text('您的答案：')
                       .fontColor('#333333')
@@ -189,11 +239,13 @@ struct ExerciseDetailsPage {
             });
           }
           .alignItems(HorizontalAlign.Start)
+          .justifyContent(FlexAlign.Start)
           .padding({ left: 18, top: 18, right: 18 })
           .width('100%');
         }
         .height('65%')
-        .backgroundColor(Color.White);
+        .backgroundColor(Color.White)
+        .align(Alignment.TopStart);
 
         // 底部按钮
         Blank()
@@ -203,20 +255,29 @@ struct ExerciseDetailsPage {
             .width(122)
             .height(40)
             .onClick(() => {
-              router.pushNamedRoute({
-                name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-                params: {
-                  practiceMode: this.typepage,
-                  qid: this.questions[0]?.qId || -1,
+              if(this.typepage === 2){
+                if(this.isBankData){
+                  this.continueRouter()
+                }else {
+                  this.showDialog("当前没有错题，练习做错的题目将会收录到这里。")
                 }
-              });
+              }else if(this.typepage === 3){
+                if(this.isBankData){
+                  this.continueRouter()
+                }else {
+                  this.showDialog("暂无收藏，请先去练习或考试中添加。")
+                }
+              }else {
+                this.continueRouter()
+              }
+
+
             });
           Image($r('app.media.ic_quit_practice'))
             .width(122)
             .height(40)
             .onClick(() => {
-              let index = Number(router.getLength()) - 2
-              router.back(index,router.RouterMode.Single)
+              this.quitRouter()
             });
         }
         .justifyContent(FlexAlign.SpaceEvenly)

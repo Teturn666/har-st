@@ -65,7 +65,7 @@ class QuestionBankTable {
           const result: BankListRes[] = [];
           for (let i = 0; i < count; i++) {
             let tmp: BankListRes = {
-              // id: 0,
+              id: -1,
               qid: 0,
               name: '',
               desc: '',
@@ -74,18 +74,19 @@ class QuestionBankTable {
               num: '',
               version: '',
               position: 0,
-              downloadedState: 2
+              downloadedState: 2,
+              bankType: 1
             };
-            // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'))
+            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'))
             tmp.qid = resultSet.getDouble(resultSet.getColumnIndex('qid'))
             tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
-            // tmp.num = resultSet.getString(resultSet.getColumnIndex('num'))
             tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'))
             tmp.time = resultSet.getString(resultSet.getColumnIndex('time'))
             tmp.url = resultSet.getString(resultSet.getColumnIndex('url'))
             tmp.version = resultSet.getString(resultSet.getColumnIndex('version'))
             tmp.position = resultSet.getDouble(resultSet.getColumnIndex('position'))
             tmp.downloadedState = resultSet.getDouble(resultSet.getColumnIndex('downloadedState'))
+            tmp.bankType = resultSet.getDouble(resultSet.getColumnIndex('bankType'))
             result[i] = tmp
             resultSet.goToNextRow();
           }
@@ -105,11 +106,11 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   obj.name = account.name
   obj.desc = account.desc
   obj.time = account.time
-  // obj.num = account.num
   obj.url = account.url
   obj.position = account.position
   obj.version = account.version
   obj.downloadedState = account.downloadedState
+  obj.bankType = account.bankType
   return obj;
 }
 

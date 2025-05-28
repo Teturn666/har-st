@@ -3,7 +3,7 @@
     "products": [
       {
         "name": "default",
-        "signingConfig": "lianxing",
+        "signingConfig": "default",
         "compatibleSdkVersion": "5.0.3(15)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
@@ -22,27 +22,14 @@
       }
     ],
     "signingConfigs": [
-            {
-              "name": "default",
-              "type": "HarmonyOS",
-              "material": {
-                "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
-                "storePassword": "000000181BD2E79489912C543F33CEDF5DB746F05DF2E8140AF5EC3F55417854CEF624D1C318F495",
-                "keyAlias": "Tl",
-                "keyPassword": "0000001873D3735AA4A7846DAD1B8DA3B065E1D5D08FF6DE1F23C46E6B671D5CA4F30D04A13F33E3",
-                "signAlg": "SHA256withECDSA",
-                "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
-                "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
-              }
-            },
       {
-        "name": "lianxing",
+        "name": "default",
         "type": "HarmonyOS",
         "material": {
           "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
-          "storePassword": "00000018DD2413AD9D37A53B023C8EE0E3334FBB7E4D3DED80AD61D55F0A7CF861DCF20D065AE60F",
-          "keyAlias": "tl",
-          "keyPassword": "00000018F6BA91D36B6391267E5E28B47C9B45D1279EC26571915FB454987318684C63B271A3D0AF",
+          "storePassword": "000000185AF714E8981FA461AA69E3E9AE27E1E181DE7F0D2C3AC58F12483F360924A57F71F52006",
+          "keyAlias": "Tl",
+          "keyPassword": "00000018BB2F004F0E51EBD095EFE47095B5775B7063D2D6851BF694A6253C02DD4C31F229E0D976",
           "signAlg": "SHA256withECDSA",
           "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
           "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
@@ -234,18 +221,6 @@
     {
       "name": "login",
       "srcPath": "./features/login",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
-      "name": "share",
-      "srcPath": "./features/share",
       "targets": [
         {
           "name": "default",

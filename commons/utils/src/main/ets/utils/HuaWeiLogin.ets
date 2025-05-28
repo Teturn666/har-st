@@ -8,7 +8,7 @@ export class HuaweiAuthManager {
       // 1.创建授权请求
       const request = new authentication.HuaweiIDProvider().createAuthorizationWithHuaweiIDRequest()
       // 2.传递参数
-      request.scopes = ['phone'];
+      request.scopes = ['quickLoginAnonymousPhone'];
       // 获取code需传如下permission
       request.permissions = ['serviceauthcode'];
       //

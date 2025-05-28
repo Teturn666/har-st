@@ -60,16 +60,18 @@ export struct LoginPage {
        * 当应用使用自定义的登录页时，如果用户未同意协议，需要设置协议状态为NOT_ACCEPTED，当用户同意协议后再设置
        * 协议状态为ACCEPTED，才可以使用华为账号一键登录功能
        */
-      .setAgreementStatus(loginComponentManager.AgreementStatus.NOT_ACCEPTED)
       .onClickLoginWithHuaweiIDButton(async (error: BusinessError | undefined,
         response: loginComponentManager.HuaweiIDCredential) => {
         // promptAction.showToast({
         //   message:'111'
         // })
-         const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
-        promptAction.showToast({
-          message:code
-        })
+        // const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
+        this.huaweiLogin()
+
+        //
+        // promptAction.showToast({
+        //   message: code
+        // })
         //   this.handleLoginWithHuaweiIDButton(error, response);
       })
       .onClickEvent((error: BusinessError, clickEvent: loginComponentManager.ClickEvent) => {
@@ -222,14 +224,11 @@ export struct LoginPage {
   }
 
   wxLoginSuccess() {
-    let sp = preferences.getPreferencesSync(this.context, LoginConstants.SP_OPTIONS)
-    sp.putSync(LoginConstants.SP_IS_LOGIN, '1')
-    sp.putSync(LoginConstants.SP_NICK_NAME, this.nickname)
-    sp.putSync(LoginConstants.SP_AVATAR_URL, this.avatarUrl)
-    sp.putSync(LoginConstants.SP_UNION_ID, this.unionId)
-    sp.putSync(LoginConstants.SP_OPEN_ID, this.openId)
-    sp.flushSync()
+    this.spWrite('wx')
+    this.backPage()
+  }
 
+  private backPage() {
     let index = Number(router.getLength()) - 1
     router.back(
       index, {
@@ -239,28 +238,28 @@ export struct LoginPage {
     })
   }
 
-  huaweiLogin() {
+  private spWrite(type: string) {
+    let sp = preferences.getPreferencesSync(this.context, LoginConstants.SP_OPTIONS)
+    sp.putSync(LoginConstants.SP_IS_LOGIN, '1')
+    if (type === 'hw') {
+      this.nickname = this.quickLoginAnonymousPhone
+    }
+    sp.putSync(LoginConstants.SP_NICK_NAME, this.nickname)
+    sp.putSync(LoginConstants.SP_AVATAR_URL, this.avatarUrl)
+    sp.putSync(LoginConstants.SP_UNION_ID, this.unionId)
+    sp.putSync(LoginConstants.SP_OPEN_ID, this.openId)
+    sp.flushSync()
+  }
+
+  async huaweiLogin() {
     if (!this.agreementChecked) {
       promptAction.showToast({ message: '请先勾选并同意用户协议和隐私政策' });
       return;
     }
-    this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED)
-
-    try {
-      this.controller.continueLogin(
-        (error: BusinessError) => {
-          if (error) {
-            hilog.error(this.domainId, this.logTag,
-              `Failed to login with agreementDialog. errCode is ${error.code}, errMessage is ${error.message}`);
-          } else {
-            hilog.info(this.domainId, this.logTag,
-              'Succeeded in clicking agreementDialog continueLogin.');
-          }
-        })
-    } catch (e) {
-      hilog.error(this.domainId, this.logTag,
-        `Failed to login with agreementDialog. errCode is ${e}`);
-    }
+    this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED);
+    (await huaweiAuthManager.launchAuth())!;
+    this.spWrite('hw');
+    this.backPage();
   }
 
   getQuickLoginAnonymousPhone() {
@@ -347,23 +346,6 @@ export struct LoginPage {
         .textAlign(TextAlign.Center)
         .fontSize(12)
 
-      // Button('华为账号一键登录', { type: ButtonType.Normal, stateEffect: true })
-      //   .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
-      //   .borderRadius(8)
-      //   .backgroundColor('#f64e4d')
-      //   .width('60%')
-      //   .height(48)
-      //   .margin({ top: 20 })
-      //
-      //   .onClick(async () => {
-      //     //Todo
-      //     promptAction.showToast({
-      //       message:'111'
-      //     })
-      //     const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
-      //
-      //    })
-
       LoginWithHuaweiIDButton({
         params: {
           // LoginWithHuaweiIDButton支持的样式
@@ -390,23 +372,6 @@ export struct LoginPage {
         .backgroundColor('#eb5555')
         .borderRadius(24)
         .margin({ top: 20 })
-
-Button("华为账号一键登录")
-  .borderRadius(8)
-  .backgroundColor('#f64e4d')
-  .width('60%')
-  .height(48)
-  .margin({ top: 20 })
-        .onClick(async () => {
-          //Todo
-          // promptAction.showToast({
-          //   message:'111'
-          // })
-         const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
-promptAction.showToast({
-  message:code
-})
-         })
 
 
       Button('微信快捷登录', { type: ButtonType.Normal, stateEffect: true })

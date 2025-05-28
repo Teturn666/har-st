@@ -5,6 +5,12 @@ export struct TitleBar {
   backClick: () => void = () => {
   };
 
+  @Builder
+  rightBuilder() {
+  };
+
+  @BuilderParam rightBuilderParam: () => void = this.rightBuilder
+
   build() {
     Row() {
       Image($r('app.media.ic_back'))
@@ -20,8 +26,9 @@ export struct TitleBar {
         .width('60%')
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
+      this.rightBuilderParam()
     }
     .margin({ top: 15 })
-
+    .justifyContent(FlexAlign.SpaceBetween)
   }
 }

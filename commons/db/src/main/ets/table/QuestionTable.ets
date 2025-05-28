@@ -57,15 +57,15 @@ class QuestionTable {
         const result: QuestionRes[] = [];
         for (let i = 0; i < count; i++) {
           let tmp: QuestionRes = {
-            // id: 0,
+            id: -1,
             qId: 0,
             question: '',
             answer: '',
             option: [],
             wrongAnswer: '',
-            questionID:0,
+            questionID: 0,
           };
-          // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+          tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
           tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
           tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
           tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
@@ -79,10 +79,11 @@ class QuestionTable {
     });
   }
 
-  async querySync(id: number, isAll: boolean = true): Promise<Array<QuestionRes>> {
+  async querySync(id: number, isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
     if (!isAll) {
-      predicates.equalTo('qId', id);
+      //搜索走的是找id的位置；题库练习走的是根据题库qId找关联的题目
+      predicates.equalTo(isSearch ? 'id' : 'qId', id);
     }
 
     let resultSet = await this.accountTable.querySync(predicates)
@@ -99,15 +100,15 @@ class QuestionTable {
           const result: QuestionRes[] = [];
           for (let i = 0; i < count; i++) {
             let tmp: QuestionRes = {
-              // id: 0,
+              id: -1,
               qId: 0,
               question: '',
               answer: '',
               option: [],
               wrongAnswer: '',
-              questionID:0
+              questionID: 0
             };
-            // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));

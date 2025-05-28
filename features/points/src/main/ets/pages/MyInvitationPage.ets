@@ -46,35 +46,35 @@ struct MyInvitationPage {
   }
   handlePasteText() {
     let systemPasteboard = pasteboard.getSystemPasteboard()
-   //  return new Promise((resolve, reject) => {
-   // // 判断系统剪贴板中是否存在数据
-   // systemPasteboard.hasData()
-   //   .then((hasData: boolean) => {
-   //     Logger.info('has data in PasteData:', JSON.stringify(hasData))
-   //     if (!hasData) {
-   //       promptAction.showToast({
-   //         message: '系统剪贴板中不否存在数据',
-   //       })
-   //       return
-   //     }
-   //     // 获取系统剪贴板中的数据
-   //     systemPasteboard.getData()
-   //       .then((pasteData: pasteboard.PasteData) => {
-   //         // 从PasteData对象中获取被复制的文本内容
-   //         let text: string = pasteData.getPrimaryText()
-   //         Logger.info('pasteboard content:', JSON.stringify(text))
-   //         resolve(text)
-   //       })
-   //       .catch((err) => {
-   //         Logger.error('Failed to get PasteData. Cause: ', err.message)
-   //         reject(err)
-   //       })
-   //   })
-   //   .catch((err) => {
-   //     Logger.error('Failed to check the PasteData. Cause:', err.message)
-   //     reject(err)
-   //   })
-   //  })
+    //  return new Promise((resolve, reject) => {
+    // // 判断系统剪贴板中是否存在数据
+    // systemPasteboard.hasData()
+    //   .then((hasData: boolean) => {
+    //     Logger.info('has data in PasteData:', JSON.stringify(hasData))
+    //     if (!hasData) {
+    //       promptAction.showToast({
+    //         message: '系统剪贴板中不否存在数据',
+    //       })
+    //       return
+    //     }
+    //     // 获取系统剪贴板中的数据
+    //     systemPasteboard.getData()
+    //       .then((pasteData: pasteboard.PasteData) => {
+    //         // 从PasteData对象中获取被复制的文本内容
+    //         let text: string = pasteData.getPrimaryText()
+    //         Logger.info('pasteboard content:', JSON.stringify(text))
+    //         resolve(text)
+    //       })
+    //       .catch((err) => {
+    //         Logger.error('Failed to get PasteData. Cause: ', err.message)
+    //         reject(err)
+    //       })
+    //   })
+    //   .catch((err) => {
+    //     Logger.error('Failed to check the PasteData. Cause:', err.message)
+    //     reject(err)
+    //   })
+    //  })
   }
 
 
@@ -163,7 +163,6 @@ struct MyInvitationPage {
         //   .onClick(()=>{
         //     this.jumpToMyBoundCode()
         //   })
-        //
         // }
         // .height('70')
         // .width('100%')
@@ -204,14 +203,14 @@ struct MyInvitationPage {
                 .height(150)
                 .margin({top:50})
               Row(){
-                  Text("暂时没有邀请的好友哦～"){
-                  }
-                  .fontSize(18)
-                  .fontColor('#333333')
-                  .margin({ right: 8 })
+                Text("暂时没有邀请的好友哦～"){
                 }
-                .height('30%')
-                .alignItems(VerticalAlign.Center)
+                .fontSize(18)
+                .fontColor('#333333')
+                .margin({ right: 8 })
+              }
+              .height('30%')
+              .alignItems(VerticalAlign.Center)
             }
             .backgroundColor(Color.White)
             .margin({ bottom:0})

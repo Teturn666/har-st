@@ -5,8 +5,6 @@
     "description": "$string:module_desc",
     "deviceTypes": [
       "phone",
-      "tablet",
-      "2in1"
     ],
   }
 }

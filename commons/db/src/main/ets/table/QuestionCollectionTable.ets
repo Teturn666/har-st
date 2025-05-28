@@ -36,6 +36,17 @@ class QuestionCollectionTable {
     this.accountTable.deleteData(predicates, callback);
   }
 
+  async deleteDataByQuestionID(questionID: number): Promise<void> {
+    try {
+      let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_COLLECTION_TABLE.tableName);
+      predicates.equalTo('questionID', questionID);
+      const affectedRows = await this.accountTable.deleteDataAwait(predicates);
+      Logger.info(`已删除收藏表中 questionID=${questionID} 的记录，影响行数: ${affectedRows}`);
+    } catch (err) {
+      Logger.error(`删除 questionID=${questionID} 的收藏记录失败: ${err}`);
+    }
+  }
+
   updateData(account: QuestionRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_COLLECTION_TABLE.tableName);
@@ -63,14 +74,15 @@ class QuestionCollectionTable {
           const result: QuestionRes[] = [];
           for (let i = 0; i < count; i++) {
             let tmp: QuestionRes = {
+              id: -1,
               qId: 0,
               question: '',
               answer: '',
               option: [],
               wrongAnswer: '',
-              questionID:0
+              questionID: 0
             };
-            // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));

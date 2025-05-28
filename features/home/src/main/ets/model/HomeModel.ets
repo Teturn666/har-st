@@ -1,4 +1,11 @@
-import { BankListRes, questionBankTable, questionWrongTable, questionCollectionTable,questionTable, QuestionRes } from 'db'
+import {
+  BankListRes,
+  questionBankTable,
+  questionWrongTable,
+  questionCollectionTable,
+  questionTable,
+  QuestionRes
+} from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
 
 const TAG = '[HomeModel]'
@@ -19,6 +26,28 @@ export class HomeModel {
   }
 
 
+  //删除数据库
+  async deleteTable(qid: number) {
+    //删除相应的题库表
+    let bankResultList = await questionBankTable.querySync(qid, false) ?? [];
+    if (bankResultList.length > 0) {
+      let bankRes = bankResultList[0]
+      questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
+        Logger.info(TAG, '题库deleteData--------' + resFlag)
+      })
+    }
+    //删除相应的题目表
+    let bankQaResultList = await questionTable.querySync(qid, false) ?? [];
+    if (bankQaResultList.length > 0) {
+      bankQaResultList.forEach((item) => {
+        questionTable.deleteData(item, (resFlag: boolean) => {
+          Logger.info(TAG, '题目deleteData--------' + resFlag)
+        })
+      })
+    }
+  }
+
+
 
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
@@ -27,9 +56,10 @@ export class HomeModel {
     Logger.info(TAG, '下载的题库--------' + bankResultList.length)
     return bankResultList
   }
+
   //获取题库中的题目
-  public async getBankQuestionList(qid:number): Promise<QuestionRes[]> {
-    let resultList = await questionTable.querySync(qid,false) ?? [];
+  public async getBankQuestionList(qid: number): Promise<QuestionRes[]> {
+    let resultList = await questionTable.querySync(qid, false, false) ?? [];
 
     Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
     return resultList
@@ -80,7 +110,7 @@ export class HomeModel {
   }
 
   //查询题库信息
-  public async queryQuestionBankList(qId:number): Promise<BankListRes[]> {
+  public async queryQuestionBankList(qId: number): Promise<BankListRes[]> {
     let QuestionBankList = await questionBankTable.querySync(qId, false) ?? [];
     return QuestionBankList
   }

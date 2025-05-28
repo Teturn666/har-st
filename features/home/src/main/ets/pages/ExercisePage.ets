@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
-import { QuestionRes, questionCollectionTable, questionTable,questionWrongTable } from 'db';
+import { QuestionRes, questionCollectionTable, questionTable, questionWrongTable } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
 import { BankListRes } from '../model/BankListRes';
 import { HomeModel } from '../model/HomeModel';
@@ -12,6 +12,8 @@ interface questionSelections {
   selectedOptions: string[];
   hasSubmitted: boolean;
 }
+
+const TAG = 'ExercisePage';
 
 @Entry({ routeName: 'exercisePage' })
 @Component
@@ -34,6 +36,16 @@ struct ExercisePage {
   // 在 ExercisePage 组件内添加以下方法
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
+      // 检查题目是否已存在于错题表
+      const existingWrongQuestions = await this.homeModel.getWrongQuestionList(question.qId);
+      const isAlreadyInWrongTable = existingWrongQuestions.some(item => item.questionID === question.questionID);
+
+      if (isAlreadyInWrongTable) {
+        console.log(`题目 ${question.questionID} 已存在于错题表中`);
+        return;
+      }
+
+      // 如果题目不在错题表中，继续插入
       let questionDb = new QuestionRes();
       questionDb.qId = question.qId;
       questionDb.question = question.question;
@@ -42,7 +54,8 @@ struct ExercisePage {
       questionDb.wrongAnswer = wrongAnswer;
       questionDb.questionID = question.questionID;
       await questionWrongTable.insertDataAwait(questionDb);
-      this.homeModel.getWrongQuestionList(question.qId)
+      this.homeModel.getWrongQuestionList(question.qId);
+      console.log(`题目 ${question.questionID} 已添加到错题表`);
 
     } catch (err) {
       console.error('插入错题表失败:', err);
@@ -65,7 +78,7 @@ struct ExercisePage {
           // 检查是否选择了错误选项
           if (!correctAnswers.includes(optionLabel)) {
             this.hasSubmitted = true;
-            promptAction.showToast({ message: '回答错误', duration: 1500 });
+            // promptAction.showToast({ message: '回答错误', duration: 1500 });
             // 插入错题表
             await this.saveToWrongTable(currentQuestion, optionLabel);
             this.saveQuestionState(); // 记录错误提交状态
@@ -75,7 +88,7 @@ struct ExercisePage {
             this.selectedOptions.every(opt => correctAnswers.includes(opt));
             if (allCorrectSelected) {
               this.hasSubmitted = true;
-              promptAction.showToast({ message: '回答正确', duration: 1500 });
+              // promptAction.showToast({ message: '回答正确', duration: 1500 });
               this.saveQuestionState(); // 记录正确提交状态
             }
           }
@@ -87,10 +100,10 @@ struct ExercisePage {
         this.hasSubmitted = true;
 
         const isCorrect = optionLabel === currentQuestion.answer;
-        promptAction.showToast({
-          message: isCorrect ? '回答正确' : '回答错误',
-          duration: 1500
-        });
+        // promptAction.showToast({
+        //   message: isCorrect ? '回答正确' : '回答错误',
+        //   duration: 1500
+        // });
         if (!isCorrect) {
           // 插入错题表
           await this.saveToWrongTable(currentQuestion, optionLabel);
@@ -135,12 +148,14 @@ struct ExercisePage {
     this.checkFavoriteStatus(); // 恢复当前题目的收藏状态
   }
 
+  // 检查收藏状态
   private async checkFavoriteStatus() {
     const currentQuestion = this.questions[this.currentQuestionIndex];
     const questionID = currentQuestion.questionID;
     try {
       const existedList = await this.homeModel.getCollectionQuestionList(currentQuestion.qId);
-      this.favoriteStatus[questionID] = existedList.some(item => item.questionID === questionID);
+      const isCollected = existedList.some(item => item.questionID === questionID)
+      this.favoriteStatus[questionID] = isCollected;
     } catch (err) {
       console.error('检查收藏状态失败:', err);
       this.favoriteStatus[questionID] = false;
@@ -150,27 +165,28 @@ struct ExercisePage {
   private async toggleFavorite() {
     const currentQuestion: QuestionRes = this.questions[this.currentQuestionIndex];
     const questionID = currentQuestion.questionID;
-
     try {
-      const existedList = await this.homeModel.getCollectionQuestionList(currentQuestion.qId);
-      const isQuestionInCollection = existedList.some(item => item.questionID === questionID);
+      const result = await questionCollectionTable.querySync(currentQuestion.qId, false);
+      const isFavorited = result.some(item => item.questionID === questionID);
 
-      if (isQuestionInCollection) {
-        await questionCollectionTable.deleteData(currentQuestion, () => {
-          this.favoriteStatus[questionID] = false;
-          promptAction.showToast({ message: '已取消收藏', duration: 1500 });
-        });
+      if (isFavorited) {
+        // 取消收藏
+        await questionCollectionTable.deleteDataByQuestionID(questionID);
+        this.favoriteStatus[questionID] = false;
+        console.log(`取消收藏，题目 ${questionID} 已从收藏表移除`);
+        promptAction.showToast({ message: '已取消收藏', duration: 1500 });
       } else {
+        // 添加收藏
         let questionDb = new QuestionRes();
         questionDb.qId = currentQuestion.qId;
         questionDb.question = currentQuestion.question;
         questionDb.answer = currentQuestion.answer;
         questionDb.option = currentQuestion.option;
-        questionDb.wrongAnswer = "B"; // 如果需要，动态设置
+        questionDb.wrongAnswer = currentQuestion.wrongAnswer || '';
         questionDb.questionID = questionID;
-
         await questionCollectionTable.insertDataAwait(questionDb);
         this.favoriteStatus[questionID] = true;
+        console.log(`添加收藏，题目 ${questionID} 已添加到收藏表`);
         promptAction.showToast({ message: '收藏成功', duration: 1500 });
       }
     } catch (err) {
@@ -233,7 +249,7 @@ struct ExercisePage {
       this.currentQuestionIndex--;
       this.currentProgress = this.currentQuestionIndex + 1;
       this.restoreQuestionState(); // 恢复上一题的选择
-      promptAction.showToast({ message: '已切换到上一题', duration: 1000 });
+      // promptAction.showToast({ message: '已切换到上一题', duration: 1000 });
     } else {
       promptAction.showToast({ message: '已经是第一题', duration: 1500 });
     }
@@ -244,7 +260,7 @@ struct ExercisePage {
       this.currentQuestionIndex++;
       this.currentProgress = this.currentQuestionIndex + 1;
       this.restoreQuestionState(); // 恢复下一题的选择
-      promptAction.showToast({ message: '已切换到下一题', duration: 1000 });
+      // promptAction.showToast({ message: '已切换到下一题', duration: 1000 });
     } else {
       promptAction.showToast({ message: '已经是最后一题', duration: 1500 });
     }
@@ -267,7 +283,6 @@ struct ExercisePage {
     }
   }
 
-
   build() {
     if (this.questions.length > 0)
     Column() {
@@ -276,18 +291,12 @@ struct ExercisePage {
         Image($r('app.media.ic_back'))
           .objectFit(ImageFit.Contain)
           .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
-          .margin({ left: 15, right: 15 })
+          .margin({ left: 15, right: 75 })
           .align(Alignment.TopStart)
-          .onClick(() => router.back())
-        Button($r('app.media.ic_back'))
-          .width(50)
-          .height(50)
-          .backgroundColor('#FFFFFF')
-          .borderRadius(6)
           .onClick(() => {
-            router.back();
+            router.back()
           })
-          .margin({ right: 20 })
+
         Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
           Button() {
             Row() {
@@ -322,6 +331,7 @@ struct ExercisePage {
             .alignItems(VerticalAlign.Center)
           }
           .backgroundColor('#d2a129')
+
           Blank()
           Button('模拟考试')
             .width(70)
@@ -333,14 +343,15 @@ struct ExercisePage {
             .onClick(() => {
               router.pushNamedRoute({
                 name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-                params:{
-                  practiceMode:1,
-                  qid:this.qid
+                params: {
+                  practiceMode: 1,
+                  qid: this.qid
                 }
               }, router.RouterMode.Single)
             })
         }
       }
+
 
       // 进度条部分
       Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
@@ -376,7 +387,8 @@ struct ExercisePage {
           .height(24)
           .objectFit(ImageFit.Cover)
         Blank()
-        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') : $r('app.media.star'))
+        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
+        $r('app.media.star'))
           .width(18)
           .height(18)
           .onClick(() => {
@@ -492,20 +504,11 @@ struct ExercisePage {
     if (params.qid) {
       this.qid = parseInt(params.qid, 10);
     }
-    console.log('Received qid =', this.qid);
+    console.log(TAG, 'Received qid =' + this.qid);
     if (this.qid > 0) {
       this.getBankQuestionList(this.qid).then(() => {
         this.checkFavoriteStatus(); // 初始化第一题的收藏状态
       });
     }
   }
-
-
 }
-
-
-// private questions: QuestionRes[] = [
-//   {"qId":1735007905,"question":"在道路等开阔地带开展训练时，应做好（）。","answer":"A","option":["安全警戒","后勤保障","着装","准备活动"],"wrongAnswer":""},
-//   {"qId":1735007905,"question":"使用绳索开展高空救援时，绳索应避开（）等高温、尖锐部位。","answer":"AB","option":["墙角","烟火","梁、柱","管线井"],"wrongAnswer":""},
-//   {"qId":1735007905,"question":"总队、支队安全助理对灭火救援现场安全员实行统一管理。","answer":"A","option":["正确","错误"],"wrongAnswer":""}
-// ];
