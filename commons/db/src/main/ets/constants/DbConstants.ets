@@ -17,8 +17,8 @@ export default class DbConstants {
     tableName: 'questionBank',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS questionBank(id INTEGER PRIMARY KEY AUTOINCREMENT, qid INTEGER, ' +
       'name TEXT,desc TEXT,time TEXT, url TEXT,version TEXT,position INTEGER,downloadedState INTEGER,' +
-      'bankType INTEGER)',
-    columns: ['id', 'qid', 'name', 'desc', 'time', 'url', 'version', 'position', 'downloadedState', 'bankType']
+      'bankType INTEGER,num TEXT)',
+    columns: ['id', 'qid', 'name', 'desc', 'time', 'url', 'version', 'position', 'downloadedState', 'bankType', 'num']
   };
   //题目表
   static readonly QUESTION_TABLE: DbTableBean = {
