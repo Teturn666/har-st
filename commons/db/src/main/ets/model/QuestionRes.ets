@@ -4,6 +4,8 @@ export class QuestionRes {
   id: number = 0
   //题库ID
   qId: number = 0
+  //题库名称
+  qName: string = ""
   //问题
   question: string = ""
   //选项数组
