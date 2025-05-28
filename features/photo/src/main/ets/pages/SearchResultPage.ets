@@ -77,14 +77,12 @@ struct LocalView {
   aboutToAppear(): void {
     emitter.on("dataText", async (event) => {
       this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
-      // this.dataValue = "1415A 模拟考试 重置进度 0/119 ☆ 保守国家秘密法》自 G 2010年1月1日 2010年4月29日 2010年5月1日 2010年10月1日"
-
     })
     this.getLocal()
   }
 
   async getLocal() {
-    this.resultData = await SearchEngine.getInstance().queryQuestionsWithText("保密")
+    this.resultData = await SearchEngine.getInstance().queryQuestionsWithText(this.dataValue)
   }
 
   build() {
