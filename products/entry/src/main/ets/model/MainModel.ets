@@ -19,7 +19,7 @@ export class MainModel {
     questionBankTable.getRdbStore(() => {
     })
     questionTable.getRdbStore(async () => {
-      await this.initSearchEngin()
+      // await this.initSearchEngin()
 
     })
     questionWrongTable.getRdbStore(() => {

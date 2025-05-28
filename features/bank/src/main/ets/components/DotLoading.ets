@@ -37,7 +37,7 @@ onPageHide(): void {
         } else {
           this.activeCount = 0
         }
-      }, 100)
+      }, 150)
     }
   }
 
@@ -61,8 +61,8 @@ onPageHide(): void {
     Row() {
       ForEach(this.getDotArray(), (idx: number) => {
         Circle()
-          .width(10)
-          .height(10)
+          .width(8)
+          .height(8)
           .fill(idx < this.activeCount ? 0xFFFF9900 : 0x33FF9900)
           .margin({ right: idx < this.dotCount - 1 ? 10 : 0 })
       })

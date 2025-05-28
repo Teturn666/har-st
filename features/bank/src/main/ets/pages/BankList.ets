@@ -43,7 +43,7 @@ function buildText(params: Params) {
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 18 })
 
-      //DotLoading({ animating: true})
+      DotLoading({ animating: true})
 
       Canvas(params.controller)
         .width('30%')
@@ -91,6 +91,7 @@ struct DownloadOverDialog {
         .borderRadius(5)
         .backgroundColor($r('app.color.c_fce8e8'))
         .onClick(() => {
+
           this.controller.close()
         })
         .textAlign(TextAlign.Center)
@@ -134,9 +135,11 @@ struct DeleteDialog {
           .fontColor($r('app.color.c_2a5089'))
           .backgroundColor($r('app.color.c_f4f3fb'))
           .onClick(() => {
+
             //删除确定
             if (this.confirm) {
               this.confirm(this.bank)
+
             }
             this.controller.close()
           })
@@ -198,6 +201,7 @@ export struct BankList {
   showDeleteDialog() {
     this.dialogDeleteController = new CustomDialogController({
       builder: DeleteDialog({
+
         bank: this.mCurBank, confirm: (item) => {
           //删除确定
           //更新状态为未下载
@@ -215,11 +219,14 @@ export struct BankList {
 
   showDownloadOverDialog(success: boolean) {
     this.dialogDownloadController = new CustomDialogController({
+
       builder: DownloadOverDialog({
+
         bank: this.mCurBank, success: success
       })
     });
-    this.dialogDownloadController.open();
+     this.dialogDownloadController.open();
+
   }
 
   private initDialog() {
@@ -354,6 +361,7 @@ export struct BankList {
                           this.bankRes.newsData = [...this.bankRes.newsData]
                           LoadingDialog.closeDialog()
                           this.showDownloadOverDialog(true)
+
                           onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
                             "question_bank_id": item.qid
                           })
