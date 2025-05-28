@@ -24,8 +24,8 @@ export default class DbConstants {
   static readonly QUESTION_TABLE: DbTableBean = {
     tableName: 'question',
     sqlCreate: 'CREATE TABLE IF NOT EXISTS question(id INTEGER PRIMARY KEY AUTOINCREMENT, qId INTEGER, ' +
-      'question TEXT, option TEXT, answer TEXT , questionID INTEGER)',
-    columns: ['id', 'qId', 'question', 'option', 'answer', 'questionID']
+      'qName TEXT,question TEXT, option TEXT, answer TEXT , questionID INTEGER)',
+    columns: ['id', 'qId', 'qName', 'question', 'option', 'answer', 'questionID']
   };
   //错题题目表
   static readonly QUESTION_WRONG_TABLE: DbTableBean = {
