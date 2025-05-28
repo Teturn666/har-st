@@ -11,7 +11,7 @@ import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
 import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { TimeUtils } from 'utils/src/main/ets/utils/TimeUtils'
+import { TimeUtils } from 'utils';
 
 const TAG = 'CustomizedBankPage'
 
@@ -24,14 +24,6 @@ struct CustomizedBankPage {
   @State message: string = '等待解析文件...';
   private parser: ParseTxtManage = new ParseTxtManage();
   @State importStatus: string = '未完成'; //'成功'、'失败'、'未完成'
-
-  // 显示结果逻辑
-  private showImportResult(result: ImportWithLog) {
-    promptAction.showToast({
-      message: `成功导入 ${result.items.length} 道题目，${result.logs.length} 条警告`,
-      duration: 3000
-    });
-  }
 
   // 将QuestionModel列表转换为QuestionRes列表
   private toQuestionResList(importResult: ImportWithLog): QuestionRes[] {
@@ -83,7 +75,17 @@ struct CustomizedBankPage {
         return;
       }
 
-      const bankName = await this.getInputDialogName(filePreName)
+      let bankName: string;
+      try {
+        bankName = await this.getInputDialogName(filePreName);
+      } catch (error) {
+        console.info('parseTxt: 用户取消导入操作', error.message);
+        this.message = '您已取消导入';
+        this.importStatus = '未完成';
+        return; // 中断操作，停留在当前页面
+      }
+
+
       // 创建BankListRes
       const bank: BankListRes = {
         id: -1,
@@ -129,12 +131,13 @@ struct CustomizedBankPage {
 
       // 将 result.logs 转换为 QuestionError 格式并存储到 questionErrorList
       this.questionErrorList = result.logs.map((log: string): QuestionError => {
-        const match = log.match(/第(\d+)行/);
+        const match = log.match(/第(\d+)行:(.*)/s);
         const row = match ? parseInt(match[1]) : 0;
+        const errorContent = match ? match[2].trim() : log;
         const errorObj: QuestionError = {
-          sheetName: 'TXT',
+          sheetName: '',
           row: row,
-          error: log
+          error: errorContent
         };
         return errorObj;
       });
@@ -172,14 +175,24 @@ struct CustomizedBankPage {
     WebClass.webviewController.runJavaScript(`parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
       async (error, excelData) => {
         if (error) {
+          console.error(TAG, `run Excel error, ErrorCode: ${error.code}`);
           this.importStatus = '失败';
-          console.error(`run Excel error, ErrorCode: ${error.code}`);
+          this.message = `导入失败`;
+          return
         }
         try {
           if (excelData) {
             let excelDataObj = JSON.parse(excelData) as ExcelDataObj;
             // 显示弹窗，获取题库名称
-            const bankName = await this.getInputDialogName(filePreName);
+            let bankName: string;
+            try {
+              bankName = await this.getInputDialogName(filePreName);
+            } catch (error) {
+              console.info('parseTxt: 用户取消导入操作', error.message);
+              this.message = '您已取消导入';
+              this.importStatus = '未完成';
+              return; // 中断操作，停留在当前页面
+            }
             await this.importSuccess(Number(excelDataObj.quizBank.num));
             excelDataObj.quizBank.name = bankName;
             excelDataObj.quizBank.desc = bankName;
@@ -193,10 +206,12 @@ struct CustomizedBankPage {
             // 显示导入结果
             this.questionErrorList = excelDataObj.questionErrorList;
             this.importStatus = '成功';
+            this.message = `开始处理Excel文件: ${file.path}`;
           }
         } catch (error) {
-          this.importStatus = '失败';
           console.error(TAG, 'excelData error:' + error);
+          this.importStatus = '失败';
+          this.message = `导入失败`;
           promptAction.showToast({ message: '文件解析失败', duration: 2000 });
         }
       });
@@ -205,7 +220,7 @@ struct CustomizedBankPage {
   async getInputDialogName(defaultName: string): Promise<string> {
     let bankName: string = defaultName;
     let isConfirmed: boolean = false;
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve,reject) => {
       this.dialogController = new CustomDialogController({
         builder: InputDialog({
           initialText: defaultName,
@@ -224,7 +239,7 @@ struct CustomizedBankPage {
           },
           cancel: () => {
             console.info('取消输入');
-            resolve();
+            reject(new Error('用户取消导入'));
           },
         })
       });
@@ -235,9 +250,8 @@ struct CustomizedBankPage {
       this.message = '取消导入';
       this.importStatus = '失败';
       promptAction.showToast({ message: '取消导入', duration: 2000 });
-      return '';
+      throw new Error('用户取消导入');
     }
-
     return bankName;
   }
 
@@ -302,7 +316,7 @@ struct CustomizedBankPage {
           this.questionErrorList,
           (item: QuestionError) => {
             ListItem() {
-              Text(`第${item.row}行, ${item.error}`)
+              Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
                 .fontSize(12)
                 .fontColor($r('app.color.c_9d9d9d'))
                 .margin({ bottom: 10, left: 20, right: 20 })
