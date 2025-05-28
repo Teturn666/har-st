@@ -13,7 +13,7 @@ import { QuestionRes } from "db";
 export struct SearchQuestions {
   @State dataValue: string = ""
   @State resultSearchRes: QuestionRes | null = null
-  @State CameraChange: boolean = false
+  @State CameraChange: boolean = true
   @State isPortrait: boolean = true;
   @State orientation: number = display.Orientation.LANDSCAPE;
   controller: XComponentController = new XComponentController()
@@ -29,6 +29,9 @@ export struct SearchQuestions {
   }
 aboutToDisappear(): void {
   cameraManager.releaseCamera()
+  emitter.on("dataText", async (event) => {
+    this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
+ })
 }
   private async searchResult() {
     this.resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(this.dataValue)
@@ -188,12 +191,18 @@ aboutToDisappear(): void {
                 .fontSize(this.isPortrait ? 20 : 14)
                 .onClick(() => {
                   //TODO  解锁题目
-                  if (!this.CameraChange) {
-                    this.CameraChange = true
+                  if (this.CameraChange) {
+                    this.CameraChange =false
                     cameraManager.releaseCamera()
+                    emitter.off('dataText')
                   } else {
-                    this.CameraChange = false
+                    this.CameraChange = true
                     cameraManager.initCamera(this.controller.getXComponentSurfaceId())
+                    emitter.on("dataText", async (event) => {
+                      this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
+
+                      await this.searchResult()
+                    })
                   }
 
                 })

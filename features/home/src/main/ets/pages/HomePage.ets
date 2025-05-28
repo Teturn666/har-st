@@ -361,6 +361,17 @@ struct SearchHelper {
       Stack({ alignContent: Alignment.Center }) {
         Image($r('app.media.ic_bg_almighty'))
           .objectFit(ImageFit.Contain)
+        Text("搜题")
+          .fontSize($r('app.float.font_size_24fp'))
+          .fontColor('#7B6008')
+
+      }.onClick(() =>{})
+      .margin({
+        bottom:5
+      })
+      Stack({ alignContent: Alignment.Center }) {
+        Image($r('app.media.ic_bg_almighty'))
+          .objectFit(ImageFit.Contain)
         Text($r('app.string.almighty_search'))
           .fontSize($r('app.float.font_size_24fp'))
           .fontColor('#7B6008')

@@ -125,11 +125,21 @@ export class CameraManager{
 
   // 释放
   releaseCamera() {
+
     this.session?.stop()
     this.cameraInput?.close()
     this.cameraOutput?.release()
     this.imageOutput?.release()
     this.session?.release()
+    this. cameraManager = null
+    this. cameraDevice= null
+    this. cameraInput = null // 相机输入流
+    this. cameraOutput= null
+    this.  imageOutput = null
+    this. cameraProfile  = null
+    this.  session= null
+    this.  imageReceiver = null
+    this. imgSurfaceId = ""
   }
 }
 
