@@ -674,6 +674,7 @@ struct QuestionUtils {
       let questionResList: QuestionRes[] = this.toQuestionResList(result);
       for (let item of questionResList) {
         try {
+          item.qName = bank.name
           await questionTable.insertDataAwait(item);
           successCount++;
           output += `[qId=${item.qId}, questionID=${item.questionID}]\n`;

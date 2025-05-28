@@ -79,6 +79,7 @@ class QuestionBankTable {
             };
             tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'))
             tmp.qid = resultSet.getDouble(resultSet.getColumnIndex('qid'))
+            tmp.num = resultSet.getString(resultSet.getColumnIndex('num'))
             tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
             tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'))
             tmp.time = resultSet.getString(resultSet.getColumnIndex('time'))
@@ -104,6 +105,7 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {}
   obj.qid = account.qid
   obj.name = account.name
+  obj.num = account.num
   obj.desc = account.desc
   obj.time = account.time
   obj.url = account.url
