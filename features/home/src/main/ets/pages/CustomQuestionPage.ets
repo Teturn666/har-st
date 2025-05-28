@@ -150,11 +150,14 @@ struct CustomQuestionPage {
                     }
 
                     Row() {
-                      Text(`题目数量：${item.num}`)
-                        .fontColor($r('app.color.c_9d9d9d'))
-                        .fontSize($r('app.float.font_size_10fp'))
-                        .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') });
-
+                      if(parseInt(item.num)>0){
+                        Text(`题目数量：${item.num}`)
+                          .fontColor($r('app.color.c_9d9d9d'))
+                          .fontSize($r('app.float.font_size_10fp'))
+                          .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') });
+                      }else {
+                        Blank()
+                      }
                       Text(`导入时间：${item.time}`)
                         .fontColor($r('app.color.c_9d9d9d'))
                         .fontSize($r('app.float.font_size_10fp'))
