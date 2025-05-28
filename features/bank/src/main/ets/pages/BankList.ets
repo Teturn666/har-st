@@ -11,6 +11,9 @@ import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
+import { webview } from '@kit.ArkWeb';
+import { DotLoading } from '../components/DotLoading';
+
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -39,6 +42,8 @@ function buildText(params: Params) {
       Text("题库下载中").fontSize(12)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 18 })
+
+      //DotLoading({ animating: true})
 
       Canvas(params.controller)
         .width('30%')
