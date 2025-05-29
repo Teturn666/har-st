@@ -1,9 +1,9 @@
 @Component
 export struct ProgressLoading {
   @Prop
-  pWidth: number = 45
+  pWidth: number = 40
   @Prop
-  strokeWidth: number = 6
+  strokeWidth: number = 4
   @Prop
   color: ResourceColor ='#fff6605e'
   @Prop
