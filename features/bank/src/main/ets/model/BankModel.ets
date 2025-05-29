@@ -7,6 +7,7 @@ import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
 
+
 const TAG = '[BankModel]'
 
 
@@ -201,6 +202,7 @@ export class BankModel {
       bankListRes.bankType = 1
       let ret = await questionBankTable.insertDataAwait(bankListRes)
       this.initSearchEngin()
+
       Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {

@@ -18,7 +18,7 @@ import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 import { BankListRes } from 'db'
 import { promptAction, window } from '@kit.ArkUI'
 import { selectImage } from '../utils/SelectImage'
-import { ProgressLoading } from '../components/ProgressLoading'
+import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager, ScreenManager } from '../utils/ScreenManager'
 
 import('photo/src/main/ets/pages/SearchResultPage')

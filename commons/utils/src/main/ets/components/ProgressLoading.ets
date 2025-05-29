@@ -5,7 +5,7 @@ export struct ProgressLoading {
   @Prop
   strokeWidth: number = 6
   @Prop
-  color: ResourceColor = $r("app.color.c_F75A23")
+  color: ResourceColor ='#fff6605e'
   @Prop
   angle: number = 0
   @Prop

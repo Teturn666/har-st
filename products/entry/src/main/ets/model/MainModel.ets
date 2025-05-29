@@ -2,6 +2,7 @@ import { questionBankTable, questionTable, questionWrongTable, questionCollectio
 import { SearchEngine } from 'search/Index';
 import { Logger } from 'utils';
 
+
 export class MainModel {
   private static instance: MainModel
 
@@ -19,7 +20,7 @@ export class MainModel {
     questionBankTable.getRdbStore(() => {
     })
     questionTable.getRdbStore(async () => {
-      // await this.initSearchEngin()
+      await this.initSearchEngin()
 
     })
     questionWrongTable.getRdbStore(() => {

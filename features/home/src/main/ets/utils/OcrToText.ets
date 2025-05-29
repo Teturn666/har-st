@@ -65,6 +65,8 @@ export  class  OcrToText {
           },1000)
 
           if (search){
+            AppStorage.setOrCreate("ocr",data.value)
+
             this.jumpToSearchResult()
           }
 
