@@ -59,6 +59,7 @@ aboutToDisappear(): void {
             type: XComponentType.SURFACE,
             controller: this.controller
           })
+
             .width("100%")
             .height("100%")// .transform({ rotate: 90 })
 
@@ -194,7 +195,7 @@ aboutToDisappear(): void {
                   if (this.CameraChange) {
                     this.CameraChange =false
                     cameraManager.releaseCamera()
-                    emitter.off('dataText')
+                    // emitter.off('dataText')
                   } else {
                     this.CameraChange = true
                     cameraManager.initCamera(this.controller.getXComponentSurfaceId())
