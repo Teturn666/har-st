@@ -14,5 +14,5 @@ export class BankListRes {
   //1=已下载，2=未下载
   downloadedState: number = 2
   //题库类型：1=题库广场，2=自定义导入
-  bankType: number = 1
+  bankType: number = 0
 }

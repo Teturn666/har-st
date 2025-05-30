@@ -9,9 +9,8 @@ class QuestionBankTable {
   private accountTable = new ChRdb(DbConstants.QUESTION_BANK_TABLE.tableName, DbConstants.QUESTION_BANK_TABLE.sqlCreate,
     DbConstants.QUESTION_BANK_TABLE.columns);
 
-  constructor(callback: Function = () => {
-  }) {
-    this.accountTable.getRdbStore(callback);
+  constructor() {
+
   }
 
   getRdbStore(callback: Function = () => {
@@ -47,11 +46,12 @@ class QuestionBankTable {
 
   async querySync(qid: number, isAll: boolean = true): Promise<Array<BankListRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
+    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
     if (!isAll) {
       predicates.equalTo('qid', qid);
     }
 
-    let resultSet = await this.accountTable.querySync(predicates)
+    let resultSet = rdb.querySync(predicates)
     if (resultSet == null) {
       return []
     } else {
@@ -75,10 +75,11 @@ class QuestionBankTable {
               version: '',
               position: 0,
               downloadedState: 2,
-              bankType: 1
+              bankType: 0
             };
             tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'))
             tmp.qid = resultSet.getDouble(resultSet.getColumnIndex('qid'))
+            //这个升级后插入的列
             tmp.num = resultSet.getString(resultSet.getColumnIndex('num'))
             tmp.name = resultSet.getString(resultSet.getColumnIndex('name'))
             tmp.desc = resultSet.getString(resultSet.getColumnIndex('desc'))
@@ -87,6 +88,7 @@ class QuestionBankTable {
             tmp.version = resultSet.getString(resultSet.getColumnIndex('version'))
             tmp.position = resultSet.getDouble(resultSet.getColumnIndex('position'))
             tmp.downloadedState = resultSet.getDouble(resultSet.getColumnIndex('downloadedState'))
+            //这个升级后插入的列
             tmp.bankType = resultSet.getDouble(resultSet.getColumnIndex('bankType'))
             result[i] = tmp
             resultSet.goToNextRow();
@@ -105,6 +107,7 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {}
   obj.qid = account.qid
   obj.name = account.name
+  //这个升级后插入的列
   obj.num = account.num
   obj.desc = account.desc
   obj.time = account.time
@@ -112,6 +115,7 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   obj.position = account.position
   obj.version = account.version
   obj.downloadedState = account.downloadedState
+  //这个升级后插入的列
   obj.bankType = account.bankType
   return obj;
 }
