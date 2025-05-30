@@ -9,9 +9,8 @@ class QuestionTable {
   private accountTable = new ChRdb(DbConstants.QUESTION_TABLE.tableName, DbConstants.QUESTION_TABLE.sqlCreate,
     DbConstants.QUESTION_TABLE.columns);
 
-  constructor(callback: Function = () => {
-  }) {
-    this.accountTable.getRdbStore(callback);
+  constructor() {
+
   }
 
   getRdbStore(callback: Function = () => {
@@ -42,53 +41,15 @@ class QuestionTable {
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
-  query(amount: number, callback: Function, isAll: boolean = true) {
-    let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    if (!isAll) {
-      predicates.equalTo('id', amount);
-    }
-    this.accountTable.query(predicates, (resultSet: relationalStore.ResultSet) => {
-      let count: number = resultSet.rowCount;
-      if (count === 0 || typeof count === 'string') {
-        console.log(`${DbConstants.TABLE_TAG}` + 'Query no results!');
-        callback([]);
-      } else {
-        resultSet.goToFirstRow();
-        const result: QuestionRes[] = [];
-        for (let i = 0; i < count; i++) {
-          let tmp: QuestionRes = {
-            id: -1,
-            qId: 0,
-            qName: '',
-            question: '',
-            answer: '',
-            option: [],
-            wrongAnswer: '',
-            questionID: 0,
-          };
-          tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-          tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
-          tmp.qName = resultSet.getString(resultSet.getColumnIndex('qName'));
-          tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
-          tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
-          tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
-          tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
-          result[i] = tmp;
-          resultSet.goToNextRow();
-        }
-        callback(result);
-      }
-    });
-  }
-
   async querySync(id: number, isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
+    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
     if (!isAll) {
       //搜索走的是找id的位置；题库练习走的是根据题库qId找关联的题目
       predicates.equalTo(isSearch ? 'id' : 'qId', id);
     }
 
-    let resultSet = await this.accountTable.querySync(predicates)
+    let resultSet = rdb.querySync(predicates)
     if (resultSet == null) {
       return []
     } else {
@@ -113,6 +74,7 @@ class QuestionTable {
             };
             tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+            //这个升级后插入的列
             tmp.qName = resultSet.getString(resultSet.getColumnIndex('qName'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
@@ -134,6 +96,7 @@ class QuestionTable {
 function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   let obj: relationalStore.ValuesBucket = {};
   obj.qId = account.qId;
+  //这个升级后插入的列
   obj.qName = account.qName;
   obj.question = account.question;
   obj.answer = account.answer;

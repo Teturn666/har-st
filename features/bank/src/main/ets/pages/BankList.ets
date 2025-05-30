@@ -43,7 +43,7 @@ function buildText(params: Params) {
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 18 })
 
-      DotLoading({ animating: true})
+      DotLoading({ animating: true })
 
       Canvas(params.controller)
         .width('30%')
@@ -193,7 +193,7 @@ export struct BankList {
   aboutToAppear(): void {
     this.bankRes.newsData = []
     this.loadFeedData()
-    this.initLottie()
+    // this.initLottie()
     this.initDialog()
   }
 
@@ -225,7 +225,7 @@ export struct BankList {
         bank: this.mCurBank, success: success
       })
     });
-     this.dialogDownloadController.open();
+    this.dialogDownloadController.open();
 
   }
 
@@ -250,17 +250,17 @@ export struct BankList {
     });
   }
 
-  private initLottie() {
-    // loading.json需要放到lottie包下的rawfile中
-    context.resourceManager.getRawFileContent('loading.json', async (err: Error, data: Uint8Array) => {
-      if (data === null || data === undefined || data.buffer === undefined) {
-        return;
-      }
-      let lottieStr = await this.resStr.decodeWithStream(new Uint8Array(data.buffer))
-      jsonData = JSON.parse(lottieStr);
-      this.hasLoadData = true
-    })
-  }
+  // private initLottie() {
+  //   // loading.json需要放到lottie包下的rawfile中
+  //   context.resourceManager.getRawFileContent('loading.json', async (err: Error, data: Uint8Array) => {
+  //     if (data === null || data === undefined || data.buffer === undefined) {
+  //       return;
+  //     }
+  //     let lottieStr = await this.resStr.decodeWithStream(new Uint8Array(data.buffer))
+  //     jsonData = JSON.parse(lottieStr);
+  //     this.hasLoadData = true
+  //   })
+  // }
 
   build() {
     if (this.bankRes.newsData.length > 0) {
@@ -439,7 +439,7 @@ export struct BankList {
         break
       case 2:
         let downloadList = await this.bankModel.getDownloadBankList()
-        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 1);
+        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 0);
         break
       default:
         let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)

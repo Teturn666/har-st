@@ -2,7 +2,6 @@ import { questionBankTable, questionTable, questionWrongTable, questionCollectio
 import { SearchEngine } from 'search/Index';
 import { Logger } from 'utils';
 
-
 export class MainModel {
   private static instance: MainModel
 
@@ -16,17 +15,12 @@ export class MainModel {
     return MainModel.instance
   }
 
-  public initDb() {
-    questionBankTable.getRdbStore(() => {
-    })
-    questionTable.getRdbStore(async () => {
-      await this.initSearchEngin()
-
-    })
-    questionWrongTable.getRdbStore(() => {
-    })
-    questionCollectionTable.getRdbStore(() => {
-    })
+  public async initDb() {
+    await questionBankTable.getRdbStore()
+    await questionTable.getRdbStore()
+    await questionWrongTable.getRdbStore()
+    await questionCollectionTable.getRdbStore()
+    // await this.initSearchEngin()
   }
 
   //初始化搜索引擎
