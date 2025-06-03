@@ -1,3 +1,5 @@
+import { classToPlainFromExist } from 'class-transformer';
+
 export { CommonConstants } from './src/main/ets/common/CommonConstants';
 
 export { default as Logger } from './src/main/ets/utils/Logger';

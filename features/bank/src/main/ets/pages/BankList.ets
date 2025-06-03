@@ -11,6 +11,9 @@ import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
+import { webview } from '@kit.ArkWeb';
+import { DotLoading } from '../components/DotLoading';
+
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -39,6 +42,8 @@ function buildText(params: Params) {
       Text("题库下载中").fontSize(12)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 18 })
+
+      DotLoading({ animating: true })
 
       Canvas(params.controller)
         .width('30%')
@@ -86,6 +91,7 @@ struct DownloadOverDialog {
         .borderRadius(5)
         .backgroundColor($r('app.color.c_fce8e8'))
         .onClick(() => {
+
           this.controller.close()
         })
         .textAlign(TextAlign.Center)
@@ -129,9 +135,11 @@ struct DeleteDialog {
           .fontColor($r('app.color.c_2a5089'))
           .backgroundColor($r('app.color.c_f4f3fb'))
           .onClick(() => {
+
             //删除确定
             if (this.confirm) {
               this.confirm(this.bank)
+
             }
             this.controller.close()
           })
@@ -185,7 +193,7 @@ export struct BankList {
   aboutToAppear(): void {
     this.bankRes.newsData = []
     this.loadFeedData()
-    this.initLottie()
+    // this.initLottie()
     this.initDialog()
   }
 
@@ -193,6 +201,7 @@ export struct BankList {
   showDeleteDialog() {
     this.dialogDeleteController = new CustomDialogController({
       builder: DeleteDialog({
+
         bank: this.mCurBank, confirm: (item) => {
           //删除确定
           //更新状态为未下载
@@ -210,11 +219,14 @@ export struct BankList {
 
   showDownloadOverDialog(success: boolean) {
     this.dialogDownloadController = new CustomDialogController({
+
       builder: DownloadOverDialog({
+
         bank: this.mCurBank, success: success
       })
     });
     this.dialogDownloadController.open();
+
   }
 
   private initDialog() {
@@ -238,17 +250,17 @@ export struct BankList {
     });
   }
 
-  private initLottie() {
-    // loading.json需要放到lottie包下的rawfile中
-    context.resourceManager.getRawFileContent('loading.json', async (err: Error, data: Uint8Array) => {
-      if (data === null || data === undefined || data.buffer === undefined) {
-        return;
-      }
-      let lottieStr = await this.resStr.decodeWithStream(new Uint8Array(data.buffer))
-      jsonData = JSON.parse(lottieStr);
-      this.hasLoadData = true
-    })
-  }
+  // private initLottie() {
+  //   // loading.json需要放到lottie包下的rawfile中
+  //   context.resourceManager.getRawFileContent('loading.json', async (err: Error, data: Uint8Array) => {
+  //     if (data === null || data === undefined || data.buffer === undefined) {
+  //       return;
+  //     }
+  //     let lottieStr = await this.resStr.decodeWithStream(new Uint8Array(data.buffer))
+  //     jsonData = JSON.parse(lottieStr);
+  //     this.hasLoadData = true
+  //   })
+  // }
 
   build() {
     if (this.bankRes.newsData.length > 0) {
@@ -349,6 +361,7 @@ export struct BankList {
                           this.bankRes.newsData = [...this.bankRes.newsData]
                           LoadingDialog.closeDialog()
                           this.showDownloadOverDialog(true)
+
                           onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
                             "question_bank_id": item.qid
                           })
@@ -426,7 +439,7 @@ export struct BankList {
         break
       case 2:
         let downloadList = await this.bankModel.getDownloadBankList()
-        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 1);
+        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 0);
         break
       default:
         let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)

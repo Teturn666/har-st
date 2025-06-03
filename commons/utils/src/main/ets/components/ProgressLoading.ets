@@ -1,11 +1,11 @@
 @Component
 export struct ProgressLoading {
   @Prop
-  pWidth: number = 45
+  pWidth: number = 40
   @Prop
-  strokeWidth: number = 6
+  strokeWidth: number = 4
   @Prop
-  color: ResourceColor = $r("app.color.c_F75A23")
+  color: ResourceColor ='#fff6605e'
   @Prop
   angle: number = 0
   @Prop

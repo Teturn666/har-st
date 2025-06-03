@@ -41,6 +41,7 @@ function buildText(params: Params) {
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 18 })
 
+
       Canvas(params.controller)
         .width('30%')
         .height('20%')

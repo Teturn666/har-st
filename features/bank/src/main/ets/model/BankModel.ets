@@ -1,4 +1,11 @@
-import { questionBankTable, questionTable, BankListRes, QuestionRes } from 'db'
+import {
+  questionBankTable,
+  questionTable,
+  BankListRes,
+  QuestionRes,
+  questionCollectionTable,
+  questionWrongTable,
+} from 'db'
 import { SearchDecryptUtils, SearchEngine } from 'search'
 import { Logger, StringUtils } from 'utils'
 import { plainToClass } from 'class-transformer'
@@ -6,6 +13,7 @@ import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
+
 
 const TAG = '[BankModel]'
 
@@ -37,11 +45,29 @@ export class BankModel {
       })
     }
     //删除相应的题目表
-    let bankQaResultList = await questionTable.querySync(qid, false) ?? [];
+    let bankQaResultList = await questionTable.querySync(qid, false, false) ?? [];
     if (bankQaResultList.length > 0) {
       bankQaResultList.forEach((item) => {
         questionTable.deleteData(item, (resFlag: boolean) => {
           Logger.info(TAG, '题目deleteData--------' + resFlag)
+        })
+      })
+    }
+    //删除相应的收藏表
+    let collectionResultList = await questionCollectionTable.querySync(qid, false) ?? [];
+    if (collectionResultList.length > 0) {
+      collectionResultList.forEach((item) => {
+        questionCollectionTable.deleteData(item, (resFlag: boolean) => {
+          Logger.info(TAG, '收藏题目deleteData--------' + resFlag)
+        })
+      })
+    }
+    //删除相应的错题表
+    let wrongResultList = await questionWrongTable.querySync(qid, false) ?? [];
+    if (wrongResultList.length > 0) {
+      wrongResultList.forEach((item) => {
+        questionWrongTable.deleteData(item, (resFlag: boolean) => {
+          Logger.info(TAG, '错题题目deleteData--------' + resFlag)
         })
       })
     }
@@ -186,6 +212,7 @@ export class BankModel {
           //题目数据插入存储
           let questionDb = new QuestionRes()
           questionDb.qId = qid
+          questionDb.qName = bankListRes.name
           questionDb.question = questionRes.q
           questionDb.answer = questionRes.ans
           questionDb.option = questionRes.a
@@ -197,9 +224,10 @@ export class BankModel {
       //插入题库表,下载成功后的状态
       bankListRes.downloadedState = 1
       bankListRes.position = 0
-      bankListRes.bankType = 1
+      bankListRes.bankType = 0
       let ret = await questionBankTable.insertDataAwait(bankListRes)
       this.initSearchEngin()
+
       Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {

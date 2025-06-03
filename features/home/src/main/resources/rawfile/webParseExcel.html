@@ -8,6 +8,8 @@
   </head>
   <body></body>
   <script>
+    const TAG = "webParseExcel";
+
     /**
      * 解析 Excel 数据并返回题库结构
      * @param {ArrayBuffer|string} excelData - Excel 文件的 ArrayBuffer 或 Base64 字符串
@@ -30,11 +32,9 @@
     }
 
     function parseExcelQuizBank(fileName, excelData) {
-      // console.log("excelData:", excelData);
       try {
         let data;
 
-        // 判断是否是 Base64 字符串，如果是则转换为 binary string
         if (typeof excelData === "string") {
           const binStr = atob(excelData);
           const buf = new Uint8Array(binStr.length);
@@ -47,9 +47,7 @@
         }
 
         const workbook = XLSX.read(data, { type: "array" });
-
         const qid = generateShortTimestampNumber();
-
         const quizBank = {
           qid: qid,
           name: fileName.replace(/\.[^/.]+$/, ""),
@@ -71,7 +69,6 @@
           const worksheet = workbook.Sheets[sheetName];
           const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-          // 验证表头
           if (
             !rows[0] ||
             rows[0].slice(0, 6).join(",") !==
@@ -81,36 +78,46 @@
             continue;
           }
 
-          // 新增：过滤掉空行（关键修改！）
           const validRows = rows.slice(1).filter((row) => {
-            // 判断行是否为空：所有单元格都是空字符串或undefined
             return !row.every(
               (cell) => cell === undefined || String(cell).trim() === ""
             );
           });
 
-          // 处理每一行数据
           validRows.slice(1).forEach((row, rowIndex) => {
-            const actualRowNumber = rowIndex + 2; // 实际Excel行号（表头是第1行）
+            const actualRowNumber = rowIndex + 2;
             const paddedRow = row.concat(Array(6 - row.length).fill(""));
             const [question, answer, optionA, optionB, optionC, optionD] =
               paddedRow;
 
-            // 题干和答案均为空时记录错误
-            if (
-              !String(question).trim() ||
-              !String(answer).trim() ||
-              (!String(optionA).trim() &&
-                !String(optionB).trim() &&
-                !String(optionC).trim() &&
-                !String(optionD).trim())
-            ) {
+            // 拆分为具体错误判断
+            const isQuestionEmpty = !String(question).trim();
+            const isAnswerEmpty = !String(answer).trim();
+            const areAllOptionsEmpty = ![
+              optionA,
+              optionB,
+              optionC,
+              optionD,
+            ].some((opt) => String(opt).trim());
+            let errorMsg = "";
+
+            if (isQuestionEmpty && isAnswerEmpty) {
+              errorMsg = " 无法提取,题干和答案均为空";
+            } else if (isQuestionEmpty) {
+              errorMsg = "无法提取,题干为空";
+            } else if (isAnswerEmpty) {
+              errorMsg = "无法提取,答案为空";
+            } else if (areAllOptionsEmpty) {
+              errorMsg = "无法提取,所有选项为空";
+            }
+
+            if (errorMsg) {
               questionErrorList.push({
                 sheetName: sheetName,
                 row: actualRowNumber,
-                error: "题干和答案均为空",
+                error: errorMsg,
               });
-              return; // 跳过当前行
+              return;
             }
 
             questions.push({
@@ -129,10 +136,9 @@
         }
 
         quizBank.num = questions.length.toString();
-
         return { quizBank, questions, questionErrorList };
       } catch (error) {
-        console.error("解析失败:", error);
+        console.error(TAG, "解析失败:" + error);
         throw error;
       }
     }

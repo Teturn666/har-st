@@ -37,7 +37,7 @@ export class HomeModel {
       })
     }
     //删除相应的题目表
-    let bankQaResultList = await questionTable.querySync(qid, false) ?? [];
+    let bankQaResultList = await questionTable.querySync(qid, false,false) ?? [];
     if (bankQaResultList.length > 0) {
       bankQaResultList.forEach((item) => {
         questionTable.deleteData(item, (resFlag: boolean) => {

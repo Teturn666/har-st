@@ -10,9 +10,8 @@ class QuestionCollectionTable {
     new ChRdb(DbConstants.QUESTION_COLLECTION_TABLE.tableName, DbConstants.QUESTION_COLLECTION_TABLE.sqlCreate,
       DbConstants.QUESTION_COLLECTION_TABLE.columns);
 
-  constructor(callback: Function = () => {
-  }) {
-    this.accountTable.getRdbStore(callback);
+  constructor() {
+
   }
 
   getRdbStore(callback: Function = () => {
@@ -76,6 +75,7 @@ class QuestionCollectionTable {
             let tmp: QuestionRes = {
               id: -1,
               qId: 0,
+              qName: '',
               question: '',
               answer: '',
               option: [],

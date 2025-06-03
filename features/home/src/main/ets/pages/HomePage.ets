@@ -15,19 +15,18 @@ import lottie, { AnimationItem } from '@ohos/lottie'
 import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
-import { BankListRes } from 'db'
-import { promptAction, window } from '@kit.ArkUI'
+import { window } from '@kit.ArkUI'
 import { selectImage } from '../utils/SelectImage'
-import { ProgressLoading } from '../components/ProgressLoading'
-import { screenManager, ScreenManager } from '../utils/ScreenManager'
+import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
+import { screenManager } from '../utils/ScreenManager'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
 import('./BankListPage')
 import('./MyDownloadPage')
 import('./CustomQuestionPage')
-import ('./SearchQuestions')
-import ('./SearchIntroductionPage')
+import('./SearchQuestions')
+import('./SearchIntroductionPage')
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
 let arr: number[] = [1]
@@ -58,37 +57,18 @@ export struct HomePage {
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
   private animateItem: AnimationItem | null = null
   @State hasLoadData: boolean = false
-  @State questionBanks: BankListRes[] = [];
-  @State wrongBanks: BankListRes[] = [];
-  @State collectionBanks: BankListRes[] = [];
-  @State loading:boolean=false
-  @State TopHeight:number=0
-  win:window.Window|null=null
+  @State loading: boolean = false
+  @State TopHeight: number = 0
+  win: window.Window | null = null
+
   aboutToAppear(): void {
-    this.initLottie()
-    this.loadResources()
-
-  }
-
-  async loadResources(): Promise<void> {
-    console.log("主页面")
-    //获取数据库下载的题库
-    const banks = await this.homeModel.getBankList();
-    this.questionBanks = banks;
-
-    //获取数据库错题的题库
-    const wrongq = await this.homeModel.getWrongBankList()
-    this.wrongBanks = wrongq;
-
-    //获取数据库收藏的题库
-    const collectionBank = await this.homeModel.getCollectionBankList()
-    this.collectionBanks = collectionBank;
+    // this.initLottie()
   }
 
   aboutToDisappear(): void {
     lottie.destroy()
     screenManager.exitFull(getContext())
-    this.TopHeight=0
+    this.TopHeight = 0
   }
 
   build() {
@@ -130,7 +110,6 @@ export struct HomePage {
 
           ListItem() {
             SearchList()
-
           }
 
           ListItem() {
@@ -138,14 +117,12 @@ export struct HomePage {
               isLoading: this.loading,
               handleClick: async () => {
                 // this.selectImage()
-             this.loading = true
+                this.loading = true
 
-             selectImage.selectImg().then(()=>{
-               this.loading = false
-             })
-
-
-  }
+                selectImage.selectImg().then(() => {
+                  this.loading = false
+                })
+              }
             })
           }
 
@@ -199,9 +176,10 @@ export struct HomePage {
         })
 
       }
-      Column(){
-        if (this.loading){
-          Row(){
+
+      Column() {
+        if (this.loading) {
+          Row() {
             ProgressLoading()
           }
 
@@ -217,9 +195,10 @@ export struct HomePage {
       })
     }
     .margin({
-      top:this.TopHeight
+      top: this.TopHeight
     })
-}
+  }
+
   //跳转到练习列表共用的页面，1=题库练习，2=错题练习，3=收藏练习
   private jumpToBankList(type: number) {
     let title = ''
@@ -239,7 +218,6 @@ export struct HomePage {
       }
     }, router.RouterMode.Single)
   }
-
 
   //跳转到我的下载
   private jumpToDownloadResult() {
@@ -345,7 +323,7 @@ export struct HomePage {
 @Component
 struct SearchHelper {
   @State isShow: boolean = false
-  @Prop isLoading:boolean =false
+  @Prop isLoading: boolean = false
   handleClick: () => void = () => {
   }
 
@@ -423,7 +401,7 @@ struct SearchList {
           })
 
       }
-      .onClick(()=>{
+      .onClick(() => {
         router.pushNamedRoute({
           name: HomeConstants.ROUTER_SEARCH_INTRODUCTION
         })

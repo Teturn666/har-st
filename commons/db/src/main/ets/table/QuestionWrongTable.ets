@@ -10,9 +10,8 @@ class QuestionWrongTable {
     new ChRdb(DbConstants.QUESTION_WRONG_TABLE.tableName, DbConstants.QUESTION_WRONG_TABLE.sqlCreate,
       DbConstants.QUESTION_WRONG_TABLE.columns);
 
-  constructor(callback: Function = () => {
-  }) {
-    this.accountTable.getRdbStore(callback);
+  constructor() {
+
   }
 
   getRdbStore(callback: Function = () => {
@@ -77,6 +76,7 @@ class QuestionWrongTable {
             let tmp: QuestionRes = {
               id: -1,
               qId: 0,
+              qName: '',
               question: '',
               answer: '',
               option: [],

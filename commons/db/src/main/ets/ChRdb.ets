@@ -14,7 +14,7 @@ export default class ChRdb {
     this.columns = columns;
   }
 
-  getRdbStore(callback: Function = () => {
+  async getRdbStore(callback: Function = () => {
   }) {
     if (!callback || typeof callback === 'undefined' || callback === undefined) {
       Logger.info('getRdbStore() has no callback!');
@@ -26,16 +26,35 @@ export default class ChRdb {
       return
     }
     let context: Context = getContext(this) as Context;
-    relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG, (err, rdb) => {
-      if (err) {
-        Logger.error(`gerRdbStore() failed, err: ${err}`);
-        return;
+    try {
+      this.rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG)
+
+      if (this.rdbStore.version === 0) {
+        await this.rdbStore.executeSql(this.sqlCreateTable)
+        this.rdbStore.version = 1
       }
-      this.rdbStore = rdb;
-      this.rdbStore.executeSql(this.sqlCreateTable);
-      Logger.info('getRdbStore() finished.');
+
+      if (this.rdbStore.version === 1) {
+        if (DbConstants.QUESTION_BANK_TABLE.tableName === this.tableName) {
+          let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
+          this.rdbStore.query(predicates)
+
+          await this.rdbStore.executeSql('ALTER TABLE questionBank ADD COLUMN num TEXT')
+          await this.rdbStore.executeSql('ALTER TABLE questionBank ADD COLUMN bankType INTEGER')
+          // console.info(`Success to executeSql.`);
+
+          this.rdbStore.version = 2
+        }
+        if (DbConstants.QUESTION_TABLE.tableName === this.tableName) {
+          await this.rdbStore.executeSql('ALTER TABLE question ADD COLUMN qName TEXT')
+          // console.info(`Success to executeSql.`);
+        }
+      }
+      // Logger.info('getRdbStore() finished.');
       callback();
-    });
+    } catch (e) {
+      Logger.info('--->' + e);
+    }
   }
 
   insertData(data: relationalStore.ValuesBucket, callback: Function = () => {
@@ -62,7 +81,7 @@ export default class ChRdb {
   /**
    * 异步插入方法
    */
-  async insertDataAwait(data: relationalStore.ValuesBucket) : Promise<number> {
+  async insertDataAwait(data: relationalStore.ValuesBucket): Promise<number> {
     const valueBucket: relationalStore.ValuesBucket = data;
     if (this.rdbStore) {
       try {
@@ -109,8 +128,6 @@ export default class ChRdb {
     Logger.error(`deleteDataAwait() failed, rdbStore is null`);
     return 0;
   }
-
-
 
   updateData(predicates: relationalStore.RdbPredicates, data: relationalStore.ValuesBucket, callback: Function = () => {
   }) {
