@@ -1,4 +1,4 @@
-import { ArrayList, LinkedList, List,  TreeMap, TreeSet } from '@kit.ArkTS'
+import { ArrayList, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
 import { QuestionRes, questionTable } from 'db/Index'
 import { Logger, StringUtils } from 'utils/Index'
 import { SegmentEngine } from './SegmentEngine'
@@ -100,12 +100,16 @@ export class SearchEngine {
         })
       }
 
+
     })
   }
 
   //TODO 这个方法还得完善，差单线程
-    async initWithThread() {
+  async initIfNotInit() {
     // 在多线程中执行初始化
+    if (!this.mIsInitFinish) {
+      await this.initWithThreadTask();
+    }
   }
 
   async initWithThreadTask(): Promise<boolean> {
@@ -440,7 +444,6 @@ export class SearchEngine {
     }
     return r[lenStr1][lenStr2]
   }
-
 }
 
 class TopItem {

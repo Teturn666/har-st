@@ -15,15 +15,16 @@ export class MainModel {
     return MainModel.instance
   }
 
-  public async initDb() {
-    await questionBankTable.getRdbStore()
-    await questionTable.getRdbStore()
-    await questionWrongTable.getRdbStore()
-    await questionCollectionTable.getRdbStore()
-    // await this.initSearchEngin()
+  public initDb() {
+    questionBankTable.getRdbStore(async () => {
+      await this.initSearchEngin()
+    })
+    questionTable.getRdbStore()
+    questionWrongTable.getRdbStore()
+    questionCollectionTable.getRdbStore()
   }
 
-  //初始化搜索引擎
+  //初始化搜索分词数据
   public async initSearchEngin() {
     let result = await SearchEngine.getInstance().initWithThreadTask()
     Logger.debug('result---' + result)
