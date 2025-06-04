@@ -19,6 +19,7 @@ import { window } from '@kit.ArkUI'
 import { selectImage } from '../utils/SelectImage'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
+import { HomeCustomDialog } from '../components/HomeCustomDialong'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -60,15 +61,41 @@ export struct HomePage {
   @State loading: boolean = false
   @State TopHeight: number = 0
   win: window.Window | null = null
+  dialogController: CustomDialogController | null = new CustomDialogController({
+    builder: HomeCustomDialog({
+      isShowDia: () => {
+        this.dialogController?.close()
+      }
+    }),
+    autoCancel: false,
+    alignment: DialogAlignment.Center,
+    offset: { dx: 0, dy: -20 },
+    gridCount: 4,
+    customStyle: false,
+    backgroundColor: 0xd9ffffff,
+    cornerRadius: 5,
+    width: 300,
+    height: 350,
+    maskColor: "#88000000",
+    borderStyle: BorderStyle.Dashed,
+    shadow: ({
+      radius: 20,
+      color: Color.Grey,
+      offsetX: 10,
+      offsetY: 10
+    }),
+  })
 
   aboutToAppear(): void {
     // this.initLottie()
+    this.dialogController!.open();
   }
 
   aboutToDisappear(): void {
     lottie.destroy()
     screenManager.exitFull(getContext())
     this.TopHeight = 0
+    this.dialogController = null
   }
 
   build() {
@@ -193,6 +220,7 @@ export struct HomePage {
         center: { anchor: '__container__', align: VerticalAlign.Center },
         middle: { anchor: '__container__', align: HorizontalAlign.Center }
       })
+
     }
     .margin({
       top: this.TopHeight

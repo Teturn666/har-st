@@ -4,6 +4,7 @@ import { relationalStore } from '@kit.ArkData';
 import { BankListRes } from '../model/BankListRes';
 import { Logger } from 'utils';
 
+
 //题库表
 class QuestionBankTable {
   private accountTable = new ChRdb(DbConstants.QUESTION_BANK_TABLE.tableName, DbConstants.QUESTION_BANK_TABLE.sqlCreate,
@@ -45,6 +46,7 @@ class QuestionBankTable {
   }
 
   async querySync(qid: number, isAll: boolean = true): Promise<Array<BankListRes>> {
+
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
     let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
     if (!isAll) {

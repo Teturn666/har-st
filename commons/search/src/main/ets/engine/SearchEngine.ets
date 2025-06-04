@@ -1,4 +1,4 @@
-import { ArrayList, LinkedList, List,  TreeMap, TreeSet } from '@kit.ArkTS'
+import { ArrayList, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
 import { QuestionRes, questionTable } from 'db/Index'
 import { Logger, StringUtils } from 'utils/Index'
 import { SegmentEngine } from './SegmentEngine'
@@ -100,7 +100,9 @@ export class SearchEngine {
         })
       }
 
+
     })
+
   }
 
   //TODO 这个方法还得完善，差单线程
@@ -168,6 +170,7 @@ export class SearchEngine {
     //获取 top5
     let topN = 5
     let topList = new LinkedList<TopItem>()
+
     mMatchScores.forEach((value: number, key: number): void => {
       if (topList.length === 0) {
         let item = new TopItem()
@@ -446,4 +449,8 @@ export class SearchEngine {
 class TopItem {
   id: number = -1
   score: number = 0.0
+}
+@Sendable
+function str (){
+
 }

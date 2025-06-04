@@ -227,7 +227,6 @@ export class BankModel {
       bankListRes.bankType = 0
       let ret = await questionBankTable.insertDataAwait(bankListRes)
       this.initSearchEngin()
-
       Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {
@@ -242,3 +241,6 @@ export class BankModel {
     Logger.debug('result---' + result)
   }
 }
+
+
+

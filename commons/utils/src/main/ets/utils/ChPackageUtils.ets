@@ -1,6 +1,6 @@
 import bundleManager from '@ohos.bundle.bundleManager';
 import Logger from './Logger';
-import { buffer, util } from '@kit.ArkTS';
+import { buffer, taskpool, util } from '@kit.ArkTS';
 import { preferences } from '@kit.ArkData';
 import { CommonConstants } from '../common/CommonConstants';
 import { Context } from '@kit.AbilityKit';
@@ -38,6 +38,7 @@ export class ChPackageUtils {
   }
 
   static getUnionId(): string {
+
     let base64 = new util.Base64Helper()
     let sp = preferences.getPreferencesSync(context||ChPackageUtils.ctx, CommonConstants.SP_OPTIONS)
     let unionId = sp.getSync(CommonConstants.SP_UNION_ID, '')
