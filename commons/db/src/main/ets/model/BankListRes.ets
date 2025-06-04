@@ -15,4 +15,6 @@ export class BankListRes {
   downloadedState: number = 2
   //题库类型：1=题库广场，2=自定义导入
   bankType: number = 0
+  //NEW题库
+  NewFlag:boolean = false
 }
