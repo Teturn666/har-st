@@ -1,15 +1,15 @@
 import { hilog } from "@kit.PerformanceAnalysisKit"
 import { systemShare } from '@kit.ShareKit';
-import { preferences, uniformTypeDescriptor as utd } from '@kit.ArkData';
+import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { ComponentContent, promptAction, router } from '@kit.ArkUI';
+import { ComponentContent, router } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { LoginConstants } from 'login/Index';
+import { preferencesUtils, PreferencesConstants } from 'utils/Index'
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
@@ -18,7 +18,6 @@ import('pay/src/main/ets/pages/PayPage')
 
 
 const context = (getContext(this) as common.UIAbilityContext)
-let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
 
 @Builder
 function buildsupportText() {
@@ -117,19 +116,9 @@ export struct MinePage {
   }
 
   private isLogin(): boolean {
-    let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
-    let loginStatus = sp.getSync(LoginConstants.SP_IS_LOGIN, '0')
-    if (typeof loginStatus === 'string') {
-      this.loginState = loginStatus
-    }
-    let name = sp.getSync(LoginConstants.SP_NICK_NAME, '')
-    if (typeof name === 'string') {
-      this.nickName = name
-    }
-    let avatar = sp.getSync(LoginConstants.SP_AVATAR_URL, '')
-    if (typeof avatar === 'string') {
-      this.avatarUrl = avatar
-    }
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME, '')
+    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL, '')
     return this.loginState === '1'
   }
 
