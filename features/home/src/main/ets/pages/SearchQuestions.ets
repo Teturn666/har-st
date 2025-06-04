@@ -27,12 +27,14 @@ export struct SearchQuestions {
       await this.searchResult()
     })
   }
-aboutToDisappear(): void {
-  cameraManager.releaseCamera()
-  emitter.on("dataText", async (event) => {
-    this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
- })
-}
+
+  aboutToDisappear(): void {
+    cameraManager.releaseCamera()
+    emitter.on("dataText", async (event) => {
+      this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
+    })
+  }
+
   private async searchResult() {
     this.resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(this.dataValue)
   }
@@ -193,7 +195,7 @@ aboutToDisappear(): void {
                 .onClick(() => {
                   //TODO  解锁题目
                   if (this.CameraChange) {
-                    this.CameraChange =false
+                    this.CameraChange = false
                     cameraManager.releaseCamera()
                     // emitter.off('dataText')
                   } else {

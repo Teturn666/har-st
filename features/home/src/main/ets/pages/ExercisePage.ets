@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
-import { QuestionRes, questionCollectionTable, questionTable, questionWrongTable } from 'db';
+import { QuestionRes, questionCollectionTable, questionWrongTable } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
 import { HomeModel } from '../model/HomeModel';
 
