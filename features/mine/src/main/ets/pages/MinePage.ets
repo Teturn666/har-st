@@ -1,23 +1,23 @@
 import { hilog } from "@kit.PerformanceAnalysisKit"
 import { systemShare } from '@kit.ShareKit';
-import { preferences, uniformTypeDescriptor as utd } from '@kit.ArkData';
+import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { ComponentContent, promptAction, router } from '@kit.ArkUI';
+import { ComponentContent, router } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { LoginConstants } from 'login/Index';
+import { preferencesUtils, PreferencesConstants } from 'utils/Index'
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
 import('setting/src/main/ets/pages/SettingPage')
+import('pay/src/main/ets/pages/PayPage')
 
 
 const context = (getContext(this) as common.UIAbilityContext)
-let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
 
 @Builder
 function buildsupportText() {
@@ -116,19 +116,9 @@ export struct MinePage {
   }
 
   private isLogin(): boolean {
-    let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
-    let loginStatus = sp.getSync(LoginConstants.SP_IS_LOGIN, '0')
-    if (typeof loginStatus === 'string') {
-      this.loginState = loginStatus
-    }
-    let name = sp.getSync(LoginConstants.SP_NICK_NAME, '')
-    if (typeof name === 'string') {
-      this.nickName = name
-    }
-    let avatar = sp.getSync(LoginConstants.SP_AVATAR_URL, '')
-    if (typeof avatar === 'string') {
-      this.avatarUrl = avatar
-    }
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME, '')
+    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL, '')
     return this.loginState === '1'
   }
 
@@ -144,6 +134,10 @@ export struct MinePage {
 
   private jumpToSetting() {
     router.pushNamedRoute({ name: MineConstants.ROUTER_SETTING }, router.RouterMode.Single)
+  }
+
+  private jumpToVIP() {
+    router.pushNamedRoute({ name: MineConstants.ROUTER_VIP }, router.RouterMode.Single)
   }
 
   private jumpToPoints() {
@@ -252,103 +246,102 @@ export struct MinePage {
 
 
       // 会员
-      // Row() {
-      //   Stack({ alignContent: Alignment.TopStart }) {
-      //     Image($r('app.media.rectangle_icon'))
-      //       .objectFit(ImageFit.Cover)
-      //       .width('auto')
-      //       .height(98)
-      //
-      //     Button('去充值')
-      //       .fontSize(10)
-      //       .fontColor(Color.Black)
-      //       .backgroundColor('#D4AF37')
-      //       .borderRadius(50)
-      //       .width('auto')
-      //       .height(20)
-      //       .position({ x: 250, y: 6 })
-      //     Stack({ alignContent: Alignment.Center }) {
-      //       Image($r('app.media.subtract_icon'))
-      //         .objectFit(ImageFit.Cover)
-      //         .width(146)
-      //         .height(26)
-      //       Text('VIP会员中心')
-      //         .fontSize(12)
-      //         .fontColor(Color.White)
-      //         .textAlign(TextAlign.Center)
-      //         .width(146)
-      //     }
-      //     .margin({ top: -8, left: 1 })
-      //
-      //     Row({ space: 18 }) {
-      //       Column() {
-      //         Image($r('app.media.group_icon'))
-      //           .objectFit(ImageFit.Cover)
-      //           .width(28)
-      //         Text("免广告搜题")
-      //           .fontSize(10)
-      //           .fontColor(Color.White)
-      //           .textAlign(TextAlign.Center)
-      //           .margin({ top: 10 })
-      //       }
-      //       .width('auto')
-      //       .padding(8)
-      //       Column() {
-      //         Image($r('app.media.group_icon'))
-      //           .objectFit(ImageFit.Cover)
-      //           .width(28)
-      //         Text("隐藏悬浮窗")
-      //           .fontSize(10)
-      //           .fontColor(Color.White)
-      //           .textAlign(TextAlign.Center)
-      //           .margin({ top: 10 })
-      //       }
-      //       .width('auto')
-      //       .padding(8)
-      //       Column() {
-      //         Image($r('app.media.group_icon'))
-      //           .objectFit(ImageFit.Cover)
-      //           .width(28)
-      //         Text("指定搜索题库")
-      //           .fontSize(10)
-      //           .fontColor(Color.White)
-      //           .textAlign(TextAlign.Center)
-      //           .margin({ top: 10 })
-      //       }
-      //       .width('auto')
-      //       .padding(8)
-      //       Column() {
-      //         Image($r('app.media.group_icon'))
-      //           .objectFit(ImageFit.Cover)
-      //           .width(28)
-      //         Text("积分会员")
-      //           .fontSize(10)
-      //           .fontColor(Color.White)
-      //           .textAlign(TextAlign.Center)
-      //           .margin({ top: 10 })
-      //       }
-      //       .width('auto')
-      //       .padding(8)
-      //     }
-      //     .width('90%')
-      //     .justifyContent(FlexAlign.SpaceAround)
-      //     .margin({ top: 25,left:10 })
-      //   }
-      //   .width('90%')
-      //   .height('auto')
-      // }
-      // .width('100%')
-      // .justifyContent(FlexAlign.Center)
+      Row() {
+        Stack({ alignContent: Alignment.TopStart }) {
+          Image($r('app.media.rectangle_icon'))
+            .objectFit(ImageFit.Cover)
+            .width('auto')
+            .height(98)
+
+          Button('去充值')
+            .fontSize(10)
+            .fontColor(Color.Black)
+            .backgroundColor('#D4AF37')
+            .borderRadius(50)
+            .width('auto')
+            .height(20)
+            .position({ x: 250, y: 6 })
+          Stack({ alignContent: Alignment.Center }) {
+            Image($r('app.media.subtract_icon'))
+              .objectFit(ImageFit.Cover)
+              .width(146)
+              .height(26)
+            Text('VIP会员中心')
+              .fontSize(12)
+              .fontColor(Color.White)
+              .textAlign(TextAlign.Center)
+              .width(146)
+          }
+          .margin({ top: -8, left: 1 })
+
+          Row({ space: 18 }) {
+            Column() {
+              Image($r('app.media.group_icon'))
+                .objectFit(ImageFit.Cover)
+                .width(28)
+              Text("免广告搜题")
+                .fontSize(10)
+                .fontColor(Color.White)
+                .textAlign(TextAlign.Center)
+                .margin({ top: 10 })
+            }
+            .width('auto')
+            .padding(8)
+
+            // Column() {
+            //   Image($r('app.media.group_icon'))
+            //     .objectFit(ImageFit.Cover)
+            //     .width(28)
+            //   Text("隐藏悬浮窗")
+            //     .fontSize(10)
+            //     .fontColor(Color.White)
+            //     .textAlign(TextAlign.Center)
+            //     .margin({ top: 10 })
+            // }
+            // .width('auto')
+            // .padding(8)
+
+            Column() {
+              Image($r('app.media.group_icon'))
+                .objectFit(ImageFit.Cover)
+                .width(28)
+              Text("指定搜索题库")
+                .fontSize(10)
+                .fontColor(Color.White)
+                .textAlign(TextAlign.Center)
+                .margin({ top: 10 })
+            }
+            .width('auto')
+            .padding(8)
+
+            Column() {
+              Image($r('app.media.group_icon'))
+                .objectFit(ImageFit.Cover)
+                .width(28)
+              Text("积分会员")
+                .fontSize(10)
+                .fontColor(Color.White)
+                .textAlign(TextAlign.Center)
+                .margin({ top: 10 })
+            }
+            .width('auto')
+            .padding(8)
+          }
+          .width('90%')
+          .justifyContent(FlexAlign.SpaceAround)
+          .margin({ top: 25, left: 10 })
+        }
+        .width('90%')
+        .height('auto')
+      }
+      .width('100%')
+      .margin({ top: 20 })
+      .justifyContent(FlexAlign.Center)
+      .onClick(() => {
+        this.jumpToVIP()
+      })
 
       List() {
-        // ListItem() {
-        //   UserListItem({
-        //     name: $r('app.string.Recharge'),
-        //     click: () => {
-        //     }
-        //   })
-        // }
-
         ListItem() {
           UserListItem({
             name: $r('app.string.my_points'),

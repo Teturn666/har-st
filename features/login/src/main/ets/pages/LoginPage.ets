@@ -10,9 +10,8 @@ import http from '@ohos.net.http';
 import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
-import { preferences } from '@kit.ArkData';
 import { huaweiAuthManager } from 'utils';
-import json from '@ohos.util.json';
+import { preferencesUtils, PreferencesConstants } from 'utils/Index'
 
 
 interface AccessTokenResponse {
@@ -239,16 +238,14 @@ export struct LoginPage {
   }
 
   private spWrite(type: string) {
-    let sp = preferences.getPreferencesSync(this.context, LoginConstants.SP_OPTIONS)
-    sp.putSync(LoginConstants.SP_IS_LOGIN, '1')
+    preferencesUtils.putString(PreferencesConstants.SP_IS_LOGIN, '1')
     if (type === 'hw') {
       this.nickname = this.quickLoginAnonymousPhone
     }
-    sp.putSync(LoginConstants.SP_NICK_NAME, this.nickname)
-    sp.putSync(LoginConstants.SP_AVATAR_URL, this.avatarUrl)
-    sp.putSync(LoginConstants.SP_UNION_ID, this.unionId)
-    sp.putSync(LoginConstants.SP_OPEN_ID, this.openId)
-    sp.flushSync()
+    preferencesUtils.putString(PreferencesConstants.SP_NICK_NAME, this.nickname)
+    preferencesUtils.putString(PreferencesConstants.SP_AVATAR_URL, this.avatarUrl)
+    preferencesUtils.putString(PreferencesConstants.SP_UNION_ID, this.unionId)
+    preferencesUtils.putString(PreferencesConstants.SP_OPEN_ID, this.openId)
   }
 
   async huaweiLogin() {

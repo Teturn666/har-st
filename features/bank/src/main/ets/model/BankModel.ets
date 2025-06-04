@@ -71,6 +71,8 @@ export class BankModel {
         })
       })
     }
+
+    this.initSearchEngin()
   }
 
   //获取热门搜索列表
@@ -235,9 +237,9 @@ export class BankModel {
     }
   }
 
-  //初始化搜索引擎,更新查询数据
+  //更新数据，需重新搜索分词
   public async initSearchEngin() {
-    let result = await SearchEngine.getInstance().initWithThreadTask()
+    let result = await SearchEngine.getInstance().initIfNotInit()
     Logger.debug('result---' + result)
   }
 }

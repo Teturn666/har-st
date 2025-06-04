@@ -11,6 +11,7 @@
     "login": "file:../login",
     "points": "file:../points",
     "setting": "file:../setting",
+    "pay": "file:../pay",
   }
 }
 
