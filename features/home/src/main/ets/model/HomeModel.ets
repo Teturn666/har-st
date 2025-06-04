@@ -47,8 +47,6 @@ export class HomeModel {
     }
   }
 
-
-
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
     let bankResultList = await questionBankTable.querySync(0) ?? [];
@@ -107,6 +105,22 @@ export class HomeModel {
   public async getCollectionQuestionList(qId: number): Promise<QuestionRes[]> {
     let collectionResultList = await questionCollectionTable.querySync(qId, false) ?? [];
     return collectionResultList
+  }
+
+  //删除数据库收藏的题目
+  public async deleteDataByQuestionID(questionID: number): Promise<void> {
+    let dataByQuestionID = await questionCollectionTable.deleteDataByQuestionID(questionID);
+    return dataByQuestionID
+  }
+
+  //插入数据库收藏的题目
+  public async collectInserDataAwait(questionDb: QuestionRes): Promise<void> {
+    await questionCollectionTable.insertDataAwait(questionDb);
+  }
+
+  //插入数据库错题的题目
+  public async WrongInserDataAwait(questionDb: QuestionRes): Promise<void> {
+    await questionWrongTable.insertDataAwait(questionDb);
   }
 
   //查询题库信息

@@ -244,23 +244,21 @@ export struct MinePage {
       .margin({ left: 28, top: 40, bottom: 0 })
       .visibility(Visibility.Visible)
 
-
       // 会员
       Row() {
         Stack({ alignContent: Alignment.TopStart }) {
           Image($r('app.media.rectangle_icon'))
             .objectFit(ImageFit.Cover)
-            .width('auto')
+            .width('100%')
             .height(98)
-
           Button('去充值')
             .fontSize(10)
-            .fontColor(Color.Black)
+            .fontColor($r("app.color.c_3e3e3e"))
             .backgroundColor('#D4AF37')
             .borderRadius(50)
             .width('auto')
             .height(20)
-            .position({ x: 250, y: 6 })
+            .position({ x: 280, y: 6 })
           Stack({ alignContent: Alignment.Center }) {
             Image($r('app.media.subtract_icon'))
               .objectFit(ImageFit.Cover)
@@ -272,7 +270,7 @@ export struct MinePage {
               .textAlign(TextAlign.Center)
               .width(146)
           }
-          .margin({ top: -8, left: 1 })
+          .margin({ top: -8, left: 2 })
 
           Row({ space: 18 }) {
             Column() {
@@ -327,11 +325,11 @@ export struct MinePage {
             .width('auto')
             .padding(8)
           }
-          .width('90%')
+          .width('95%')
           .justifyContent(FlexAlign.SpaceAround)
-          .margin({ top: 25, left: 10 })
+          .margin({ top: 28, left: 10 })
         }
-        .width('90%')
+        .width('95%')
         .height('auto')
       }
       .width('100%')
@@ -432,7 +430,7 @@ export struct MinePage {
             }
           })
         }
-      }.margin({ top: 40 })
+      }
       .alignListItem(ListItemAlign.Center)
     }
     .alignItems(HorizontalAlign.Start)

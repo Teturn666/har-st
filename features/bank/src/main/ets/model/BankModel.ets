@@ -75,6 +75,27 @@ export class BankModel {
     this.initSearchEngin()
   }
 
+  //更新题库
+  async refreshBank(bank: BankListRes): Promise<boolean> {
+    await this.deleteTable(bank.qid)
+    const okdata = await this.downLoadBank(bank)
+    return okdata
+  }
+
+  //获取数据库题库版本
+  async getLocalVersion(qid: number): Promise<string | null> {
+    try {
+      const dbResult = await questionBankTable.querySync(qid, false) ?? [];
+      if (dbResult.length > 0) {
+        return dbResult[0].version; // Return the version of the first item
+      }
+      return null;
+    } catch (error) {
+      Logger.error(TAG, `Error querying local version for qid ${qid}: ${error}`);
+      return null;
+    }
+  }
+
   //获取热门搜索列表
   public async getHotSearchList(): Promise<string[]> {
     try {
