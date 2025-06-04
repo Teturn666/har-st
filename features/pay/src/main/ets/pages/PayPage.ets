@@ -4,7 +4,7 @@ import { router } from '@kit.ArkUI';
 
 const TAG = '[PayPage]';
 
-@Entry
+@Entry({ routeName: 'vipPage' })
 @Component
 export struct PayPage {
   @State payModel: PayModel = PayModel.getInstance();
