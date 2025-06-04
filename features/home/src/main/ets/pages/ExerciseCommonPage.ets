@@ -3,7 +3,6 @@ import promptAction from '@ohos.promptAction';
 import {
   QuestionRes,
   questionCollectionTable,
-  questionTable,
   questionWrongTable,
   questionBankTable,
   BankListRes

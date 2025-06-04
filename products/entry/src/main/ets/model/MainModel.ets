@@ -1,4 +1,4 @@
-import { questionBankTable, questionTable, questionWrongTable, questionCollectionTable } from 'db'
+import { questionBankTable, QuestionTable, questionWrongTable, questionCollectionTable } from 'db'
 import { SearchEngine } from 'search/Index';
 import { Logger } from 'utils';
 
@@ -16,17 +16,17 @@ export class MainModel {
   }
 
   public initDb() {
-    questionBankTable.getRdbStore(async () => {
-      await this.initSearchEngin()
+    questionBankTable.getRdbStore(() => {
     })
-    questionTable.getRdbStore()
-    questionWrongTable.getRdbStore()
-    questionCollectionTable.getRdbStore()
+    QuestionTable.getInstance().getRdbStore(() => {
+    })
+    questionWrongTable.getRdbStore(() => {
+    })
+    questionCollectionTable.getRdbStore(() => {
+    })
   }
 
   //初始化搜索分词数据
   public async initSearchEngin() {
-    let result = await SearchEngine.getInstance().initWithThreadTask()
-    Logger.debug('result---' + result)
   }
 }

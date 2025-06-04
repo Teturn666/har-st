@@ -6,12 +6,11 @@ import { BankListRes } from 'db'
 import { ComponentContent } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
 import { FinishDialog } from './FinishDialog';
-import lottie, { AnimationItem } from '@ohos/lottie';
+import lottie from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
-import { webview } from '@kit.ArkWeb';
 import { DotLoading } from '../components/DotLoading';
 
 
@@ -201,16 +200,15 @@ export struct BankList {
   showDeleteDialog() {
     this.dialogDeleteController = new CustomDialogController({
       builder: DeleteDialog({
-
-        bank: this.mCurBank, confirm: (item) => {
+        bank: this.mCurBank, confirm: async (item) => {
           //删除确定
           //更新状态为未下载
           item.downloadedState = 2
           //触发UI重新渲染
           this.bankRes.newsData = [...this.bankRes.newsData]
           this.dialogDeleteController?.close()
-          this.bankModel.deleteTable(item.qid)
-          this.bankModel.initSearchEngin()
+          await this.bankModel.deleteTable(item.qid)
+          await this.bankModel.initSearchEngin(0, 0, 2)
         }
       })
     });
