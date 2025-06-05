@@ -1,5 +1,4 @@
 import bundleManager from '@ohos.bundle.bundleManager';
-import Logger from './Logger';
 import { buffer, util } from '@kit.ArkTS';
 import { PreferencesConstants } from '../common/PreferencesConstants'
 import { preferencesUtils } from '../common/PreferencesUtils'
