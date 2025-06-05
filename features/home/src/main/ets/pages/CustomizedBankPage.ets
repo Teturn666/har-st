@@ -1,9 +1,9 @@
 import fs from '@ohos.file.fs';
 import { TitleBar } from 'widget'
 import { promptAction, router } from '@kit.ArkUI'
-import { getFileExtension, getPrefix, selectFile } from '../manage/SelectFileManage';
+import { getFileExtension, getPrefix } from '../manage/SelectFileManage';
 import { WebClass } from '../components/WebParseExcel';
-import { questionBankTable, questionTable } from 'db';
+import { questionBankTable, QuestionTable } from 'db';
 import picker from '@ohos.file.picker';
 import { util } from '@kit.ArkTS';
 import { ExcelDataObj, QuestionError } from '../model/CustomizedBankModel';
@@ -120,7 +120,7 @@ struct CustomizedBankPage {
       for (let item of questionResList) {
         try {
           item.qName = bank.name
-          await questionTable.insertDataAwait(item);
+          await QuestionTable.getInstance().insertDataAwait(item);
           successCount++;
         } catch (error) {
           const err: BusinessError = error as BusinessError;
@@ -201,7 +201,7 @@ struct CustomizedBankPage {
             // 存储进题目表
             excelDataObj.questions.forEach(async (item) => {
               item.qName = bankName
-              await questionTable.insertDataAwait(item);
+              await QuestionTable.getInstance().insertDataAwait(item);
             });
             // 显示导入结果
             this.questionErrorList = excelDataObj.questionErrorList;
@@ -220,7 +220,7 @@ struct CustomizedBankPage {
   async getInputDialogName(defaultName: string): Promise<string> {
     let bankName: string = defaultName;
     let isConfirmed: boolean = false;
-    await new Promise<void>((resolve,reject) => {
+    await new Promise<void>((resolve, reject) => {
       this.dialogController = new CustomDialogController({
         builder: InputDialog({
           initialText: defaultName,

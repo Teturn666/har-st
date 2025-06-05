@@ -1,7 +1,4 @@
-import { questionBankTable, questionTable, BankListRes, QuestionRes } from 'db'
-import { SearchDecryptUtils } from 'search'
-import { Logger, StringUtils } from 'utils'
-import { plainToClass } from 'class-transformer'
+import { Logger } from 'utils'
 import { PointsNet } from '../service/PointsNet'
 import CheckDataRes, { PointEventRes } from './CheckDataRes'
 

@@ -8,12 +8,10 @@ import { onEventObject } from "@umeng/analytics"
 import HomeMobClickConstants from "../Constants/HomeMobClickConstants"
 import HomeConstants from "../Constants/HomeConstants"
 
-
-export  class  OcrToText {
+export class OcrToText {
   private imageSource?: image.ImageSource
   chooseImage?: PixelMap
-  dataValues:string=""
-
+  dataValues: string = ""
 
   // private openPhoto(): Promise<string> {
   //   return new Promise<string>((resolve, reject) => {
@@ -30,15 +28,16 @@ export  class  OcrToText {
   //   })
   // }
 
-   loadImage(map:image.PixelMap,search?:boolean) {
+  loadImage(map: image.PixelMap, search?: boolean) {
 
-      // let fileSource = await fileIo.open(name, fileIo.OpenMode.READ_ONLY)
-      // this.imageSource = image.createImageSource(fileSource.fd)
-      // this.chooseImage = await this.imageSource.createPixelMap()
-        this.ocrToText(map,search)
+    // let fileSource = await fileIo.open(name, fileIo.OpenMode.READ_ONLY)
+    // this.imageSource = image.createImageSource(fileSource.fd)
+    // this.chooseImage = await this.imageSource.createPixelMap()
+    this.ocrToText(map, search)
 
   }
-  private async ocrToText(map:image.PixelMap,search?:boolean) {
+
+  private async ocrToText(map: image.PixelMap, search?: boolean) {
     // emitter.on("upPix", (event) => {
     //   this.chooseImage = event.data!["map"]
     // })
@@ -47,11 +46,12 @@ export  class  OcrToText {
     }
     // 调用文本识别接口
     let visionInfo: textRecognition.VisionInfo = {
-      pixelMap:map
+      pixelMap: map
     };
     let textConfiguration: textRecognition.TextRecognitionConfiguration = {
       isDirectionDetectionSupported: false
     };
+
     textRecognition.recognizeText(visionInfo, textConfiguration,
       (error: BusinessError, data: textRecognition.TextRecognitionResult) => {
         // 识别成功，获取对应的结果
@@ -60,16 +60,11 @@ export  class  OcrToText {
           hilog.info(0x0000, 'OCRDemo', `Succeeded in recognizing text：${recognitionString}`)
           // 将结果更新到Text中显示
           // this.dataValues = data.value
-          setTimeout(()=>{
-            emitter.emit("dataText", { data: { "text": data.value } })
-          },1000)
-
-          if (search){
-            AppStorage.setOrCreate("ocr",data.value)
-
+          emitter.emit("dataText", { data: { "text": data.value } })
+          if (search) {
+            AppStorage.setOrCreate("ocr", data.value)
             this.jumpToSearchResult()
           }
-
         }
         if (this.chooseImage && this.imageSource) {
           this.chooseImage.release()
@@ -77,6 +72,7 @@ export  class  OcrToText {
         }
       })
   }
+
   //跳转到搜索结果页
   private jumpToSearchResult() {
 
@@ -86,4 +82,5 @@ export  class  OcrToText {
     onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
   }
 }
-export  const ocrToText = new OcrToText ()
+
+export const ocrToText = new OcrToText()

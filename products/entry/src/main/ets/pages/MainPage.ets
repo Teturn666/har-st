@@ -7,9 +7,8 @@ import { TabBarType } from '../model/TabBarModel';
 import router from '@ohos.router'
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
-import { init, onEventObject } from '@umeng/analytics';
+import { init } from '@umeng/analytics';
 import { MainModel } from '../model/MainModel';
-import { questionBankTable, questionTable, questionWrongTable, questionCollectionTable } from 'db'
 
 const context = (getContext(this) as common.UIAbilityContext)
 
