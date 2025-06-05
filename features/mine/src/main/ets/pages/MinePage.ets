@@ -9,7 +9,7 @@ import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { preferencesUtils, PreferencesConstants, EmitterConstants, Logger } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
@@ -104,7 +104,6 @@ export struct MinePage {
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildText))
-  //@Consume 配合 @Provide 使用，只是只读的状态
   @State nickName: string = ''
   @State avatarUrl: string = ''
   @State loginState: string = ''
@@ -220,6 +219,7 @@ export struct MinePage {
       Row() {
         Image(this.isLogin() ? this.avatarUrl : $r('app.media.user_icon'))
           .alt($r('app.media.user_icon'))
+          .borderRadius(28)
           .objectFit(ImageFit.Contain)
           .width(48)
           .height(48)

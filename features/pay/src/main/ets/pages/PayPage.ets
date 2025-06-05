@@ -1,27 +1,47 @@
-import { PayModel } from '../model/PayModel';
-import { PriceInfoRes } from '../model/PriceInfoRes';
-import { router } from '@kit.ArkUI';
+import { PayModel } from '../model/PayModel'
+import { PriceInfoRes } from '../model/PriceInfoRes'
+import { router } from '@kit.ArkUI'
+import { emitter } from '@kit.BasicServicesKit'
+import { preferencesUtils, PreferencesConstants, EmitterConstants, ToastUtils } from 'utils/Index'
 
-const TAG = '[PayPage]';
+const TAG = '[PayPage]'
 
 @Entry({ routeName: 'vipPage' })
 @Component
 export struct PayPage {
-  @State payModel: PayModel = PayModel.getInstance();
-  @State priceList: PriceInfoRes[] = [];
-  @State selectedCard: string = '3';
-  @State totalPrice: number = 60.0;
-  @State savePrice: number = 60.0;
-  @State autoRenew: boolean = false;
-  @State agreementChecked: boolean = false;
-  @State isVip: boolean = true;
-  @State isLoading: boolean = true;
-  @State errorMessage: string = '';
-  private scroller: Scroller = new Scroller();
+  @State payModel: PayModel = PayModel.getInstance()
+  @State priceList: PriceInfoRes[] = []
+  @State selectedCard: string = '3'
+  @State totalPrice: number = 60.0
+  @State savePrice: number = 60.0
+  @State autoRenew: boolean = false
+  @State agreementChecked: boolean = false
+  @State isVip: boolean = true
+  @State isLoading: boolean = true
+  @State errorMessage: string = ''
+  private scroller: Scroller = new Scroller()
+  @State nickName: string = ''
+  @State avatarUrl: string = ''
+  @State loginState: string = ''
 
   aboutToAppear(): void {
-    console.info(`${TAG} aboutToAppear called`);
-    this.loadData();
+    this.loadData()
+    this.initData()
+  }
+
+  private initData() {
+    emitter.on(EmitterConstants.EM_USER_LOGIN, (event) => {
+      this.loginState = event.data![PreferencesConstants.SP_IS_LOGIN]
+      this.nickName = event.data![PreferencesConstants.SP_NICK_NAME]
+      this.avatarUrl = event.data![PreferencesConstants.SP_AVATAR_URL]
+    })
+  }
+
+  private isLogin(): boolean {
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME, '')
+    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL, '')
+    return this.loginState === '1'
   }
 
   private jumpToHelpCenter() {
@@ -37,6 +57,14 @@ export struct PayPage {
     } catch (error) {
       console.error(`${TAG} Navigation failed:`, error);
     }
+  }
+
+  private jumpToLogin() {
+    router.pushNamedRoute({ name: 'login' }, router.RouterMode.Single)
+  }
+
+  private jumpToWxPay() {
+    ToastUtils.showToast("调起微信支付")
   }
 
   private async loadData(): Promise<void> {
@@ -115,19 +143,21 @@ export struct PayPage {
 
       // 用户信息
       Row() {
-        Image($r('app.media.ic_head'))
-          .width(40)
-          .height(40)
-          .borderRadius(20)
+        Image(this.isLogin() ? this.avatarUrl : $r('app.media.ic_head'))
+          .alt($r('app.media.ic_head'))
+          .width(48)
+          .height(48)
+          .borderRadius(28)
           .margin({ left: 28 })
 
         Column() {
           Row() {
-            Text('用户xxx')
+            Text(this.isLogin() ? this.nickName : "用户名")
               .fontSize(14)
               .fontColor('#3E3E3E')
             if (this.isVip) {
               Image($r('app.media.ic_vip'))
+                .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
                 .width(16)
                 .height(16)
                 .margin({ left: 4 })
@@ -138,6 +168,7 @@ export struct PayPage {
 
           if (this.isVip) {
             Text('VIP 2023-01-01 到期')
+              .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
               .fontSize(10)
               .fontColor('#9D9D9D')
               .margin({ top: 5 })
@@ -263,14 +294,25 @@ export struct PayPage {
           .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
           .margin({ left: 8 })
       }
-      .margin({ left: 25,top:18 })
+      .margin({ left: 25, top: 18 })
       .width('100%')
 
       BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
       BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
       BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
       // 底部支付
-      PaymentFooter({ totalPrice: this.totalPrice, savePrice: this.savePrice })
+      PaymentFooter({ totalPrice: this.totalPrice, savePrice: this.savePrice, isLogin: this.isLogin() })
+        .onClick(() => {
+          if (!this.agreementChecked) {
+            ToastUtils.showToast('请先勾选并同意购买后再次尝试')
+            return
+          }
+          if (this.isLogin()) {
+            this.jumpToWxPay()
+          } else {
+            this.jumpToLogin()
+          }
+        })
     }
     .height('100%')
     .width('100%')
@@ -306,8 +348,9 @@ struct BenefitItem {
 
 @Component
 struct PaymentFooter {
-  @Prop totalPrice: number = 60.0;
-  @Prop savePrice: number = 60.0;
+  @Prop totalPrice: number = 60.0
+  @Prop savePrice: number = 60.0
+  @Prop isLogin: boolean = false
 
   build() {
     Row() {
@@ -340,7 +383,7 @@ struct PaymentFooter {
         Image($r('app.media.ic_button'))
           .width(113)
           .height(48)
-        Text("立即开通")
+        Text(this.isLogin ? "立即开通" : "支付前登录")
           .fontSize(14)
           .fontColor(Color.White)
       }
