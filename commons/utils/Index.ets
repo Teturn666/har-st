@@ -14,6 +14,8 @@ export { ChPackageUtils } from './src/main/ets/utils/ChPackageUtils'
 
 export { ToastUtils } from './src/main/ets/utils/ToastUtils'
 
+export { EmitterConstants } from './src/main/ets/common/EmitterConstants'
+
 export {
   LoadingStatus
 } from './src/main/ets/common/CommonEnums'

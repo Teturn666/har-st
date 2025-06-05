@@ -4,13 +4,13 @@ import { OnWXResp, WXApi, WXEventHandler, APP_ID } from '../model/WXApiWrap';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction, router } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
 import http from '@ohos.net.http';
 import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
-import { preferencesUtils, PreferencesConstants, ToastUtils } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, ToastUtils, EmitterConstants } from 'utils/Index'
 
 interface AccessTokenResponse {
   access_token?: string;
@@ -216,6 +216,14 @@ export struct LoginPage {
     preferencesUtils.putString(PreferencesConstants.SP_AVATAR_URL, this.avatarUrl)
     preferencesUtils.putString(PreferencesConstants.SP_UNION_ID, this.unionId)
     preferencesUtils.putString(PreferencesConstants.SP_OPEN_ID, this.openId)
+
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': this.nickname,
+        'avatarUrl': this.avatarUrl,
+        'isLogin': '1',
+      }
+    })
   }
 
   async huaweiLogin(error: BusinessError | undefined,

@@ -1,7 +1,8 @@
 import { TitleBar } from 'widget/Index'
 import { SettingConstants } from "../Constants/SettingConstants";
 import { promptAction, router } from '@kit.ArkUI';
-import { preferencesUtils, PreferencesConstants } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
+import { emitter } from '@kit.BasicServicesKit';
 
 
 @Entry({ routeName: 'settingPage' })
@@ -45,14 +46,15 @@ export struct SettingPage {
     preferencesUtils.deleteData(PreferencesConstants.SP_UNION_ID)
     preferencesUtils.deleteData(PreferencesConstants.SP_OPEN_ID)
 
-    let index = Number(router.getLength()) - 1
-    router.back(
-      index, {
-      nickName: '',
-      avatarUrl: '',
-      loginState: '0'
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': '',
+        'avatarUrl': '',
+        'isLogin': '0',
+      }
     })
 
+    router.back()
   }
 
   build() {
