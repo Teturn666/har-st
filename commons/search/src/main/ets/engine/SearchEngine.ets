@@ -8,7 +8,7 @@ import { QuestionBean } from '../model/QuestionBean';
 import systemDateTime from '@ohos.systemDateTime';
 import SearchConstants from '../constants/SearchConstants'
 import { taskpool } from '@kit.ArkTS';
-import { searchInitCurrent } from '../manage/ConcurrentManage'
+import { searchInitCurrent, searchTask } from '../manage/ConcurrentManage'
 import { common } from '@kit.AbilityKit'
 import { preferences, relationalStore } from '@kit.ArkData'
 import DbConstants from 'db/src/main/ets/constants/DbConstants'
@@ -139,10 +139,10 @@ export class SearchEngine {
    * 初始化搜索引擎
    * @param context
    */
-  async initWithThreadTask(context: common.Context, qid: number, type: number) {
+  async initWithThreadTask(qid: number, type: number) {
     try {
       // 创建任务并在 TaskPool 中执行
-      const task: taskpool.Task = new taskpool.Task(searchInitCurrent, context, qid, type);
+      const task: taskpool.Task = new taskpool.Task(searchInitCurrent, getContext(this), qid, type);
       await taskpool.execute(task) as number;
       SearchEngine.getInstance().mIsInitFinish = true
     } catch (error) {
@@ -156,35 +156,53 @@ export class SearchEngine {
    * @param qStr 搜索内容
    * @returns 返回结果
    */
-  public async queryTextWithIndexInThread(qStr: string): Promise<QuestionRes | null> {
-    // if (!this.mIsInitFinish) {
-    //   Logger.error("搜索引擎初还未初始化完成")
-    //   return null
-    // }
+  public async queryTextWithIndexInThread(qStr: string, mDataText: SharedArrayBuffer): Promise<QuestionRes | null> {
     try {
-      let id = await SearchEngine.getInstance().searchTextWithIndex(qStr)
-      if (id === -1) {
-        return null
-      } else {
-        let result = await QuestionTable.getInstance()?.querySync(id, true, false) ?? []
-        Logger.info('题目表获取到的数据====>' + result.length)
-        if (result.length > 0) {
-          return result[0]
-        }
-      }
-    } catch (e) {
+      // 在这里读取内容
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(searchTask, getContext(this), qStr, mDataText);
+      const res = await taskpool.execute(task) as QuestionRes;
+      return res
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
       return null
     }
-    return null
   }
 
-  async searchTextWithIndex(q: string): Promise<number> {
+  // /**
+  //  * 返回一个最匹配的结果
+  //  * @param qStr 搜索内容
+  //  * @returns 返回结果
+  //  */
+  // public async queryTextWithIndexInThread(qStr: string): Promise<QuestionRes | null> {
+  //   // if (!this.mIsInitFinish) {
+  //   //   Logger.error("搜索引擎初还未初始化完成")
+  //   //   return null
+  //   // }
+  //   try {
+  //     let id = await SearchEngine.getInstance().searchTextWithIndex(qStr)
+  //     if (id === -1) {
+  //       return null
+  //     } else {
+  //       let result = await QuestionTable.getInstance()?.querySync(id, true, false) ?? []
+  //       Logger.info('题目表获取到的数据====>' + result.length)
+  //       if (result.length > 0) {
+  //         return result[0]
+  //       }
+  //     }
+  //   } catch (e) {
+  //     return null
+  //   }
+  //   return null
+  // }
+
+  async searchTextWithIndex(q: string, context: common.Context,
+    mDataText: SharedArrayBuffer): Promise<QuestionRes | null> {
     let mMatchScores = new TreeMap<number, number>()
-    let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
+    let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
     let mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0) as number
-    console.debug(TAG, 'mDataSize: ' + mDataSize)
-    const mDataText =
-      await SearchMapManage.getInstance().loadTreeMapFromFile(getContext(this)) || new Map<string, Set<number>>()
+
+    let mDataTextData = SearchMapManage.getInstance().parseDataFromSharedBuffer(mDataText)
 
     // 取出数据
     if (!StringUtils.isNullOrEmpty(q)) {
@@ -194,18 +212,19 @@ export class SearchEngine {
           continue;
         }
         // 等待查询结果
-        const ids = mDataText?.get(key);
-        if (ids?.size === 0) {
+        const ids = mDataTextData?.[key];
+        if (ids?.length === 0) {
           continue; // 无有效 id 时跳过
         }
         // 更新匹配分数
         ids && ids.forEach((id: number) => {
           const currentScore = mMatchScores.get(id) ?? 0;
-          const newScore = currentScore + Math.log10(mDataSize / ids.size);
+          const newScore = currentScore + Math.log10(mDataSize / ids.length);
           mMatchScores.set(id, newScore);
         });
       }
     }
+
     //获取 top5
     let topN = 5
     let topList = new LinkedList<TopItem>()
@@ -237,44 +256,52 @@ export class SearchEngine {
           topList.removeLast()
         }
       }
-
     })
+
     //处理 top5
     let maxVal = -1
-    let id = -1
+    let bestQuestion: QuestionRes | null = null
     let maxLcs = -1
+
+    // 只获取一次数据库连接
+    let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
+
     // topList 一直为空
     for (let topListElement of topList) {
-      Logger.info(TAG, "resultSet topList",);
-      let result = await QuestionTable.getInstance()?.querySync(topListElement.id, true, false) ?? []
+      Logger.info(TAG, "resultSet topList");
+      let result = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, topListElement.id, true, false) ?? [];
       Logger.info(TAG, '题目表获取到的数据====>' + result.length)
+
       let qs: QuestionRes | null = null;
       if (result.length > 0) {
         qs = result[0]
       }
+
       let ss = ""
       if (qs != null) {
         ss = qs.question + qs.answer
       }
+
       let lcsVal = this.lcs(q, ss)
       if (maxLcs < lcsVal) {
         maxLcs = lcsVal
       }
+
       let score = topListElement.score * lcsVal * 1.0 / ss.length
       if (score > maxVal) {
-        id = topListElement.id
+        bestQuestion = qs
         maxVal = score
-      } else if (score == maxVal && topListElement.id > id) {
-        id = topListElement.id
+      } else if (score == maxVal && topListElement.id > (bestQuestion?.id || -1)) {
+        bestQuestion = qs
         maxVal = score
       }
     }
 
     // TODO 这个系数需要根据情况调整
     if (maxVal <= 0.1) {
-      return -1
+      return null
     }
-    return id
+    return bestQuestion
   }
 
   /**
@@ -288,12 +315,17 @@ export class SearchEngine {
     //   return null;
     // }
     let qStr = StringFilter.formatString(q);
-    let id = await this.searchTextWithIndex(qStr);
+    const mDataText =
+      await SearchMapManage.getInstance().loadSharedArrayBufferFromFile(getContext(this))
+    if (!mDataText) {
+      return null
+    }
+    let result = await this.searchTextWithIndex(qStr, getContext(this), mDataText);
     let questions = new Array<QuestionBean>()
-    let result = await QuestionTable.getInstance()?.querySync(id, true, false) ?? []
-    Logger.info('题目表获取到的数据====>' + result.length)
-    if (result.length > 0 && result[0] != null) {
-      let record: QuestionRes = result[0]
+    // let result = await QuestionTable.getInstance()?.querySync(id, true, false) ?? []
+    Logger.info('题目表获取到的数据====>' + result)
+    if (result) {
+      let record: QuestionRes = result
       const qItem = new QuestionBean()
       qItem.q = "【" + record.answer + "】" + record.question
       let options = record.option
