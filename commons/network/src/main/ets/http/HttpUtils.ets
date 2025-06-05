@@ -27,7 +27,7 @@ export class HttpUtils {
         'device-model': "",
         'apk-channel': channel,
         'apk-name': channel,
-        'apk-version': '1.0.0'
+        'apk-version': '2.0.0'
       }
     })
   }

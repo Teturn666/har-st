@@ -2,14 +2,14 @@ import { hilog } from "@kit.PerformanceAnalysisKit"
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { ComponentContent, router } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { preferencesUtils, PreferencesConstants } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants, Logger } from 'utils/Index'
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
@@ -103,16 +103,33 @@ export struct MinePage {
   @State message: string = "hello"
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
-    new ComponentContent(this.ctx, wrapBuilder(buildText));
+    new ComponentContent(this.ctx, wrapBuilder(buildText))
   //@Consume 配合 @Provide 使用，只是只读的状态
-  @Consume nickName: string
-  @Consume avatarUrl: string
-  @Consume loginState: string
+  @State nickName: string = ''
+  @State avatarUrl: string = ''
+  @State loginState: string = ''
 
   aboutToAppear(): void {
-    OfficialDialog.setContext(this.ctx);
-    OfficialDialog.setContentNode(this.contentNode);
-    OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true });
+    this.initData()
+    this.initDialog()
+  }
+
+  aboutToDisappear(): void {
+    emitter.off(EmitterConstants.EM_USER_LOGIN)
+  }
+
+  private initData() {
+    emitter.on(EmitterConstants.EM_USER_LOGIN, (event) => {
+      this.loginState = event.data![PreferencesConstants.SP_IS_LOGIN]
+      this.nickName = event.data![PreferencesConstants.SP_NICK_NAME]
+      this.avatarUrl = event.data![PreferencesConstants.SP_AVATAR_URL]
+    })
+  }
+
+  private initDialog() {
+    OfficialDialog.setContext(this.ctx)
+    OfficialDialog.setContentNode(this.contentNode)
+    OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true })
   }
 
   private isLogin(): boolean {

@@ -18,19 +18,7 @@ struct MainPage {
   @LocalStorageLink('mainTabIndex') currentIndex: TabBarType = TabBarType.HOME;
   @Provide('appPathStack') appPathStack: NavPathStack = new NavPathStack();
   @State showDialog: boolean = false
-  @Provide nickName: string = ''
-  @Provide avatarUrl: string = ''
-  @Provide loginState: string = '0' //0=未登录
   @State mainModel: MainModel = MainModel.getInstance()
-
-  onPageShow(): void {
-    const params = router.getParams() as Record<string, string>
-    if (params) {
-      this.nickName = params.nickName as string
-      this.avatarUrl = params.avatarUrl as string
-      this.loginState = params.loginState as string
-    }
-  }
 
   private initPreferences() {
     //初始化sp实例
