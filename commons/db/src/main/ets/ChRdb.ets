@@ -42,12 +42,19 @@ export default class ChRdb {
           await this.rdbStore.executeSql('ALTER TABLE questionBank ADD COLUMN num TEXT')
           await this.rdbStore.executeSql('ALTER TABLE questionBank ADD COLUMN bankType INTEGER')
           // console.info(`Success to executeSql.`);
-
           this.rdbStore.version = 2
         }
         if (DbConstants.QUESTION_TABLE.tableName === this.tableName) {
           await this.rdbStore.executeSql('ALTER TABLE question ADD COLUMN qName TEXT')
           // console.info(`Success to executeSql.`);
+        }
+      }
+      if (this.rdbStore.version === 2) {
+        if (DbConstants.QUESTION_BANK_TABLE.tableName === this.tableName) {
+          let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
+          this.rdbStore.query(predicates)
+          await this.rdbStore.executeSql('ALTER TABLE questionBank ADD COLUMN NewFlag BOOLEAN')
+          this.rdbStore.version = 3
         }
       }
       // Logger.info('getRdbStore() finished.');

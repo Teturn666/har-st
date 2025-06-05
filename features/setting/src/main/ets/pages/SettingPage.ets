@@ -1,13 +1,9 @@
 import { TitleBar } from 'widget/Index'
 import { SettingConstants } from "../Constants/SettingConstants";
 import { promptAction, router } from '@kit.ArkUI';
-import { preferencesUtils } from '../Constants/PreferencesUtil'
-import { preferences } from '@kit.ArkData';
-import { LoginConstants } from 'login/Index';
-import { common } from '@kit.AbilityKit';
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
+import { emitter } from '@kit.BasicServicesKit';
 
-const context = (getContext(this) as common.UIAbilityContext)
-let sp = preferences.getPreferencesSync(context, LoginConstants.SP_OPTIONS)
 
 @Entry({ routeName: 'settingPage' })
 @Component
@@ -15,35 +11,28 @@ export struct SettingPage {
   @State maskOpacity: number = 0;
   @State title: string = '关于设置'
   @State isDialogVisible: boolean = false;
-  @State questionCounts: string[] = SettingConstants.ROUTER_SETTING_NUMBERS_QUESTIONS;
-  @State v: string = SettingConstants.ROUTER_SETTING_NUMBERS_QUESTIONS[0];
+  @State questionCounts: string[] = SettingConstants.DIALOG_QUESTIONS;
+  @State v: string = SettingConstants.DIALOG_QUESTIONS[0];
   private select: number | number[] = 0;
   @State loginState: string = "0"
 
   // 初始化时加载保存的题目数量
   aboutToAppear() {
     this.loadResource()
-    sp.getSync(LoginConstants.SP_IS_LOGIN, '0')
-    let loginStatus = sp.getSync(LoginConstants.SP_IS_LOGIN, '0')
-    if (typeof loginStatus === 'string') {
-      this.loginState = loginStatus
-    }
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
   }
 
   loadResource() {
-    preferencesUtils.getPreferences()
-    this.questionCounts = SettingConstants.ROUTER_SETTING_NUMBERS_QUESTIONS
-    let count = preferencesUtils.read(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS, 0)
-    if (count != undefined) {
-      this.v = this.questionCounts[Number(count)]
-      this.select = Number(count)
-    }
+    this.questionCounts = SettingConstants.DIALOG_QUESTIONS
+    let count = preferencesUtils.getString(PreferencesConstants.SP_SELECT_INDEX, '0')
+    this.v = this.questionCounts[Number(count)]
+    this.select = Number(count)
   }
 
   // 保存题目数量设置
   saveQuestionCount() {
-    preferencesUtils.write(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS, String(this.select))
-    preferencesUtils.write(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS_GLOBAL, this.v)
+    preferencesUtils.putString(PreferencesConstants.SP_SELECT_INDEX, String(this.select))
+    preferencesUtils.putString(PreferencesConstants.SP_SELECT_VALUE, this.v)
   }
 
   private isLogin() {
@@ -51,20 +40,21 @@ export struct SettingPage {
   }
 
   private loginOut() {
-    sp.putSync(LoginConstants.SP_IS_LOGIN, '0')
-    sp.putSync(LoginConstants.SP_NICK_NAME, '')
-    sp.putSync(LoginConstants.SP_AVATAR_URL, '')
-    sp.putSync(LoginConstants.SP_UNION_ID, '')
-    sp.putSync(LoginConstants.SP_OPEN_ID, '')
-    sp.flushSync()
-    let index = Number(router.getLength()) - 1
-    router.back(
-      index, {
-      nickName: '',
-      avatarUrl: '',
-      loginState: '0'
+    preferencesUtils.deleteData(PreferencesConstants.SP_IS_LOGIN)
+    preferencesUtils.deleteData(PreferencesConstants.SP_NICK_NAME)
+    preferencesUtils.deleteData(PreferencesConstants.SP_AVATAR_URL)
+    preferencesUtils.deleteData(PreferencesConstants.SP_UNION_ID)
+    preferencesUtils.deleteData(PreferencesConstants.SP_OPEN_ID)
+
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': '',
+        'avatarUrl': '',
+        'isLogin': '0',
+      }
     })
 
+    router.back()
   }
 
   build() {

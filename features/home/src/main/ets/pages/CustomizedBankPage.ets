@@ -98,7 +98,8 @@ struct CustomizedBankPage {
         version: '1.0',
         position: 0,
         downloadedState: 1,
-        bankType: 2
+        bankType: 2,
+        NewFlag: false
       };
       let output: string = '';
       let successCount = 0;

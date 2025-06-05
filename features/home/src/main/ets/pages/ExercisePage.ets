@@ -1,6 +1,6 @@
 import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
-import { QuestionRes, questionCollectionTable, questionWrongTable } from 'db';
+import { QuestionRes } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
 import { HomeModel } from '../model/HomeModel';
 
@@ -20,7 +20,7 @@ struct ExercisePage {
   @State qid: number = -1
   @State homeModel: HomeModel = HomeModel.getInstance()
   @State questions: QuestionRes[] = [];
-  @State selectedIndex: number = 0; // 0 for 答题, 1 for 背题
+  @State selectedIndex: number = 0; // 0 答题, 1 背题
   @State currentQuestionIndex: number = 0; // 当前问题索引
   @State currentProgress: number = 1; // 目前进度
   @State isStarred: boolean = false; //
@@ -32,13 +32,10 @@ struct ExercisePage {
   @State totalProgress: number = this.questions.length;
   @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
 
-  // 在 ExercisePage 组件内添加以下方法
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
-      // 检查题目是否已存在于错题表
       const existingWrongQuestions = await this.homeModel.getWrongQuestionList(question.qId);
       const isAlreadyInWrongTable = existingWrongQuestions.some(item => item.questionID === question.questionID);
-
       if (isAlreadyInWrongTable) {
         console.log(`题目 ${question.questionID} 已存在于错题表中`);
         return;
@@ -52,7 +49,7 @@ struct ExercisePage {
       questionDb.option = question.option;
       questionDb.wrongAnswer = wrongAnswer;
       questionDb.questionID = question.questionID;
-      await questionWrongTable.insertDataAwait(questionDb);
+      await this.homeModel.WrongInserDataAwait(questionDb);
       this.homeModel.getWrongQuestionList(question.qId);
       console.log(`题目 ${question.questionID} 已添加到错题表`);
 
@@ -62,7 +59,6 @@ struct ExercisePage {
     }
   }
 
-  // 修改 handleOptionClick 方法
   private async handleOptionClick(optionLabel: string) {
     if (this.selectedIndex === 0 && !this.hasSubmitted) {
       const currentQuestion = this.questions[this.currentQuestionIndex];
@@ -77,17 +73,15 @@ struct ExercisePage {
           // 检查是否选择了错误选项
           if (!correctAnswers.includes(optionLabel)) {
             this.hasSubmitted = true;
-            // promptAction.showToast({ message: '回答错误', duration: 1500 });
             // 插入错题表
             await this.saveToWrongTable(currentQuestion, optionLabel);
-            this.saveQuestionState(); // 记录错误提交状态
+            this.saveQuestionState();
           } else {
             // 检查是否选中了全部正确答案
             const allCorrectSelected = correctAnswers.every(ans => this.selectedOptions.includes(ans)) &&
             this.selectedOptions.every(opt => correctAnswers.includes(opt));
             if (allCorrectSelected) {
               this.hasSubmitted = true;
-              // promptAction.showToast({ message: '回答正确', duration: 1500 });
               this.saveQuestionState(); // 记录正确提交状态
             }
           }
@@ -97,12 +91,7 @@ struct ExercisePage {
         // 单选：设置选项并提交
         this.selectedOption = optionLabel;
         this.hasSubmitted = true;
-
         const isCorrect = optionLabel === currentQuestion.answer;
-        // promptAction.showToast({
-        //   message: isCorrect ? '回答正确' : '回答错误',
-        //   duration: 1500
-        // });
         if (!isCorrect) {
           // 插入错题表
           await this.saveToWrongTable(currentQuestion, optionLabel);
@@ -165,12 +154,12 @@ struct ExercisePage {
     const currentQuestion: QuestionRes = this.questions[this.currentQuestionIndex];
     const questionID = currentQuestion.questionID;
     try {
-      const result = await questionCollectionTable.querySync(currentQuestion.qId, false);
+      const result = await this.homeModel.getCollectionQuestionList(currentQuestion.qId)
       const isFavorited = result.some(item => item.questionID === questionID);
 
       if (isFavorited) {
         // 取消收藏
-        await questionCollectionTable.deleteDataByQuestionID(questionID);
+        await this.homeModel.deleteDataByQuestionID(questionID);
         this.favoriteStatus[questionID] = false;
         console.log(`取消收藏，题目 ${questionID} 已从收藏表移除`);
         promptAction.showToast({ message: '已取消收藏', duration: 1500 });
@@ -183,7 +172,7 @@ struct ExercisePage {
         questionDb.option = currentQuestion.option;
         questionDb.wrongAnswer = currentQuestion.wrongAnswer || '';
         questionDb.questionID = questionID;
-        await questionCollectionTable.insertDataAwait(questionDb);
+        await this.homeModel.collectInserDataAwait(questionDb);
         this.favoriteStatus[questionID] = true;
         console.log(`添加收藏，题目 ${questionID} 已添加到收藏表`);
         promptAction.showToast({ message: '收藏成功', duration: 1500 });
@@ -220,10 +209,6 @@ struct ExercisePage {
     }
   }
 
-  private getOptionLabel(index: number): string {
-    return String.fromCharCode(65 + index);
-  }
-
   private resetProgress() {
     promptAction.showDialog({
       title: '提示',
@@ -236,7 +221,7 @@ struct ExercisePage {
       if (data.index === 1) {
         this.currentProgress = 1;
         this.currentQuestionIndex = 0;
-        this.questionSelections = {}; // 清空选择记录
+        this.questionSelections = {};
         this.resetQuestionState();
         promptAction.showToast({ message: '进度已重置', duration: 1500 });
       }
@@ -247,8 +232,7 @@ struct ExercisePage {
     if (this.currentQuestionIndex > 0) {
       this.currentQuestionIndex--;
       this.currentProgress = this.currentQuestionIndex + 1;
-      this.restoreQuestionState(); // 恢复上一题的选择
-      // promptAction.showToast({ message: '已切换到上一题', duration: 1000 });
+      this.restoreQuestionState();
     } else {
       promptAction.showToast({ message: '已经是第一题', duration: 1500 });
     }
@@ -258,239 +242,69 @@ struct ExercisePage {
     if (this.currentQuestionIndex < this.questions.length - 1) {
       this.currentQuestionIndex++;
       this.currentProgress = this.currentQuestionIndex + 1;
-      this.restoreQuestionState(); // 恢复下一题的选择
-      // promptAction.showToast({ message: '已切换到下一题', duration: 1000 });
+      this.restoreQuestionState();
     } else {
       promptAction.showToast({ message: '已经是最后一题', duration: 1500 });
     }
   }
 
-  private getQuestionTypeImage(): Resource {
-    const question = this.questions[this.currentQuestionIndex];
-    const options = question.option;
-    const answer = question.answer;
-
-    const isTrueFalse = options.length === 2 && options.includes('正确') && options.includes('错误');
-    const isMultiple = answer.length > 1 && /^[A-D]+$/.test(answer);
-
-    if (isMultiple) {
-      return $r('app.media.ic_mu');
-    } else if (isTrueFalse) {
-      return $r('app.media.ic_es');
-    } else {
-      return $r('app.media.ic_ch');
-    }
+  isQuestionStarred(index: number): boolean {
+    const question = this.questions[index];
+    return this.favoriteStatus[question.questionID] || false;
   }
 
   build() {
     if (this.questions.length > 0)
     Column() {
-      // 头部
-      Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
-        Image($r('app.media.ic_back'))
-          .objectFit(ImageFit.Contain)
-          .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
-          .margin({ left: 15, right: 75 })
-          .align(Alignment.TopStart)
-          .onClick(() => {
-            router.back()
-          })
-
-        Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
-          Button() {
-            Row() {
-              Button('答题')
-                .fontColor(this.selectedIndex == 0 ? '#FFFFFF' : '#d2a129')
-                .fontSize(12)
-                .border({ width: 1, color: '#d2a129' })
-                .width(60)
-                .height(28)
-                .backgroundColor(this.selectedIndex === 0 ? '#d2a129' : '#FFFFFF')
-                .borderRadius(6)
-                .padding({ left: 12, right: 12 })
-                .onClick(() => {
-                  this.selectedIndex = 0;
-                  promptAction.showToast({ message: '切换到答题' });
-                })
-              Button('背题')
-                .fontColor(this.selectedIndex == 1 ? '#FFFFFF' : '#d2a129')
-                .fontSize(12)
-                .border({ width: 1, color: '#d2a129' })
-                .width(60)
-                .height(28)
-                .backgroundColor(this.selectedIndex === 1 ? '#d2a129' : '#FFFFFF')
-                .borderRadius(6)
-                .padding({ left: 12, right: 12 })
-                .onClick(() => {
-                  this.selectedIndex = 1;
-                  promptAction.showToast({ message: '切换到背题' });
-                })
-            }
-            .justifyContent(FlexAlign.SpaceBetween)
-            .alignItems(VerticalAlign.Center)
-          }
-          .backgroundColor('#d2a129')
-
-          Blank()
-          Button('模拟考试')
-            .width(70)
-            .height(28)
-            .backgroundColor('#d2a129')
-            .borderRadius(6)
-            .padding({ left: 12, right: 12 })
-            .margin({ right: 12 })
-            .onClick(() => {
-              router.pushNamedRoute({
-                name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-                params: {
-                  practiceMode: 1,
-                  qid: this.qid
-                }
-              }, router.RouterMode.Single)
-            })
+      HeaderComponent({
+        qid: this.qid,
+        selectedIndex: this.selectedIndex,
+        onModeChange: (index: number) => {
+          this.selectedIndex = index;
         }
-      }
+      })
 
 
       // 进度条部分
-      Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
-        Progress({
-          type: ProgressType.Linear,
-          value: this.currentProgress,
-          total: this.totalProgress,
-        })
-          .color(Color.Orange)
-          .width('60%')
-          .height(16)
-          .backgroundColor('#dadada')
-          .style({ strokeWidth: 15 })
-        Text(`${this.currentProgress}/${this.totalProgress}`)
-          .fontSize(12)
-          .fontColor(Color.Black)
-        Text('重置进度')
-          .fontSize(12)
-          .onClick(() => {
-            this.resetProgress()
-          })
-      }
-      .backgroundColor('#f5f3f4')
-      .borderRadius(8)
-      .width('90%')
-      .height(50)
-      .margin({ top: 10 })
-      .padding(10)
-
-      // 内容部分
-      Row() {
-        Image(this.getQuestionTypeImage())
-          .height(24)
-          .objectFit(ImageFit.Cover)
-        Blank()
-        Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
-        $r('app.media.star'))
-          .width(18)
-          .height(18)
-          .onClick(() => {
-            this.toggleFavorite();
-          })
-          .margin({ right: 5 })
-        Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
-          .fontSize(12)
-      }
-      .justifyContent(FlexAlign.SpaceBetween)
-      .padding(10)
-      .backgroundColor(Color.White)
-      .borderRadius(8)
-      .margin({ top: 20 })
-      .width('90%')
-
-      // 问题描述
-      Text(this.questions[this.currentQuestionIndex].question)
-        .fontSize(16)
-        .padding({ left: 10, right: 10, top: 10 })
-        .textAlign(TextAlign.Start)
-        .width('90%')
-
-      // 选项列表
-      ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
-        Row() {
-          Text(this.getOptionLabel(idx))
-            .width(30)
-            .height(30)
-            .textAlign(TextAlign.Center)
-            .fontSize(16)
-            .fontColor('#000000')
-            .borderRadius(15)
-            .backgroundColor(
-              this.selectedIndex === 1
-                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                '#F2F2F2')
-                : (this.hasSubmitted
-                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                  ? '#DFF5E3'
-                  : (this.isMultipleChoice()
-                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                    : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                : (this.isMultipleChoice()
-                  ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                  : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-            )
-            .margin({ right: 10 })
-          Text(item)
-            .fontSize(16)
-            .padding(10)
-            .width('80%')
-            .borderRadius(8)
-            .backgroundColor(
-              this.selectedIndex === 1
-                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                '#F2F2F2')
-                : (this.hasSubmitted
-                ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                  ? '#DFF5E3'
-                  : (this.isMultipleChoice()
-                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                    : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                : (this.isMultipleChoice()
-                  ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                  : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-            )
+      ProgressBar({
+        current: this.currentQuestionIndex + 1,
+        total: this.questions.length,
+        onReset: () => {
+          this.resetProgress()
         }
-        .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
-        .margin({ top: 12, left: 16, right: 16 })
       })
 
-      if ((this.selectedIndex === 0 && this.hasSubmitted) || this.selectedIndex === 1) {
-        Row() {
-          Button() {
-            Text('上一题')
-              .fontSize(16)
-              .fontColor('#F2B771')
+      if (this.questions.length > 0) {
+        QuestionContent({
+          question: this.questions[this.currentQuestionIndex],
+          isStarred: this.isQuestionStarred(this.currentQuestionIndex),
+          onToggleStar: () => {
+            this.toggleFavorite()
           }
-          .width(100)
-          .height(30)
-          .backgroundColor(Color.White)
-          .borderRadius(20)
-          .border({ width: 1, color: '#F2B771' })
-          .onClick(() => this.goToPreviousQuestion())
+        })
 
-          Button() {
-            Text('下一题')
-              .fontSize(16)
-              .fontColor('#F2B771')
+        OptionList({
+          options: this.questions[this.currentQuestionIndex].option,
+          selectedOptions: this.selectedOptions,
+          selectedOption: this.selectedOption,
+          hasSubmitted: this.hasSubmitted,
+          isMultipleChoice: this.isMultipleChoice(),
+          correctAnswers: this.questions[this.currentQuestionIndex].answer,
+          isReviewMode: this.selectedIndex === 1,
+          onOptionClick: (option) => {
+            this.handleOptionClick(option)
           }
-          .backgroundColor(Color.White)
-          .width(100)
-          .height(30)
-          .borderRadius(20)
-          .border({ width: 1, color: '#F2B771' })
-          .onClick(() => this.goToNextQuestion())
-        }
-        .justifyContent(FlexAlign.SpaceAround)
-        .alignItems(VerticalAlign.Center)
-        .padding(10)
-        .width('80%')
-        .margin({ top: 18 })
+        })
+        NavigationButtons({
+          canGoPrevious: this.currentQuestionIndex > 0,
+          canGoNext: this.currentQuestionIndex < this.questions.length - 1,
+          onPrevious: () => {
+            this.goToPreviousQuestion()
+          },
+          onNext: () => {
+            this.goToNextQuestion()
+          }
+        })
       }
     }
     .width('100%')
@@ -509,5 +323,300 @@ struct ExercisePage {
         this.checkFavoriteStatus(); // 初始化第一题的收藏状态
       });
     }
+  }
+}
+
+
+@Component
+struct HeaderComponent {
+  @Prop selectedIndex: number = 0;
+  @Prop qid: number = 0;
+  onModeChange: (index: number) => void = () => {
+
+  };
+
+  build() {
+    Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
+      Image($r('app.media.ic_back'))
+        .objectFit(ImageFit.Contain)
+        .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
+        .margin({ left: 15, right: 75 })
+        .align(Alignment.TopStart)
+        .onClick(() => {
+          router.back()
+        })
+
+      Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
+        Button() {
+          Row() {
+            Button('答题')
+              .fontColor(this.selectedIndex === 0 ? '#FFFFFF' : '#d2a129')
+              .fontSize($r('app.float.font_size_12fp'))
+              .border({ width: 1, color: '#d2a129' })
+              .width(60)
+              .height(28)
+              .backgroundColor(this.selectedIndex === 0 ? '#d2a129' : '#FFFFFF')
+              .borderRadius(6)
+              .padding({ left: 12, right: 12 })
+              .onClick(() => {
+                this.onModeChange(0);
+                promptAction.showToast({ message: '切换到答题' });
+              })
+            Button('背题')
+              .fontColor(this.selectedIndex === 1 ? '#FFFFFF' : '#d2a129')
+              .fontSize($r('app.float.font_size_12fp'))
+              .border({ width: 1, color: '#d2a129' })
+              .width(60)
+              .height(28)
+              .backgroundColor(this.selectedIndex === 1 ? '#d2a129' : '#FFFFFF')
+              .borderRadius(6)
+              .padding({ left: 12, right: 12 })
+              .onClick(() => {
+                this.onModeChange(1);
+                promptAction.showToast({ message: '切换到背题' });
+              })
+          }
+          .justifyContent(FlexAlign.SpaceBetween)
+          .alignItems(VerticalAlign.Center)
+        }
+        .backgroundColor('#d2a129')
+
+        Blank()
+        Button('模拟考试')
+          .width(70)
+          .height(28)
+          .backgroundColor('#d2a129')
+          .borderRadius(6)
+          .padding({ left: 12, right: 12 })
+          .margin({ right: 12 })
+          .onClick(() => {
+            router.pushNamedRoute({
+              name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
+              params: {
+                practiceMode: 1,
+                qid: this.qid
+              }
+            }, router.RouterMode.Single)
+          })
+      }
+    }
+  }
+}
+
+@Component
+export struct ProgressBar {
+  @Prop current: number;
+  @Prop total: number;
+  onReset: () => void = () => {
+  };
+
+  build() {
+    Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
+      Progress({
+        type: ProgressType.Linear,
+        value: this.current,
+        total: this.total
+      })
+        .color(Color.Orange)
+        .width('60%')
+        .height($r('app.float.float_16vp'))
+        .backgroundColor($r('app.color.c_dadada'))
+        .style({ strokeWidth: 15 })
+
+      Text(`${this.current}/${this.total}`)
+        .fontSize($r('app.float.font_size_12fp'))
+        .fontColor(Color.Black)
+
+      Text('重置进度')
+        .fontSize($r('app.float.font_size_12fp'))
+        .onClick(() => this.onReset())
+    }
+    .backgroundColor($r('app.color.c_f5f3f4'))
+    .borderRadius(8)
+    .width('90%')
+    .height($r('app.float.float_50vp'))
+    .margin({ top: 10, left: 15, right: 15 })
+    .padding(10)
+  }
+}
+
+@Component
+export struct QuestionContent {
+  @Prop question: QuestionRes;
+  @Prop isStarred: boolean;
+  onToggleStar: () => void = () => {
+  };
+
+  build() {
+    Column() {
+      Row() {
+        Image(this.getQuestionTypeImage())
+          .height($r('app.float.float_24vp'))
+          .objectFit(ImageFit.Cover)
+
+        Blank()
+
+        Row() {
+          Image(this.isStarred ? $r('app.media.stared') : $r('app.media.star'))
+            .width($r('app.float.float_18vp'))
+            .height($r('app.float.float_18vp'))
+            .margin({ right: 5 })
+
+          Text(this.isStarred ? "已收藏" : "收藏")
+            .fontSize($r('app.float.font_size_14fp'))
+        }
+        .onClick(() => this.onToggleStar())
+      }
+      .justifyContent(FlexAlign.SpaceBetween)
+      .padding(10)
+      .backgroundColor($r('app.color.c_white'))
+      .borderRadius(8)
+      .margin({ top: 20, left: 15, right: 15 })
+      .width('90%')
+
+      Text(this.question.question)
+        .fontSize(16)
+        .padding({ left: 15, right: 15, top: 10 })
+        .textAlign(TextAlign.Start)
+        .width('90%')
+    }
+  }
+
+  private getQuestionTypeImage(): Resource {
+    const options = this.question.option;
+    const answer = this.question.answer;
+
+    const isTrueFalse = options.length === 2 && options.includes('正确') && options.includes('错误');
+    const isMultiple = answer.length > 1 && /^[A-D]+$/.test(answer);
+
+    if (isMultiple) {
+      return $r('app.media.ic_mu');
+    } else if (isTrueFalse) {
+      return $r('app.media.ic_es');
+    } else {
+      return $r('app.media.ic_ch');
+    }
+  }
+}
+
+@Component
+export struct OptionList {
+  @Prop options: string[];
+  @Prop selectedOptions: string[];
+  @Prop selectedOption: string;
+  @Prop hasSubmitted: boolean;
+  @Prop isMultipleChoice: boolean;
+  @Prop correctAnswers: string;
+  @Prop isReviewMode: boolean; // 新增：是否为背题模式
+  onOptionClick: (option: string) => void = () => {
+  };
+
+  build() {
+    Column() {
+      ForEach(this.options, (item: string, idx: number) => {
+        Row() {
+          Text(String.fromCharCode(65 + idx))
+            .width(30)
+            .height($r('app.float.float_30vp'))
+            .textAlign(TextAlign.Center)
+            .fontSize($r('app.float.font_size_16fp'))
+            .fontColor($r('app.color.c_black'))
+            .borderRadius(15)
+            .backgroundColor(
+              this.getOptionBackgroundColor(idx)
+            )
+            .margin({ right: 10 })
+
+          Text(item)
+            .fontSize($r('app.float.font_size_16fp'))
+            .padding(10)
+            .width('80%')
+            .borderRadius(8)
+            .backgroundColor(
+              this.getOptionBackgroundColor(idx)
+            )
+        }
+        .onClick(() => this.onOptionClick(String.fromCharCode(65 + idx)))
+        .margin({ top: 12, left: 16, right: 16 })
+      })
+    }
+    .width('100%')
+  }
+
+  private getOptionBackgroundColor(idx: number): ResourceStr {
+    const optionLabel = String.fromCharCode(65 + idx);
+    const isSelected = this.isMultipleChoice
+      ? this.selectedOptions.includes(optionLabel)
+      : this.selectedOption === optionLabel;
+    const isCorrect = this.correctAnswers.includes(optionLabel);
+
+    if (this.isReviewMode) {
+      return isCorrect ? '#DFF5E3' : '#F2F2F2';
+    }
+
+    if (this.hasSubmitted) {
+      if (isCorrect) {
+        return '#DFF5E3';
+      }
+      if (isSelected && !isCorrect) {
+        return '#FDECEC';
+      }
+      return '#F2F2F2';
+    } else {
+      return isSelected ? '#B3E5FC' : '#F2F2F2';
+    }
+  }
+}
+
+@Component
+export struct NavigationButtons {
+  @Prop canGoPrevious: boolean;
+  @Prop canGoNext: boolean;
+  onPrevious: () => void = () => {
+  };
+  onNext: () => void = () => {
+  };
+
+  build() {
+    Row() {
+      // 只有当canGoPrevious为true时才显示上一题按钮
+      if (this.canGoPrevious) {
+        Button() {
+          Text('上一题')
+            .fontSize($r('app.float.font_size_16fp'))
+            .fontColor($r('app.color.c_F2B771'))
+        }
+        .width(100)
+        .height($r('app.float.float_30vp'))
+        .backgroundColor(Color.White)
+        .borderRadius(20)
+        .border({ width: 1, color: $r('app.color.c_F2B771') })
+        .onClick(() => this.onPrevious())
+      } else {
+        Blank()
+      }
+
+      // 只有当canGoNext为true时才显示下一题按钮
+      if (this.canGoNext) {
+        Button() {
+          Text('下一题')
+            .fontSize($r('app.float.font_size_16fp'))
+            .fontColor($r('app.color.c_F2B771'))
+        }
+        .backgroundColor(Color.White)
+        .width(100)
+        .height($r('app.float.float_30vp'))
+        .borderRadius(20)
+        .border({ width: 1, color: $r('app.color.c_F2B771') })
+        .onClick(() => this.onNext())
+      } else {
+        Blank()
+      }
+    }
+    .justifyContent(FlexAlign.SpaceAround)
+    .alignItems(VerticalAlign.Center)
+    .padding(10)
+    .width('80%')
+    .margin({ top: 18, bottom: 20 })
   }
 }

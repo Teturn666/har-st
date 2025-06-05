@@ -5,10 +5,10 @@ import { CustomTabBar } from '../components/CustomTabBar';
 import { AppConstants } from '../constants/AppConstants';
 import { TabBarType } from '../model/TabBarModel';
 import router from '@ohos.router'
-import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { init } from '@umeng/analytics';
 import { MainModel } from '../model/MainModel';
+import { preferencesUtils, PreferencesConstants } from 'utils/Index'
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -18,39 +18,17 @@ struct MainPage {
   @LocalStorageLink('mainTabIndex') currentIndex: TabBarType = TabBarType.HOME;
   @Provide('appPathStack') appPathStack: NavPathStack = new NavPathStack();
   @State showDialog: boolean = false
-  private sp: preferences.Preferences | null = null
-  @Provide nickName: string = ''
-  @Provide avatarUrl: string = ''
-  @Provide loginState: string = '0' //0=未登录
   @State mainModel: MainModel = MainModel.getInstance()
 
-  onPageShow(): void {
-    const params = router.getParams() as Record<string, string>
-    if (params) {
-      this.nickName = params.nickName as string
-      this.avatarUrl = params.avatarUrl as string
-      this.loginState = params.loginState as string
-    }
-  }
-
   private initPreferences() {
-    this.sp = preferences.getPreferencesSync(context, AppConstants.SP_OPTIONS)
-    let show = this.sp.getSync("isFirstInstall", true)
-    if (typeof show === 'boolean') {
-      this.showDialog = show
-    }
+    //初始化sp实例
+    preferencesUtils.setContext(context)
+    this.showDialog = preferencesUtils.getBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, true)
   }
 
   // 修改布尔值的方法
   updateBooleanValue(newValue: boolean) {
-    try {
-      // 同步更新布尔值
-      this.sp?.putSync("isFirstInstall", newValue);
-      // 同步保存更改
-      this.sp?.flushSync();
-    } catch (err) {
-      console.error('更新布尔值失败:', err);
-    }
+    preferencesUtils.putBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, newValue)
   }
 
   aboutToAppear(): void {
@@ -84,7 +62,7 @@ struct MainPage {
             this.currentIndex = index
           })
 
-           CustomTabBar({ currentIndex: $currentIndex })
+          CustomTabBar({ currentIndex: $currentIndex })
         }
         .width(AppConstants.FULL_PERCENT)
         .height(AppConstants.FULL_PERCENT)

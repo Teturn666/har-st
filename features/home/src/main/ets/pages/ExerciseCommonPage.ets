@@ -1,16 +1,10 @@
 import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
-import {
-  QuestionRes,
-  questionCollectionTable,
-  questionWrongTable,
-  questionBankTable,
-  BankListRes
-} from 'db';
+import { QuestionRes, questionCollectionTable, questionWrongTable, } from 'db';
 import { TitleBar } from 'widget/Index';
-import { preferencesUtils, SettingConstants } from 'setting/Index';
 import { HomeModel } from '../model/HomeModel';
 import HomeConstants from '../Constants/HomeConstants'
+import { preferencesUtils, PreferencesConstants } from 'utils/Index'
 
 
 import('./ExerciseDetailsPage')
@@ -52,7 +46,7 @@ struct ExerciseCommonPage {
   @State elapsedSeconds: number = 0; // 经过的秒数
   @State timerText: string = '00:00'; // 格式化时间
   private timerId: number | null = null; // 计时器 ID
-  @State backindex: number = -1;  //路由页数
+  @State backindex: number = -1; //路由页数
   @State isBankData: boolean = false;
 
   // 格式化时间为 MM:SS
@@ -105,14 +99,12 @@ struct ExerciseCommonPage {
         // 模拟考试模式：随机抽取题目
         if (this.practiceMode === 1) {
           // 读取 Preferences 中的题目数量
-          const count = preferencesUtils.read(SettingConstants.ROUTER_SETTING_NAME_NUMBERS_QUESTIONS_GLOBAL, 10)
-          if (typeof count === 'string') {
-            let countNum = Number(count)
-            if (list.length < countNum) {
-              this.getQuestionCount = list.length
-            } else {
-              this.getQuestionCount = countNum
-            }
+          const count = preferencesUtils.getString(PreferencesConstants.SP_SELECT_VALUE, "10")
+          let countNum = Number(count)
+          if (list.length < countNum) {
+            this.getQuestionCount = list.length
+          } else {
+            this.getQuestionCount = countNum
           }
           this.questions = this.getRandomQuestions(list, this.getQuestionCount);
           console.log("模拟考试随机抽取题目: ", this.questions.length);
@@ -168,9 +160,7 @@ struct ExerciseCommonPage {
     }
   }
 
-
-
-  private async  goToNextQuestion() {
+  private async goToNextQuestion() {
     if (this.currentQuestionIndex < this.questions.length - 1) {
       this.currentQuestionIndex++;
       this.currentProgress = this.currentQuestionIndex + 1;
@@ -493,7 +483,6 @@ struct ExerciseCommonPage {
 
   }
 
-
   private async handleOptionClick(optionLabel: string) {
     if (this.selectedIndex === 0 && !this.hasSubmitted) {
       const currentQuestion = this.questions[this.currentQuestionIndex];
@@ -559,7 +548,6 @@ struct ExerciseCommonPage {
     }
   }
 
-
   private async deleteFromWrongTable(question: QuestionRes) {
     try {
       console.log(`准备从错题表移除题目: questionID=${question.questionID}`);
@@ -568,7 +556,6 @@ struct ExerciseCommonPage {
       console.error('从错题表移除失败:', err);
     }
   }
-
 
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
@@ -698,24 +685,24 @@ struct ExerciseCommonPage {
   }
 
   async hasWrongQuestions() {
-  try {
-    const list = await this.homeModel.getWrongQuestionList(this.qid);
-    return Array.isArray(list) && list.length > 0; // 直接返回布尔值
-  } catch (error) {
-    console.error('获取错题列表失败:', error);
-    return false; // 出错时返回false
+    try {
+      const list = await this.homeModel.getWrongQuestionList(this.qid);
+      return Array.isArray(list) && list.length > 0; // 直接返回布尔值
+    } catch (error) {
+      console.error('获取错题列表失败:', error);
+      return false; // 出错时返回false
+    }
   }
-}
 
-  async  hasCollectionQuestions() {
-  try {
-    const list = await this.homeModel.getCollectionQuestionList(this.qid);
-    return Array.isArray(list) && list.length > 0;
-  } catch (error) {
-    console.error('获取收藏题目列表失败:', error);
-    return false;
+  async hasCollectionQuestions() {
+    try {
+      const list = await this.homeModel.getCollectionQuestionList(this.qid);
+      return Array.isArray(list) && list.length > 0;
+    } catch (error) {
+      console.error('获取收藏题目列表失败:', error);
+      return false;
+    }
   }
-}
 
   // 获取错题列表
   async getWrongQuestionList(qid: number): Promise<void> {
@@ -829,8 +816,6 @@ struct ExerciseCommonPage {
       }
     });
   }
-
-
 
   private async removeCurrentQuestion() {
     const currentQuestion = this.questions[this.currentQuestionIndex];

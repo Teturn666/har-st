@@ -22,10 +22,12 @@ const context = (getContext(this) as common.UIAbilityContext)
 class Params {
   controller: CanvasRenderingContext2D
   animateName: string
+  imgRes: string
 
-  constructor(controller: CanvasRenderingContext2D, animateName: string) {
+  constructor(controller: CanvasRenderingContext2D, animateName: string, imgRes: string) {
     this.controller = controller;
     this.animateName = animateName;
+    this.imgRes = imgRes;
   }
 }
 
@@ -35,7 +37,7 @@ function buildText(params: Params) {
     Blank()
     Column() {
       Row() {
-        Image($r('app.media.loading_default')).width('90%').margin({ top: 15 })
+        Image($r(params.imgRes)).width('90%').margin({ top: 15 })
       }
 
       Text("题库下载中").fontSize(12)
@@ -69,6 +71,7 @@ function buildText(params: Params) {
 @CustomDialog
 struct DownloadOverDialog {
   success: boolean = false
+  isUpdate: boolean = false
   controller: CustomDialogController
   bank: BankListRes = {} as BankListRes
 
@@ -81,7 +84,10 @@ struct DownloadOverDialog {
   build() {
     Column() {
       Blank()
-      Text(this.success ? `导入成功：导入数据${this.bank.num}条` : "导入失败：文件不存在或者内容格式异常").fontSize(18)
+      Text(this.success ?
+        (this.isUpdate ? `更新成功：导入数据${this.bank.num}条`
+          : `导入成功：导入数据${this.bank.num}条`)
+        : "导入失败：文件不存在或者内容格式异常").fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 20 })
       Text("确定")
@@ -179,8 +185,12 @@ export struct BankList {
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
   private animateName = "loading"
-  private contentNode: ComponentContent<Object> =
-    new ComponentContent(this.ctx, wrapBuilder(buildText), new Params(this.controller, this.animateName));
+  private contentNodeDownload: ComponentContent<Object> =
+    new ComponentContent(this.ctx, wrapBuilder(buildText),
+      new Params(this.controller, this.animateName, 'app.media.loading_default'));
+  private contentNodeUpdate: ComponentContent<Object> =
+    new ComponentContent(this.ctx, wrapBuilder(buildText),
+      new Params(this.controller, this.animateName, 'app.media.loading_update'));
   private contentNode1: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
@@ -188,6 +198,7 @@ export struct BankList {
   @State mCurBank: BankListRes = {} as BankListRes
   dialogDeleteController?: CustomDialogController
   dialogDownloadController?: CustomDialogController
+  @State updateStatusMap: Map<number, boolean> = new Map();
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
@@ -204,6 +215,7 @@ export struct BankList {
           //删除确定
           //更新状态为未下载
           item.downloadedState = 2
+          this.updateStatusMap.delete(item.qid); // 删除缓存中的更新状态
           //触发UI重新渲染
           this.bankRes.newsData = [...this.bankRes.newsData]
           this.dialogDeleteController?.close()
@@ -215,12 +227,12 @@ export struct BankList {
     this.dialogDeleteController.open();
   }
 
-  showDownloadOverDialog(success: boolean) {
+  showDownloadOverDialog(success: boolean, isUpdate: boolean) {
     this.dialogDownloadController = new CustomDialogController({
 
       builder: DownloadOverDialog({
 
-        bank: this.mCurBank, success: success
+        bank: this.mCurBank, success: success, isUpdate: isUpdate
       })
     });
     this.dialogDownloadController.open();
@@ -229,7 +241,7 @@ export struct BankList {
 
   private initDialog() {
     LoadingDialog.setContext(this.ctx);
-    LoadingDialog.setContentNode(this.contentNode);
+    LoadingDialog.setContentNode(this.contentNodeDownload);
     LoadingDialog.setOptions({
       alignment: DialogAlignment.Center, onWillDismiss: (dismissDialogAction: DismissDialogAction) => {
         if (dismissDialogAction.reason == DismissReason.PRESS_BACK) {
@@ -260,6 +272,25 @@ export struct BankList {
   //   })
   // }
 
+  private async isNeedUpdate(item: BankListRes): Promise<boolean> {
+    // 已下载的题库才需要检查更新
+    if (item.downloadedState !== 1) {
+      return false;
+    }
+
+    try {
+      // 假设 BankModel 有一个方法 getLocalBankVersion 返回本地版本号
+      const localVersion = await this.bankModel.getLocalVersion(item.qid);
+
+      // 如果本地版本号不存在或为空，或者线上版本号大于本地版本号，返回 true
+      return !localVersion || localVersion === '' || Number(item.version) > Number(localVersion);
+    } catch (error) {
+      Logger.error(TAG, `获取本地版本号失败，qid: ${item.qid}，错误: ${error}`);
+      // 如果获取本地版本号失败，假设需要更新
+      return true;
+    }
+  }
+
   build() {
     if (this.bankRes.newsData.length > 0) {
       List() {
@@ -273,16 +304,26 @@ export struct BankList {
               }) {
                 Column() {
                   Row() {
-                    // Image($r('app.media.ic_feed'))
-                    //   .objectFit(ImageFit.Contain)
-                    //   .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
+                    Image($r('app.media.ic_feed'))
+                      .objectFit(ImageFit.Contain)
+                      .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
                     Text(item.name)
                       .fontColor($r('app.color.c_3e3e3e'))
                       .fontSize($r('app.float.font_size_16fp'))
                       .fontWeight(FontWeight.Bold)
-                    // .margin({
-                    //   left: $r('app.float.float_5vp'),
-                    // })
+                      .maxLines(1)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                      .width('85%')
+                      .margin({
+                        left: $r('app.float.float_5vp'),
+                      })
+
+                    if (item.NewFlag) {
+                      Image($r('app.media.ic_NEW'))
+                        .objectFit(ImageFit.Contain)
+                        .size({ width: $r('app.float.float_20vp'), height: $r('app.float.float_12vp') })
+                        .align(Alignment.TopStart)
+                    }
                   }
 
                   Text(item.desc)
@@ -312,15 +353,20 @@ export struct BankList {
                 }
                 .width('85%')
                 .alignItems(HorizontalAlign.Start)
+                .justifyContent(FlexAlign.SpaceBetween)
                 .margin({
                   left: $r('app.float.float_20vp'),
                   top: $r('app.float.float_20vp'),
                   right: $r('app.float.float_20vp'),
                 })
 
+
                 Column() {
                   if (item.downloadedState === 1) {
-                    Image(this.fromType === 2 ? $r('app.media.ic_remove') : $r('app.media.ic_download_pre'))
+                    Image(this.fromType === 2 ? $r('app.media.ic_remove') :
+                      this.updateStatusMap.get(item.qid) ?? false ?
+                      $r('app.media.ic_update') :
+                      $r('app.media.ic_download_pre'))
                       .objectFit(ImageFit.Contain)
                       .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
                     Text("删除")
@@ -342,9 +388,42 @@ export struct BankList {
                 .onClick(
                   async () => {
                     this.mCurBank = item
+                    const needUpdate = this.updateStatusMap.get(item.qid) ?? false;
+
                     if (item.downloadedState === 1) {
                       if (this.fromType === 2) {
                         this.showDeleteDialog()
+                      }
+
+                      //更新
+                      if (needUpdate) {
+                        LoadingDialog.setContentNode(this.contentNodeUpdate);
+                        LoadingDialog.openDialog()
+                        try {
+                          const success = await this.bankModel.refreshBank(item)
+                          if (success) {
+                            item.downloadedState = 1
+                            this.updateStatusMap.set(item.qid, false); // 更新成功后重置更新状态
+                            this.bankRes.newsData = [...this.bankRes.newsData]
+                            LoadingDialog.closeDialog()
+                            this.showDownloadOverDialog(true, true)
+                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                              "question_bank_id": item.qid
+                            })
+                          } else {
+                            LoadingDialog.closeDialog()
+                            this.showDownloadOverDialog(false, true)
+                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                              "question_bank_id": item.qid
+                            })
+                          }
+                        } catch (error) {
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(false, true)
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                            "question_bank_id": item.qid
+                          })
+                        }
                       }
                     } else {
                       Logger.info(TAG, '题库内容--------' + item)
@@ -355,10 +434,11 @@ export struct BankList {
                           Logger.info(TAG, '下载成功' + item)
                           //更新状态为已下载
                           item.downloadedState = 1
+                          this.updateStatusMap.set(item.qid, false);
                           //触发UI重新渲染
                           this.bankRes.newsData = [...this.bankRes.newsData]
                           LoadingDialog.closeDialog()
-                          this.showDownloadOverDialog(true)
+                          this.showDownloadOverDialog(true, false)
 
                           onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
                             "question_bank_id": item.qid
@@ -366,7 +446,7 @@ export struct BankList {
                         } else {
                           Logger.info(TAG, '下载失败' + item)
                           LoadingDialog.closeDialog()
-                          this.showDownloadOverDialog(false)
+                          this.showDownloadOverDialog(false, false)
                           onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
                             "question_bank_id": item.qid
                           })
@@ -374,7 +454,7 @@ export struct BankList {
                       } catch (error) {
                         Logger.info(TAG, '下载过程中发生错误' + item)
                         LoadingDialog.closeDialog()
-                        this.showDownloadOverDialog(false)
+                        this.showDownloadOverDialog(false, false)
                         onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
                           "question_bank_id": item.qid
                         })
@@ -426,29 +506,38 @@ export struct BankList {
   async loadFeedData(): Promise<void> {
     switch (this.fromType) {
       case 1:
-        let hotList = await this.bankModel.getSearchBankList(this.searchText, this.pageNum)
+        let hotList = await this.bankModel.getSearchBankList(this.searchText, this.pageNum);
         if (hotList === null || hotList.length < 10) {
-          this.loadMore = false
+          this.loadMore = false;
         } else {
-          this.pageNum++
-          this.loadMore = true
+          this.pageNum++;
+          this.loadMore = true;
         }
-        this.bankRes.newsData = this.bankRes.newsData.concat(hotList)
-        break
+        for (let item of hotList) {
+          this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
+        }
+        this.bankRes.newsData = this.bankRes.newsData.concat(hotList);
+        break;
       case 2:
-        let downloadList = await this.bankModel.getDownloadBankList()
-        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 0);
-        break
-      default:
-        let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum)
-        if (list === null || list.length < 10) {
-          this.loadMore = false
-        } else {
-          this.pageNum++
-          this.loadMore = true
+        let downloadList = await this.bankModel.getDownloadBankList();
+        for (let item of downloadList) {
+          this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
-        this.bankRes.newsData = this.bankRes.newsData.concat(list)
-        break
+        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 0);
+        break;
+      default:
+        let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum);
+        if (list === null || list.length < 10) {
+          this.loadMore = false;
+        } else {
+          this.pageNum++;
+          this.loadMore = true;
+        }
+        for (let item of list) {
+          this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
+        }
+        this.bankRes.newsData = this.bankRes.newsData.concat(list);
+        break;
     }
   }
 }
