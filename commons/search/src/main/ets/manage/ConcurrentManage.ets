@@ -1,5 +1,6 @@
 import { SearchEngine } from "../engine/SearchEngine";
 import { common } from "@kit.AbilityKit";
+import { QuestionRes } from "db";
 
 const TAG = 'ConcurrentManage'
 
@@ -8,26 +9,16 @@ const TAG = 'ConcurrentManage'
  * @param qStr 搜索内容
  * @returns 返回结果
  */
-// @Concurrent
-// export async function searchTask(qStr: string, context: common.Context): Promise<QuestionRes | null> {
-//   try {
-//     // 注意：在并发函数中需要重新获取单例实例
-//     let id = await SearchEngine.getInstance().searchTextWithIndex(qStr);  // 获取题目的id
-//     if (id === -1) {
-//       return null;
-//     }
-//
-//     // 获取 QuestionTable.getInstance() 实例并查询
-//     let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
-//     let result = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, id, true, false) ?? [];
-//     if (result.length > 0) {
-//       return result[0];
-//     }
-//   } catch (e) {
-//     return null;
-//   }
-//   return null;
-// }
+@Concurrent
+export async function searchTask(context: common.Context, qStr: string,
+  mDataText: SharedArrayBuffer): Promise<QuestionRes | null> {
+  try {
+    // 直接返回 QuestionRes 对象
+    return await SearchEngine.getInstance().searchTextWithIndex(qStr, context, mDataText);
+  } catch (e) {
+    return null;
+  }
+}
 
 /**
  * 返回一个最匹配的结果

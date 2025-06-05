@@ -253,7 +253,7 @@ export class BankModel {
     }
     sp.putSync(SearchConstants.SEARCH_DATASIZE, qaNum)
     sp.flushSync()
-    let result = await SearchEngine.getInstance().initWithThreadTask(getContext(this), qid, type)
+    let result = await SearchEngine.getInstance().initWithThreadTask(qid, type)
     Logger.debug('result---' + result)
   }
 }

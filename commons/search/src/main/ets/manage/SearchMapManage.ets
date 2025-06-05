@@ -7,11 +7,7 @@ import SearchConstants from '../constants/SearchConstants';
 // 定义可序列化的数据格式
 type SerializableTreeMapData = Record<string, number[]>;
 
-// 定义数组对象形式的返回格式
-interface TreeMapArrayObject {
-  key: string;
-  values: number[];
-}
+export type TreeDataObject = Record<string, number[]>;
 
 export class SearchMapManage {
   // 新增单例实例存储
@@ -81,6 +77,107 @@ export class SearchMapManage {
     }
   }
 
+  /**
+   * 从文件中加载数据,返回数组对象数据类型
+   * @param ctx
+   * @returns
+   */
+  // 从文件中加载数据,返回对象数据类型
+  async loadTreeObjectFromFile(ctx: common.Context): Promise<TreeDataObject | null> {
+    try {
+      const stat = await fs.stat(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME);
+      if (!stat.isFile()) {
+        throw new Error('文件不存在');
+      }
+
+      const file = await fs.open(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME, fs.OpenMode.READ_ONLY);
+      const buffer = new ArrayBuffer(stat.size);
+      await fs.read(file.fd, buffer);
+      await fs.close(file.fd);
+
+      const textDecoder = util.TextDecoder.create('utf-8');
+      const jsonData = textDecoder.decodeToString(new Uint8Array(buffer));
+      const serializableData: SerializableTreeMapData = JSON.parse(jsonData);
+
+      // 创建对象而不是Map
+      const restoredObject: TreeDataObject = {};
+      const keys = Object.keys(serializableData);
+
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        restoredObject[key] = serializableData[key];
+      }
+
+      return restoredObject;
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error('Failed to load TreeObject data:', err);
+      return {};
+    }
+  }
+
+  /**
+   * 从文件中加载数据,返回SharedArrayBuffer对象数据类型
+   * @param ctx
+   * @returns SharedArrayBuffer | null
+   */
+  async loadSharedArrayBufferFromFile(ctx: common.Context): Promise<SharedArrayBuffer | null> {
+    try {
+      const stat = await fs.stat(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME);
+      if (!stat.isFile()) {
+        throw new Error('文件不存在');
+      }
+
+      const file = await fs.open(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME, fs.OpenMode.READ_ONLY);
+      const buffer = new ArrayBuffer(stat.size);
+      await fs.read(file.fd, buffer);
+      await fs.close(file.fd);
+
+      // 创建SharedArrayBuffer,大小与读取的文件大小一致
+      const sharedBuffer = new SharedArrayBuffer(stat.size);
+
+      // 创建视图来操作SharedArrayBuffer
+      const sharedView = new Uint8Array(sharedBuffer);
+      const sourceView = new Uint8Array(buffer);
+
+      // 将ArrayBuffer的数据复制到SharedArrayBuffer中
+      sharedView.set(sourceView);
+
+      return sharedBuffer;
+    } catch (error) {
+      const err = error as BusinessError;
+      console.error('Failed to load SharedArrayBuffer data:', err);
+      return null;
+    }
+  }
+
+  /**
+   * 从SharedArrayBuffer中解析JSON数据（辅助函数）
+   * @param sharedBuffer
+   * @returns 解析后的对象数据
+   */
+  parseDataFromSharedBuffer(sharedBuffer: SharedArrayBuffer): TreeDataObject {
+    try {
+      const textDecoder = util.TextDecoder.create('utf-8');
+      const jsonData = textDecoder.decodeToString(new Uint8Array(sharedBuffer));
+      const serializableData: SerializableTreeMapData = JSON.parse(jsonData);
+
+      // 创建对象而不是Map
+      const restoredObject: TreeDataObject = {};
+      const keys = Object.keys(serializableData);
+
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        restoredObject[key] = serializableData[key];
+      }
+
+      return restoredObject;
+    } catch (error) {
+      console.error('Failed to parse data from SharedArrayBuffer:', error);
+      return {};
+    }
+  }
+
   // 清空沙箱文件内容：删除文件
   async clearTreeMapFile(ctx: common.Context): Promise<boolean> {
     try {
@@ -129,27 +226,5 @@ export class SearchMapManage {
       console.error('Failed to clear TreeMap file content:', err);
       return false;
     }
-  }
-
-
-  // 从文件中加载数据,返回TreeMapArrayObject数组对象
-  async getDataAsArrayObjects(): Promise<TreeMapArrayObject[]> {
-    const loadedData = await this.loadTreeMapFromFile(getContext(this));
-    if (!loadedData) {
-      return [];
-    }
-    const arrayObjects: TreeMapArrayObject[] = [];
-    const entries = loadedData.entries();
-    let entry = entries.next();
-    while (!entry.done) {
-      const key = entry.value[0];
-      const setValues = entry.value[1];
-      arrayObjects.push({
-        key: key,
-        values: Array.from<number>(setValues).sort((a, b) => a - b)
-      });
-      entry = entries.next();
-    }
-    return arrayObjects;
   }
 }

@@ -2,11 +2,12 @@ import { emitter } from "@kit.BasicServicesKit";
 import { display, router, window as kitWindow } from "@kit.ArkUI";
 import { accessManager } from "../utils/AccessManager";
 import { cameraManager } from "../utils/CameraManager";
-
 import window from '@ohos.window';
 import { SearchEngine } from "search";
 import { QuestionRes } from "db";
+import { SearchMapManage } from "search/src/main/ets/manage/SearchMapManage";
 
+const TAG = "SearchQuestions";
 
 @Entry({ routeName: "searchQuestionsPage" })
 @Component
@@ -20,23 +21,27 @@ export struct SearchQuestions {
   win: window.Window | null = null
   map: PixelMap | null = null
 
-  aboutToAppear(): void {
+  async aboutToAppear() {
+    // 做分词处理，处理完毕后再搜索
+    const mDataText =
+      await SearchMapManage.getInstance().loadSharedArrayBufferFromFile(getContext(this))
+    console.debug(TAG, '分词处理数据已拿到')
     emitter.on("dataText", async (event) => {
       this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
       // this.dataValue = "1415A 模拟考试 重置进度 0/119 ☆ 保守国家秘密法》自 G 2010年1月1日 2010年4月29日 2010年5月1日 2010年10月1日"
-      await this.searchResult()
+      if (mDataText && mDataText?.byteLength !== 0) {
+        await this.searchResult(mDataText)
+      }
     })
   }
 
   aboutToDisappear(): void {
     cameraManager.releaseCamera()
-    emitter.on("dataText", async (event) => {
-      this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
-    })
+    emitter.off("dataText")
   }
 
-  private async searchResult() {
-    this.resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(this.dataValue)
+  private async searchResult(mDataText: SharedArrayBuffer) {
+    this.resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(this.dataValue, mDataText)
   }
 
   //转换答案前加ABCD
@@ -61,15 +66,11 @@ export struct SearchQuestions {
             type: XComponentType.SURFACE,
             controller: this.controller
           })
-
             .width("100%")
-            .height("100%")// .transform({ rotate: 90 })
-
+            .height("100%")
             .onLoad(() => {
-
               accessManager.CheckCamera(["ohos.permission.CAMERA"], () => {
                 cameraManager.initCamera(this.controller.getXComponentSurfaceId())
-
               })
             })
         }
@@ -201,13 +202,7 @@ export struct SearchQuestions {
                   } else {
                     this.CameraChange = true
                     cameraManager.initCamera(this.controller.getXComponentSurfaceId())
-                    emitter.on("dataText", async (event) => {
-                      this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
-
-                      await this.searchResult()
-                    })
                   }
-
                 })
             }
             .margin({
