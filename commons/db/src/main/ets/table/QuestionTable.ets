@@ -4,13 +4,26 @@ import { relationalStore } from '@kit.ArkData';
 import { QuestionRes } from '../model/QuestionRes';
 import { Logger } from 'utils';
 
-//题目表
-class QuestionTable {
-  private accountTable = new ChRdb(DbConstants.QUESTION_TABLE.tableName, DbConstants.QUESTION_TABLE.sqlCreate,
-    DbConstants.QUESTION_TABLE.columns);
+// 题目表（单例模式）
+export class QuestionTable {
+  private static _instance: QuestionTable;
+  private accountTable: ChRdb;
 
-  constructor() {
+  // 私有构造函数防止外部实例化
+  private constructor() {
+    this.accountTable = new ChRdb(
+      DbConstants.QUESTION_TABLE.tableName,
+      DbConstants.QUESTION_TABLE.sqlCreate,
+      DbConstants.QUESTION_TABLE.columns
+    );
+  }
 
+  // 获取单例实例
+  public static getInstance(): QuestionTable {
+    if (!QuestionTable._instance) {
+      QuestionTable._instance = new QuestionTable();
+    }
+    return QuestionTable._instance;
   }
 
   getRdbStore(callback: Function = () => {
@@ -19,12 +32,12 @@ class QuestionTable {
   }
 
   insertData(account: QuestionRes, callback: Function) {
-    const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
+    const valueBucket: relationalStore.ValuesBucket = this.generateBucket(account);
     this.accountTable.insertData(valueBucket, callback);
   }
 
   async insertDataAwait(account: QuestionRes) {
-    const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
+    const valueBucket: relationalStore.ValuesBucket = this.generateBucket(account);
     return await this.accountTable.insertDataAwait(valueBucket);
   }
 
@@ -35,7 +48,7 @@ class QuestionTable {
   }
 
   updateData(account: QuestionRes, callback: Function) {
-    const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
+    const valueBucket: relationalStore.ValuesBucket = this.generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
     predicates.equalTo('id', account.qId);
     this.accountTable.updateData(predicates, valueBucket, callback);
@@ -91,18 +104,69 @@ class QuestionTable {
       }
     }
   }
-}
 
-function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
-  let obj: relationalStore.ValuesBucket = {};
-  obj.qId = account.qId;
-  //这个升级后插入的列
-  obj.qName = account.qName;
-  obj.question = account.question;
-  obj.answer = account.answer;
-  obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
-  obj.questionID = account.questionID;
-  return obj;
-}
+  async querySyncTaskPool(rdbStore: relationalStore.RdbStore, id: number, isSearch: boolean = false,
+    isAll: boolean = true): Promise<Array<QuestionRes>> {
+    const predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
+    if (!isAll) {
+      predicates.equalTo(isSearch ? 'id' : 'qId', id);
+    }
 
-export const questionTable = new QuestionTable()
+    const resultSet = rdbStore.querySync(predicates); // 查询到几万条
+    if (!resultSet) {
+      return [];
+    }
+
+    try {
+      const count: number = resultSet.rowCount;
+      if (count === 0 || typeof count === 'string') {
+        console.log(`${DbConstants.TABLE_TAG} Query no results!`);
+        return [];
+      }
+
+      resultSet.goToFirstRow();
+      const result: QuestionRes[] = [];
+      for (let i = 0; i < count; i++) {
+        const tmp: QuestionRes = {
+          id: -1,
+          qId: 0,
+          qName: '',
+          question: '',
+          answer: '',
+          option: [],
+          wrongAnswer: '',
+          questionID: 0
+        };
+        tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+        tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+        tmp.qName = resultSet.getString(resultSet.getColumnIndex('qName'));
+        tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
+        tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
+        tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+        tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
+        result[i] = tmp;
+        resultSet.goToNextRow();
+      }
+      return result;
+    } catch (e) {
+      Logger.error(e);
+      return [];
+    }
+  }
+
+  /**
+   * 生成ValuesBucket
+   * @param account
+   * @returns
+   */
+  private generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
+    return {
+      qId: account.qId,
+      qName: account.qName,
+      question: account.question,
+      answer: account.answer,
+      option: (account.option ?? []).join(DbConstants.SEPARATOR),
+      questionID: account.questionID
+    };
+  }
+}
