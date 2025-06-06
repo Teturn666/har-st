@@ -3,7 +3,7 @@ import {
   questionBankTable,
   questionWrongTable,
   questionCollectionTable,
-  questionTable,
+  QuestionTable,
   QuestionRes
 } from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
@@ -37,10 +37,10 @@ export class HomeModel {
       })
     }
     //删除相应的题目表
-    let bankQaResultList = await questionTable.querySync(qid, false,false) ?? [];
+    let bankQaResultList = await QuestionTable.getInstance().querySync(qid, false,false) ?? [];
     if (bankQaResultList.length > 0) {
       bankQaResultList.forEach((item) => {
-        questionTable.deleteData(item, (resFlag: boolean) => {
+        QuestionTable.getInstance().deleteData(item, (resFlag: boolean) => {
           Logger.info(TAG, '题目deleteData--------' + resFlag)
         })
       })
@@ -57,7 +57,7 @@ export class HomeModel {
 
   //获取题库中的题目
   public async getBankQuestionList(qid: number): Promise<QuestionRes[]> {
-    let resultList = await questionTable.querySync(qid, false, false) ?? [];
+    let resultList = await QuestionTable.getInstance().querySync(qid, false, false) ?? [];
 
     Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
     return resultList

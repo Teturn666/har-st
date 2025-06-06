@@ -6,7 +6,7 @@ import { AppConstants } from '../constants/AppConstants';
 import { TabBarType } from '../model/TabBarModel';
 import router from '@ohos.router'
 import { common } from '@kit.AbilityKit';
-import { init, onEventObject } from '@umeng/analytics';
+import { init } from '@umeng/analytics';
 import { MainModel } from '../model/MainModel';
 import { preferencesUtils, PreferencesConstants } from 'utils/Index'
 
