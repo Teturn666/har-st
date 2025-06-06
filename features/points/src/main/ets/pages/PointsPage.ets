@@ -1,11 +1,12 @@
 import { TitleBar } from 'widget/Index'
 import { PointsModel } from '../model/PointsModel';
 import CheckDataRes, { showSingle } from '../model/CheckDataRes';
-import { router } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import PointsConstants from '../../../Constants/PointsConstants';
 
 import('./MyHistoryPage')
 import('./MyInvitationPage')
+import ('./PointExchangePage')
 
 @Entry({ routeName: 'pointsPage' })
 @Component
@@ -17,6 +18,7 @@ export struct PointsPage {
   @State toShowList: showSingle[] = []
   @State toSignToday: boolean = false
   @State loadingStatus: boolean = false
+
 
   aboutToAppear(): void {
     this.loadResources()
@@ -49,25 +51,25 @@ export struct PointsPage {
       // 获得签到展示
       this.toShowList = []
       let mapLists = await this.PointsModel.getSignMapList()
-      let cur_day = Math.abs(sign_days)
+      let totalDays = Math.abs(sign_days)
+      let cycleDay = totalDays % 8 === 0 ? 8 : totalDays % 8
       for (let i = 0; i < mapLists.length; i++) {
         let days = mapLists[i].days
         let point = mapLists[i].point
-        if (i + 1 <= cur_day) {
+        if (i + 1 <= cycleDay) {
           this.toShowList.push(new showSingle(days, point, 1))
         } else {
           this.toShowList.push(new showSingle(days, point, 3))
         }
       }
       if (sign_days > 0) {
-        this.toShowList[cur_day - 1].type = 2
+        this.toShowList[cycleDay - 1].type = 2
       }
 
       // 获得我的积分
       this.myPoints = await this.PointsModel.getMyNumb()
       this.loadingStatus = true
     } catch (error) {
-
     }
     return this.loadingStatus
   }
@@ -82,6 +84,10 @@ export struct PointsPage {
 
   private jumpToMyInvitation() {
     router.pushNamedRoute({ name: PointsConstants.ROUTE_DETAILS_INVITATION })
+  }
+
+  private jumpToPointExchange() {
+    router.pushNamedRoute({ name: PointsConstants.ROUTE_EXCHANGE_POINTS })
   }
 
   build() {
@@ -117,16 +123,20 @@ export struct PointsPage {
 
           }.onClick(() => {
             this.jumpToMyInvitation()
+
           })
 
-          // Stack() {
-          //   Image($r('app.media.ic_rectangls'))
-          //     .width(80)
-          //     .height(28)
-          //   Text("积分兑换")
-          //     .fontColor('#3E3E3E')
-          //     .fontSize(12)
-          // }
+          Stack() {
+            Image($r('app.media.ic_rectangls'))
+              .width(80)
+              .height(28)
+            Text("积分兑换")
+              .fontColor('#3E3E3E')
+              .fontSize(12)
+          }
+          .onClick(() => {
+            this.jumpToPointExchange()
+          })
         }
         .height('70')
         .width('100%')

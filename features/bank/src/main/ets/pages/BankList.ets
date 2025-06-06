@@ -1,7 +1,7 @@
 ///题库列表
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
-import { Logger } from 'utils';
+import { EmitterConstants, Logger } from 'utils';
 import { BankListRes } from 'db'
 import { ComponentContent } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
@@ -12,6 +12,7 @@ import { util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
 import { DotLoading } from '../components/DotLoading';
+import { emitter } from '@kit.BasicServicesKit';
 
 
 const TAG = '[BankList]'
@@ -225,6 +226,8 @@ export struct BankList {
       })
     });
     this.dialogDeleteController.open();
+    emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+
   }
 
   showDownloadOverDialog(success: boolean, isUpdate: boolean) {
