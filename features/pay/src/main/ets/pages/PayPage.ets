@@ -74,15 +74,18 @@ export struct PayPage {
   }
 
   private async jumpToWxPay() {
+    let payInfo = await this.payModel.getCreatePay(this.selectedCard)
+
     ToastUtils.showToast("调起微信支付")
 
     let req = new wxOpenSdk.PayReq()
-    req.partnerId = 'xxxx'
+    req.partnerId = payInfo.partner_id
     req.appId = APP_ID
     req.packageValue = 'Sign=WXPay'
-    req.prepayId = 'wxxxxxxx'
-    req.nonceStr = 'abcd'
-    req.timeStamp = '1727338524'
+    req.prepayId = payInfo.prepay_id
+    req.nonceStr = payInfo.nonce_str
+    req.timeStamp = payInfo.timestamp
+    req.sign = payInfo.sign
 
     let finished = await this.wxApi.sendReq(getContext(this) as common.UIAbilityContext, req)
     hilog.info(0x0000, 'TAG', `发送支付请求完成: ${finished}`)

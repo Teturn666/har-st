@@ -208,9 +208,9 @@ export struct LoginPage {
     preferencesUtils.putString(PreferencesConstants.SP_OPEN_ID, this.openId)
 
     let userInfo = await this.loginModel.getUser()
+    preferencesUtils.putString(PreferencesConstants.SP_U_ID, userInfo.id)
     preferencesUtils.putNumber(PreferencesConstants.SP_IS_VIP, userInfo.vip)
     preferencesUtils.putString(PreferencesConstants.SP_VIP_TIME, userInfo.vip_expire)
-
 
     emitter.emit(EmitterConstants.EM_USER_LOGIN, {
       data: {

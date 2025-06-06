@@ -14,10 +14,12 @@ export class PreferencesConstants {
   static readonly SP_UNION_ID = 'union-id'
   //open-id
   static readonly SP_OPEN_ID = 'open-id'
-  //是否是会员
+  //是否是会员:1=是会员
   static readonly SP_IS_VIP = 'isVip'
   //会员到期时间
   static readonly SP_VIP_TIME = 'vipTime'
+  //用户ID
+  static readonly SP_U_ID = 'uId'
   // setting 存储题目选择的index
   static readonly SP_SELECT_INDEX = 'select_index'
   // setting 题目选择的index所对应的value

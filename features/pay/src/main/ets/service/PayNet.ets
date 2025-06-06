@@ -6,6 +6,7 @@ import { PayPriceRes } from '../model/PayPriceRes'
 import { PriceInfoRes } from '../model/PriceInfoRes'
 import { CreatePayInfoRes } from '../model/CreatePayInfoRes'
 import { CreatePayRes } from '../model/CreatePayRes'
+import { PreferencesConstants, preferencesUtils } from 'utils'
 
 const TAG = '[PayNet]'
 
@@ -32,13 +33,13 @@ export class PayNet {
   }
 
   //获取创建支付的信息，传给微信支付
-  public getCreatePay(): Promise<CreatePayInfoRes> {
-    let pid = '0'
-    let uid = '0'
-    let openid = '0'
-    let unionid = '0'
-    let udid = '0'
-    let data = "api=wxcreate&pid=" + pid + "&uid=" + uid + "&openid=" + openid
+  public getCreatePay(pId: string): Promise<CreatePayInfoRes> {
+    let uid = preferencesUtils.getString(PreferencesConstants.SP_U_ID)
+    let openid = preferencesUtils.getString(PreferencesConstants.SP_OPEN_ID)
+    let unionid = preferencesUtils.getString(PreferencesConstants.SP_UNION_ID)
+    let udid = preferencesUtils.getString(PreferencesConstants.SP_UUID)
+    // let udid = 'AE0DB7989BC4668E5D6F3D595397E828C7FA45D0D0222B8DEC741B0DBA0F0385'
+    let data = "api=wxcreate&pid=" + pId + "&uid=" + uid + "&openid=" + openid
       + "&unionid=" + unionid + "&wxid=wx4f844b28fe56146f&id=" + udid
     return new Promise((resolve: Function, reject: Function) => {
       HttpUtils.getVipInstance()
