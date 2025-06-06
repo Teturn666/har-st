@@ -15,7 +15,7 @@ export struct selectBankDialog {
   @State isVip: boolean = false;
 
   private getDownloadBanks(): BankListRes[] {
-    return this.bankList.filter(bank => bank.bankType === 1);
+    return this.bankList.filter(bank => bank.bankType === 0);
   }
 
   private getCustomBanks(): BankListRes[] {

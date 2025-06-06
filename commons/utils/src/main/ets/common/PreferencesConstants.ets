@@ -24,6 +24,4 @@ export class PreferencesConstants {
   static readonly SP_SELECT_VALUE = 'select_value'
   // setting 题目选择的弹窗是否显示
   static readonly SP_SELECT_DIALOG_SHOW = 'select_dialog_show'
-  //是否是VIP会员
-  static readonly SP_IS_VIP = 'is_vip'
 }

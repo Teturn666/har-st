@@ -526,7 +526,7 @@ export struct BankList {
         for (let item of downloadList) {
           this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
-        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 1);
+        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 0);
         break;
       default:
         let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum);
