@@ -45,12 +45,16 @@ export struct SettingPage {
     preferencesUtils.deleteData(PreferencesConstants.SP_AVATAR_URL)
     preferencesUtils.deleteData(PreferencesConstants.SP_UNION_ID)
     preferencesUtils.deleteData(PreferencesConstants.SP_OPEN_ID)
+    preferencesUtils.deleteData(PreferencesConstants.SP_IS_VIP)
+    preferencesUtils.deleteData(PreferencesConstants.SP_VIP_TIME)
 
     emitter.emit(EmitterConstants.EM_USER_LOGIN, {
       data: {
         'nickName': '',
         'avatarUrl': '',
         'isLogin': '0',
+        'isVip': 0,
+        'vipTime': ''
       }
     })
 

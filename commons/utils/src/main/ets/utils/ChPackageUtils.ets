@@ -19,6 +19,7 @@ export class ChPackageUtils {
 
   static getDeviceId(): string {
     let uuId: string = util.generateRandomUUID(true)
+    preferencesUtils.putString(PreferencesConstants.SP_UUID, uuId)
     let base64 = new util.Base64Helper()
     let uint8Array = new Uint8Array(buffer.from(uuId).buffer)
     let deviceId = base64.encodeToStringSync(uint8Array)

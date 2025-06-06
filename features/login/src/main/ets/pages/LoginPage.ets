@@ -11,6 +11,7 @@ import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
 import { preferencesUtils, PreferencesConstants, ToastUtils, EmitterConstants } from 'utils/Index'
+import { LoginModel } from '../model/LoginModel';
 
 interface AccessTokenResponse {
   access_token?: string;
@@ -40,6 +41,7 @@ interface UserInfoResponse {
 @Component
 export struct LoginPage {
   @State agreementChecked: boolean = false;
+  @State loginModel: LoginModel = LoginModel.getInstance()
   private wxApi = WXApi
   @State nickname: string = '';
   @State avatarUrl: string = '';
@@ -73,7 +75,6 @@ export struct LoginPage {
       this.unionId = response.unionID
       this.openId = response.openID
       this.spWrite('hw')
-      this.backPage()
     }
   }
 
@@ -194,20 +195,9 @@ export struct LoginPage {
 
   wxLoginSuccess() {
     this.spWrite('wx')
-    this.backPage()
   }
 
-  private backPage() {
-    let index = Number(router.getLength()) - 1
-    router.back(
-      index, {
-      nickName: this.nickname,
-      avatarUrl: this.avatarUrl,
-      loginState: '1'
-    })
-  }
-
-  private spWrite(type: string) {
+  private async spWrite(type: string) {
     preferencesUtils.putString(PreferencesConstants.SP_IS_LOGIN, '1')
     if (type === 'hw') {
       this.nickname = this.quickLoginAnonymousPhone
@@ -217,13 +207,22 @@ export struct LoginPage {
     preferencesUtils.putString(PreferencesConstants.SP_UNION_ID, this.unionId)
     preferencesUtils.putString(PreferencesConstants.SP_OPEN_ID, this.openId)
 
+    let userInfo = await this.loginModel.getUser()
+    preferencesUtils.putNumber(PreferencesConstants.SP_IS_VIP, userInfo.vip)
+    preferencesUtils.putString(PreferencesConstants.SP_VIP_TIME, userInfo.vip_expire)
+
+
     emitter.emit(EmitterConstants.EM_USER_LOGIN, {
       data: {
         'nickName': this.nickname,
         'avatarUrl': this.avatarUrl,
         'isLogin': '1',
+        'isVip': userInfo.vip,
+        'vipTime': userInfo.vip_expire
       }
     })
+
+    router.back()
   }
 
   async huaweiLogin(error: BusinessError | undefined,
