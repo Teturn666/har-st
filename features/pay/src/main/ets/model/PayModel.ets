@@ -1,4 +1,5 @@
 import { PayNet } from "../service/PayNet"
+import { CreatePayInfoRes } from "./CreatePayInfoRes"
 import { PriceInfoRes } from "./PriceInfoRes"
 
 @Observed
@@ -20,10 +21,20 @@ export class PayModel {
   //获取会员价格列表
   public async getPayPriceList(): Promise<PriceInfoRes[]> {
     try {
-      let data = await this.payNet.getBankTypeList()
+      let data = await this.payNet.getPriceList()
       return data
     } catch (e) {
       return []
+    }
+  }
+
+  //获取创建订单的参数，给微信支付调用
+  public async getCreatePay(): Promise<CreatePayInfoRes> {
+    try {
+      let data = await this.payNet.getCreatePay()
+      return data
+    } catch (e) {
+      return new CreatePayInfoRes()
     }
   }
 }

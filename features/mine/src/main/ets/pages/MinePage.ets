@@ -9,7 +9,7 @@ import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { preferencesUtils, PreferencesConstants, EmitterConstants, Logger } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
@@ -104,10 +104,11 @@ export struct MinePage {
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildText))
-  //@Consume 配合 @Provide 使用，只是只读的状态
   @State nickName: string = ''
   @State avatarUrl: string = ''
   @State loginState: string = ''
+  @State isVip: number = 0
+  @State vipTime: string = ''
 
   aboutToAppear(): void {
     this.initData()
@@ -123,6 +124,8 @@ export struct MinePage {
       this.loginState = event.data![PreferencesConstants.SP_IS_LOGIN]
       this.nickName = event.data![PreferencesConstants.SP_NICK_NAME]
       this.avatarUrl = event.data![PreferencesConstants.SP_AVATAR_URL]
+      this.isVip = event.data![PreferencesConstants.SP_IS_VIP]
+      this.vipTime = event.data![PreferencesConstants.SP_VIP_TIME]
     })
   }
 
@@ -134,8 +137,10 @@ export struct MinePage {
 
   private isLogin(): boolean {
     this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
-    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME, '')
-    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL, '')
+    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL)
+    this.vipTime = preferencesUtils.getString(PreferencesConstants.SP_VIP_TIME)
+    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     return this.loginState === '1'
   }
 
@@ -220,6 +225,7 @@ export struct MinePage {
       Row() {
         Image(this.isLogin() ? this.avatarUrl : $r('app.media.user_icon'))
           .alt($r('app.media.user_icon'))
+          .borderRadius(28)
           .objectFit(ImageFit.Contain)
           .width(48)
           .height(48)
@@ -230,7 +236,8 @@ export struct MinePage {
             .textAlign(TextAlign.Start)
             .padding({ left: 16 })
             .lineHeight(20)
-          Text(this.isLogin() ? "欢迎使用快搜搜题" : "考试答题，快人一步")
+          Text(this.isLogin() ? (this.isVip ? "VIP用户 有效期至" + this.vipTime : "欢迎使用快搜搜题") :
+            "考试答题，快人一步")
             .fontSize(12)
             .fontColor($r("app.color.c_9d9d9d"))
             .textAlign(TextAlign.Start)
