@@ -7,6 +7,7 @@ import { BankListRes } from 'db'
 import { Logger } from 'utils'
 import fs, { ReadTextOptions } from '@ohos.file.fs';
 import CheckDataRes, { PointEventRes } from '../model/CheckDataRes';
+import { ExchangeRes } from '../model/ExchangeRes';
 
 
 const TAG = '[PointsNet]'
@@ -257,4 +258,48 @@ export class PointsNet {
       })
     })
   }
+
+  //获取积分兑换列表
+  public getExchangeList(): Promise<ExchangeRes[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_EXCHANGE_RULES)
+        .then((res: AxiosResponse<BaseResponse<ExchangeRes[]>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  //积分兑换
+  public getExchangeVip(id: string): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_USE_VIP,{
+        params: {
+          id: id
+        }
+      })
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          }
+          else if (code === "300") {
+            reject("积分不足");
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+
+
 }

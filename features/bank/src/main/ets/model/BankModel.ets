@@ -248,7 +248,7 @@ export class BankModel {
       //插入题库表,下载成功后的状态
       bankListRes.downloadedState = 1
       bankListRes.position = 0
-      bankListRes.bankType = 0
+      bankListRes.bankType = 1
       let ret = await questionBankTable.insertDataAwait(bankListRes)
       this.initSearchEngin(bankListRes.qid, qaNum, 1)
 

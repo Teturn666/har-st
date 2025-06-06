@@ -5,6 +5,8 @@ import { WebParseExcel } from '../components/WebParseExcel';
 import { HomeModel } from '../model/HomeModel';
 import { BankListRes } from 'db';
 import promptAction from '@ohos.promptAction';
+import { emitter } from '@kit.BasicServicesKit';
+import { EmitterConstants } from 'utils';
 
 import('./HelpPage');
 import('./CustomizedBankPage');
@@ -65,6 +67,7 @@ struct CustomQuestionPage {
       this.questionBanks = [];
       await this.getimportList();
       promptAction.showToast({ message: '删除成功', duration: 2000 });
+      emitter.emit(EmitterConstants.EM_REFRESH_HOME)
     } catch (error) {
       console.error(`Delete failed: ${error}`);
       promptAction.showToast({ message: '删除失败', duration: 2000 });

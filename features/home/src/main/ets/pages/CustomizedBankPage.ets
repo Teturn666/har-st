@@ -10,8 +10,8 @@ import { ExcelDataObj, QuestionError } from '../model/CustomizedBankModel';
 import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
 import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { TimeUtils } from 'utils';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
+import { EmitterConstants, TimeUtils } from 'utils';
 
 const TAG = 'CustomizedBankPage'
 
@@ -152,6 +152,8 @@ struct CustomizedBankPage {
       if (successCount > 0 && this.questionErrorList.length > 0) {
         this.importStatus = '成功';
         promptAction.showToast({ message: `成功导入 ${successCount} 道题目`, duration: 2000 });
+        emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+
       } else {
         this.importStatus = '失败';
         promptAction.showToast({ message: '导入失败', duration: 2000 });
@@ -208,6 +210,7 @@ struct CustomizedBankPage {
             this.questionErrorList = excelDataObj.questionErrorList;
             this.importStatus = '成功';
             this.message = `开始处理Excel文件: ${file.path}`;
+            emitter.emit(EmitterConstants.EM_REFRESH_HOME)
           }
         } catch (error) {
           console.error(TAG, 'excelData error:' + error);
@@ -411,7 +414,6 @@ struct InputDialog {
     .width('90%')
     .height(250)
     .padding({ top: 20, bottom: 20 })
-    .backgroundColor(Color.White)
     .borderRadius(12)
   }
 }
@@ -459,7 +461,6 @@ struct ResultDialog {
     .width('90%')
     .height(250)
     .padding({ top: 20, bottom: 20 })
-    .backgroundColor(Color.White)
     .borderRadius(12)
   }
 }
