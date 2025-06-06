@@ -8,7 +8,8 @@ import router from '@ohos.router'
 import { common } from '@kit.AbilityKit';
 import { init } from '@umeng/analytics';
 import { MainModel } from '../model/MainModel';
-import { preferencesUtils, PreferencesConstants } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
+import { emitter } from '@kit.BasicServicesKit';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -60,6 +61,9 @@ struct MainPage {
           .scrollable(false)
           .onChange((index) => {
             this.currentIndex = index
+            if (index === TabBarType.HOME) {
+              emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+            }
           })
 
           CustomTabBar({ currentIndex: $currentIndex })

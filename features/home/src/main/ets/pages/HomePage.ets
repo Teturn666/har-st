@@ -1,6 +1,6 @@
-import { CommonConstants as Const, Logger } from 'utils/Index'
+import { CommonConstants as Const, EmitterConstants, Logger, PreferencesConstants, preferencesUtils } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
-import { BusinessError } from '@kit.BasicServicesKit'
+import { BusinessError, emitter } from '@kit.BasicServicesKit'
 import { fileIo, picker } from '@kit.CoreFileKit'
 import { image } from '@kit.ImageKit'
 import { faceDetector, textRecognition } from '@kit.CoreVisionKit'
@@ -19,6 +19,8 @@ import { window } from '@kit.ArkUI'
 import { selectImage } from '../utils/SelectImage'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
+import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
+import { BankListRes } from 'db'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -60,9 +62,43 @@ export struct HomePage {
   @State loading: boolean = false
   @State TopHeight: number = 0
   win: window.Window | null = null
+  @State bankList: BankListRes[] = [];
+  private dialogController: CustomDialogController | null = null;
+  @State agreementChecked: boolean = false;
+  @State isVIP: boolean = false
+
+  // 打开选择题库对话框的方法
+  async showSelectBankDialog() {
+    this.dialogController = new CustomDialogController({
+      builder: selectBankDialog({
+        bankList: this.bankList,
+        agreementChecked: this.agreementChecked,
+        onConfirm: (selected: string[]) => {
+          this.agreementChecked = this.agreementChecked;
+        },
+        isVip: this.isVIP
+      })
+    });
+    this.dialogController.open();
+  }
+
+  //获取是否显示弹窗
+  getIsShowDialog(): boolean {
+    return this.agreementChecked = preferencesUtils.getBoolean(PreferencesConstants.SP_SELECT_DIALOG_SHOW, false)
+  }
 
   aboutToAppear(): void {
     // this.initLottie()
+    this.loadResource()
+    emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
+      this.loadResource()
+    })
+  }
+
+  async loadResource() {
+    this.getIsShowDialog()
+    const banks = await this.homeModel.getBankList();
+    this.bankList = banks
   }
 
   aboutToDisappear(): void {
@@ -109,8 +145,19 @@ export struct HomePage {
           }
 
           ListItem() {
-            SearchList()
+            SearchList({
+              nClick: () => {
+                if (!this.getIsShowDialog()) {
+                  this.showSelectBankDialog()
+                } else {
+                  router.pushNamedRoute({
+                    name: HomeConstants.ROUTER_SEARCH_INTRODUCTION
+                  })
+                }
+              }
+            })
           }
+
 
           ListItem() {
             SearchHelper({
@@ -387,6 +434,9 @@ struct Banner {
 
 @Component
 struct SearchList {
+  nClick: () => void = () => {
+  }
+
   build() {
     Row() {
       Column() {
@@ -401,11 +451,7 @@ struct SearchList {
           })
 
       }
-      .onClick(() => {
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION
-        })
-      })
+      .onClick(() => this.nClick())
     }
 
     .margin({

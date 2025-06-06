@@ -24,4 +24,6 @@ export class PreferencesConstants {
   static readonly SP_SELECT_INDEX = 'select_index'
   // setting 题目选择的index所对应的value
   static readonly SP_SELECT_VALUE = 'select_value'
+  // setting 题目选择的弹窗是否显示
+  static readonly SP_SELECT_DIALOG_SHOW = 'select_dialog_show'
 }
