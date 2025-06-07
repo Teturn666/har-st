@@ -1,3 +1,7 @@
-export * from "./HuaWeiLogin" //  华为登陆
+export * from "./HuaWeiLogin"
 
 export * from "./TimeUtils"
+
+export * from './UIUtil'
+
+export * from './WindowStage'
