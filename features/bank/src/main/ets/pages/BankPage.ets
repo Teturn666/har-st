@@ -168,6 +168,7 @@ export struct BankPage {
               BankList({
                 aid: item.aid
               })
+
             }
             .backgroundColor(Color.White)
             .margin({ bottom: 30 })

@@ -281,6 +281,7 @@ export struct selectBankDialog {
             ]));
             this.onConfirm(selectedIds, this.agreementChecked);
             this.controller?.close();
+
           })
       }
     }
