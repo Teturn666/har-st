@@ -1,27 +1,57 @@
-import { PayModel } from '../model/PayModel';
-import { PriceInfoRes } from '../model/PriceInfoRes';
-import { router } from '@kit.ArkUI';
+import { PayModel } from '../model/PayModel'
+import { PriceInfoRes } from '../model/PriceInfoRes'
+import { router } from '@kit.ArkUI'
+import { emitter } from '@kit.BasicServicesKit'
+import * as wxOpenSdk from '@tencent/wechat_open_sdk'
+import { preferencesUtils, PreferencesConstants, EmitterConstants, ToastUtils } from 'utils/Index'
+import { APP_ID, WXApi } from '../model/WXApiWrap'
+import { hilog } from '@kit.PerformanceAnalysisKit'
+import { common } from '@kit.AbilityKit'
 
-const TAG = '[PayPage]';
+const TAG = '[PayPage]'
 
 @Entry({ routeName: 'vipPage' })
 @Component
 export struct PayPage {
-  @State payModel: PayModel = PayModel.getInstance();
-  @State priceList: PriceInfoRes[] = [];
-  @State selectedCard: string = '3';
-  @State totalPrice: number = 60.0;
-  @State savePrice: number = 60.0;
-  @State autoRenew: boolean = false;
-  @State agreementChecked: boolean = false;
-  @State isVip: boolean = true;
-  @State isLoading: boolean = true;
-  @State errorMessage: string = '';
-  private scroller: Scroller = new Scroller();
+  private wxApi = WXApi
+  @State payModel: PayModel = PayModel.getInstance()
+  @State priceList: PriceInfoRes[] = []
+  @State selectedCard: string = '3'
+  @State totalPrice: number = 60.0
+  @State savePrice: number = 60.0
+  @State autoRenew: boolean = false
+  @State agreementChecked: boolean = false
+  @State isLoading: boolean = true
+  @State errorMessage: string = ''
+  private scroller: Scroller = new Scroller()
+  @State nickName: string = ''
+  @State avatarUrl: string = ''
+  @State loginState: string = ''
+  @State isVip: number = 0
+  @State vipTime: string = ''
 
   aboutToAppear(): void {
-    console.info(`${TAG} aboutToAppear called`);
-    this.loadData();
+    this.loadData()
+    this.initData()
+  }
+
+  private initData() {
+    emitter.on(EmitterConstants.EM_USER_LOGIN, (event) => {
+      this.loginState = event.data![PreferencesConstants.SP_IS_LOGIN]
+      this.nickName = event.data![PreferencesConstants.SP_NICK_NAME]
+      this.avatarUrl = event.data![PreferencesConstants.SP_AVATAR_URL]
+      this.isVip = event.data![PreferencesConstants.SP_IS_VIP]
+      this.vipTime = event.data![PreferencesConstants.SP_VIP_TIME]
+    })
+  }
+
+  private isLogin(): boolean {
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL)
+    this.vipTime = preferencesUtils.getString(PreferencesConstants.SP_VIP_TIME)
+    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
+    return this.loginState === '1'
   }
 
   private jumpToHelpCenter() {
@@ -37,6 +67,25 @@ export struct PayPage {
     } catch (error) {
       console.error(`${TAG} Navigation failed:`, error);
     }
+  }
+
+  private jumpToLogin() {
+    router.pushNamedRoute({ name: 'login' }, router.RouterMode.Single)
+  }
+
+  private async jumpToWxPay() {
+    ToastUtils.showToast("调起微信支付")
+
+    let req = new wxOpenSdk.PayReq()
+    req.partnerId = 'xxxx'
+    req.appId = APP_ID
+    req.packageValue = 'Sign=WXPay'
+    req.prepayId = 'wxxxxxxx'
+    req.nonceStr = 'abcd'
+    req.timeStamp = '1727338524'
+
+    let finished = await this.wxApi.sendReq(getContext(this) as common.UIAbilityContext, req)
+    hilog.info(0x0000, 'TAG', `发送支付请求完成: ${finished}`)
   }
 
   private async loadData(): Promise<void> {
@@ -115,19 +164,21 @@ export struct PayPage {
 
       // 用户信息
       Row() {
-        Image($r('app.media.ic_head'))
-          .width(40)
-          .height(40)
-          .borderRadius(20)
+        Image(this.isLogin() ? this.avatarUrl : $r('app.media.ic_head'))
+          .alt($r('app.media.ic_head'))
+          .width(48)
+          .height(48)
+          .borderRadius(28)
           .margin({ left: 28 })
 
         Column() {
           Row() {
-            Text('用户xxx')
+            Text(this.isLogin() ? this.nickName : "用户名")
               .fontSize(14)
               .fontColor('#3E3E3E')
-            if (this.isVip) {
+            if (this.isVip === 1) {
               Image($r('app.media.ic_vip'))
+                .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
                 .width(16)
                 .height(16)
                 .margin({ left: 4 })
@@ -136,8 +187,9 @@ export struct PayPage {
           .justifyContent(FlexAlign.Center)
           .alignItems(VerticalAlign.Center)
 
-          if (this.isVip) {
-            Text('VIP 2023-01-01 到期')
+          if (this.isVip === 1) {
+            Text('VIP' + this.vipTime + '到期，购买后有效期顺延')
+              .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
               .fontSize(10)
               .fontColor('#9D9D9D')
               .margin({ top: 5 })
@@ -186,10 +238,6 @@ export struct PayPage {
                 Image($r(`app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`))
                   .width(105)
                   .height(78)
-                  .onError(() => {
-                    console.error(`${TAG} Failed to load image: app.media.${this.getCardBackground(card,
-                      this.selectedCard === card.id)}`);
-                  })
                 Column() {
                   Text(card.showtext)
                     .fontWeight(600)
@@ -218,7 +266,7 @@ export struct PayPage {
                 this.selectCard(card);
               })
             }
-          }, (card: PriceInfoRes) => card.id)
+          })
         }
       }
       .width('100%')
@@ -260,50 +308,112 @@ export struct PayPage {
       .backgroundColor('#ebebeb')
       .margin({ left: 32, right: 32, top: 20 })
 
-      // 底部支付
       Row() {
-        Column() {
-          Row() {
-            Text(`总计：`)
-              .fontSize(20)
-              .fontColor('#3E3E3E')
-              .margin({ left: 16, top: 12 })
-            Text(`¥${this.totalPrice.toFixed(1)}`)
-              .fontSize(20)
-              .fontColor('#F75A23')
-              .fontWeight(600)
-              .margin({ left: 0, top: 12 })
-          }
-
-          if (this.savePrice > 0.0) {
-            Text(`已优惠：¥${this.savePrice.toFixed(1)}`)
-              .fontSize(12)
-              .fontColor('#9D9D9D')
-              .fontWeight(400)
-              .margin({ left: 16, top: 8 })
-          }
-        }
-        .justifyContent(FlexAlign.Start)
-        .alignItems(HorizontalAlign.Start)
-
-        Blank()
-        Stack() {
-          Image($r('app.media.ic_button'))
-            .width(113)
-            .height(48)
-          Text("立即开通")
-            .fontSize(14)
-            .fontColor(Color.White)
-        }
-        .alignContent(Alignment.Center)
-        .margin({ right: 18 })
+        Image($r('app.media.ic_vip'))
+          .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
+        Image($r('app.media.ic_vipsize'))
+          .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
+          .margin({ left: 8 })
       }
+      .margin({ left: 25, top: 18 })
       .width('100%')
-      .height(64)
-      .backgroundColor(Color.White)
-      .position({ bottom: 0 })
+
+      BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
+      BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
+      BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
+      // 底部支付
+      PaymentFooter({ totalPrice: this.totalPrice, savePrice: this.savePrice, isLogin: this.isLogin() })
+        .onClick(async () => {
+          if (!this.agreementChecked) {
+            ToastUtils.showToast('请先勾选并同意购买后再次尝试')
+            return
+          }
+          if (this.isLogin()) {
+            this.jumpToWxPay()
+          } else {
+            this.jumpToLogin()
+          }
+        })
     }
     .height('100%')
     .width('100%')
+  }
+}
+
+
+@Component
+struct BenefitItem {
+  @Prop title: string = '';
+  @Prop description: string = '';
+
+  build() {
+    Row() {
+      Text(this.title)
+        .fontSize($r('app.float.font_size_14fp'))
+        .fontWeight(400)
+      Text(this.description)
+        .fontSize($r('app.float.font_size_14fp'))
+        .fontColor('#967d25')
+        .fontWeight(400)
+    }
+    .justifyContent(FlexAlign.SpaceBetween)
+    .margin({ top: 8 })
+    .padding({ left: 18, right: 18 })
+    .width('90%')
+    .height('55')
+    .borderRadius(5)
+    .backgroundColor('#ecebeb')
+  }
+}
+
+
+@Component
+struct PaymentFooter {
+  @Prop totalPrice: number = 60.0
+  @Prop savePrice: number = 60.0
+  @Prop isLogin: boolean = false
+
+  build() {
+    Row() {
+      Column() {
+        Row() {
+          Text(`总计：`)
+            .fontSize(20)
+            .fontColor('#3E3E3E')
+            .margin({ left: 16, top: 12 })
+          Text(`¥${this.totalPrice.toFixed(1)}`)
+            .fontSize(20)
+            .fontColor('#F75A23')
+            .fontWeight(600)
+            .margin({ left: 0, top: 12 })
+        }
+
+        if (this.savePrice > 0.0) {
+          Text(`已优惠：¥${this.savePrice.toFixed(1)}`)
+            .fontSize(12)
+            .fontColor('#9D9D9D')
+            .fontWeight(400)
+            .margin({ left: 16, top: 8 })
+        }
+      }
+      .justifyContent(FlexAlign.Start)
+      .alignItems(HorizontalAlign.Start)
+
+      Blank()
+      Stack() {
+        Image($r('app.media.ic_button'))
+          .width(113)
+          .height(48)
+        Text(this.isLogin ? "立即开通" : "支付前登录")
+          .fontSize(14)
+          .fontColor(Color.White)
+      }
+      .alignContent(Alignment.Center)
+      .margin({ right: 18 })
+    }
+    .width('100%')
+    .height(64)
+    .backgroundColor(Color.White)
+    .position({ bottom: 0 })
   }
 }

@@ -49,8 +49,20 @@
       "value": "48vp"
     },
     {
+      "name": "float_70vp",
+      "value": "70vp"
+    },
+    {
+      "name": "float_80vp",
+      "value": "80vp"
+    },
+    {
       "name": "float_140vp",
       "value": "140vp"
+    },
+    {
+      "name": "float_340vp",
+      "value": "340vp"
     },
     {
       "name": "font_size_10fp",

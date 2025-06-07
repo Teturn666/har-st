@@ -3,7 +3,7 @@ import {
   questionBankTable,
   questionWrongTable,
   questionCollectionTable,
-  questionTable,
+  QuestionTable,
   QuestionRes
 } from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
@@ -37,17 +37,15 @@ export class HomeModel {
       })
     }
     //删除相应的题目表
-    let bankQaResultList = await questionTable.querySync(qid, false,false) ?? [];
+    let bankQaResultList = await QuestionTable.getInstance().querySync(qid, false,false) ?? [];
     if (bankQaResultList.length > 0) {
       bankQaResultList.forEach((item) => {
-        questionTable.deleteData(item, (resFlag: boolean) => {
+        QuestionTable.getInstance().deleteData(item, (resFlag: boolean) => {
           Logger.info(TAG, '题目deleteData--------' + resFlag)
         })
       })
     }
   }
-
-
 
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
@@ -59,7 +57,7 @@ export class HomeModel {
 
   //获取题库中的题目
   public async getBankQuestionList(qid: number): Promise<QuestionRes[]> {
-    let resultList = await questionTable.querySync(qid, false, false) ?? [];
+    let resultList = await QuestionTable.getInstance().querySync(qid, false, false) ?? [];
 
     Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
     return resultList
@@ -107,6 +105,22 @@ export class HomeModel {
   public async getCollectionQuestionList(qId: number): Promise<QuestionRes[]> {
     let collectionResultList = await questionCollectionTable.querySync(qId, false) ?? [];
     return collectionResultList
+  }
+
+  //删除数据库收藏的题目
+  public async deleteDataByQuestionID(questionID: number): Promise<void> {
+    let dataByQuestionID = await questionCollectionTable.deleteDataByQuestionID(questionID);
+    return dataByQuestionID
+  }
+
+  //插入数据库收藏的题目
+  public async collectInserDataAwait(questionDb: QuestionRes): Promise<void> {
+    await questionCollectionTable.insertDataAwait(questionDb);
+  }
+
+  //插入数据库错题的题目
+  public async WrongInserDataAwait(questionDb: QuestionRes): Promise<void> {
+    await questionWrongTable.insertDataAwait(questionDb);
   }
 
   //查询题库信息

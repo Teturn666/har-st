@@ -1,8 +1,11 @@
 import { TitleBar } from 'widget/Index'
 import { SettingConstants } from "../Constants/SettingConstants";
 import { promptAction, router } from '@kit.ArkUI';
-import { preferencesUtils, PreferencesConstants } from 'utils/Index'
-
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
+import { emitter } from '@kit.BasicServicesKit';
+import { BankListRes } from 'db';
+import { SettingModel } from '../model/SettingModel';
+import { selectBankDialog } from './SelectBankDialog';
 
 @Entry({ routeName: 'settingPage' })
 @Component
@@ -14,18 +17,50 @@ export struct SettingPage {
   @State v: string = SettingConstants.DIALOG_QUESTIONS[0];
   private select: number | number[] = 0;
   @State loginState: string = "0"
+  @State settingModel: SettingModel = SettingModel.getInstance()
+  @State bankList: BankListRes[] = [];
+  private dialogController: CustomDialogController | null = null;
+  @State agreementChecked: boolean = false;
+  @State isVIP: boolean = false
+
+  // 打开选择题库对话框的方法
+  async showSelectBankDialog() {
+    await this.getIsShowDialog()
+    this.dialogController = new CustomDialogController({
+      builder: selectBankDialog({
+        bankList: this.bankList,
+        agreementChecked: this.agreementChecked,
+        onConfirm: (selected: string[]) => {
+          this.agreementChecked = this.agreementChecked;
+        },
+        isVip: this.isVIP
+      })
+    });
+    this.dialogController.open();
+  }
 
   // 初始化时加载保存的题目数量
   aboutToAppear() {
     this.loadResource()
     this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    this.getIsShowDialog()
   }
 
-  loadResource() {
+  //获取是否显示弹窗
+  getIsShowDialog() {
+    this.agreementChecked = preferencesUtils.getBoolean(PreferencesConstants.SP_SELECT_DIALOG_SHOW, false)
+    console.log("初始 agreementChecked 值: " + this.agreementChecked)
+  }
+
+  async loadResource() {
     this.questionCounts = SettingConstants.DIALOG_QUESTIONS
     let count = preferencesUtils.getString(PreferencesConstants.SP_SELECT_INDEX, '0')
     this.v = this.questionCounts[Number(count)]
     this.select = Number(count)
+
+    const banks = await this.settingModel.getBankList();
+    this.bankList = banks
+    console.log("查看题库列表" + JSON.stringify(this.bankList))
   }
 
   // 保存题目数量设置
@@ -44,15 +79,20 @@ export struct SettingPage {
     preferencesUtils.deleteData(PreferencesConstants.SP_AVATAR_URL)
     preferencesUtils.deleteData(PreferencesConstants.SP_UNION_ID)
     preferencesUtils.deleteData(PreferencesConstants.SP_OPEN_ID)
+    preferencesUtils.deleteData(PreferencesConstants.SP_IS_VIP)
+    preferencesUtils.deleteData(PreferencesConstants.SP_VIP_TIME)
 
-    let index = Number(router.getLength()) - 1
-    router.back(
-      index, {
-      nickName: '',
-      avatarUrl: '',
-      loginState: '0'
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': '',
+        'avatarUrl': '',
+        'isLogin': '0',
+        'isVip': 0,
+        'vipTime': ''
+      }
     })
 
+    router.back()
   }
 
   build() {
@@ -146,7 +186,49 @@ export struct SettingPage {
         })
       }
       .width('90%')
-      .margin({ top: 1, left: 20 })
+      .alignItems(HorizontalAlign.Start)
+      .backgroundColor('#f9f9f9')
+      .borderRadius(5)
+
+
+      //搜索设置
+      Column() {
+        Text('搜索设置')
+          .fontWeight(FontWeight.Bold)
+          .fontSize(18)
+          .fontColor("#3e3e3e")
+          .textAlign(TextAlign.Start)
+          .padding({ left: 16, top: 16, bottom: 16 })
+          .lineHeight(20)
+          .margin({ left: 20 })
+      }
+      .margin({ top: 5 })
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+      .justifyContent(FlexAlign.Start)
+
+      Column() {
+        Row() {
+          Text("指定搜索题库")
+            .fontSize(16)
+            .fontColor("#3e3e3e")
+            .textAlign(TextAlign.Start)
+            .padding({ left: 16, top: 16, bottom: 16 })
+            .lineHeight(20)
+          Image($r('app.media.ic_vip'))
+            .width($r('app.float.float_16vp'))
+            .height($r('app.float.float_16vp'))
+            .margin({ left: 8 })
+          Blank()
+          Image($r('app.media.ic_enter')).width(6).height(10)
+            .margin({ right: 12 })
+        }
+        .width('100%')
+        .onClick(() => {
+          this.showSelectBankDialog();
+        })
+      }
+      .width('90%')
       .alignItems(HorizontalAlign.Start)
       .backgroundColor('#f9f9f9')
       .borderRadius(5)

@@ -2,14 +2,14 @@ import { hilog } from "@kit.PerformanceAnalysisKit"
 import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { ComponentContent, router } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { preferencesUtils, PreferencesConstants } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
@@ -103,22 +103,44 @@ export struct MinePage {
   @State message: string = "hello"
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
-    new ComponentContent(this.ctx, wrapBuilder(buildText));
-  //@Consume 配合 @Provide 使用，只是只读的状态
-  @Consume nickName: string
-  @Consume avatarUrl: string
-  @Consume loginState: string
+    new ComponentContent(this.ctx, wrapBuilder(buildText))
+  @State nickName: string = ''
+  @State avatarUrl: string = ''
+  @State loginState: string = ''
+  @State isVip: number = 0
+  @State vipTime: string = ''
 
   aboutToAppear(): void {
-    OfficialDialog.setContext(this.ctx);
-    OfficialDialog.setContentNode(this.contentNode);
-    OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true });
+    this.initData()
+    this.initDialog()
+  }
+
+  aboutToDisappear(): void {
+    emitter.off(EmitterConstants.EM_USER_LOGIN)
+  }
+
+  private initData() {
+    emitter.on(EmitterConstants.EM_USER_LOGIN, (event) => {
+      this.loginState = event.data![PreferencesConstants.SP_IS_LOGIN]
+      this.nickName = event.data![PreferencesConstants.SP_NICK_NAME]
+      this.avatarUrl = event.data![PreferencesConstants.SP_AVATAR_URL]
+      this.isVip = event.data![PreferencesConstants.SP_IS_VIP]
+      this.vipTime = event.data![PreferencesConstants.SP_VIP_TIME]
+    })
+  }
+
+  private initDialog() {
+    OfficialDialog.setContext(this.ctx)
+    OfficialDialog.setContentNode(this.contentNode)
+    OfficialDialog.setOptions({ alignment: DialogAlignment.Center, isModal: true })
   }
 
   private isLogin(): boolean {
     this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
-    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME, '')
-    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL, '')
+    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL)
+    this.vipTime = preferencesUtils.getString(PreferencesConstants.SP_VIP_TIME)
+    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     return this.loginState === '1'
   }
 
@@ -203,6 +225,7 @@ export struct MinePage {
       Row() {
         Image(this.isLogin() ? this.avatarUrl : $r('app.media.user_icon'))
           .alt($r('app.media.user_icon'))
+          .borderRadius(28)
           .objectFit(ImageFit.Contain)
           .width(48)
           .height(48)
@@ -213,7 +236,8 @@ export struct MinePage {
             .textAlign(TextAlign.Start)
             .padding({ left: 16 })
             .lineHeight(20)
-          Text(this.isLogin() ? "欢迎使用快搜搜题" : "考试答题，快人一步")
+          Text(this.isLogin() ? (this.isVip ? "VIP用户 有效期至" + this.vipTime : "欢迎使用快搜搜题") :
+            "考试答题，快人一步")
             .fontSize(12)
             .fontColor($r("app.color.c_9d9d9d"))
             .textAlign(TextAlign.Start)
@@ -244,23 +268,21 @@ export struct MinePage {
       .margin({ left: 28, top: 40, bottom: 0 })
       .visibility(Visibility.Visible)
 
-
       // 会员
       Row() {
         Stack({ alignContent: Alignment.TopStart }) {
           Image($r('app.media.rectangle_icon'))
             .objectFit(ImageFit.Cover)
-            .width('auto')
+            .width('100%')
             .height(98)
-
           Button('去充值')
             .fontSize(10)
-            .fontColor(Color.Black)
+            .fontColor($r("app.color.c_3e3e3e"))
             .backgroundColor('#D4AF37')
             .borderRadius(50)
             .width('auto')
             .height(20)
-            .position({ x: 250, y: 6 })
+            .position({ x: 280, y: 6 })
           Stack({ alignContent: Alignment.Center }) {
             Image($r('app.media.subtract_icon'))
               .objectFit(ImageFit.Cover)
@@ -272,7 +294,7 @@ export struct MinePage {
               .textAlign(TextAlign.Center)
               .width(146)
           }
-          .margin({ top: -8, left: 1 })
+          .margin({ top: -8, left: 2 })
 
           Row({ space: 18 }) {
             Column() {
@@ -327,11 +349,11 @@ export struct MinePage {
             .width('auto')
             .padding(8)
           }
-          .width('90%')
+          .width('95%')
           .justifyContent(FlexAlign.SpaceAround)
-          .margin({ top: 25, left: 10 })
+          .margin({ top: 28, left: 10 })
         }
-        .width('90%')
+        .width('95%')
         .height('auto')
       }
       .width('100%')
@@ -432,7 +454,7 @@ export struct MinePage {
             }
           })
         }
-      }.margin({ top: 40 })
+      }
       .alignListItem(ListItemAlign.Center)
     }
     .alignItems(HorizontalAlign.Start)

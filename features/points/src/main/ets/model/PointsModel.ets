@@ -1,9 +1,8 @@
-import { questionBankTable, questionTable, BankListRes, QuestionRes } from 'db'
-import { SearchDecryptUtils } from 'search'
-import { Logger, StringUtils } from 'utils'
-import { plainToClass } from 'class-transformer'
+import { Logger } from 'utils'
 import { PointsNet } from '../service/PointsNet'
 import CheckDataRes, { PointEventRes } from './CheckDataRes'
+import { ExchangeRes } from './ExchangeRes'
+import { promptAction } from '@kit.ArkUI'
 
 const TAG = '[PointsModel]'
 
@@ -163,4 +162,30 @@ export class PointsModel {
       return ''
     }
   }
+  //获取积分兑换列表
+  public async getExchangeList(): Promise<ExchangeRes[]> {
+    try {
+      let data = await this.PointsNet.getExchangeList()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return []
+    }
+  }
+
+  //积分兑换
+  public async getExchangeVip(id: string): Promise<string> {
+    try {
+      const data = await this.PointsNet.getExchangeVip(id)
+      return data
+    } catch (e) {
+      if (e === '积分不足' || e?.toString().includes('积分不足')) {
+        promptAction.showToast({ message: '积分不足，无法兑换会员', duration: 2000 })
+      } else {
+        Logger.info(TAG, '兑换失败: ' + e)
+      }
+      return ''
+    }
+  }
+
 }

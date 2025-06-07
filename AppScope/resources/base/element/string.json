@@ -6,7 +6,7 @@
     },
     {
       "name": "app_camera",
-      "value": "获取相机"
+      "value": "获取相机用于识别文本"
     }
   ]
 }

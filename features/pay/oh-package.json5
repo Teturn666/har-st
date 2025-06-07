@@ -6,7 +6,8 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "network": "file:../../commons/network"
+    "network": "file:../../commons/network",
+    "utils": "file:../../commons/utils",
   }
 }
 

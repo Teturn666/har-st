@@ -43,5 +43,9 @@ export enum PointsTrigger {
   // 查询还有多少次看广告机会 /m/point/ad/count
   URL_INVITE_AD_COUNT = "/m/point/ad/count",
 
+  //积分兑换
+  URL_POINT_USE_VIP = "/m/point/use/vip",
 
+  //获取积分兑换列表
+  URL_POINT_EXCHANGE_RULES = "/m/point/exchange/rules",
 }

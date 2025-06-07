@@ -4,15 +4,14 @@ import { OnWXResp, WXApi, WXEventHandler, APP_ID } from '../model/WXApiWrap';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction, router } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
 import http from '@ohos.net.http';
 import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
-import { huaweiAuthManager } from 'utils';
-import { preferencesUtils, PreferencesConstants } from 'utils/Index'
-
+import { preferencesUtils, PreferencesConstants, ToastUtils, EmitterConstants } from 'utils/Index'
+import { LoginModel } from '../model/LoginModel';
 
 interface AccessTokenResponse {
   access_token?: string;
@@ -42,68 +41,40 @@ interface UserInfoResponse {
 @Component
 export struct LoginPage {
   @State agreementChecked: boolean = false;
+  @State loginModel: LoginModel = LoginModel.getInstance()
   private wxApi = WXApi
   @State nickname: string = '';
   @State avatarUrl: string = '';
   @State unionId: string = '';
   @State openId: string = '';
   @State quickLoginAnonymousPhone: string = '';
-  private context = (getContext(this) as common.UIAbilityContext)
   private wxEventHandler = WXEventHandler
   logTag: string = 'QuickLoginButtonComponent';
   domainId: number = 0x0000;
   // 构造LoginWithHuaweiIDButton组件的控制器
   controller: loginComponentManager.LoginWithHuaweiIDButtonController =
     new loginComponentManager.LoginWithHuaweiIDButtonController()
-      /**
-       * 当应用使用自定义的登录页时，如果用户未同意协议，需要设置协议状态为NOT_ACCEPTED，当用户同意协议后再设置
-       * 协议状态为ACCEPTED，才可以使用华为账号一键登录功能
-       */
       .onClickLoginWithHuaweiIDButton(async (error: BusinessError | undefined,
         response: loginComponentManager.HuaweiIDCredential) => {
-        // promptAction.showToast({
-        //   message:'111'
-        // })
-        // const code = (await huaweiAuthManager.launchAuth())! // 拉起华为登录
-        this.huaweiLogin()
-
-        //
-        // promptAction.showToast({
-        //   message: code
-        // })
-        //   this.handleLoginWithHuaweiIDButton(error, response);
+        this.huaweiLogin(error, response)
       })
       .onClickEvent((error: BusinessError, clickEvent: loginComponentManager.ClickEvent) => {
         if (error) {
-          this.dealAllError(error);
-          return;
+          this.dealAllError(error)
+          return
         }
-        hilog.info(this.domainId, this.logTag, `onClickEvent clickEvent: ${clickEvent}`);
-      });
+        hilog.info(this.domainId, this.logTag, `onClickEvent clickEvent: ${clickEvent}`)
+      })
 
-  async handleLoginWithHuaweiIDButton(error: BusinessError | undefined,
+  handleLoginWithHuaweiIDButton(error: BusinessError | undefined,
     response: loginComponentManager.HuaweiIDCredential) {
-
     if (error) {
-      hilog.error(this.domainId, this.logTag,
-        `Failed to login with LoginWithHuaweiIDButton. errCode is ${error.code}, errMessage is ${error.message}`)
-      promptAction.showToast({ message: '服务或网络异常，请稍后重试' })
-      return
-    }
-
-    try {
-      if (response) {
-        hilog.info(this.domainId, this.logTag, 'Succeeded in clicking LoginWithHuaweiIDButton.');
-        // 开发者根据实际业务情况使用以下信息
-        const authCode = response.authorizationCode;
-        const openID = response.openID;
-        const unionID = response.unionID;
-        const idToken = response.idToken;
-      }
-    } catch (err) {
-      hilog.error(this.domainId, this.logTag,
-        `Failed to login with LoginWithHuaweiIDButton, errCode: ${err.code}, errMessage: ${err.message}`);
-      promptAction.showToast({ message: '服务或网络异常，请稍后重试' })
+      ToastUtils.showToast('服务或网络异常，请稍后重试')
+    } else {
+      //华为登录成功
+      this.unionId = response.unionID
+      this.openId = response.openID
+      this.spWrite('hw')
     }
   }
 
@@ -118,24 +89,24 @@ export struct LoginPage {
 
   private onWXResp: OnWXResp = async (resp) => {
     if (resp.errCode === ErrCode.ERR_OK) {
-      promptAction.showToast({ message: '微信授权成功' });
-      const authResp = resp as wxOpenSdk.SendAuthResp;
+      promptAction.showToast({ message: '微信授权成功' })
+      const authResp = resp as wxOpenSdk.SendAuthResp
       if (authResp.code) {
         try {
-          await this.fetchUserInfo(authResp.code);
+          await this.fetchUserInfo(authResp.code)
         } catch (err) {
-          promptAction.showToast({ message: '获取用户信息失败' });
-          hilog.error(0x0000, 'TAG', `获取用户信息失败: ${err}`);
+          promptAction.showToast({ message: '获取用户信息失败' })
+          hilog.error(0x0000, 'TAG', `获取用户信息失败: ${err}`)
         }
       } else {
-        promptAction.showToast({ message: '未获取到授权码' });
-        hilog.error(0x0000, 'TAG', '授权响应缺少 code');
+        promptAction.showToast({ message: '未获取到授权码' })
+        hilog.error(0x0000, 'TAG', '授权响应缺少 code')
       }
     } else {
-      promptAction.showToast({ message: `授权失败: ${resp.errStr || '未知错误'}` });
-      hilog.error(0x0000, 'TAG', `授权失败: errCode=${resp.errCode}, errStr=${resp.errStr}`);
+      promptAction.showToast({ message: `授权失败: ${resp.errStr || '未知错误'}` })
+      hilog.error(0x0000, 'TAG', `授权失败: errCode=${resp.errCode}, errStr=${resp.errStr}`)
     }
-  };
+  }
 
   async fetchUserInfo(code: string) {
     let httpClient = http.createHttp();
@@ -224,20 +195,9 @@ export struct LoginPage {
 
   wxLoginSuccess() {
     this.spWrite('wx')
-    this.backPage()
   }
 
-  private backPage() {
-    let index = Number(router.getLength()) - 1
-    router.back(
-      index, {
-      nickName: this.nickname,
-      avatarUrl: this.avatarUrl,
-      loginState: '1'
-    })
-  }
-
-  private spWrite(type: string) {
+  private async spWrite(type: string) {
     preferencesUtils.putString(PreferencesConstants.SP_IS_LOGIN, '1')
     if (type === 'hw') {
       this.nickname = this.quickLoginAnonymousPhone
@@ -246,48 +206,61 @@ export struct LoginPage {
     preferencesUtils.putString(PreferencesConstants.SP_AVATAR_URL, this.avatarUrl)
     preferencesUtils.putString(PreferencesConstants.SP_UNION_ID, this.unionId)
     preferencesUtils.putString(PreferencesConstants.SP_OPEN_ID, this.openId)
+
+    let userInfo = await this.loginModel.getUser()
+    preferencesUtils.putNumber(PreferencesConstants.SP_IS_VIP, userInfo.vip)
+    preferencesUtils.putString(PreferencesConstants.SP_VIP_TIME, userInfo.vip_expire)
+
+
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': this.nickname,
+        'avatarUrl': this.avatarUrl,
+        'isLogin': '1',
+        'isVip': userInfo.vip,
+        'vipTime': userInfo.vip_expire
+      }
+    })
+
+    router.back()
   }
 
-  async huaweiLogin() {
+  async huaweiLogin(error: BusinessError | undefined,
+    response: loginComponentManager.HuaweiIDCredential) {
     if (!this.agreementChecked) {
       promptAction.showToast({ message: '请先勾选并同意用户协议和隐私政策' });
       return;
     }
-    this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED);
-    (await huaweiAuthManager.launchAuth())!;
-    this.spWrite('hw');
-    this.backPage();
+    this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED)
+    this.handleLoginWithHuaweiIDButton(error, response)
   }
 
   getQuickLoginAnonymousPhone() {
     // 创建授权请求，并设置参数
-    const authRequest = new authentication.HuaweiIDProvider().createAuthorizationWithHuaweiIDRequest();
+    const authRequest = new authentication.HuaweiIDProvider().createAuthorizationWithHuaweiIDRequest()
     // 获取匿名手机号需传quickLoginAnonymousPhone这个scope，传参之前需要先申请"华为账号一键登录"权限
-    authRequest.scopes = ['quickLoginAnonymousPhone'];
+    authRequest.scopes = ['quickLoginAnonymousPhone']
     // 用于防跨站点请求伪造
-    authRequest.state = util.generateRandomUUID();
+    authRequest.state = util.generateRandomUUID()
     // 一键登录场景该参数必须设置为false
     authRequest.forceAuthorization = false;
-    const controller = new authentication.AuthenticationController();
+    const controller = new authentication.AuthenticationController()
 
     try {
       controller.executeRequest(authRequest).then((response: authentication.AuthorizationWithHuaweiIDResponse) => {
-        // 获取到UnionID、OpenID、匿名手机号
-        const unionID = response.data?.unionID;
-        const openID = response.data?.openID;
         const anonymousPhone = response.data?.extraInfo?.quickLoginAnonymousPhone as string;
         if (anonymousPhone) {
-          hilog.info(0x0000, 'testTag', 'Succeeded in authentication.');
-          this.quickLoginAnonymousPhone = anonymousPhone;
-          return;
+          hilog.info(0x0000, 'testTag', 'Succeeded in authentication.')
+          this.quickLoginAnonymousPhone = anonymousPhone
+          return
         }
-        hilog.info(0x0000, 'testTag', 'Succeeded in authentication. AnonymousPhone is empty.');
+        hilog.info(0x0000, 'testTag', 'Succeeded in authentication. AnonymousPhone is empty.')
         // 未获取到匿名手机号需要跳转到应用自定义的登录页面
       }).catch((error: BusinessError) => {
-        this.dealAllError(error);
+        this.dealAllError(error)
       })
     } catch (error) {
-      this.dealAllError(error);
+      this.dealAllError(error)
     }
   }
 

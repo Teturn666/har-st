@@ -1,6 +1,6 @@
 import {
   questionBankTable,
-  questionTable,
+  QuestionTable,
   BankListRes,
   QuestionRes,
   questionCollectionTable,
@@ -13,7 +13,8 @@ import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
-
+import preferences from '@ohos.data.preferences'
+import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 
 const TAG = '[BankModel]'
 
@@ -45,10 +46,10 @@ export class BankModel {
       })
     }
     //删除相应的题目表
-    let bankQaResultList = await questionTable.querySync(qid, false, false) ?? [];
+    let bankQaResultList = await QuestionTable.getInstance().querySync(qid, false, false) ?? [];
     if (bankQaResultList.length > 0) {
       bankQaResultList.forEach((item) => {
-        questionTable.deleteData(item, (resFlag: boolean) => {
+        QuestionTable.getInstance().deleteData(item, (resFlag: boolean) => {
           Logger.info(TAG, '题目deleteData--------' + resFlag)
         })
       })
@@ -71,8 +72,27 @@ export class BankModel {
         })
       })
     }
+  }
 
-    this.initSearchEngin()
+  //更新题库
+  async refreshBank(bank: BankListRes): Promise<boolean> {
+    await this.deleteTable(bank.qid)
+    const okdata = await this.downLoadBank(bank)
+    return okdata
+  }
+
+  //获取数据库题库版本
+  async getLocalVersion(qid: number): Promise<string | null> {
+    try {
+      const dbResult = await questionBankTable.querySync(qid, false) ?? [];
+      if (dbResult.length > 0) {
+        return dbResult[0].version; // Return the version of the first item
+      }
+      return null;
+    } catch (error) {
+      Logger.error(TAG, `Error querying local version for qid ${qid}: ${error}`);
+      return null;
+    }
   }
 
   //获取热门搜索列表
@@ -205,6 +225,7 @@ export class BankModel {
       Logger.info(TAG, 'trStr--------' + trStr)
       //转换成 题目的对象
       let lines = trStr.split('\n')
+      let qaNum = 0
       for (let i = 0; i < lines.length; i++) {
         let line = lines[i]
 
@@ -219,8 +240,9 @@ export class BankModel {
           questionDb.answer = questionRes.ans
           questionDb.option = questionRes.a
           questionDb.questionID = qid + i + 1
-          let ret = await questionTable.insertDataAwait(questionDb)
+          let ret = await QuestionTable.getInstance().insertDataAwait(questionDb)
           Logger.info(TAG, 'ret--------' + ret)
+          qaNum++
         }
       }
       //插入题库表,下载成功后的状态
@@ -228,7 +250,8 @@ export class BankModel {
       bankListRes.position = 0
       bankListRes.bankType = 0
       let ret = await questionBankTable.insertDataAwait(bankListRes)
-      this.initSearchEngin()
+      this.initSearchEngin(bankListRes.qid, qaNum, 1)
+
       Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {
@@ -237,12 +260,21 @@ export class BankModel {
     }
   }
 
-  //更新数据，需重新搜索分词
-  public async initSearchEngin() {
-    let result = await SearchEngine.getInstance().initIfNotInit()
+  //初始化搜索引擎,更新查询数据
+  public async initSearchEngin(qid: number, qaNum: number, type: number) {
+    let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
+    //删除
+    if (type === 2) {
+      qaNum = 0
+    } else {
+      let oldNum = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0)
+      if (typeof oldNum === 'number') {
+        qaNum = oldNum + qaNum
+      }
+    }
+    sp.putSync(SearchConstants.SEARCH_DATASIZE, qaNum)
+    sp.flushSync()
+    let result = await SearchEngine.getInstance().initWithThreadTask(qid, type)
     Logger.debug('result---' + result)
   }
 }
-
-
-

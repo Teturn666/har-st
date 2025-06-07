@@ -1,17 +1,17 @@
 import fs from '@ohos.file.fs';
 import { TitleBar } from 'widget'
 import { promptAction, router } from '@kit.ArkUI'
-import { getFileExtension, getPrefix, selectFile } from '../manage/SelectFileManage';
+import { getFileExtension, getPrefix } from '../manage/SelectFileManage';
 import { WebClass } from '../components/WebParseExcel';
-import { questionBankTable, questionTable } from 'db';
+import { questionBankTable, QuestionTable } from 'db';
 import picker from '@ohos.file.picker';
 import { util } from '@kit.ArkTS';
 import { ExcelDataObj, QuestionError } from '../model/CustomizedBankModel';
 import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
 import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { TimeUtils } from 'utils';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
+import { EmitterConstants, TimeUtils } from 'utils';
 
 const TAG = 'CustomizedBankPage'
 
@@ -98,7 +98,8 @@ struct CustomizedBankPage {
         version: '1.0',
         position: 0,
         downloadedState: 1,
-        bankType: 2
+        bankType: 2,
+        NewFlag: false
       };
       let output: string = '';
       let successCount = 0;
@@ -120,7 +121,7 @@ struct CustomizedBankPage {
       for (let item of questionResList) {
         try {
           item.qName = bank.name
-          await questionTable.insertDataAwait(item);
+          await QuestionTable.getInstance().insertDataAwait(item);
           successCount++;
         } catch (error) {
           const err: BusinessError = error as BusinessError;
@@ -151,6 +152,8 @@ struct CustomizedBankPage {
       if (successCount > 0 && this.questionErrorList.length > 0) {
         this.importStatus = '成功';
         promptAction.showToast({ message: `成功导入 ${successCount} 道题目`, duration: 2000 });
+        emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+
       } else {
         this.importStatus = '失败';
         promptAction.showToast({ message: '导入失败', duration: 2000 });
@@ -201,12 +204,13 @@ struct CustomizedBankPage {
             // 存储进题目表
             excelDataObj.questions.forEach(async (item) => {
               item.qName = bankName
-              await questionTable.insertDataAwait(item);
+              await QuestionTable.getInstance().insertDataAwait(item);
             });
             // 显示导入结果
             this.questionErrorList = excelDataObj.questionErrorList;
             this.importStatus = '成功';
             this.message = `开始处理Excel文件: ${file.path}`;
+            emitter.emit(EmitterConstants.EM_REFRESH_HOME)
           }
         } catch (error) {
           console.error(TAG, 'excelData error:' + error);
@@ -220,7 +224,7 @@ struct CustomizedBankPage {
   async getInputDialogName(defaultName: string): Promise<string> {
     let bankName: string = defaultName;
     let isConfirmed: boolean = false;
-    await new Promise<void>((resolve,reject) => {
+    await new Promise<void>((resolve, reject) => {
       this.dialogController = new CustomDialogController({
         builder: InputDialog({
           initialText: defaultName,
@@ -410,7 +414,6 @@ struct InputDialog {
     .width('90%')
     .height(250)
     .padding({ top: 20, bottom: 20 })
-    .backgroundColor(Color.White)
     .borderRadius(12)
   }
 }
@@ -458,7 +461,6 @@ struct ResultDialog {
     .width('90%')
     .height(250)
     .padding({ top: 20, bottom: 20 })
-    .backgroundColor(Color.White)
     .borderRadius(12)
   }
 }

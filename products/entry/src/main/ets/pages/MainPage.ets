@@ -6,9 +6,10 @@ import { AppConstants } from '../constants/AppConstants';
 import { TabBarType } from '../model/TabBarModel';
 import router from '@ohos.router'
 import { common } from '@kit.AbilityKit';
-import { init, onEventObject } from '@umeng/analytics';
+import { init } from '@umeng/analytics';
 import { MainModel } from '../model/MainModel';
-import { preferencesUtils, PreferencesConstants } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
+import { emitter } from '@kit.BasicServicesKit';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -18,19 +19,7 @@ struct MainPage {
   @LocalStorageLink('mainTabIndex') currentIndex: TabBarType = TabBarType.HOME;
   @Provide('appPathStack') appPathStack: NavPathStack = new NavPathStack();
   @State showDialog: boolean = false
-  @Provide nickName: string = ''
-  @Provide avatarUrl: string = ''
-  @Provide loginState: string = '0' //0=未登录
   @State mainModel: MainModel = MainModel.getInstance()
-
-  onPageShow(): void {
-    const params = router.getParams() as Record<string, string>
-    if (params) {
-      this.nickName = params.nickName as string
-      this.avatarUrl = params.avatarUrl as string
-      this.loginState = params.loginState as string
-    }
-  }
 
   private initPreferences() {
     //初始化sp实例
@@ -72,6 +61,9 @@ struct MainPage {
           .scrollable(false)
           .onChange((index) => {
             this.currentIndex = index
+            if (index === TabBarType.HOME) {
+              emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+            }
           })
 
           CustomTabBar({ currentIndex: $currentIndex })
