@@ -21,7 +21,6 @@ export struct SettingPage {
   @State bankList: BankListRes[] = [];
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
-  @State isVIP: boolean = false
 
   // 打开选择题库对话框的方法
   async showSelectBankDialog() {
@@ -33,7 +32,6 @@ export struct SettingPage {
         onConfirm: (selected: string[]) => {
           this.agreementChecked = this.agreementChecked;
         },
-        isVip: this.isVIP
       })
     });
     this.dialogController.open();
