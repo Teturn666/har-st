@@ -16,6 +16,8 @@ export { ToastUtils } from './src/main/ets/utils/ToastUtils'
 
 export { EmitterConstants } from './src/main/ets/common/EmitterConstants'
 
+export { OnWXResp, APP_ID, WXApi, WXEventHandler } from './src/main/ets/utils/WXApiWrap'
+
 export {
   LoadingStatus
 } from './src/main/ets/common/CommonEnums'

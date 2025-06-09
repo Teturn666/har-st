@@ -12,8 +12,6 @@
     "db": "file:../../commons/db",
     "network": "file:../../commons/network",
     "login": "file:../login",
-    "home": "file:../home",
-    "home1": "file:../home"
   }
 }
 

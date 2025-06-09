@@ -29,9 +29,9 @@ export class PayModel {
   }
 
   //获取创建订单的参数，给微信支付调用
-  public async getCreatePay(): Promise<CreatePayInfoRes> {
+  public async getCreatePay(pId: string): Promise<CreatePayInfoRes> {
     try {
-      let data = await this.payNet.getCreatePay()
+      let data = await this.payNet.getCreatePay(pId)
       return data
     } catch (e) {
       return new CreatePayInfoRes()
