@@ -40,6 +40,7 @@ export struct ProgressLoading {
 
   build() {
     RelativeContainer() {
+
       Progress({
         total: 100,
         value: this.value,

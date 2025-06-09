@@ -21,6 +21,7 @@ import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
 import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
 import { BankListRes } from 'db'
+import {AdCustomDialog} from '../components/AdCustomDialog'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -65,7 +66,31 @@ export struct HomePage {
   @State bankList: BankListRes[] = [];
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
-
+  @State isVip:number=2
+  AdDialogController: CustomDialogController | null = new CustomDialogController({
+    builder: AdCustomDialog({
+      isShowDia: () => {
+        this.AdDialogController?.close()
+      }
+    }),
+    autoCancel: false,
+    alignment: DialogAlignment.Center,
+    offset: { dx: 0, dy: -20 },
+    gridCount: 4,
+    customStyle: false,
+    backgroundColor: 0xd9ffffff,
+    cornerRadius: 5,
+    width: 300,
+    height: 350,
+    maskColor: "#88000000",
+    borderStyle: BorderStyle.Dashed,
+    shadow: ({
+      radius: 20,
+      color: Color.Grey,
+      offsetX: 10,
+      offsetY: 10
+    }),
+  })
   // 打开选择题库对话框的方法
   async showSelectBankDialog() {
     this.dialogController = new CustomDialogController({
@@ -75,7 +100,14 @@ export struct HomePage {
         onConfirm: (selected: string[]) => {
           this.agreementChecked = this.agreementChecked;
         },
+        isVipDialog:()=>{
+          this.dialogController?.close()
+          if (!this.isVip){
+            this.AdDialogController?.open()
+          }
+        }
       })
+
     });
     this.dialogController.open();
   }
@@ -86,6 +118,7 @@ export struct HomePage {
   }
 
   aboutToAppear(): void {
+    this.isVip= preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     // this.initLottie()
     this.loadResource()
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
@@ -147,11 +180,13 @@ export struct HomePage {
               nClick: () => {
                 if (!this.getIsShowDialog()) {
                   this.showSelectBankDialog()
-                } else {
-                  router.pushNamedRoute({
-                    name: HomeConstants.ROUTER_SEARCH_INTRODUCTION
-                  })
+
+                }else {
+                  if (!this.isVip){
+                    this.AdDialogController?.open()
+                  }
                 }
+
               }
             })
           }
