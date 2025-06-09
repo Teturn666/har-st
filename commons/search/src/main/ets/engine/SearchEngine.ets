@@ -74,7 +74,7 @@ export class SearchEngine {
   private async initEngineTaskPool(context: Context, questionList: ArrayList<QuestionRes>): Promise<void> {
     // 此处需要从沙箱文件里取出变量
     const mDataTexts =
-      await SearchMapManage.getInstance().loadTreeMapFromFile(context) || new Map<string, Set<number>>();
+      await SearchMapManage.getInstance().loadMapFromFile(context) || new Map<string, Set<number>>();
     const mStopWords = "\t1234567890【】，。,.、  ？?_;；：:…'\"\nABCD";
     questionList.forEach((item) => {
       // 处理题干分词
@@ -110,7 +110,7 @@ export class SearchEngine {
     });
 
     // 存储进入沙箱文件
-    await SearchMapManage.getInstance().saveTreeMapToFile(context, mDataTexts)
+    await SearchMapManage.getInstance().saveMapToFile(context, mDataTexts)
     console.debug(TAG, "保存成功")
   }
 
@@ -133,6 +133,15 @@ export class SearchEngine {
   //   this.mIsInitFinish = true
   //   return isFinish
   // }
+
+
+  /**
+   * 初始化搜索引擎
+   * @param context
+   */
+  async initWithThread(ctx: common.Context, qid: number, type: number) {
+    SearchEngine.getInstance().indexFromDatabase(ctx, qid, type)
+  }
 
 
   /**
@@ -396,7 +405,7 @@ export class SearchEngine {
     let mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0) as number
     let mMatchScores = new TreeMap<number, number>()
     const mDataText =
-      await SearchMapManage.getInstance().loadTreeMapFromFile(getContext(this)) || new Map<string, Set<number>>()
+      await SearchMapManage.getInstance().loadMapFromFile(getContext(this)) || new Map<string, Set<number>>()
     if (!StringUtils.isNullOrEmpty(q)) {
       //分词
       let list = SegmentEngine.getInstance().cut(q)

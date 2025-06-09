@@ -4,6 +4,8 @@ import { relationalStore } from '@kit.ArkData';
 import { BankListRes } from '../model/BankListRes';
 import { Logger } from 'utils';
 
+const TAG = 'QuestionBankTable'
+
 //题库表
 class QuestionBankTable {
   private accountTable = new ChRdb(DbConstants.QUESTION_BANK_TABLE.tableName, DbConstants.QUESTION_BANK_TABLE.sqlCreate,
@@ -31,10 +33,16 @@ class QuestionBankTable {
     return await this.accountTable.insertDataAwait(valueBucket)
   }
 
-  deleteData(account: BankListRes, callback: Function) {
+  async deleteData(account: BankListRes, callback: Function, rdb?: relationalStore.RdbStore) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
     predicates.equalTo('qid', account.qid);
-    this.accountTable.deleteData(predicates, callback);
+    if (rdb) {
+      console.info(TAG, 'deleteData() has rdbStore!');
+      await this.accountTable.deleteDataTask(rdb, predicates);
+    } else {
+      console.info(TAG, 'deleteData() no rdbStore!');
+      this.accountTable.deleteData(predicates, callback);
+    }
   }
 
   updateData(account: BankListRes, callback: Function) {
@@ -44,14 +52,16 @@ class QuestionBankTable {
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
-  async querySync(qid: number, isAll: boolean = true): Promise<Array<BankListRes>> {
+  // 抽取的公共查询函数
+  private async executeBankQuery(rdbStore: relationalStore.RdbStore, qid: number,
+    isAll: boolean = true): Promise<Array<BankListRes>> {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
-    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
+
     if (!isAll) {
       predicates.equalTo('qid', qid);
     }
 
-    let resultSet = rdb.querySync(predicates)
+    let resultSet = rdbStore.querySync(predicates)
     if (resultSet == null) {
       return []
     } else {
@@ -102,6 +112,18 @@ class QuestionBankTable {
         return []
       }
     }
+  }
+
+  // 数据查询
+  async querySync(qid: number, isAll: boolean = true): Promise<Array<BankListRes>> {
+    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
+    return this.executeBankQuery(rdb, qid, isAll);
+  }
+
+  // 多线程数据查询
+  async querySyncTaskPool(rdbStore: relationalStore.RdbStore, qid: number,
+    isAll: boolean = true): Promise<Array<BankListRes>> {
+    return this.executeBankQuery(rdbStore, qid, isAll);
   }
 }
 
