@@ -122,6 +122,18 @@ export default class ChRdb {
     }
   }
 
+  async deleteDataTask(rdbStore: relationalStore.RdbStore,
+    predicates: relationalStore.RdbPredicates): Promise<boolean> {
+    try {
+      const result = await rdbStore.delete(predicates);
+      Logger.info(`deleteData() finished: ${result}`);
+      return true;
+    } catch (err) {
+      Logger.error(`deleteData() failed, err: ${err}`);
+      return false;
+    }
+  }
+
   async deleteDataAwait(predicates: relationalStore.RdbPredicates): Promise<number> {
     if (this.rdbStore) {
       try {
@@ -180,10 +192,11 @@ export default class ChRdb {
    * 返回Promise的查询方法
    * @returns ResultSet
    */
-  async querySync(predicates: relationalStore.RdbPredicates): Promise<relationalStore.ResultSet | null> {
-    if (this.rdbStore) {
+  async querySync(rdbStore: relationalStore.RdbStore,
+    predicates: relationalStore.RdbPredicates): Promise<relationalStore.ResultSet | null> {
+    if (rdbStore) {
       try {
-        let resultSet = await this.rdbStore.query(predicates, this.columns)
+        let resultSet = await rdbStore.query(predicates, this.columns)
         Logger.info('query() finished.')
         return resultSet
         // resultSet.close()
