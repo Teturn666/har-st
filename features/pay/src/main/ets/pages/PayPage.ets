@@ -129,7 +129,7 @@ export struct PayPage {
   // 获取卡的背景图片
   private getCardBackground(card: PriceInfoRes, isSelected: boolean): string {
     if (isSelected) {
-      return card.id === '3' ? 'ic_yearbg' : 'ic_bg';
+      return card.id === '3' ? 'ic_yearbg' : 'ic_vipbg';
     }
     return card.id === '3' ? 'ic_yearedbg' : 'ic_bged';
   }
@@ -177,7 +177,7 @@ export struct PayPage {
               .fontSize(14)
               .fontColor('#3E3E3E')
             if (this.isVip === 1) {
-              Image($r('app.media.ic_vip'))
+              Image($r('app.media.ic_vips'))
                 .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
                 .width(16)
                 .height(16)
@@ -234,10 +234,11 @@ export struct PayPage {
         } else {
           ForEach(this.priceList, (card: PriceInfoRes) => {
             ListItem() {
-              Stack() {
+              Stack() {//ic_bg ${this.getCardBackground(card, this.selectedCard === card.id)}
                 Image($r(`app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`))
+                  .objectFit(ImageFit.Contain)
                   .width(105)
-                  .height(78)
+                  .height(80)
                 Column() {
                   Text(card.showtext)
                     .fontWeight(600)
@@ -308,19 +309,21 @@ export struct PayPage {
       .backgroundColor('#ebebeb')
       .margin({ left: 32, right: 32, top: 20 })
 
-      Row() {
-        Image($r('app.media.ic_vip'))
-          .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
-        Image($r('app.media.ic_vipsize'))
-          .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
-          .margin({ left: 8 })
-      }
-      .margin({ left: 25, top: 18 })
-      .width('100%')
+      // Row() {
+      //   Image($r('app.media.ic_vips'))
+      //     .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
+      //   Image($r('app.media.ic_vipsize'))
+      //     .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
+      //     .margin({ left: 8 })
+      // }
+      // .margin({ left: 25, top: 18 })
+      // .width('100%')
 
-      BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
-      BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
-      BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
+      // BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
+      // BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
+      // BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
+
+      Blank()
       // 底部支付
       PaymentFooter({ totalPrice: this.totalPrice, savePrice: this.savePrice, isLogin: this.isLogin() })
         .onClick(async () => {

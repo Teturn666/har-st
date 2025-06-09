@@ -6,7 +6,7 @@ import PointsConstants from '../../../Constants/PointsConstants';
 
 import('./MyHistoryPage')
 import('./MyInvitationPage')
-import ('./PointExchangePage')
+import('./PointExchangePage')
 
 @Entry({ routeName: 'pointsPage' })
 @Component
@@ -18,7 +18,6 @@ export struct PointsPage {
   @State toShowList: showSingle[] = []
   @State toSignToday: boolean = false
   @State loadingStatus: boolean = false
-
 
   aboutToAppear(): void {
     this.loadResources()
@@ -52,7 +51,7 @@ export struct PointsPage {
       this.toShowList = []
       let mapLists = await this.PointsModel.getSignMapList()
       let totalDays = Math.abs(sign_days)
-      let cycleDay = totalDays % 8 === 0 ? 8 : totalDays % 8
+      let cycleDay = totalDays % 7 === 0 ? 7 : totalDays % 7
       for (let i = 0; i < mapLists.length; i++) {
         let days = mapLists[i].days
         let point = mapLists[i].point
@@ -159,7 +158,9 @@ export struct PointsPage {
             .fontColor('#333333')
             .margin({ left: 8 })
         }
-        .margin({ left: 15, top: 10 })
+        .margin({ left: 18, top: 10 })
+        .width('100%')
+
 
         if (this.loadingStatus == false) {
 
@@ -210,12 +211,49 @@ export struct PointsPage {
           .margin({ top: 8 })
           .width('100%')
           .height('auto')
+
         }
+
+        // Row() {
+        //   Image($r('app.media.ic_task'))
+        //     .width(18)
+        //     .height(18)
+        //   Image($r('app.media.ic_tasking'))
+        //     .width(122)
+        //     .height(18)
+        // }
+        // .margin({ left: 18, top: 10 })
+        // .width('100%')
+        //
+        // TaskCard({
+        //   points: "+20积分",
+        //   unit: "/人",
+        //   title: "邀请好友",
+        //   description: "  (分享好友完成注册)",
+        //   buttonImage: $r('app.media.ic_share')
+        // })
+        //
+        // TaskCard({
+        //   points: "+5积分",
+        //   unit: "/个",
+        //   title: "看广告赚积分",
+        //   description: "  (看20个可兑换一天VIP)",
+        //   buttonImage: $r('app.media.ic_complete')
+        // })
+        //
+        // TaskCard({
+        //   points: "+10积分",
+        //   unit: "/周",
+        //   title: "应用评分",
+        //   description: "  (应用商店评分，我们需要您的支持)",
+        //   buttonImage: $r('app.media.ic_share')
+        // })
+
       }
       .borderRadius(12)
       .padding({ top: 8 })
       .justifyContent(FlexAlign.Start)
-      .alignItems(HorizontalAlign.Start)
+      // .alignItems(HorizontalAlign.Start)
       .margin({ top: 15 })
       .width('95%')
       .height('100%')
@@ -259,3 +297,50 @@ struct PointsCard {
   }
 }
 
+@ComponentV2
+struct TaskCard {
+  @Param points: string = '';
+  @Param unit: string = '';
+  @Param title: string = '';
+  @Param description: string = '';
+  @Param buttonImage: Resource = $r('app.media.ic_share');
+
+  build() {
+    Row() {
+      Column() {
+        Row() {
+          Text(this.points)
+            .fontSize(16)
+            .fontColor('#F75A23')
+          Text(this.unit)
+            .fontSize(12)
+            .fontColor($r('app.color.c_9d9d9d'))
+        }
+        Row() {
+          Text(this.title)
+            .fontSize(12)
+            .fontColor($r('app.color.c_3e3e3e'))
+          Text(this.description)
+            .fontSize(12)
+            .fontColor($r('app.color.c_9d9d9d'))
+        }
+      }
+      .width('70%')
+      .height('50')
+      .justifyContent(FlexAlign.SpaceAround)
+      .alignItems(HorizontalAlign.Start)
+      Image(this.buttonImage)
+        .width(63)
+        .height(24)
+        // .onClick( ())
+    }
+    .justifyContent(FlexAlign.SpaceBetween)
+    .alignItems(VerticalAlign.Center)
+    .margin({ top: 8 })
+    .padding({ left: 18, right: 8 })
+    .width('95%')
+    .height('70')
+    .borderRadius(5)
+    .backgroundColor('#ecebeb')
+  }
+}
