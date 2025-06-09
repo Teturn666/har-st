@@ -3,8 +3,6 @@ import {
   QuestionTable,
   BankListRes,
   QuestionRes,
-  questionCollectionTable,
-  questionWrongTable,
 } from 'db'
 import { SearchDecryptUtils, SearchEngine } from 'search'
 import { Logger, StringUtils } from 'utils'
@@ -15,8 +13,10 @@ import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
 import preferences from '@ohos.data.preferences'
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
+import { taskpool } from '@kit.ArkTS'
+import { deleteTableTask } from '../manage/ConcurrentManage'
 
-const TAG = '[BankModel]'
+const TAG = 'BankModel'
 
 
 @Observed
@@ -36,41 +36,13 @@ export class BankModel {
   }
 
   //删除数据库
-  async deleteTable(qid: number) {
-    //删除相应的题库表
-    let bankResultList = await questionBankTable.querySync(qid, false) ?? [];
-    if (bankResultList.length > 0) {
-      let bankRes = bankResultList[0]
-      questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
-        Logger.info(TAG, '题库deleteData--------' + resFlag)
-      })
-    }
-    //删除相应的题目表
-    let bankQaResultList = await QuestionTable.getInstance().querySync(qid, false, false) ?? [];
-    if (bankQaResultList.length > 0) {
-      bankQaResultList.forEach((item) => {
-        QuestionTable.getInstance().deleteData(item, (resFlag: boolean) => {
-          Logger.info(TAG, '题目deleteData--------' + resFlag)
-        })
-      })
-    }
-    //删除相应的收藏表
-    let collectionResultList = await questionCollectionTable.querySync(qid, false) ?? [];
-    if (collectionResultList.length > 0) {
-      collectionResultList.forEach((item) => {
-        questionCollectionTable.deleteData(item, (resFlag: boolean) => {
-          Logger.info(TAG, '收藏题目deleteData--------' + resFlag)
-        })
-      })
-    }
-    //删除相应的错题表
-    let wrongResultList = await questionWrongTable.querySync(qid, false) ?? [];
-    if (wrongResultList.length > 0) {
-      wrongResultList.forEach((item) => {
-        questionWrongTable.deleteData(item, (resFlag: boolean) => {
-          Logger.info(TAG, '错题题目deleteData--------' + resFlag)
-        })
-      })
+  deleteTable(qid: number) {
+    try {
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(deleteTableTask, getContext(this), qid);
+      taskpool.execute(task);
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
     }
   }
 
@@ -254,6 +226,24 @@ export class BankModel {
     sp.putSync(SearchConstants.SEARCH_DATASIZE, qaNum)
     sp.flushSync()
     let result = await SearchEngine.getInstance().initWithThreadTask(qid, type)
+    Logger.debug('result---' + result)
+  }
+
+  // 多线程初始化搜索引擎,更新查询数据
+  public async initSearchEnginTask(ctx: Context, qid: number, qaNum: number, type: number) {
+    let sp = preferences.getPreferencesSync(ctx, SearchConstants.SEARCH_OPTIONS)
+    //删除
+    if (type === 2) {
+      qaNum = 0
+    } else {
+      let oldNum = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0)
+      if (typeof oldNum === 'number') {
+        qaNum = oldNum + qaNum
+      }
+    }
+    sp.putSync(SearchConstants.SEARCH_DATASIZE, qaNum)
+    sp.flushSync()
+    let result = await SearchEngine.getInstance().initWithThread(ctx, qid, type)
     Logger.debug('result---' + result)
   }
 }

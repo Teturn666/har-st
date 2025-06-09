@@ -41,10 +41,14 @@ export class QuestionTable {
     return await this.accountTable.insertDataAwait(valueBucket);
   }
 
-  deleteData(account: QuestionRes, callback: Function) {
+  async deleteData(account: QuestionRes, callback: Function, rdb?: relationalStore.RdbStore) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
     predicates.equalTo('qId', account.qId);
-    this.accountTable.deleteData(predicates, callback);
+    if (rdb) {
+      await this.accountTable.deleteDataTask(rdb, predicates);
+    } else {
+      this.accountTable.deleteData(predicates, callback);
+    }
   }
 
   updateData(account: QuestionRes, callback: Function) {
@@ -54,65 +58,17 @@ export class QuestionTable {
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
-  async querySync(id: number, isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
-    let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
+  // 抽取的公共查询函数
+  private async executeQuestionQuery(rdbStore: relationalStore.RdbStore, id: number, isSearch: boolean = false,
+    isAll: boolean = true): Promise<Array<QuestionRes>> {
+    const predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
+
     if (!isAll) {
       //搜索走的是找id的位置；题库练习走的是根据题库qId找关联的题目
       predicates.equalTo(isSearch ? 'id' : 'qId', id);
     }
 
-    let resultSet = rdb.querySync(predicates)
-    if (resultSet == null) {
-      return []
-    } else {
-      try {
-        let count: number = resultSet.rowCount;
-        if (count === 0 || typeof count === 'string') {
-          console.log(`${DbConstants.TABLE_TAG}` + 'Query no results!');
-          return []
-        } else {
-          resultSet.goToFirstRow();
-          const result: QuestionRes[] = [];
-          for (let i = 0; i < count; i++) {
-            let tmp: QuestionRes = {
-              id: -1,
-              qId: 0,
-              qName: '',
-              question: '',
-              answer: '',
-              option: [],
-              wrongAnswer: '',
-              questionID: 0
-            };
-            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
-            tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
-            //这个升级后插入的列
-            tmp.qName = resultSet.getString(resultSet.getColumnIndex('qName'));
-            tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
-            tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
-            tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
-            tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
-            result[i] = tmp;
-            resultSet.goToNextRow();
-          }
-          return result
-        }
-      } catch (e) {
-        Logger.error(e)
-        return []
-      }
-    }
-  }
-
-  async querySyncTaskPool(rdbStore: relationalStore.RdbStore, id: number, isSearch: boolean = false,
-    isAll: boolean = true): Promise<Array<QuestionRes>> {
-    const predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    if (!isAll) {
-      predicates.equalTo(isSearch ? 'id' : 'qId', id);
-    }
-
-    const resultSet = rdbStore.querySync(predicates); // 查询到几万条
+    const resultSet = rdbStore.querySync(predicates);
     if (!resultSet) {
       return [];
     }
@@ -139,6 +95,7 @@ export class QuestionTable {
         };
         tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
         tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
+        //这个升级后插入的列
         tmp.qName = resultSet.getString(resultSet.getColumnIndex('qName'));
         tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
         tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
@@ -152,6 +109,16 @@ export class QuestionTable {
       Logger.error(e);
       return [];
     }
+  }
+
+  async querySync(id: number, isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
+    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
+    return this.executeQuestionQuery(rdb, id, isSearch, isAll);
+  }
+
+  async querySyncTaskPool(rdbStore: relationalStore.RdbStore, id: number, isSearch: boolean = false,
+    isAll: boolean = true): Promise<Array<QuestionRes>> {
+    return this.executeQuestionQuery(rdbStore, id, isSearch, isAll);
   }
 
   /**
