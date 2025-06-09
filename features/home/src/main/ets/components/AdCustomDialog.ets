@@ -116,9 +116,6 @@ export  struct AdCustomDialog {
     .width('100%')
     .height('100%')
     .backgroundColor('#FFFEFA')
-    // .alignRules({
-    //   center: { anchor: '__container__', align: VerticalAlign.Center },
-    //   middle: { anchor: '__container__', align: HorizontalAlign.Center }
-    // })
+
   }
 }
