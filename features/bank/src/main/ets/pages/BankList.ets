@@ -212,16 +212,17 @@ export struct BankList {
   showDeleteDialog() {
     this.dialogDeleteController = new CustomDialogController({
       builder: DeleteDialog({
-        bank: this.mCurBank, confirm: async (item) => {
-          //删除确定
-          //更新状态为未下载
+        bank: this.mCurBank,
+        confirm: async (item) => {
+          // 1. 先关闭对话框
+          this.dialogDeleteController?.close()
+
           item.downloadedState = 2
           this.updateStatusMap.delete(item.qid); // 删除缓存中的更新状态
           //触发UI重新渲染
           this.bankRes.newsData = [...this.bankRes.newsData]
-          this.dialogDeleteController?.close()
-          await this.bankModel.deleteTable(item.qid)
-          await this.bankModel.initSearchEngin(0, 0, 2)
+          // 4. 执行删除操作
+          this.bankModel.deleteTable(item.qid)
         }
       })
     });

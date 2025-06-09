@@ -26,7 +26,7 @@ export class SearchMapManage {
   }
 
   // 保存数据到文件
-  async saveTreeMapToFile(ctx: common.Context, data: Map<string, Set<number>>): Promise<void> {
+  async saveMapToFile(ctx: common.Context, data: Map<string, Set<number>>): Promise<void> {
     try {
       const serializableData: SerializableTreeMapData = {};
       const entries = data.entries();
@@ -42,15 +42,15 @@ export class SearchMapManage {
         await fs.open(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY);
       await fs.write(file.fd, jsonData);
       await fs.close(file.fd);
-      console.info('TreeMap data saved successfully');
+      console.info('map data saved successfully');
     } catch (error) {
       const err = error as BusinessError;
-      console.error('Failed to save TreeMap data:', err);
+      console.error('Failed to save map data:', err);
     }
   }
 
   // 从文件中加载数据,返回map数据类型
-  async loadTreeMapFromFile(ctx: common.Context): Promise<Map<string, Set<number>> | null> {
+  async loadMapFromFile(ctx: common.Context): Promise<Map<string, Set<number>> | null> {
     try {
       const stat = await fs.stat(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME);
       if (!stat.isFile()) {
@@ -72,7 +72,7 @@ export class SearchMapManage {
       return restoredMap;
     } catch (error) {
       const err = error as BusinessError;
-      console.error('Failed to load TreeMap data:', err);
+      console.error('Failed to load map data:', err);
       return new Map<string, Set<number>>();
     }
   }
@@ -83,7 +83,7 @@ export class SearchMapManage {
    * @returns
    */
   // 从文件中加载数据,返回对象数据类型
-  async loadTreeObjectFromFile(ctx: common.Context): Promise<TreeDataObject | null> {
+  async loadObjectFromFile(ctx: common.Context): Promise<TreeDataObject | null> {
     try {
       const stat = await fs.stat(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME);
       if (!stat.isFile()) {
@@ -187,17 +187,17 @@ export class SearchMapManage {
       try {
         await fs.stat(filePath);
       } catch (error) {
-        console.info('TreeMap file does not exist, no need to clear');
+        console.info('map file does not exist, no need to clear');
         return true;
       }
 
       // 删除文件
       await fs.unlink(filePath);
-      console.info('TreeMap file cleared successfully (deleted)');
+      console.info('map file cleared successfully (deleted)');
       return true;
     } catch (error) {
       const err = error as BusinessError;
-      console.error('Failed to clear TreeMap file:', err);
+      console.error('Failed to clear map file:', err);
       return false;
     }
   }
@@ -211,7 +211,7 @@ export class SearchMapManage {
       try {
         await fs.stat(filePath);
       } catch (error) {
-        console.info('TreeMap file does not exist, creating empty file');
+        console.info('map file does not exist, creating empty file');
       }
 
       // 写入空的JSON对象到文件
@@ -219,11 +219,11 @@ export class SearchMapManage {
       const file = await fs.open(filePath, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY | fs.OpenMode.TRUNC);
       await fs.write(file.fd, emptyData);
       await fs.close(file.fd);
-      console.info('TreeMap file content cleared successfully');
+      console.info('map file content cleared successfully');
       return true;
     } catch (error) {
       const err = error as BusinessError;
-      console.error('Failed to clear TreeMap file content:', err);
+      console.error('Failed to clear map file content:', err);
       return false;
     }
   }
