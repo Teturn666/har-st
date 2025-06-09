@@ -3,9 +3,9 @@ import { TitleBar } from 'widget/Index'
 import { SearchModel } from '../model/SearchModel'
 import { SearchResultRes } from '../model/SearchResultRes'
 import { router } from '@kit.ArkUI'
-import { BankListRes, QuestionRes } from 'db'
+import {  QuestionRes } from 'db'
 import { SearchEngine } from 'search'
-import { emitter } from '@kit.BasicServicesKit'
+
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 
 @Entry({ routeName: 'searchResultPage' })

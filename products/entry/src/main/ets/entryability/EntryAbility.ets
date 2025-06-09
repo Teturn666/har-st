@@ -2,7 +2,8 @@ import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { WXApi, WXEventHandler } from 'login/Index';
-import { ChPackageUtils } from 'utils';
+import { ChPackageUtils, DemoConstants } from 'utils';
+import { cSJAdSdkAd } from '../utils/CSJAdSdk';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -24,7 +25,11 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
+
     });
+    DemoConstants.windowStage=windowStage
+    cSJAdSdkAd.ctx=this.context
+    cSJAdSdkAd.ConfigSDK()
   }
 
   onWindowStageDestroy(): void {
