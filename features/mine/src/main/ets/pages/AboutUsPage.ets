@@ -1,10 +1,23 @@
 import { TitleBar } from 'widget/Index'
 import MineConstants from "../Constants/MineConstants";
 import { router } from '@kit.ArkUI';
+import { ChPackageUtils } from 'utils';
 
 @Entry({ routeName: 'aboutUsPage' })
 @Component
 export struct AboutUsPage {
+  //版本号
+  @State version: string = ''
+
+  aboutToAppear(): void {
+    this.loadsource()
+  }
+
+  async loadsource() {
+    const version = await ChPackageUtils.getVersionName()
+    this.version = version.toString()
+  }
+
   build() {
     Column() {
       TitleBar({
@@ -31,7 +44,7 @@ export struct AboutUsPage {
               url: MineConstants.USER_AGREEMENT_URL,
               title: "用户协议"
             }
-          },router.RouterMode.Single)
+          }, router.RouterMode.Single)
         }).width('100%')
 
         Row() {
@@ -51,7 +64,7 @@ export struct AboutUsPage {
               url: MineConstants.USER_PRIVACY_URL,
               title: "隐私政策"
             }
-          },router.RouterMode.Single)
+          }, router.RouterMode.Single)
         })
       }
       .width('90%')
@@ -64,7 +77,7 @@ export struct AboutUsPage {
       Text("快搜搜题").fontSize(16)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Start).margin({ bottom: 4 })
-      Text("版本号1.0.0").fontSize(16)
+      Text(`版本号${this.version}`).fontSize(16)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Start).margin({ bottom: 4 })
       Text("粤ICP备2021067372号-2A").fontSize(12)
