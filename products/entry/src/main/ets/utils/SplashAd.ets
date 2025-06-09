@@ -1,63 +1,66 @@
-import { AdSlot, AdSlotBuilder,
+import {
+  AdSlot,
+  AdSlotBuilder,
   CSJAdCreator,
   CSJAdSdk,
   CSJSplashAd,
   CSJSplashAdCloseType,
   CSJSplashAdInteractionListener,
-  CSJSplashAdLoadListener, CSJSplashAdLoadParam } from "@csj/openadsdk"
+  CSJSplashAdLoadListener,
+  CSJSplashAdLoadParam
+} from "@csj/openadsdk"
 
-import { Content, promptAction, window } from "@kit.ArkUI"
+import { Content, window } from "@kit.ArkUI"
 import { DemoConstants, UIUtil } from "utils"
 
 
 export class SplashAd {
-
-  private mAdCreator: CSJAdCreator|null=null
+  private mAdCreator: CSJAdCreator | null = null
   private screenWidth: number = UIUtil.getScreenWidthVp()
   private screenHeight: number = UIUtil.getScreenHeightVp()
   private adWidth: number = Math.round(this.screenWidth)
   private adHeight: number = Math.round(this.screenHeight)
-  private  mLoadListener: CSJSplashAdLoadListener|null=null
-  private  mSplashAdInteractionListener:CSJSplashAdInteractionListener|null=null
+  private mLoadListener: CSJSplashAdLoadListener | null = null
+  private mSplashAdInteractionListener: CSJSplashAdInteractionListener | null = null
   private splashAd: CSJSplashAd | undefined
   private adLoadSuccess: Boolean = false
   private mWindow: window.Window | undefined = undefined
   globalBuilder: WrappedBuilder<[]> = wrapBuilder(bottomViewBuilder)
   globalCloseBtnBuilder: WrappedBuilder<[closeBlock: () => Promise<void>]> = wrapBuilder(closeBtnBuilder)
-  ctx?:Content
-  adSlot: AdSlot|undefined=undefined
-
-  TimeOut:number=3000
-  useCustomCloseBtn:boolean=false
-  mBiddingAdm:string = '' //服务端bidding才需要设置
+  ctx?: Content
+  adSlot: AdSlot | undefined = undefined
+  TimeOut: number = 3000
+  useCustomCloseBtn: boolean = false
+  mBiddingAdm: string = '' //服务端bidding才需要设置
   errorMsg: string | undefined = undefined;
   startLoad: boolean = false;
 
-  ShowSplash( callback:(ids:boolean)=>void) {
-  this.mAdCreator=  CSJAdSdk.getAdCreator()   //初始化广告创建器
-    this.errorMsg=undefined
+  ShowSplash(callback: (ids: boolean) => void) {
+    this.mAdCreator = CSJAdSdk.getAdCreator() //初始化广告创建器
+    this.errorMsg = undefined
     this.adLoadSuccess = false;
     this.startLoad = true;
 
     this.asSLOTaD(callback)
-    let param =   new CSJSplashAdLoadParam(this.adSlot!, this.mLoadListener!, this.ctx as UIContext , this.TimeOut!)
-//    PrintBiddingTokenUtils.printBiddingToken(this.adSlot!,this.mAdCreator)
+    let param = new CSJSplashAdLoadParam(this.adSlot!, this.mLoadListener!, this.ctx as UIContext, this.TimeOut!)
+
     this.mAdCreator.loadSplashAd(param)
 
 
   }
-  //构建广告位对象
-      private  asSLOTaD( callback:(ids:boolean)=>void){
 
-        this.adSlot= new AdSlotBuilder()
-          .setCodeId("888906709")//891708155 888906709
-          .setAcceptSize(this.adWidth, this.adHeight)
-          .setBidAdm(this.mBiddingAdm)
-          .build()
-        this.InteractionListener()
-        this.Listener(callback)
-         }
-  isShowAd(){
+  private asSLOTaD(callback: (ids: boolean) => void) {
+
+    this.adSlot = new AdSlotBuilder()
+      .setCodeId("888906709")
+      .setAcceptSize(this.adWidth, this.adHeight)
+      .setBidAdm(this.mBiddingAdm)
+      .build()
+    this.InteractionListener()
+    this.Listener(callback)
+  }
+
+  isShowAd() {
 
     this.splashAd!.setInteractionListener(this.mSplashAdInteractionListener)
 
@@ -69,9 +72,10 @@ export class SplashAd {
         this.useCustomCloseBtn ? this.globalCloseBtnBuilder : undefined)
     }
   }
+
   //开启监听
-    Listener( callback:(ids:boolean)=>void){
-    this.mLoadListener= {
+  Listener(callback: (ids: boolean) => void) {
+    this.mLoadListener = {
       onAdLoaded: (splashAd: CSJSplashAd) => {
         console.log("开屏回调 - onAdLoaded")
         this.splashAd = splashAd;
@@ -85,22 +89,22 @@ export class SplashAd {
       onError: (code: number, message: string) => {
         this.errorMsg = "onError\ncode: " + code + "\nmessage: " + message;
         console.log(`开屏回调 - onError code: ${code} message: ${message}`)
-        callback(true)
+        callback(false)
       },
       // 开屏渲染成功
       onRenderSuccess: (splashAd: CSJSplashAd) => {
         console.log("开屏回调 - onRenderSuccess")
       },
       // 开屏渲染失败
-      onRenderFail:(code: number, message: string) => {
+      onRenderFail: (code: number, message: string) => {
         console.log("开屏回调 - onRenderFail")
       }
     }
   }
 
   //开屏回调
-  InteractionListener(){
-    this.mSplashAdInteractionListener={
+  InteractionListener() {
+    this.mSplashAdInteractionListener = {
       onDidShow: () => {
         console.log("开屏回调 - onDidShow")
 
@@ -109,7 +113,6 @@ export class SplashAd {
       onDidClose: (closeType: CSJSplashAdCloseType) => {
         console.log(`开屏回调 - onDidClose 关闭原因：${closeType.value}`)
         this.splashAd = undefined
-        // 方式二：需自行移除广告
         this.mWindow?.destroyWindow()
       },
 
@@ -126,18 +129,19 @@ export class SplashAd {
       }
     }
   }
-
 }
 
 export const splashAd = new SplashAd()
+
 // 创建Builder函数用于展示底部View
 @Builder
 function bottomViewBuilder() {
   Text('Bottom View')
     .backgroundColor(Color.Yellow)
     .width(UIUtil.getScreenWidthVp())
-    .height(UIUtil.getScreenHeightVp() )
+    .height(UIUtil.getScreenHeightVp())
 }
+
 //自定义关闭按钮
 @Builder
 function closeBtnBuilder(closeBlock: () => Promise<void>) {

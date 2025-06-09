@@ -1,13 +1,25 @@
 
 import { router } from "@kit.ArkUI";
+import { PreferencesConstants, preferencesUtils } from "utils";
+import { rewardAd, RewardAd } from "../utils/RewardAd";
+
 
 @CustomDialog
 export  struct AdCustomDialog {
-  @State isVerify:boolean=false
+  @State @Watch('isClose') isVerify:boolean=false
+  @State isVip:number=0
   controller?: CustomDialogController;
   isShowDia:()=>void=()=>{}
-  aboutToAppear(): void {
+  rewardAd:RewardAd|null =new RewardAd()
+  isClose(){
+    this.controller?.close()
+    router.pushNamedRoute({
+      name: "searchIntroductionPage",
 
+    })
+  }
+  aboutToAppear(): void {
+   this.isVip= preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
   }
   build() {
     Column({space:10}){
@@ -45,8 +57,11 @@ export  struct AdCustomDialog {
           offsetY: 4
         })
         .onClick(()=>{
+      rewardAd.AdSlotBuilder((isVerify:boolean)=>{
+        this.isVerify=isVerify
 
-          this.controller?.close()
+          })
+
 
 
         })
@@ -77,6 +92,14 @@ export  struct AdCustomDialog {
             ['#FFFFD6', 0.4],   // 中
             ['#cdcf9c34', 0.7]    // 右
           ]
+        })
+        .onClick(()=>{
+          if (!this.isVip){
+            this.controller?.close()
+            router.pushNamedRoute({
+              name:"vipPage"
+            })
+          }
         })
     }
     .linearGradient({

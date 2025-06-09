@@ -6,6 +6,12 @@ import HomeConstants from "../Constants/HomeConstants";
 @Entry({ routeName: "searchIntroductionPage" })
 @Component
 export struct SearchIntroductionPage {
+  onBackPress(): boolean | void {
+    router.pushNamedRoute({
+      name:'pages/HomePage'
+    })
+  //  return true
+  }
      build() {
     RelativeContainer() {
       // 标题

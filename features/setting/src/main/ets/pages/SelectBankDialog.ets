@@ -2,16 +2,16 @@ import { promptAction } from '@kit.ArkUI';
 import { preferencesUtils, PreferencesConstants } from 'utils/Index';
 import { BankListRes } from 'db';
 
+
 @CustomDialog
 export struct selectBankDialog {
   controller?: CustomDialogController;
   @Prop bankList: BankListRes[];
   @Prop isVip: boolean = false; // 从外部传入VIP状态
   onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {};
-
   @State agreementChecked: boolean = false;
   @State selectedBankIds: string[] = []; // 统一管理选中的题库ID
-
+  isVipDialog?:()=>void=()=>{}
   //获取是否是VIP
   private getIsVip(): boolean {
     try {
@@ -391,6 +391,7 @@ export struct selectBankDialog {
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
+            if (this.isVipDialog) this.isVipDialog()
 
           })
       }
