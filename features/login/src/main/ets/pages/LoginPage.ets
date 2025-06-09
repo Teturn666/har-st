@@ -1,6 +1,5 @@
 import bundleManager from '@ohos.bundle.bundleManager';
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
-import { OnWXResp, WXApi, WXEventHandler, APP_ID } from '../model/WXApiWrap';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { promptAction, router } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
@@ -10,7 +9,16 @@ import http from '@ohos.net.http';
 import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
-import { preferencesUtils, PreferencesConstants, ToastUtils, EmitterConstants } from 'utils/Index'
+import {
+  preferencesUtils,
+  PreferencesConstants,
+  ToastUtils,
+  EmitterConstants,
+  OnWXResp,
+  WXApi,
+  WXEventHandler,
+  APP_ID
+} from 'utils/Index'
 import { LoginModel } from '../model/LoginModel';
 
 interface AccessTokenResponse {

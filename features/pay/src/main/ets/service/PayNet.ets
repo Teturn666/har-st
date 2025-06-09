@@ -38,7 +38,6 @@ export class PayNet {
     let openid = preferencesUtils.getString(PreferencesConstants.SP_OPEN_ID)
     let unionid = preferencesUtils.getString(PreferencesConstants.SP_UNION_ID)
     let udid = preferencesUtils.getString(PreferencesConstants.SP_UUID)
-    // let udid = 'AE0DB7989BC4668E5D6F3D595397E828C7FA45D0D0222B8DEC741B0DBA0F0385'
     let data = "api=wxcreate&pid=" + pId + "&uid=" + uid + "&openid=" + openid
       + "&unionid=" + unionid + "&wxid=wx4f844b28fe56146f&id=" + udid
     return new Promise((resolve: Function, reject: Function) => {

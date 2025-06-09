@@ -3,8 +3,8 @@ import { PriceInfoRes } from '../model/PriceInfoRes'
 import { router } from '@kit.ArkUI'
 import { emitter } from '@kit.BasicServicesKit'
 import * as wxOpenSdk from '@tencent/wechat_open_sdk'
-import { preferencesUtils, PreferencesConstants, EmitterConstants, ToastUtils } from 'utils/Index'
-import { APP_ID, WXApi } from '../model/WXApiWrap'
+import { preferencesUtils, PreferencesConstants, EmitterConstants, ToastUtils, ChPackageUtils } from 'utils/Index'
+import { APP_ID, WXApi } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { common } from '@kit.AbilityKit'
 
@@ -84,7 +84,7 @@ export struct PayPage {
     req.packageValue = 'Sign=WXPay'
     req.prepayId = payInfo.prepay_id
     req.nonceStr = payInfo.nonce_str
-    req.timeStamp = payInfo.timestamp
+    req.timeStamp = payInfo.timestamp.toString()
     req.sign = payInfo.sign
 
     let finished = await this.wxApi.sendReq(getContext(this) as common.UIAbilityContext, req)
@@ -237,7 +237,7 @@ export struct PayPage {
         } else {
           ForEach(this.priceList, (card: PriceInfoRes) => {
             ListItem() {
-              Stack() {//ic_bg ${this.getCardBackground(card, this.selectedCard === card.id)}
+              Stack() { //ic_bg ${this.getCardBackground(card, this.selectedCard === card.id)}
                 Image($r(`app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`))
                   .objectFit(ImageFit.Contain)
                   .width(105)
@@ -312,19 +312,19 @@ export struct PayPage {
       .backgroundColor('#ebebeb')
       .margin({ left: 32, right: 32, top: 20 })
 
-      // Row() {
-      //   Image($r('app.media.ic_vips'))
-      //     .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
-      //   Image($r('app.media.ic_vipsize'))
-      //     .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
-      //     .margin({ left: 8 })
-      // }
-      // .margin({ left: 25, top: 18 })
-      // .width('100%')
+      Row() {
+        Image($r('app.media.ic_vips'))
+          .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
+        Image($r('app.media.ic_vipsize'))
+          .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
+          .margin({ left: 8 })
+      }
+      .margin({ left: 25, top: 18 })
+      .width('100%')
 
-      // BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
-      // BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
-      // BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
+      BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
+      BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
+      BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
 
       Blank()
       // 底部支付
