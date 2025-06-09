@@ -48,20 +48,30 @@ struct CustomizedBankPage {
       fileSuffixFilters: ['.xlsx', '.xls', '.txt'],
       maxSelectNumber: 1
     });
+
     if (result.length === 0) {
       promptAction.showToast({ message: '未选择文件', duration: 2000 });
-      router.back()
+      router.back();
       return;
     }
-    let file = fs.openSync(result[0], fs.OpenMode.READ_ONLY);
-    // 获取文件扩展名
-    const fileTypeName = getFileExtension(file.name)
-    const filePreName = getPrefix(file.name)
-    if (fileTypeName === 'xlsx' || fileTypeName === 'xls') {
-      this.parseExcel(file, filePreName);
-    } else if (fileTypeName === 'txt') {
-      this.parseTxt(file, filePreName);
 
+    let file = fs.openSync(result[0], fs.OpenMode.READ_ONLY);
+    const fileTypeName = getFileExtension(file.name);
+    const filePreName = getPrefix(file.name);
+
+    try {
+      if (fileTypeName === 'xlsx' || fileTypeName === 'xls') {
+        await this.parseExcel(file, filePreName);
+      } else if (fileTypeName === 'txt') {
+        await this.parseTxt(file, filePreName);
+      } else {
+        promptAction.showToast({ message: '不支持的文件格式', duration: 2000 });
+      }
+    } catch (error) {
+      console.error('文件处理失败:', error);
+      this.importStatus = '失败';
+      this.message = '文件处理失败';
+      promptAction.showToast({ message: '文件处理失败', duration: 2000 });
     }
   }
 
@@ -69,12 +79,14 @@ struct CustomizedBankPage {
     try {
       const result = await this.parser.parseTxtFile(file.path);
       this.message = `开始处理TXT文件：${file.path}`;
+
       if (!result) {
         this.message = '解析失败';
         promptAction.showToast({ message: '解析失败', duration: 2000 });
         return;
       }
 
+      // 获取题库名称
       let bankName: string;
       try {
         bankName = await this.getInputDialogName(filePreName);
@@ -82,11 +94,10 @@ struct CustomizedBankPage {
         console.info('parseTxt: 用户取消导入操作', error.message);
         this.message = '您已取消导入';
         this.importStatus = '未完成';
-        return; // 中断操作，停留在当前页面
+        return;
       }
 
-
-      // 创建BankListRes
+      // 创建题库对象
       const bank: BankListRes = {
         id: -1,
         qid: result.items[0]?.qid || 0,
@@ -100,26 +111,25 @@ struct CustomizedBankPage {
         downloadedState: 1,
         bankType: 2
       };
-      let output: string = '';
-      let successCount = 0;
 
       // 插入题库
       try {
         await questionBankTable.insertDataAwait(bank);
-        output += `题库名称: ${bank.name}\n题目数量: ${bank.num}\n创建时间: ${bank.time}\n\n`;
       } catch (error) {
         const err: BusinessError = error as BusinessError;
-        result.logs.push(`插入题库失败: ${err.message}`);
         this.importStatus = '失败';
         this.message = `插入题库失败: ${err.message}`;
         promptAction.showToast({ message: '插入题库失败', duration: 2000 });
         return;
       }
-      // 插入题目
-      let questionResList: QuestionRes[] = this.toQuestionResList(result);
+
+      // 批量插入题目
+      const questionResList: QuestionRes[] = this.toQuestionResList(result);
+      let successCount = 0;
+
       for (let item of questionResList) {
         try {
-          item.qName = bank.name
+          item.qName = bank.name;
           await QuestionTable.getInstance().insertDataAwait(item);
           successCount++;
         } catch (error) {
@@ -129,92 +139,119 @@ struct CustomizedBankPage {
         }
       }
 
-      // 将 result.logs 转换为 QuestionError 格式并存储到 questionErrorList
+      // 处理错误日志
       this.questionErrorList = result.logs.map((log: string): QuestionError => {
         const match = log.match(/第(\d+)行:(.*)/s);
-        const row = match ? parseInt(match[1]) : 0;
-        const errorContent = match ? match[2].trim() : log;
-        const errorObj: QuestionError = {
+        return {
           sheetName: '',
-          row: row,
-          error: errorContent
+          row: match ? parseInt(match[1]) : 0,
+          error: match ? match[2].trim() : log
         };
-        return errorObj;
       });
 
-      await this.importSuccess(successCount)
+      await this.importSuccess(successCount);
 
-      result.logs.forEach((log: string) => {
-        output += `错误: ${log}\n`;
-      });
-
-      if (successCount > 0 && this.questionErrorList.length > 0) {
+      // 设置最终状态
+      if (successCount > 0) {
         this.importStatus = '成功';
-        promptAction.showToast({ message: `成功导入 ${successCount} 道题目`, duration: 2000 });
+        const toastMessage = this.questionErrorList.length > 0
+          ? `成功导入 ${successCount} 道题目，存在 ${this.questionErrorList.length} 个错误`
+          : `成功导入 ${successCount} 道题目`;
+        promptAction.showToast({ message: toastMessage, duration: 2000 });
       } else {
         this.importStatus = '失败';
         promptAction.showToast({ message: '导入失败', duration: 2000 });
       }
+
     } catch (error) {
       const err: BusinessError = error as BusinessError;
       console.error(`读取文件失败: code=${err.code}, message=${err.message}`);
       this.message = `文件读取失败: ${err.message} (错误码: ${err.code})`;
+      this.importStatus = '失败';
       promptAction.showToast({ message: '文件读取失败', duration: 2000 });
     }
   }
 
   private async parseExcel(file: fs.File, filePreName: string) {
-    const stat = fs.statSync(file.fd);
-    let buffer = new ArrayBuffer(stat.size);
-    fs.readSync(file.fd, buffer);
-    // 获取文件名
-    fs.closeSync(file.fd);
-    // 转成base64编码的字符串
-    const helper = new util.Base64Helper();
-    const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
-    WebClass.webviewController.runJavaScript(`parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
-      async (error, excelData) => {
-        if (error) {
-          console.error(TAG, `run Excel error, ErrorCode: ${error.code}`);
-          this.importStatus = '失败';
-          this.message = `导入失败`;
-          return
-        }
-        try {
-          if (excelData) {
-            let excelDataObj = JSON.parse(excelData) as ExcelDataObj;
-            // 显示弹窗，获取题库名称
-            let bankName: string;
-            try {
-              bankName = await this.getInputDialogName(filePreName);
-            } catch (error) {
-              console.info('parseTxt: 用户取消导入操作', error.message);
-              this.message = '您已取消导入';
-              this.importStatus = '未完成';
-              return; // 中断操作，停留在当前页面
+    try {
+      const stat = fs.statSync(file.fd);
+      let buffer = new ArrayBuffer(stat.size);
+      fs.readSync(file.fd, buffer);
+      fs.closeSync(file.fd);
+
+      // 转成base64编码的字符串
+      const helper = new util.Base64Helper();
+      const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
+
+      // Promise化Excel解析过程
+      const excelDataObj = await new Promise<ExcelDataObj>((resolve, reject) => {
+        WebClass.webviewController.runJavaScript(
+          `parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
+          async (error, excelData) => {
+            if (error) {
+              console.error(TAG, `run Excel error, ErrorCode: ${error.code}`);
+              reject(new Error(`Excel解析失败: ${error.code}`));
+              return;
             }
-            await this.importSuccess(Number(excelDataObj.quizBank.num));
-            excelDataObj.quizBank.name = bankName;
-            excelDataObj.quizBank.desc = bankName;
-            // 存储进题库表
-            await questionBankTable.insertDataAwait(excelDataObj.quizBank);
-            // 存储进题目表
-            excelDataObj.questions.forEach(async (item) => {
-              item.qName = bankName
-              await QuestionTable.getInstance().insertDataAwait(item);
-            });
-            // 显示导入结果
-            this.questionErrorList = excelDataObj.questionErrorList;
-            this.importStatus = '成功';
-            this.message = `开始处理Excel文件: ${file.path}`;
+
+            if (!excelData) {
+              reject(new Error('Excel数据为空'));
+              return;
+            }
+
+            try {
+              resolve(JSON.parse(excelData) as ExcelDataObj);
+            } catch (parseError) {
+              reject(new Error(`Excel数据解析失败: ${parseError}`));
+            }
           }
-        } catch (error) {
-          console.error(TAG, 'excelData error:' + error);
-          this.importStatus = '失败';
-          this.message = `导入失败`;
-          promptAction.showToast({ message: '文件解析失败', duration: 2000 });
-        }
+        );
       });
+
+      this.message = `开始处理Excel文件: ${file.path}`;
+
+      // 获取题库名称
+      let bankName: string;
+      try {
+        bankName = await this.getInputDialogName(filePreName);
+      } catch (error) {
+        console.info('parseExcel: 用户取消导入操作', error.message);
+        this.message = '您已取消导入';
+        this.importStatus = '未完成';
+        return;
+      }
+
+      // 设置题库信息
+      excelDataObj.quizBank.name = bankName;
+      excelDataObj.quizBank.desc = bankName;
+
+      // 插入题库
+      await questionBankTable.insertDataAwait(excelDataObj.quizBank);
+
+      // 批量插入题目
+      const insertPromises = excelDataObj.questions.map(async (item): Promise<number> => {
+        item.qName = bankName;
+        return QuestionTable.getInstance().insertDataAwait(item);
+      });
+      await Promise.all(insertPromises);
+
+      await this.importSuccess(Number(excelDataObj.quizBank.num));
+
+      // 设置导入结果
+      this.questionErrorList = excelDataObj.questionErrorList || [];
+      this.importStatus = '成功';
+
+      const toastMessage = this.questionErrorList.length > 0
+        ? `成功导入 ${excelDataObj.quizBank.num} 道题目，存在 ${this.questionErrorList.length} 个错误`
+        : `成功导入 ${excelDataObj.quizBank.num} 道题目`;
+      promptAction.showToast({ message: toastMessage, duration: 2000 });
+
+    } catch (error) {
+      console.error(TAG, 'Excel处理失败:', error);
+      this.importStatus = '失败';
+      this.message = '导入失败';
+      promptAction.showToast({ message: error.message || '文件解析失败', duration: 2000 });
+    }
   }
 
   async getInputDialogName(defaultName: string): Promise<string> {
