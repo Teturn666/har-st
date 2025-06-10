@@ -1,6 +1,9 @@
 import { AdSlot, AdSlotBuilder, CSJAdCreator, CSJAdSdk, CSJRewardAd, RewardAdLoadListener } from "@csj/openadsdk"
-import { DemoConstants } from "utils"
-import { ToastUtil } from "./ToastUtil"
+
+
+import { DemoConstants } from "."
+import { CSJ_State } from "../constants/CSJState"
+import { ConfigRes } from "../model/ConfigRes"
 
 
 export class RewardAd {
@@ -13,8 +16,9 @@ export class RewardAd {
   }
 
   async AdSlotBuilder(callback: (isVerify: boolean) => void) {
+    let res= AppStorage.get(CSJ_State.CSJ_HM_AD) as ConfigRes
     let adSlot = new AdSlotBuilder()
-      .setCodeId("955804646")
+      .setCodeId(res.hmAd.rewardScan.csj)//955804646
       .setRewardName("金币")
       .setRewardAmount(1)
       .setBidAdm(this.mBiddingAdm)

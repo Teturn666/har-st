@@ -1,5 +1,6 @@
-import { AdConfigInfo } from "./AdConfigInfo";
-import { AdInfo } from "./AdInfo";
+import { AdConfigInfo } from "./AdConfigInfo"
+import { AdInfo } from "./AdInfo"
+
 
 export class HmAdInfo {
   splash: AdInfo = new AdInfo()

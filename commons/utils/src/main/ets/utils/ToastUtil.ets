@@ -4,7 +4,7 @@
  */
 import promptAction from '@ohos.promptAction';
 import { BusinessError } from '@ohos.base';
-import { DemoConstants } from 'utils';
+import { DemoConstants } from '.';
 
 
 export class ToastUtil {
