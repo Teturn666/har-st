@@ -12,11 +12,15 @@ const TAG = 'SelectBankDialog';
 export struct selectBankDialog {
   controller?: CustomDialogController;
   @Prop bankList: BankListRes[];
-  @Prop isVip: boolean = false; // 从外部传入VIP状态
-  onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {};
+  @Prop isVip: boolean = true; // 从外部传入VIP状态
+  onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {
+  };
   @State agreementChecked: boolean = false;
   @State selectedBankIds: string[] = []; // 统一管理选中的题库ID
-  isVipDialog?:()=>void=()=>{}
+  isVipDialog?: () => void = () => {
+  }
+  @State loginState: string = ''
+
   //获取是否是VIP
   private getIsVip(): boolean {
     try {
@@ -128,7 +132,7 @@ export struct selectBankDialog {
       });
       this.selectedBankIds = newSelectedIds;
     } else {
-      this.selectedBankIds =[...this.selectedBankIds.filter(id => !downloadBankIds.includes(id))] ;
+      this.selectedBankIds = [...this.selectedBankIds.filter(id => !downloadBankIds.includes(id))];
     }
   }
 
@@ -159,10 +163,64 @@ export struct selectBankDialog {
     }
   }
 
+  // 保存选中的题库ID到本地
+  private saveSelectedBankIds(selectedIds: string[]) {
+    try {
+      const idsJson = JSON.stringify(selectedIds);
+      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK, idsJson);
+      console.info(TAG, `Saved selected bank IDs: ${idsJson}`);
+
+      //保存是否全选
+      if (this.selectedBankIds.length === this.bankList.length) {
+        preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1')
+      } else {
+        preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
+      }
+     const result = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
+      console.info(TAG, `查看一一: ${result}`);
+    } catch (error) {
+      console.error(TAG, 'Error saving selected bank IDs:', error);
+    }
+  }
+
+  // 从本地读取选中的题库ID
+  private getSelectedBankIds(): string[] {
+    try {
+      const idsJson = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK, '[]');
+      const savedIds = JSON.parse(idsJson) as string[];
+      console.info(TAG, `Loaded selected bank IDs: ${idsJson}`);
+
+      // 验证保存的ID是否在当前题库列表中存在
+      const currentBankIds = this.bankList.map(bank => String(bank.id || ''));
+      const validIds = savedIds.filter(id => currentBankIds.includes(id));
+
+      // 如果没有有效的保存记录，默认选中所有题库
+      if (validIds.length === 0) {
+        return currentBankIds;
+      }
+
+      return validIds;
+    } catch (error) {
+      console.error(TAG, 'Error loading selected bank IDs:', error);
+      // 出错时默认选中所有题库
+      return this.bankList.map(bank => String(bank.id || ''));
+    }
+  }
+
   aboutToAppear() {
-    // 初始化选中所有题库
-    this.selectedBankIds = this.bankList.map(bank => String(bank.id || ''));
-    this.getIsVip()
+    // this.getIsVip()
+    // 从本地读取选中的题库ID，如果没有则默认选中所有  //一：登录 是会员 显示本地存储的  二：登录 非会员  默认全选 三：退出登录的话默认选中所有题库
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    if (this.loginState === '1') {
+      if (this.isVip) {
+        this.selectedBankIds = this.getSelectedBankIds();
+
+      } else {
+        this.selectedBankIds = this.bankList.map(bank => String(bank.id || ''));
+      }
+    } else {
+      this.selectedBankIds = this.bankList.map(bank => String(bank.id || ''));
+    }
   }
 
   build() {
@@ -205,7 +263,7 @@ export struct selectBankDialog {
             }
             .width('100%')
           }
-          .onClick(()=>{
+          .onClick(() => {
             this.handleNonVipClick();
           })
 
@@ -215,7 +273,7 @@ export struct selectBankDialog {
               Column({ space: 8 }) {
                 // 自定义题库标题
                 Row() {
-                  Checkbox({ name: 'customBanks',  })
+                  Checkbox({ name: 'customBanks', })
                     .select(this.isCustomBanksAllSelected())
                     .selectedColor(0xed6f21)
                     .shape(CheckBoxShape.CIRCLE)
@@ -263,7 +321,7 @@ export struct selectBankDialog {
               }
               .alignItems(HorizontalAlign.Start)
             }.margin({ left: 18 })
-            .onClick(()=>{
+            .onClick(() => {
               this.handleNonVipClick();
             })
 
@@ -323,7 +381,7 @@ export struct selectBankDialog {
               }
               .alignItems(HorizontalAlign.Start)
             }.margin({ left: 18 })
-            .onClick(()=>{
+            .onClick(() => {
               this.handleNonVipClick();
             })
 
@@ -385,8 +443,13 @@ export struct selectBankDialog {
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
 
-            if(!this.isVip){
-              if (this.isVipDialog) this.isVipDialog()
+            //将选择的题库列表存入本地
+            this.saveSelectedBankIds(this.selectedBankIds);
+
+            if (!this.isVip) {
+              if (this.isVipDialog) {
+                this.isVipDialog()
+              }
             }
             // 判断选择部分题库进行初始化
             if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {

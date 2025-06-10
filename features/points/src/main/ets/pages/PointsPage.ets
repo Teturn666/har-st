@@ -3,6 +3,12 @@ import { PointsModel } from '../model/PointsModel';
 import CheckDataRes, { showSingle } from '../model/CheckDataRes';
 import { promptAction, router } from '@kit.ArkUI';
 import PointsConstants from '../../../Constants/PointsConstants';
+import { uniformTypeDescriptor as utd } from '@kit.ArkData';
+import { common, Want } from '@kit.AbilityKit';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { PreferencesConstants, preferencesUtils } from 'utils';
+import { systemShare } from '@kit.ShareKit';
 
 import('./MyHistoryPage')
 import('./MyInvitationPage')
@@ -18,9 +24,75 @@ export struct PointsPage {
   @State toShowList: showSingle[] = []
   @State toSignToday: boolean = false
   @State loadingStatus: boolean = false
+  @State AppScore: boolean = false
+  @State adTimes: string = ''
+  @State myCode: string = ''
+  static readonly APP_STORE_URL = 'https://appgallery.huawei.com/app/detail?id=com.chznai.ikst&channelId=SHARE'
+
+  //获取是否已经评分
+  getIsAppScore(): void {
+    this.AppScore = preferencesUtils.getBoolean(PreferencesConstants.SP_APP_RATING, false)
+  }
+
+  //获取广告次数
+  async getAdTimes(): Promise<void> {
+    this.adTimes = await this.PointsModel.getAdCount()
+  }
+
+  //应用评分
+  jumpToApplication() {
+    let link = `store://appgallery.huawei.com/app/detail?id=com.chznai.ikst`
+    let want: Want = {
+      action: 'ohos.want.action.appdetail',
+      uri: link,
+    };
+    let context = getContext(this) as common.UIAbilityContext
+    context.startAbility(want).then(async () => {
+      hilog.info(0x0001, 'TAG', "Succeeded in starting Ability successfully.")
+      //调用应用商店加分接口
+      const scoreResult = await this.PointsModel.getScoreAction();
+      if (scoreResult) {
+        preferencesUtils.putBoolean(PreferencesConstants.SP_APP_RATING, true)
+        this.AppScore = true
+        await this.gettingPointsInfo();
+        promptAction.showToast({
+          message: '感谢您的评分支持！积分已到账',
+          duration: 3000
+        });
+      }
+
+
+    }).catch((error: BusinessError) => {
+      hilog.error(0x0001, 'TAG', `Failed to startAbility.Code: ${error.code}, message is ${error.message}`);
+    });
+  }
+
+  //邀请好友
+  private async share() {
+    let shareData: systemShare.SharedData = new systemShare.SharedData({
+      utd: utd.UniformDataType.TEXT,
+      content: `我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧！填写我的邀请码 ${this.myCode} 领取20积分，积分可兑换VIP哦！官方下载链接：` +
+      PointsPage.APP_STORE_URL,
+      title: '快搜搜题',
+      description: '我正在使用快搜答题神器，支持各类答题平台，快来一起轻松答题吧！',
+      thumbnail: new Uint8Array()
+    });
+
+    let controller: systemShare.ShareController = new systemShare.ShareController(shareData);
+    let context = getContext(this) as common.UIAbilityContext;
+    controller.show(context, {
+      selectionMode: systemShare.SelectionMode.SINGLE,
+      previewMode: systemShare.SharePreviewMode.DEFAULT,
+    }).then(() => {
+
+    }).catch((error: BusinessError) => {
+
+    });
+  }
 
   aboutToAppear(): void {
     this.loadResources()
+    this.getIsAppScore()
   }
 
   async actionSigning(): Promise<void> {
@@ -32,7 +104,10 @@ export struct PointsPage {
   }
 
   async loadResources(): Promise<void> {
-    await this.gettingPointsInfo()
+    await this.gettingPointsInfo();
+    await this.getAdTimes();
+    this.myCode = await this.PointsModel.getMyCode();
+    console.log('所有资源加载完成, adTimes:', this.adTimes);
   }
 
   async gettingPointsInfo(): Promise<boolean> {
@@ -214,46 +289,56 @@ export struct PointsPage {
 
         }
 
-        // Row() {
-        //   Image($r('app.media.ic_task'))
-        //     .width(18)
-        //     .height(18)
-        //   Image($r('app.media.ic_tasking'))
-        //     .width(122)
-        //     .height(18)
-        // }
-        // .margin({ left: 18, top: 10 })
-        // .width('100%')
-        //
-        // TaskCard({
-        //   points: "+20积分",
-        //   unit: "/人",
-        //   title: "邀请好友",
-        //   description: "  (分享好友完成注册)",
-        //   buttonImage: $r('app.media.ic_share')
-        // })
-        //
-        // TaskCard({
-        //   points: "+5积分",
-        //   unit: "/个",
-        //   title: "看广告赚积分",
-        //   description: "  (看20个可兑换一天VIP)",
-        //   buttonImage: $r('app.media.ic_complete')
-        // })
-        //
-        // TaskCard({
-        //   points: "+10积分",
-        //   unit: "/周",
-        //   title: "应用评分",
-        //   description: "  (应用商店评分，我们需要您的支持)",
-        //   buttonImage: $r('app.media.ic_share')
-        // })
+        Row() {
+          Image($r('app.media.ic_task'))
+            .width(18)
+            .height(18)
+          Image($r('app.media.ic_tasking'))
+            .width(122)
+            .height(18)
+        }
+        .margin({ left: 18, top: 10 })
+        .width('100%')
+
+        TaskCard({
+          points: "+20积分",
+          unit: "/人",
+          title: "邀请好友",
+          description: "  (分享好友完成注册)",
+          buttonImage: $r('app.media.ic_share'),
+          nClick: () => {
+            this.share()
+          }
+        })
+
+        TaskCard({
+          points: "+5积分",
+          unit: "/个",
+          title: "看广告赚积分",
+          description: "  (看20个可兑换一天VIP)",
+          buttonImage:  $r('app.media.ic_complete'),
+          nClick: () => {
+
+          }
+        })
+
+        TaskCard({
+          points: "+10积分",
+          unit: "/周",
+          title: "应用评分",
+          description: "  (应用商店评分，我们需要您的支持)",
+          buttonImage: this.AppScore ? $r('app.media.ic_comple') : $r('app.media.ic_share'),
+          nClick: () => {
+            if (!this.AppScore) {
+              this.jumpToApplication()
+            }
+          }
+        })
 
       }
       .borderRadius(12)
       .padding({ top: 8 })
       .justifyContent(FlexAlign.Start)
-      // .alignItems(HorizontalAlign.Start)
       .margin({ top: 15 })
       .width('95%')
       .height('100%')
@@ -297,13 +382,15 @@ struct PointsCard {
   }
 }
 
-@ComponentV2
+@Component
 struct TaskCard {
-  @Param points: string = '';
-  @Param unit: string = '';
-  @Param title: string = '';
-  @Param description: string = '';
-  @Param buttonImage: Resource = $r('app.media.ic_share');
+  @State points: string = '';
+  @State unit: string = '';
+  @State title: string = '';
+  @State description: string = '';
+  @State buttonImage: Resource = $r('app.media.ic_share');
+  nClick: () => void = () => {
+  }
 
   build() {
     Row() {
@@ -316,6 +403,7 @@ struct TaskCard {
             .fontSize(12)
             .fontColor($r('app.color.c_9d9d9d'))
         }
+
         Row() {
           Text(this.title)
             .fontSize(12)
@@ -329,10 +417,11 @@ struct TaskCard {
       .height('50')
       .justifyContent(FlexAlign.SpaceAround)
       .alignItems(HorizontalAlign.Start)
+
       Image(this.buttonImage)
         .width(63)
         .height(24)
-        // .onClick( ())
+        .onClick(() => this.nClick())
     }
     .justifyContent(FlexAlign.SpaceBetween)
     .alignItems(VerticalAlign.Center)

@@ -188,4 +188,37 @@ export class PointsModel {
     }
   }
 
+  //查询还有多少次看广告的机会 /m/point/ad/count
+  public async getAdCount(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getAdCount()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  //看广告领积分 /m/point/ad
+  public async getAdPoint(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getAdPoint()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  // 应用商店加分接口：/m/point/score/action
+  public async getScoreAction(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getScoreAction()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
 }
