@@ -1,7 +1,11 @@
 
 import { router } from "@kit.ArkUI";
 import { PreferencesConstants, preferencesUtils } from "utils";
-import { rewardAd, RewardAd } from "../utils/RewardAd";
+import { CSJ_State } from "utils/src/main/ets/constants/CSJState";
+import { ConfigRes } from "utils/src/main/ets/model/ConfigRes";
+import { HmAdInfo } from "utils/src/main/ets/model/HmAdInfo";
+import { rewardAd, RewardAd } from "utils/src/main/ets/utils/RewardAd";
+import HomeConstants from "../Constants/HomeConstants";
 
 
 @CustomDialog
@@ -11,10 +15,14 @@ export  struct AdCustomDialog {
   controller?: CustomDialogController;
   isShowDia:()=>void=()=>{}
   rewardAd:RewardAd|null =new RewardAd()
+  @StorageProp(CSJ_State.CSJ_HM_AD)
+  CsjHmAD:ConfigRes= {
+    hmAd: new HmAdInfo()
+  }
   isClose(){
     this.controller?.close()
     router.pushNamedRoute({
-      name: "searchIntroductionPage",
+      name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
     })
   }
@@ -57,10 +65,13 @@ export  struct AdCustomDialog {
           offsetY: 4
         })
         .onClick(()=>{
-      rewardAd.AdSlotBuilder((isVerify:boolean)=>{
-        this.isVerify=isVerify
+          if (this.CsjHmAD.hmAd.rewardScan.switchOff){
+            rewardAd.AdSlotBuilder((isVerify:boolean)=>{
+              this.isVerify=isVerify
 
-          })
+            })
+          }
+
 
 
 

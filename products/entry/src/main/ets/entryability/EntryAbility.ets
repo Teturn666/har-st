@@ -4,13 +4,21 @@ import { window } from '@kit.ArkUI';
 import { WXApi, WXEventHandler } from 'utils/Index';
 import { ChPackageUtils, DemoConstants } from 'utils';
 import { cSJAdSdkAd } from '../utils/CSJAdSdk';
+import { MainModel } from '../model/MainModel';
+import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
+import {CSJ_State} from 'utils/src/main/ets/constants/CSJState'
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
     this.handleWeChatCallIfNeed(want)
+   this.getCSJ()
   }
 
+  async getCSJ(){
+   let  result= await MainModel.getInstance().getConfigList()
+    AppStorage.setOrCreate(CSJ_State.CSJ_HM_AD,result as ConfigRes)
+}
   onDestroy(): void {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onDestroy');
   }
@@ -29,7 +37,11 @@ export default class EntryAbility extends UIAbility {
     });
     DemoConstants.windowStage = windowStage
     cSJAdSdkAd.ctx = this.context
-    cSJAdSdkAd.ConfigSDK()
+    let res= AppStorage.get(CSJ_State.CSJ_HM_AD) as ConfigRes
+    if (res.hmAd.adconfig.csjAppId){
+      cSJAdSdkAd.ConfigSDK()
+    }
+
   }
 
   onWindowStageDestroy(): void {

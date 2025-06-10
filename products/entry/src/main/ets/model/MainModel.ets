@@ -1,6 +1,6 @@
 import { questionBankTable, QuestionTable, questionWrongTable, questionCollectionTable } from 'db'
 import { MainNet } from '../service/MainNet';
-import { ConfigRes } from './ConfigRes';
+import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
 
 export class MainModel {
   private mainNet: MainNet

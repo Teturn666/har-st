@@ -22,6 +22,9 @@ import { screenManager } from '../utils/ScreenManager'
 import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
 import { BankListRes } from 'db'
 import {AdCustomDialog} from '../components/AdCustomDialog'
+import { CSJ_State } from 'utils/src/main/ets/constants/CSJState'
+import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes'
+import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -67,6 +70,10 @@ export struct HomePage {
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
   @State isVip:number=2
+  @StorageProp(CSJ_State.CSJ_HM_AD)
+  CsjHmAD:ConfigRes= {
+    hmAd: new HmAdInfo()
+  }
   AdDialogController: CustomDialogController | null = new CustomDialogController({
     builder: AdCustomDialog({
       isShowDia: () => {
@@ -102,8 +109,14 @@ export struct HomePage {
         },
         isVipDialog:()=>{
           this.dialogController?.close()
-          if (!this.isVip){
+          //弹窗
+          if (!this.isVip&&this.bankList.length>0&&this.CsjHmAD.hmAd.rewardScan.switchOff){
             this.AdDialogController?.open()
+          }else {
+            router.pushNamedRoute({
+              name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+
+            })
           }
         }
       })

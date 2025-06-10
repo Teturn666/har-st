@@ -11,7 +11,10 @@ import { MainModel } from '../model/MainModel';
 import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
 import { emitter } from '@kit.BasicServicesKit';
 import { splashAd } from '../utils/SplashAd';
-import { ConfigRes } from '../model/ConfigRes';
+import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
+import { CSJ_State } from 'utils/src/main/ets/constants/CSJState'
+import { StartResult } from '@csj/openadsdk';
+import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -25,7 +28,15 @@ struct MainPage {
   @State isShow: boolean = false
   @State timer: number = 0
   @State configRes: ConfigRes = new ConfigRes()
-
+  @StorageProp(CSJ_State.APP_CSJ_STATE)
+   CsjState:StartResult= {
+     code: 0,
+     msg: ''
+   }
+   @StorageProp(CSJ_State.CSJ_HM_AD)
+   CsjHmAD:ConfigRes= {
+     hmAd: new HmAdInfo()
+   }
   private initPreferences() {
     //初始化sp实例
     preferencesUtils.setContext(context)
@@ -37,23 +48,26 @@ struct MainPage {
     preferencesUtils.putBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, newValue)
   }
 
-  async loadData() {
-    this.configRes = await this.mainModel.getConfigList()
-    console.info('configRes---' + this.configRes.hmAd.splash.switchOff)
-  }
 
   aboutToAppear(): void {
     this.initPreferences()
     this.mainModel.initDb()
-    this.loadData()
-    this.timer = setTimeout(() => {
-      splashAd.ShowSplash((ids: boolean) => {
-        this.isShow = ids
-      })
-    })
+
+    this.ShowSplash()
 
   }
+  ShowSplash(){
+    if (this.CsjState.code===0 && this.CsjHmAD.hmAd.splash.switchOff){
+      this.timer = setTimeout(() => {
 
+        splashAd.ShowSplash((ids: boolean) => {
+          this.isShow = ids
+        })
+      })
+    }else {
+      this.isShow=true
+    }
+  }
   onPageHide(): void {
     clearTimeout(this.timer)
   }
@@ -174,6 +188,11 @@ struct MainPage {
         }
 
       }
+    }else {
+      Image($r('app.media.block'))
+        .width('100%')
+        .height('100%')
+        .expandSafeArea()
     }
   }
 }

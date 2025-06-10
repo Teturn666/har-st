@@ -2,7 +2,7 @@ import { MainTrigger } from './MainTrigger';
 import { BaseResponse, HttpUtils } from 'network/Index';
 import { AxiosResponse } from '@ohos/axios';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { ConfigRes } from '../model/ConfigRes';
+import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
 
 const TAG = '[MainNet]'
 

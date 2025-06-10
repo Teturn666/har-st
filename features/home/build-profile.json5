@@ -5,12 +5,8 @@
   "buildOptionSet": [
     {
       "name": "release",
-      "arkOptions": {     "runtimeOnly": {
-        "packages": [
-          "@csj/adapter_ks",
-          "@csj/adapter_gdt"
-        ]
-      },
+      "arkOptions": {
+
         "obfuscation": {
           "ruleOptions": {
             "enable": true,

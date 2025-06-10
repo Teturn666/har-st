@@ -1,4 +1,4 @@
 export class AdConfigInfo {
   csjApplicationId: string = ''
-  csjAppId: string = ''
+  csjAppId: string = '5477447'
 }

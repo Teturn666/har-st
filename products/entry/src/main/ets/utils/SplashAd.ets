@@ -12,6 +12,8 @@ import {
 
 import { Content, window } from "@kit.ArkUI"
 import { DemoConstants, UIUtil } from "utils"
+import { CSJ_State } from "utils/src/main/ets/constants/CSJState"
+import { ConfigRes } from "utils/src/main/ets/model/ConfigRes"
 
 
 export class SplashAd {
@@ -32,12 +34,12 @@ export class SplashAd {
   TimeOut: number = 3000
   useCustomCloseBtn: boolean = false
   mBiddingAdm: string = '' //服务端bidding才需要设置
-  errorMsg: string | undefined = undefined;
+
   startLoad: boolean = false;
 
   ShowSplash(callback: (ids: boolean) => void) {
     this.mAdCreator = CSJAdSdk.getAdCreator() //初始化广告创建器
-    this.errorMsg = undefined
+
     this.adLoadSuccess = false;
     this.startLoad = true;
 
@@ -50,9 +52,9 @@ export class SplashAd {
   }
 
   private asSLOTaD(callback: (ids: boolean) => void) {
-
+    let res = AppStorage.get(CSJ_State.CSJ_HM_AD) as ConfigRes
     this.adSlot = new AdSlotBuilder()
-      .setCodeId("888906709")
+      .setCodeId(res.hmAd.splash.csj)
       .setAcceptSize(this.adWidth, this.adHeight)
       .setBidAdm(this.mBiddingAdm)
       .build()
@@ -87,17 +89,18 @@ export class SplashAd {
       },
 
       onError: (code: number, message: string) => {
-        this.errorMsg = "onError\ncode: " + code + "\nmessage: " + message;
-        console.log(`开屏回调 - onError code: ${code} message: ${message}`)
-        callback(false)
+
+
+        callback(true)
       },
       // 开屏渲染成功
       onRenderSuccess: (splashAd: CSJSplashAd) => {
-        console.log("开屏回调 - onRenderSuccess")
+
       },
       // 开屏渲染失败
       onRenderFail: (code: number, message: string) => {
-        console.log("开屏回调 - onRenderFail")
+        callback(true)
+
       }
     }
   }
