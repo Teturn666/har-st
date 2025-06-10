@@ -13,6 +13,7 @@
     "login": "file:../../features/login",
     "utils": "file:../../commons/utils",
     "search": 'file:../../commons/search',
+    "network": "file:../../commons/network",
     "@csj/openadsdk": "6.9.1",
     "@csj/adapter_ks": "3.0.6-1",
     "@csj/adapter_gdt": "1.1.0-1"
