@@ -26,4 +26,11 @@ export class PreferencesConstants {
   static readonly SP_SELECT_VALUE = 'select_value'
   // setting 题目选择的弹窗是否显示
   static readonly SP_SELECT_DIALOG_SHOW = 'select_dialog_show'
+  //应用评分
+  static readonly SP_APP_RATING = 'app_rating'
+  //保存题库选择
+  static readonly SP_QUESTION_BANK = 'question_bank'
+  //保存题库选择是否全选
+  static readonly SP_QUESTION_BANK_ALL = 'question_bank_all'
+
 }

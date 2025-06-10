@@ -1,6 +1,6 @@
 import { ArrayList, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
 import { QuestionRes, QuestionTable } from 'db/Index'
-import { Logger, StringUtils } from 'utils/Index'
+import { Logger, PreferencesConstants, preferencesUtils, StringUtils } from 'utils/Index'
 import { SegmentEngine } from './SegmentEngine'
 
 import { StringFilter } from './StringFilter'
@@ -66,7 +66,7 @@ export class SearchEngine {
    * @param qidArr - 题库ID数组
    * @returns 返回包含所有题目数据的列表
    */
-   async findQuestionInitEngine(context: Context, qidArr: number[]) {
+  async findQuestionInitEngine(context: Context, qidArr: number[]) {
     let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
     // 题库所对应的题库
     let questions: QuestionRes[] = []
@@ -76,12 +76,12 @@ export class SearchEngine {
     }
     let questionList: ArrayList<QuestionRes> = new ArrayList<QuestionRes>()
 
-     // 重置mDataSize的大小
-     let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
-     sp.putSync(SearchConstants.SEARCH_DATASIZE_SOME, questions.length)
-     // 设置搜索状态
-     sp.putSync(SearchConstants.isAll, false)
-     sp.flushSync()
+    // 重置mDataSize的大小
+    let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
+    sp.putSync(SearchConstants.SEARCH_DATASIZE_SOME, questions.length)
+    // 设置搜索状态
+    sp.putSync(SearchConstants.isAll, false)
+    sp.flushSync()
 
     questions.forEach((resultElement) => {
       questionList.add(resultElement)
@@ -92,8 +92,8 @@ export class SearchEngine {
       Logger.debug(TAG, "开始初始化引擎：" + startTime)
       await this.initEngineTaskPool(context, questionList, SearchConstants.SEARCH_FILE_SOME)
     }
-     console.log(TAG, "findQuestionInitEngine 初始化搜索引擎完成")
-   }
+    console.log(TAG, "findQuestionInitEngine 初始化搜索引擎完成")
+  }
 
 
   /**
@@ -445,11 +445,22 @@ export class SearchEngine {
    */
   private async searchQuestionsId(q: string): Promise<List<number>> {
     let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
-    let mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number
+    let mDataSize: number = 0
     let mMatchScores = new TreeMap<number, number>()
-    const mDataText =
-      await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL) ||
-      new Map<string, Set<number>>()
+    // 这里判断是否为全部题库
+    let mDataText: Map<string, Set<number>>
+    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
+    if (isAllNum === '1') {
+      mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number
+      mDataText =
+        await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL) ||
+        new Map<string, Set<number>>()
+    } else {
+      mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_SOME, 0) as number
+      mDataText =
+        await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME) ||
+        new Map<string, Set<number>>()
+    }
     if (!StringUtils.isNullOrEmpty(q)) {
       //分词
       let list = SegmentEngine.getInstance().cut(q)
