@@ -17,6 +17,7 @@ export struct selectBankDialog {
   @State agreementChecked: boolean = false;
   @State selectedBankIds: string[] = []; // 统一管理选中的题库ID
   isVipDialog?:()=>void=()=>{}
+  isChangeText?:()=>void=()=>{}
   //获取是否是VIP
   private getIsVip(): boolean {
     try {
@@ -378,7 +379,10 @@ export struct selectBankDialog {
                   duration: 2000
                 });
                 return;
+              }else {
+                if (this.isChangeText)this.isChangeText()
               }
+
             }
             // 去重并返回选中的题库ID
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));

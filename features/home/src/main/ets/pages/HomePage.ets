@@ -118,6 +118,12 @@ export struct HomePage {
 
             })
           }
+        },
+        isChangeText:()=>{
+          router.pushNamedRoute({
+            name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+
+          })
         }
       })
 
