@@ -5,6 +5,7 @@ import { CSJ_State } from "utils/src/main/ets/constants/CSJState";
 import { ConfigRes } from "utils/src/main/ets/model/ConfigRes";
 import { HmAdInfo } from "utils/src/main/ets/model/HmAdInfo";
 import { rewardAd, RewardAd } from "utils/src/main/ets/utils/RewardAd";
+import HomeConstants from "../Constants/HomeConstants";
 
 
 @CustomDialog
@@ -21,7 +22,7 @@ export  struct AdCustomDialog {
   isClose(){
     this.controller?.close()
     router.pushNamedRoute({
-      name: "searchIntroductionPage",
+      name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
     })
   }
