@@ -26,7 +26,7 @@ export class SearchMapManage {
   }
 
   // 保存数据到文件
-  async saveMapToFile(ctx: common.Context, data: Map<string, Set<number>>): Promise<void> {
+  async saveMapToFile(ctx: common.Context, data: Map<string, Set<number>>, fileName: string): Promise<void> {
     try {
       const serializableData: SerializableTreeMapData = {};
       const entries = data.entries();
@@ -39,7 +39,7 @@ export class SearchMapManage {
       }
       const jsonData = JSON.stringify(serializableData, null, 2);
       const file =
-        await fs.open(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY);
+        await fs.open(ctx.filesDir + fileName, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY);
       await fs.write(file.fd, jsonData);
       await fs.close(file.fd);
       console.info('map data saved successfully');
@@ -50,13 +50,13 @@ export class SearchMapManage {
   }
 
   // 从文件中加载数据,返回map数据类型
-  async loadMapFromFile(ctx: common.Context): Promise<Map<string, Set<number>> | null> {
+  async loadMapFromFile(ctx: common.Context, fileName: string): Promise<Map<string, Set<number>> | null> {
     try {
-      const stat = await fs.stat(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME);
+      const stat = await fs.stat(ctx.filesDir + fileName);
       if (!stat.isFile()) {
         throw new Error('文件不存在');
       }
-      const file = await fs.open(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME, fs.OpenMode.READ_ONLY);
+      const file = await fs.open(ctx.filesDir + fileName, fs.OpenMode.READ_ONLY);
       const buffer = new ArrayBuffer(stat.size);
       await fs.read(file.fd, buffer);
       await fs.close(file.fd);
@@ -83,14 +83,14 @@ export class SearchMapManage {
    * @returns
    */
   // 从文件中加载数据,返回对象数据类型
-  async loadObjectFromFile(ctx: common.Context): Promise<TreeDataObject | null> {
+  async loadObjectFromFile(ctx: common.Context, fileName: string): Promise<TreeDataObject | null> {
     try {
-      const stat = await fs.stat(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME);
+      const stat = await fs.stat(ctx.filesDir + fileName);
       if (!stat.isFile()) {
         throw new Error('文件不存在');
       }
 
-      const file = await fs.open(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME, fs.OpenMode.READ_ONLY);
+      const file = await fs.open(ctx.filesDir + fileName, fs.OpenMode.READ_ONLY);
       const buffer = new ArrayBuffer(stat.size);
       await fs.read(file.fd, buffer);
       await fs.close(file.fd);
@@ -121,14 +121,14 @@ export class SearchMapManage {
    * @param ctx
    * @returns SharedArrayBuffer | null
    */
-  async loadSharedArrayBufferFromFile(ctx: common.Context): Promise<SharedArrayBuffer | null> {
+  async loadSharedArrayBufferFromFile(ctx: common.Context, fileName: string): Promise<SharedArrayBuffer | null> {
     try {
-      const stat = await fs.stat(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME);
+      const stat = await fs.stat(ctx.filesDir + fileName);
       if (!stat.isFile()) {
         throw new Error('文件不存在');
       }
 
-      const file = await fs.open(ctx.filesDir + SearchConstants.SEARCH_FILE_NAME, fs.OpenMode.READ_ONLY);
+      const file = await fs.open(ctx.filesDir + fileName, fs.OpenMode.READ_ONLY);
       const buffer = new ArrayBuffer(stat.size);
       await fs.read(file.fd, buffer);
       await fs.close(file.fd);
@@ -179,9 +179,9 @@ export class SearchMapManage {
   }
 
   // 清空沙箱文件内容：删除文件
-  async clearTreeMapFile(ctx: common.Context): Promise<boolean> {
+  async clearTreeMapFile(ctx: common.Context, fileName: string): Promise<boolean> {
     try {
-      const filePath = ctx.filesDir + SearchConstants.SEARCH_FILE_NAME;
+      const filePath = ctx.filesDir + fileName;
 
       // 先检查文件是否存在
       try {
@@ -203,9 +203,9 @@ export class SearchMapManage {
   }
 
   // 清空沙箱文件内容 - 方式2：清空文件内容但保留文件
-  async clearTreeMapFileContent(ctx: common.Context): Promise<boolean> {
+  async clearTreeMapFileContent(ctx: common.Context, fileName: string): Promise<boolean> {
     try {
-      const filePath = ctx.filesDir + SearchConstants.SEARCH_FILE_NAME;
+      const filePath = ctx.filesDir + fileName;
 
       // 先检查文件是否存在
       try {

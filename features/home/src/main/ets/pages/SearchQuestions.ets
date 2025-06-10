@@ -6,6 +6,8 @@ import window from '@ohos.window';
 import { SearchEngine } from "search";
 import { QuestionRes } from "db";
 import { SearchMapManage } from "search/src/main/ets/manage/SearchMapManage";
+import SearchConstants from "search/src/main/ets/constants/SearchConstants";
+import { preferences } from "@kit.ArkData";
 
 const TAG = "SearchQuestions";
 
@@ -23,8 +25,20 @@ export struct SearchQuestions {
 
   async aboutToAppear() {
     // 做分词处理，处理完毕后再搜索
-    const mDataText =
-      await SearchMapManage.getInstance().loadSharedArrayBufferFromFile(getContext(this))
+    // 判断从哪个文件里取 mDataText 以及 mDataSize
+    let mDataText: SharedArrayBuffer | null = null
+
+    let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
+    if (sp.getSync(SearchConstants.isAll, true)) {
+      mDataText =
+        await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+    } else {
+      mDataText =
+        await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+    }
+
     console.debug(TAG, '分词处理数据已拿到')
     emitter.on("dataText", async (event) => {
       this.dataValue = event.data!["text"].replace(/\r?\n/g, '')

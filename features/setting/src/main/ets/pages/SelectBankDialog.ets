@@ -1,17 +1,25 @@
-import { promptAction } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import { preferencesUtils, PreferencesConstants } from 'utils/Index';
 import { BankListRes } from 'db';
+import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage';
+import { SearchEngine } from 'search';
+import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 
+
+const TAG = 'SelectBankDialog';
 
 @CustomDialog
 export struct selectBankDialog {
   controller?: CustomDialogController;
   @Prop bankList: BankListRes[];
-  @Prop isVip: boolean = false; // 从外部传入VIP状态
-  onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {};
+  @Prop isVip: boolean = true; // 从外部传入VIP状态
+  onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {
+  };
   @State agreementChecked: boolean = false;
   @State selectedBankIds: string[] = []; // 统一管理选中的题库ID
-  isVipDialog?:()=>void=()=>{}
+  isVipDialog?: () => void = () => {
+  }
+
   //获取是否是VIP
   private getIsVip(): boolean {
     try {
@@ -48,14 +56,18 @@ export struct selectBankDialog {
   // 检查自定义题库是否全选
   private isCustomBanksAllSelected(): boolean {
     const customBanks = this.getCustomBanks();
-    if (customBanks.length === 0) return false;
+    if (customBanks.length === 0) {
+      return false;
+    }
     return customBanks.every(bank => this.selectedBankIds.includes(String(bank.id || '')));
   }
 
   // 检查下载题库是否全选
   private isDownloadBanksAllSelected(): boolean {
     const downloadBanks = this.getDownloadBanks();
-    if (downloadBanks.length === 0) return false;
+    if (downloadBanks.length === 0) {
+      return false;
+    }
     return downloadBanks.every(bank => this.selectedBankIds.includes(String(bank.id || '')));
   }
 
@@ -121,7 +133,7 @@ export struct selectBankDialog {
     } else {
       console.log("查看Bank" + this.selectedBankIds)
       // 取消选中所有下载题库 - 只移除下载题库的ID
-      this.selectedBankIds =[...this.selectedBankIds.filter(id => !downloadBankIds.includes(id))] ;
+      this.selectedBankIds = [...this.selectedBankIds.filter(id => !downloadBankIds.includes(id))];
 
       console.log("查看Bank--" + this.selectedBankIds)
     }
@@ -157,7 +169,7 @@ export struct selectBankDialog {
   aboutToAppear() {
     // 初始化选中所有题库
     this.selectedBankIds = this.bankList.map(bank => String(bank.id || ''));
-    this.getIsVip()
+    // this.getIsVip()
   }
 
   build() {
@@ -214,7 +226,7 @@ export struct selectBankDialog {
               Column({ space: 8 }) {
                 // 自定义题库标题
                 Row() {
-                  Checkbox({ name: 'customBanks',  })
+                  Checkbox({ name: 'customBanks', })
                     .select(this.isCustomBanksAllSelected())
                     .selectedColor(0xed6f21)
                     .shape(CheckBoxShape.CIRCLE)
@@ -386,13 +398,26 @@ export struct selectBankDialog {
           .width(120)
           .height(40)
           .borderRadius(8)
-          .onClick(() => {
+          .onClick(async () => {
             // 去重并返回选中的题库ID
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
-            if (this.isVipDialog) this.isVipDialog()
 
+            if (this.isVipDialog) {
+              this.isVipDialog()
+            }
+            // 判断选择部分题库进行初始化
+            if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
+              await SearchMapManage.getInstance()
+                .clearTreeMapFileContent(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+              const selectedBankQIds = this.bankList
+                .filter(bank => this.selectedBankIds.includes(String(bank.id)))
+                .map(bank => bank.qid)
+
+              await SearchEngine.getInstance()
+                .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+            }
           })
       }
       .width('100%')
