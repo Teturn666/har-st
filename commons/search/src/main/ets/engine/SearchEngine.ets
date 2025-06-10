@@ -44,10 +44,10 @@ export class SearchEngine {
     if (type === 2) {
       questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
       let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
-      sp.putSync(SearchConstants.SEARCH_DATASIZE, questions.length)
+      sp.putSync(SearchConstants.SEARCH_DATASIZE_ALL, questions.length)
       sp.flushSync()
       // 清空文件内容
-      await SearchMapManage.getInstance().clearTreeMapFileContent(context)
+      await SearchMapManage.getInstance().clearTreeMapFileContent(context, SearchConstants.SEARCH_FILE_ALL)
     } else {
       questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, qid, false, false)
     }
@@ -60,6 +60,43 @@ export class SearchEngine {
   }
 
   /**
+   * 根据qidArr找到数据库里的数据进行搜索初始化(vip)
+   *
+   * @param context - 应用上下文对象，用于获取数据库连接
+   * @param qidArr - 题库ID数组
+   * @returns 返回包含所有题目数据的列表
+   */
+   async findQuestionInitEngine(context: Context, qidArr: number[]) {
+    let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
+    // 题库所对应的题库
+    let questions: QuestionRes[] = []
+    for (const qid of qidArr) {
+      let data = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, qid, false, false)
+      questions = questions.concat(data)
+    }
+    let questionList: ArrayList<QuestionRes> = new ArrayList<QuestionRes>()
+
+     // 重置mDataSize的大小
+     let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
+     sp.putSync(SearchConstants.SEARCH_DATASIZE_SOME, questions.length)
+     // 设置搜索状态
+     sp.putSync(SearchConstants.isAll, false)
+     sp.flushSync()
+
+    questions.forEach((resultElement) => {
+      questionList.add(resultElement)
+    })
+
+    if (questionList && questionList.length > 0) {
+      let startTime = systemDateTime.getTime();
+      Logger.debug(TAG, "开始初始化引擎：" + startTime)
+      await this.initEngineTaskPool(context, questionList, SearchConstants.SEARCH_FILE_SOME)
+    }
+     console.log(TAG, "findQuestionInitEngine 初始化搜索引擎完成")
+   }
+
+
+  /**
    * 从数据库初始化数据并判断是否需要初始化搜索引擎
    */
   public async indexFromDatabase(context: common.Context, qid: number, type: number): Promise<void> {
@@ -67,14 +104,15 @@ export class SearchEngine {
     if (questionList && questionList.length > 0) {
       let startTime = systemDateTime.getTime();
       Logger.debug(TAG, "开始初始化引擎：" + startTime)
-      await this.initEngineTaskPool(context, questionList)
+      await this.initEngineTaskPool(context, questionList, SearchConstants.SEARCH_FILE_ALL)
     }
   }
 
-  private async initEngineTaskPool(context: Context, questionList: ArrayList<QuestionRes>): Promise<void> {
+  private async initEngineTaskPool(context: Context, questionList: ArrayList<QuestionRes>,
+    fileName: string): Promise<void> {
     // 此处需要从沙箱文件里取出变量
     const mDataTexts =
-      await SearchMapManage.getInstance().loadMapFromFile(context) || new Map<string, Set<number>>();
+      await SearchMapManage.getInstance().loadMapFromFile(context, fileName) || new Map<string, Set<number>>();
     const mStopWords = "\t1234567890【】，。,.、  ？?_;；：:…'\"\nABCD";
     questionList.forEach((item) => {
       // 处理题干分词
@@ -110,7 +148,7 @@ export class SearchEngine {
     });
 
     // 存储进入沙箱文件
-    await SearchMapManage.getInstance().saveMapToFile(context, mDataTexts)
+    await SearchMapManage.getInstance().saveMapToFile(context, mDataTexts, fileName)
     console.debug(TAG, "保存成功")
   }
 
@@ -209,10 +247,14 @@ export class SearchEngine {
     mDataText: SharedArrayBuffer): Promise<QuestionRes | null> {
     let mMatchScores = new TreeMap<number, number>()
     let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
-    let mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0) as number
 
+    let mDataSize: number = 0
+    if (sp.getSync(SearchConstants.isAll, true)) {
+      mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number
+    } else {
+      mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_SOME, 0) as number
+    }
     let mDataTextData = SearchMapManage.getInstance().parseDataFromSharedBuffer(mDataText)
-
     // 取出数据
     if (!StringUtils.isNullOrEmpty(q)) {
       let list = SegmentEngine.getInstance().cut(q)
@@ -325,7 +367,8 @@ export class SearchEngine {
     // }
     let qStr = StringFilter.formatString(q);
     const mDataText =
-      await SearchMapManage.getInstance().loadSharedArrayBufferFromFile(getContext(this))
+      await SearchMapManage.getInstance()
+        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
     if (!mDataText) {
       return null
     }
@@ -402,10 +445,11 @@ export class SearchEngine {
    */
   private async searchQuestionsId(q: string): Promise<List<number>> {
     let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
-    let mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0) as number
+    let mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number
     let mMatchScores = new TreeMap<number, number>()
     const mDataText =
-      await SearchMapManage.getInstance().loadMapFromFile(getContext(this)) || new Map<string, Set<number>>()
+      await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL) ||
+      new Map<string, Set<number>>()
     if (!StringUtils.isNullOrEmpty(q)) {
       //分词
       let list = SegmentEngine.getInstance().cut(q)
