@@ -11,6 +11,7 @@ import { MainModel } from '../model/MainModel';
 import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
 import { emitter } from '@kit.BasicServicesKit';
 import { splashAd } from '../utils/SplashAd';
+import { ConfigRes } from '../model/ConfigRes';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -23,6 +24,7 @@ struct MainPage {
   @State mainModel: MainModel = MainModel.getInstance()
   @State isShow: boolean = false
   @State timer: number = 0
+  @State configRes: ConfigRes = new ConfigRes()
 
   private initPreferences() {
     //初始化sp实例
@@ -35,9 +37,15 @@ struct MainPage {
     preferencesUtils.putBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, newValue)
   }
 
+  async loadData() {
+    this.configRes = await this.mainModel.getConfigList()
+    console.info('configRes---' + this.configRes.hmAd.splash.switchOff)
+  }
+
   aboutToAppear(): void {
     this.initPreferences()
     this.mainModel.initDb()
+    this.loadData()
     this.timer = setTimeout(() => {
       splashAd.ShowSplash((ids: boolean) => {
         this.isShow = ids
@@ -45,6 +53,7 @@ struct MainPage {
     })
 
   }
+
   onPageHide(): void {
     clearTimeout(this.timer)
   }

@@ -1,11 +1,13 @@
 import { questionBankTable, QuestionTable, questionWrongTable, questionCollectionTable } from 'db'
-import { SearchEngine } from 'search/Index';
-import { Logger } from 'utils';
+import { MainNet } from '../service/MainNet';
+import { ConfigRes } from './ConfigRes';
 
 export class MainModel {
+  private mainNet: MainNet
   private static instance: MainModel
 
   private constructor() {
+    this.mainNet = new MainNet()
   }
 
   public static getInstance(): MainModel {
@@ -16,17 +18,17 @@ export class MainModel {
   }
 
   public initDb() {
-    questionBankTable.getRdbStore(() => {
-    })
-    QuestionTable.getInstance().getRdbStore(() => {
-    })
-    questionWrongTable.getRdbStore(() => {
-    })
-    questionCollectionTable.getRdbStore(() => {
-    })
+    questionBankTable.getRdbStore()
+    QuestionTable.getInstance().getRdbStore()
+    questionWrongTable.getRdbStore()
+    questionCollectionTable.getRdbStore()
   }
 
-  //初始化搜索分词数据
-  public async initSearchEngin() {
+  public async getConfigList(): Promise<ConfigRes> {
+    try {
+      return await this.mainNet.getConfigList()
+    } catch (e) {
+      return new ConfigRes()
+    }
   }
 }
