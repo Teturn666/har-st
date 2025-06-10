@@ -102,7 +102,7 @@ export struct HomePage {
         },
         isVipDialog:()=>{
           this.dialogController?.close()
-          if (!this.isVip){
+          if (!this.isVip&&this.bankList.length>0){
             this.AdDialogController?.open()
           }
         }
