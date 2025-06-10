@@ -1,7 +1,12 @@
-import { promptAction } from '@kit.ArkUI';
+import { promptAction, router } from '@kit.ArkUI';
 import { preferencesUtils, PreferencesConstants } from 'utils/Index';
 import { BankListRes } from 'db';
+import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage';
+import { SearchEngine } from 'search';
+import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 
+
+const TAG = 'SelectBankDialog';
 
 @CustomDialog
 export struct selectBankDialog {
@@ -48,14 +53,18 @@ export struct selectBankDialog {
   // 检查自定义题库是否全选
   private isCustomBanksAllSelected(): boolean {
     const customBanks = this.getCustomBanks();
-    if (customBanks.length === 0) return false;
+    if (customBanks.length === 0) {
+      return false;
+    }
     return customBanks.every(bank => this.selectedBankIds.includes(String(bank.id || '')));
   }
 
   // 检查下载题库是否全选
   private isDownloadBanksAllSelected(): boolean {
     const downloadBanks = this.getDownloadBanks();
-    if (downloadBanks.length === 0) return false;
+    if (downloadBanks.length === 0) {
+      return false;
+    }
     return downloadBanks.every(bank => this.selectedBankIds.includes(String(bank.id || '')));
   }
 
@@ -119,11 +128,7 @@ export struct selectBankDialog {
       });
       this.selectedBankIds = newSelectedIds;
     } else {
-      console.log("查看Bank" + this.selectedBankIds)
-      // 取消选中所有下载题库 - 只移除下载题库的ID
       this.selectedBankIds =[...this.selectedBankIds.filter(id => !downloadBankIds.includes(id))] ;
-
-      console.log("查看Bank--" + this.selectedBankIds)
     }
   }
 
@@ -187,8 +192,10 @@ export struct selectBankDialog {
                 .selectedColor(0xed6f21)
                 .shape(CheckBoxShape.CIRCLE)
                 .enabled(this.isVip)
-                .onChange((value: boolean) => {
-                  this.handleSelectAll(value);
+                .onClick(() => {
+                  // 切换全选状态
+                  const isCurrentlyAllSelected = this.isAllSelected();
+                  this.handleSelectAll(!isCurrentlyAllSelected);
                 })
 
               Text("全选")
@@ -197,16 +204,10 @@ export struct selectBankDialog {
                 .margin({ left: 8 })
             }
             .width('100%')
-            .onClick(() => {
-              if (this.isVip) {
-                // 切换全选状态
-                const isCurrentlyAllSelected = this.isAllSelected();
-                this.handleSelectAll(!isCurrentlyAllSelected);
-              } else {
-                this.handleNonVipClick();
-              }
-            })
           }
+          .onClick(()=>{
+            this.handleNonVipClick();
+          })
 
           // 自定义题库分组
           if (this.getCustomBanks().length > 0) {
@@ -219,8 +220,10 @@ export struct selectBankDialog {
                     .selectedColor(0xed6f21)
                     .shape(CheckBoxShape.CIRCLE)
                     .enabled(this.isVip)
-                    .onChange((value: boolean) => {
-                      this.handleCustomBanksSelectAll(value);
+                    .onClick(() => {
+                      // 切换自定义题库全选状态
+                      const isCurrentlyAllSelected = this.isCustomBanksAllSelected();
+                      this.handleCustomBanksSelectAll(!isCurrentlyAllSelected);
                     })
 
                   Text("自定义题库")
@@ -230,15 +233,6 @@ export struct selectBankDialog {
                     .margin({ left: 8 })
                 }
                 .width('100%')
-                .onClick(() => {
-                  if (this.isVip) {
-                    // 切换自定义题库全选状态
-                    const isCurrentlyAllSelected = this.isCustomBanksAllSelected();
-                    this.handleCustomBanksSelectAll(!isCurrentlyAllSelected);
-                  } else {
-                    this.handleNonVipClick();
-                  }
-                })
 
                 // 自定义题库列表
                 ForEach(this.getCustomBanks(), (bank: BankListRes) => {
@@ -248,8 +242,10 @@ export struct selectBankDialog {
                       .selectedColor(0xed6f21)
                       .shape(CheckBoxShape.CIRCLE)
                       .enabled(this.isVip)
-                      .onChange((value: boolean) => {
-                        this.handleBankSelect(String(bank.id || ''), value);
+                      .onClick(() => {
+                        const bankId = String(bank.id || '');
+                        const isSelected = this.selectedBankIds.includes(bankId);
+                        this.handleBankSelect(bankId, !isSelected);
                       })
 
                     Text(bank.name || "未命名题库")
@@ -262,19 +258,15 @@ export struct selectBankDialog {
                   }
                   .width('100%')
                   .margin({ left: 30 })
-                  .onClick(() => {
-                    if (this.isVip) {
-                      const bankId = String(bank.id || '');
-                      const isSelected = this.selectedBankIds.includes(bankId);
-                      this.handleBankSelect(bankId, !isSelected);
-                    } else {
-                      this.handleNonVipClick();
-                    }
-                  })
+
                 })
               }
               .alignItems(HorizontalAlign.Start)
             }.margin({ left: 18 })
+            .onClick(()=>{
+              this.handleNonVipClick();
+            })
+
           }
 
           // 我的下载分组
@@ -288,8 +280,10 @@ export struct selectBankDialog {
                     .selectedColor(0xed6f21)
                     .shape(CheckBoxShape.CIRCLE)
                     .enabled(this.isVip)
-                    .onChange((value: boolean) => {
-                      this.handleDownloadBanksSelectAll(value);
+                    .onClick(() => {
+                      // 切换下载题库全选状态
+                      const isCurrentlyAllSelected = this.isDownloadBanksAllSelected();
+                      this.handleDownloadBanksSelectAll(!isCurrentlyAllSelected);
                     })
 
                   Text("我的下载")
@@ -299,15 +293,7 @@ export struct selectBankDialog {
                     .margin({ left: 8 })
                 }
                 .width('100%')
-                .onClick(() => {
-                  if (this.isVip) {
-                    // 切换下载题库全选状态
-                    const isCurrentlyAllSelected = this.isDownloadBanksAllSelected();
-                    this.handleDownloadBanksSelectAll(!isCurrentlyAllSelected);
-                  } else {
-                    this.handleNonVipClick();
-                  }
-                })
+
 
                 // 下载题库列表
                 ForEach(this.getDownloadBanks(), (bank: BankListRes) => {
@@ -317,8 +303,10 @@ export struct selectBankDialog {
                       .selectedColor(0xed6f21)
                       .shape(CheckBoxShape.CIRCLE)
                       .enabled(this.isVip)
-                      .onChange((value: boolean) => {
-                        this.handleBankSelect(String(bank.id || ''), value);
+                      .onClick(() => {
+                        const bankId = String(bank.id || '');
+                        const isSelected = this.selectedBankIds.includes(bankId);
+                        this.handleBankSelect(bankId, !isSelected);
                       })
 
                     Text(bank.name || "未命名题库")
@@ -331,19 +319,14 @@ export struct selectBankDialog {
                   }
                   .width('100%')
                   .margin({ left: 30 })
-                  .onClick(() => {
-                    if (this.isVip) {
-                      const bankId = String(bank.id || '');
-                      const isSelected = this.selectedBankIds.includes(bankId);
-                      this.handleBankSelect(bankId, !isSelected);
-                    } else {
-                      this.handleNonVipClick();
-                    }
-                  })
                 })
               }
               .alignItems(HorizontalAlign.Start)
             }.margin({ left: 18 })
+            .onClick(()=>{
+              this.handleNonVipClick();
+            })
+
           }
         }
         .width('100%')
@@ -386,13 +369,36 @@ export struct selectBankDialog {
           .width(120)
           .height(40)
           .borderRadius(8)
-          .onClick(() => {
+          .onClick(async () => {
+            if (this.isVip) {
+              // 用户必须勾选至少一个题库
+              if (this.selectedBankIds.length === 0) {
+                promptAction.showToast({
+                  message: '请至少选择一个题库进行扫描题库',
+                  duration: 2000
+                });
+                return;
+              }
+            }
             // 去重并返回选中的题库ID
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
-            if (this.isVipDialog) this.isVipDialog()
 
+            if(!this.isVip){
+              if (this.isVipDialog) this.isVipDialog()
+            }
+            // 判断选择部分题库进行初始化
+            if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
+              await SearchMapManage.getInstance()
+                .clearTreeMapFileContent(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+              const selectedBankQIds = this.bankList
+                .filter(bank => this.selectedBankIds.includes(String(bank.id)))
+                .map(bank => bank.qid)
+
+              await SearchEngine.getInstance()
+                .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+            }
           })
       }
       .width('100%')

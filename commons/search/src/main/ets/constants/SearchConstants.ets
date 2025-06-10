@@ -9,7 +9,15 @@ export default class SearchConstants {
   static readonly SEARCH_OPTIONS: dataPreferences.Options = {
     name: 'SearchEngine',
   }
-  // 首选项mdataSize键值
-  static readonly SEARCH_DATASIZE = 'Search_DATASIZE'
-  static readonly SEARCH_FILE_NAME = '/treemap_data.json'
+  // 当前选择搜索逻辑为all还是some
+  static readonly isAll = 'isAll'
+
+  // 首选项mdataSize数量
+  static readonly SEARCH_DATASIZE_ALL = 'Search_dataSize_all'
+  static readonly SEARCH_DATASIZE_SOME = 'Search_dataSize_some'
+
+  // 文件路径
+  static readonly SEARCH_FILE_ALL = '/search_file_all.json'
+  static readonly SEARCH_FILE_SOME = '/search_file_some.json'
+
 }

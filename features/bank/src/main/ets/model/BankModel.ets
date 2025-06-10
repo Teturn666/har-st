@@ -239,30 +239,30 @@ export class BankModel {
     if (type === 2) {
       qaNum = 0
     } else {
-      let oldNum = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0)
+      let oldNum = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0)
       if (typeof oldNum === 'number') {
         qaNum = oldNum + qaNum
       }
     }
-    sp.putSync(SearchConstants.SEARCH_DATASIZE, qaNum)
+    sp.putSync(SearchConstants.SEARCH_DATASIZE_ALL, qaNum)
     sp.flushSync()
     let result = await SearchEngine.getInstance().initWithThreadTask(qid, type)
     Logger.debug('result---' + result)
   }
 
-  // 多线程初始化搜索引擎,更新查询数据
+  // 多线程初始化搜索引擎,更新查询数据  (添加题库删除题库都会触发）
   public async initSearchEnginTask(ctx: Context, qid: number, qaNum: number, type: number) {
     let sp = preferences.getPreferencesSync(ctx, SearchConstants.SEARCH_OPTIONS)
     //删除
     if (type === 2) {
       qaNum = 0
     } else {
-      let oldNum = sp.getSync(SearchConstants.SEARCH_DATASIZE, 0)
+      let oldNum = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0)
       if (typeof oldNum === 'number') {
         qaNum = oldNum + qaNum
       }
     }
-    sp.putSync(SearchConstants.SEARCH_DATASIZE, qaNum)
+    sp.putSync(SearchConstants.SEARCH_DATASIZE_ALL, qaNum)
     sp.flushSync()
     let result = await SearchEngine.getInstance().initWithThread(ctx, qid, type)
     Logger.debug('result---' + result)

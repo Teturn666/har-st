@@ -1,6 +1,8 @@
-import { router, } from "@kit.ArkUI";
+import { promptAction, router, } from "@kit.ArkUI";
 import { TitleBar } from "widget";
 import HomeConstants from "../Constants/HomeConstants";
+import { preferences } from "@kit.ArkData";
+import SearchConstants from "search/src/main/ets/constants/SearchConstants";
 
 
 @Entry({ routeName: "searchIntroductionPage" })
@@ -8,11 +10,18 @@ import HomeConstants from "../Constants/HomeConstants";
 export struct SearchIntroductionPage {
   onBackPress(): boolean | void {
     router.pushNamedRoute({
-      name:'pages/HomePage'
+      name: 'pages/HomePage'
     })
-  //  return true
+    //  return true
   }
-     build() {
+
+  aboutToDisappear(): void {
+    let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
+    sp.putSync(SearchConstants.isAll, true)
+    sp.flushSync()
+  }
+
+  build() {
     RelativeContainer() {
       // 标题
       TitleBar({
@@ -25,7 +34,6 @@ export struct SearchIntroductionPage {
           // this.dialogController?.open();
         },
       }).width('100%')
-
 
 
       // 使用说明行
@@ -57,6 +65,7 @@ export struct SearchIntroductionPage {
           Text("先下载或导入对应题库。")
             .fontSize(12)
         }
+
         // 2
         Row() {
           Text("2.锁定题目：屏幕中显示正确答案时，点击")
@@ -67,10 +76,12 @@ export struct SearchIntroductionPage {
           Text("可以让搜索")
             .fontSize(12)
         }
-        Row(){
+
+        Row() {
           Text("结果不再变化。")
             .fontSize(12)
         }
+
         // 3
         Row() {
           Text("3.点击右上角")
@@ -115,9 +126,9 @@ export struct SearchIntroductionPage {
         .linearGradient({
           angle: 90, // 横向渐变
           colors: [
-            ['#ffddac54', 0],   // 左
+            ['#ffddac54', 0], // 左
 
-            ['#ffc3622e', 1]    // 右
+            ['#ffc3622e', 1]// 右
           ]
         })
 
