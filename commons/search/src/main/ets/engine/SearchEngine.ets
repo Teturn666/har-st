@@ -449,7 +449,7 @@ export class SearchEngine {
     let mMatchScores = new TreeMap<number, number>()
     // 这里判断是否为全部题库
     let mDataText: Map<string, Set<number>>
-    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
+    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1')
     if (isAllNum === '1') {
       mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number
       mDataText =

@@ -178,8 +178,6 @@ export struct selectBankDialog {
       } else {
         preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
       }
-      const result = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
-      console.info(TAG, `查看一一: ${result}`);
     } catch (error) {
       console.error(TAG, 'Error saving selected bank IDs:', error);
     }
@@ -210,7 +208,7 @@ export struct selectBankDialog {
   }
 
   aboutToAppear() {
-    // this.getIsVip()
+    this.getIsVip()
     // 从本地读取选中的题库ID，如果没有则默认选中所有  //一：登录 是会员 显示本地存储的  二：登录 非会员  默认全选 三：退出登录的话默认选中所有题库
     this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
     if (this.loginState === '1') {
@@ -453,7 +451,7 @@ export struct selectBankDialog {
                 this.isVipDialog()
               }
             } else {
-              if (this.isChangeText){
+              if (this.isChangeText) {
                 this.isChangeText()
               }
 

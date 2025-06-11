@@ -153,6 +153,7 @@ export class PointsNet {
       })
     })
   }
+
   // 积分历史增加
   public getHistoryPointIncrease(): Promise<PointEventRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -169,6 +170,7 @@ export class PointsNet {
       })
     })
   }
+
   // 积分历史消耗
   public getHistoryPointConsumer(): Promise<PointEventRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -235,9 +237,9 @@ export class PointsNet {
   }
 
   // 绑定邀请码
-  public submitBoundCode(codeText:string): Promise<string> {
+  public submitBoundCode(codeText: string): Promise<string> {
     return new Promise((resolve: Function, reject: Function) => {
-      HttpUtils.getInstance().get(PointsTrigger.URL_INVITE_SUBMIT,{
+      HttpUtils.getInstance().get(PointsTrigger.URL_INVITE_SUBMIT, {
         params: {
           code: codeText
         }
@@ -246,10 +248,9 @@ export class PointsNet {
           let code = res.data.code
           if (code === "0") {
             resolve("done");
-          } else if(code === "300"){
+          } else if (code === "300") {
             resolve("您已注册超过30天，无法填写邀请码")
-          }
-          else {
+          } else {
             resolve("绑定失败，请检查邀请码是否正确")
             // reject("data is null");
           }
@@ -279,7 +280,7 @@ export class PointsNet {
   //积分兑换
   public getExchangeVip(id: string): Promise<string> {
     return new Promise((resolve: Function, reject: Function) => {
-      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_USE_VIP,{
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_USE_VIP, {
         params: {
           id: id
         }
@@ -288,8 +289,7 @@ export class PointsNet {
           let code = res.data.code
           if (code === "0") {
             resolve(res.data.data);
-          }
-          else if (code === "300") {
+          } else if (code === "300") {
             reject("积分不足");
           } else {
             reject("data is null");
@@ -334,6 +334,23 @@ export class PointsNet {
     })
   }
 
+  //先判断是否还能跳转应用商店
+  public getScoreSelect(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_SCORE_SELECT)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
   // 应用商店加分接口：/m/point/score/action
   public getScoreAction(): Promise<string> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -350,6 +367,4 @@ export class PointsNet {
       })
     })
   }
-
-
 }

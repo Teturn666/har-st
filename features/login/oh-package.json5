@@ -11,6 +11,7 @@
   "devDependencies": {
     "web": "file:../../commons/web",
     "utils": "file:../../commons/utils",
-    "network": "file:../../commons/network"
+    "network": "file:../../commons/network",
+    "db": "file:../../commons/db"
   },
 }
