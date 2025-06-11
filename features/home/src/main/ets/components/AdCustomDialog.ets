@@ -83,7 +83,9 @@ export struct AdCustomDialog {
         })
         .onClick(() => {
 
-          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff&&  !this.AdInit.code) {
+          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff&& !this.AdInit.code) {
+            let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+            rewardAd.CsjSdkId=res?.hmAd?.rewardScan?.csj
             rewardAd.AdSlotBuilder((isVerify: boolean) => {
               this.isVerify = isVerify
 

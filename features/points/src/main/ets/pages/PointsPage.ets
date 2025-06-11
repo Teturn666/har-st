@@ -338,11 +338,13 @@ export struct PointsPage {
           unit: "/个",
           title: "看广告赚积分",
           description:  ` (今日还剩${this.adTimes}次)`,
-          buttonImage: this.adTimes > 0 && this.CsjHmAD?.hmAd?.rewardScan?.switchOff ? $r('app.media.ic_complete') :
+          buttonImage: this.adTimes > 0 && this.CsjHmAD?.hmAd?.rewardPoint?.switchOff ? $r('app.media.ic_complete') :
           $r('app.media.ic_comple'),
           nClick: () => {
             if (this.adTimes > 0) {
-              if (this.CsjHmAD?.hmAd?.rewardScan?.switchOff) {
+              if (this.CsjHmAD?.hmAd?.rewardPoint?.switchOff) {
+                let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+                rewardAd.CsjSdkId=res?.hmAd?.rewardPoint?.csj
                 rewardAd.AdSlotBuilder((isVerify: boolean) => {
                   if (isVerify) {
                     this.getPointsByAd()
