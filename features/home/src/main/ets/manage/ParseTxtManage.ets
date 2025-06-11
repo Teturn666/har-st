@@ -146,7 +146,9 @@ export class ParseTxtManage {
 
   // 解析题干
   private parseQuestion(s: string): QuestionModel | null {
-    if (!s) return null;
+    if (!s) {
+      return null;
+    }
     let ss = this.format(s.trim());
     let q: QuestionModel | null = null;
 
@@ -168,7 +170,8 @@ export class ParseTxtManage {
               questionID: 0
             };
             arr[i] = `）${tarr[1].trim()}`;
-            q.q = this.join('（', arr, i === arr.length - 1 && tarr.length === 2 && !tarr[1].trim() ? arr.length - 1 : -1);
+            q.q =
+              this.join('（', arr, i === arr.length - 1 && tarr.length === 2 && !tarr[1].trim() ? arr.length - 1 : -1);
             return q;
           }
         }
@@ -188,11 +191,15 @@ export class ParseTxtManage {
       let size = ss.length;
       for (let i = 0; i < ss.length; i++) {
         let tans = this.formatAnswer(ss.substring(size - 1 - i));
-        if (!this.isAnswer(tans)) break;
+        if (!this.isAnswer(tans)) {
+          break;
+        }
         q.ans = tans;
         q.q = ss.substring(0, size - 1 - i);
       }
-      if (q.q) return q;
+      if (q.q) {
+        return q;
+      }
     }
     return null;
   }
@@ -238,13 +245,17 @@ export class ParseTxtManage {
 
   // 处理答案行
   private processAnswer(question: QuestionModel | null, line: string): void {
-    if (!question) return;
+    if (!question) {
+      return;
+    }
 
     let ans = '';
     line = line.replace('正确答案', '').replace('参考答案', '').replace('答案', '');
     for (let i = 0; i < line.length; i++) {
       let t = line[i].toUpperCase();
-      if (this.labels.includes(t)) ans += t;
+      if (this.labels.includes(t)) {
+        ans += t;
+      }
     }
 
     if (this.isAnswer(ans)) {
@@ -270,13 +281,17 @@ export class ParseTxtManage {
   private flushCurrentQuestion(res: ImportWithLog, question: QuestionModel | null): void {
     if (question) {
       const formatted = this.formatQuestion(question);
-      if (formatted) res.items.push(formatted);
+      if (formatted) {
+        res.items.push(formatted);
+      }
     }
   }
 
   // 验证题目有效性
   private validateQuestion(q: QuestionModel): QuestionModel | null {
-    if (!q.q || !q.ans || (q.type !== 'truefalse' && q.a.length === 0)) return null;
+    if (!q.q || !q.ans || (q.type !== 'truefalse' && q.a.length === 0)) {
+      return null;
+    }
     q.ans = q.ans.split('').filter(c => this.ANSWERLABEL.includes(c)).join('');
     return q.ans ? q : null;
   }
@@ -293,7 +308,9 @@ export class ParseTxtManage {
 
   // 字符串拼接
   private join(delimiter: string, list: string[], endpos: number): string {
-    if (!list || list.length === 0) return '';
+    if (!list || list.length === 0) {
+      return '';
+    }
     let resstr = list[0];
     for (let i = 1; i < list.length && (endpos === -1 || i < endpos); i++) {
       resstr += delimiter + list[i];
@@ -392,7 +409,8 @@ export class ParseTxtManage {
         }
       } else {
         console.info(`第${lineid + 1}行: 不符合题目/选项/答案格式: ${ss}`);
-        res.logs.push(`第${lineid + 1}行: ${s}\n该行不是以题目数字开头，也不是以ABCD选项开头，也不是标记答案行。即将跳过该行。`);
+        res.logs.push(`第${lineid +
+          1}行: ${s}\n该行不是以题目数字开头，也不是以ABCD选项开头，也不是标记答案行。即将跳过该行。`);
       }
     }
     if (cur) {
@@ -442,6 +460,19 @@ export class ParseTxtManage {
           return null;
         }
 
+        try {
+          const firstLine = lines.find(line => line.length > 0);
+          if (firstLine) {
+            JSON.parse(firstLine);
+            console.info('检测到JSON格式内容，调用parseJsonFile');
+            return await this.parseJsonFile(filePath);
+          }
+        } catch (e) {
+          // Not JSON, proceed with regular text parsing
+          console.info('非JSON格式内容，继续按普通文本解析');
+        }
+
+
         let result: ImportWithLog | null = this.parse(lines);
         if (!result || result.items.length === 0) {
           console.error('没有解析到有效题目');
@@ -490,6 +521,112 @@ export class ParseTxtManage {
           console.info(`成功关闭文件: ${filePath}`);
         } catch (closeError) {
           console.error(`关闭文件失败: ${(closeError as BusinessError).message}`);
+        }
+      }
+    }
+  }
+
+  // 解析JSON格式的TXT文件
+  async parseJsonFile(filePath: string): Promise<ImportWithLog | null> {
+    if (!filePath || typeof filePath !== 'string') {
+      console.error('文件路径无效');
+      promptAction.showToast({ message: '文件路径无效', duration: 2000 });
+      return null;
+    }
+
+    let file: fs.File | null = null;
+    try {
+      file = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
+      console.info(`成功打开JSON文件: ${filePath}`);
+      try {
+        let stat = fs.statSync(file.path);
+        console.info(`JSON文件状态: size=${stat.size}, mtime=${stat.mtime}`);
+
+        let buffer = new ArrayBuffer(stat.size);
+        let bytesRead = fs.readSync(file.fd, buffer);
+
+        let decoder = util.TextDecoder.create('utf-8', { ignoreBOM: true });
+        let text = decoder.decodeWithStream(new Uint8Array(buffer).slice(0, bytesRead));
+        let lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+        if (lines.length === 0) {
+          console.error('JSON文件为空或无有效内容');
+          promptAction.showToast({ message: 'JSON文件中没有有效内容', duration: 2000 });
+          return null;
+        }
+
+        let res: ImportWithLog = { items: [], logs: [] };
+        for (let lineid = 0; lineid < lines.length; lineid++) {
+          let s = lines[lineid];
+          if (!s || !s.trim()) {
+            console.info(`第${lineid + 1}行: 空行，跳过`);
+            continue;
+          }
+          try {
+            let model: QuestionModel = JSON.parse(s.trim());
+            if (model && model.q && model.ans) {
+              // Validate and format the question
+              let formatted = this.formatQuestion(model);
+              if (formatted) {
+                res.items.push(formatted);
+                console.info(`第${lineid + 1}行: 成功解析JSON题目: ${JSON.stringify(formatted)}`);
+              } else {
+                res.logs.push(`第${lineid + 1}行: 题目格式化失败: ${s}`);
+                console.info(`第${lineid + 1}行: formatQuestion 返回 null`);
+              }
+            } else {
+              res.logs.push(`第${lineid + 1}行: JSON题目缺少必要字段: ${s}`);
+              console.info(`第${lineid + 1}行: JSON题目无效`);
+            }
+          } catch (e) {
+            let err = e as BusinessError;
+            res.logs.push(`第${lineid + 1}行: ${s}\nJSON格式异常: ${err.message}`);
+            console.error(`第${lineid + 1}行: JSON解析失败: ${err.message}`);
+          }
+        }
+
+        if (res.items.length === 0) {
+          console.error('没有解析到有效JSON题目');
+          promptAction.showToast({ message: 'JSON文件中没有有效题目', duration: 2000 });
+          return null;
+        }
+
+        // Generate question IDs
+        this.generateQuestionIDs(res);
+        console.info(`JSON解析完成: items=${res.items.length}, logs=${res.logs.length}`);
+        return res;
+      } catch (statError) {
+        let err = statError as BusinessError;
+        console.error(`获取JSON文件状态失败: filePath=${filePath}, code=${err.code}, message=${err.message}`);
+        let message = '获取JSON文件状态失败';
+        if (err.code === 13900002) {
+          message = `JSON文件不存在或路径错误: ${filePath}`;
+        } else if (err.code === 13900004) {
+          message = `无权限访问JSON文件: ${filePath}`;
+        }
+        promptAction.showToast({ message, duration: 2000 });
+        return null;
+      }
+    } catch (error) {
+      let err = error as BusinessError;
+      let message = '解析JSON文件失败';
+      if (err.code === 13900002) {
+        message = `JSON文件不存在或路径错误: ${filePath}`;
+      } else if (err.code === 13900004) {
+        message = `无权限访问JSON文件: ${filePath}`;
+      } else {
+        message = `解析JSON文件失败: ${filePath} (错误: ${err.message})`;
+      }
+      console.error(`解析JSON文件失败: code=${err.code}, message=${err.message}, filePath=${filePath}`);
+      promptAction.showToast({ message, duration: 2000 });
+      return null;
+    } finally {
+      if (file) {
+        try {
+          fs.closeSync(file);
+          console.info(`成功关闭JSON文件: ${filePath}`);
+        } catch (closeError) {
+          console.error(`关闭JSON文件失败: ${(closeError as BusinessError).message}`);
         }
       }
     }
