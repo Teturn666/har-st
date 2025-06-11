@@ -216,8 +216,8 @@ struct CustomizedBankPage {
               return;
             }
 
-            if (!excelData) {
-              reject(new Error('Excel数据为空'));
+            if (!excelData || excelData === 'null') {
+              reject(new Error('Excel符合格式的数据为空'));
               return;
             }
 
