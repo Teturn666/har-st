@@ -3,10 +3,17 @@ import { PriceInfoRes } from '../model/PriceInfoRes'
 import { router } from '@kit.ArkUI'
 import { emitter } from '@kit.BasicServicesKit'
 import * as wxOpenSdk from '@tencent/wechat_open_sdk'
-import { preferencesUtils, PreferencesConstants, EmitterConstants, ToastUtils, ChPackageUtils } from 'utils/Index'
+import {
+  preferencesUtils,
+  PreferencesConstants,
+  EmitterConstants,
+  ToastUtils,
+  WXEventHandler,
+  OnWXResp
+} from 'utils/Index'
 import { APP_ID, WXApi } from 'utils/Index'
-import { hilog } from '@kit.PerformanceAnalysisKit'
 import { common } from '@kit.AbilityKit'
+import { ErrCode } from '@tencent/wechat_open_sdk'
 
 const TAG = '[PayPage]'
 
@@ -14,6 +21,7 @@ const TAG = '[PayPage]'
 @Component
 export struct PayPage {
   private wxApi = WXApi
+  private wxEventHandler = WXEventHandler
   @State payModel: PayModel = PayModel.getInstance()
   @State priceList: PriceInfoRes[] = []
   @State selectedCard: string = '3'
@@ -33,6 +41,35 @@ export struct PayPage {
   aboutToAppear(): void {
     this.loadData()
     this.initData()
+    this.wxEventHandler.registerOnWXRespCallback(this.onWXResp)
+  }
+
+  aboutToDisappear(): void {
+    this.wxEventHandler.unregisterOnWXRespCallback(this.onWXResp)
+  }
+
+  private onWXResp: OnWXResp = async (resp) => {
+    if (resp.errCode === ErrCode.ERR_OK) {
+      await this.loadUser()
+      ToastUtils.showToast('支付成功')
+    } else {
+      ToastUtils.showToast('支付失败')
+    }
+  }
+
+  private async loadUser() {
+    let usrInfo = await this.payModel.getUser()
+    preferencesUtils.putNumber(PreferencesConstants.SP_IS_VIP, usrInfo.vip)
+    preferencesUtils.putString(PreferencesConstants.SP_VIP_TIME, usrInfo.vip_expire)
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': this.nickName,
+        'avatarUrl': this.avatarUrl,
+        'isLogin': this.loginState,
+        'isVip': usrInfo.vip,
+        'vipTime': usrInfo.vip_expire
+      }
+    })
   }
 
   private initData() {
@@ -92,7 +129,7 @@ export struct PayPage {
     req.sign = payInfo.sign
 
     let finished = await this.wxApi.sendReq(getContext(this) as common.UIAbilityContext, req)
-    hilog.info(0x0000, 'TAG', `发送支付请求完成: ${finished}`)
+    // hilog.info(0x0000, 'TAG', `发送支付请求完成: ${finished}`)
   }
 
   private async loadData(): Promise<void> {
@@ -307,14 +344,6 @@ export struct PayPage {
       .width('100%')
       .height('auto')
       .backgroundColor(Color.White)
-
-      Row() {
-
-      }
-      .width('90%')
-      .height(0.8)
-      .backgroundColor('#ebebeb')
-      .margin({ left: 32, right: 32, top: 20 })
 
       Row() {
         Image($r('app.media.ic_vips'))
