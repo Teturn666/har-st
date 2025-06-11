@@ -100,11 +100,11 @@ export struct LoginPage {
       const isAllSelected = savedIds.length === allBankIds.length;
 
       // 保存全选状态
-      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK, isAllSelected ? '1' : '0');
+      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, isAllSelected ? '1' : '0');
       return savedIds;
     } catch (error) {
       // 出错时默认选中所有题库
-      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK, '1');
+      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1');
       return;
     }
   }

@@ -437,14 +437,13 @@ export struct selectBankDialog {
                 });
                 return;
               }
+              //将选择的题库列表存入本地
+              this.saveSelectedBankIds(this.selectedBankIds);
             }
             // 去重并返回选中的题库ID
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
-
-            //将选择的题库列表存入本地
-            this.saveSelectedBankIds(this.selectedBankIds);
 
             if (!this.isVip) {
               if (this.isVipDialog) {

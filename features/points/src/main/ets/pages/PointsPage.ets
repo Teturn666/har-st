@@ -60,10 +60,6 @@ export struct PointsPage {
     let data = await this.PointsModel.getAdPoint()
     if (data) {
       await this.gettingPointsInfo()
-      promptAction.showToast({
-        message: '积分已到账',
-        duration: 3000
-      });
     }
   }
 
@@ -82,13 +78,11 @@ export struct PointsPage {
       if (scoreResult) {
         this.AppScore = true
         await this.gettingPointsInfo();
-        promptAction.showToast({
-          message: '感谢您的评分支持！积分已到账',
-          duration: 3000
-        });
+        // promptAction.showToast({
+        //   message: '感谢您的评分支持！积分已到账',
+        //   duration: 3000
+        // });
       }
-
-
     }).catch((error: BusinessError) => {
       hilog.error(0x0001, 'TAG', `Failed to startAbility.Code: ${error.code}, message is ${error.message}`);
     });
@@ -331,7 +325,7 @@ export struct PointsPage {
           points: "+20积分",
           unit: "/人",
           title: "邀请好友",
-          description: "  (分享好友完成注册)",
+          description: "  (好友完成注册，填写我的邀请码)",
           buttonImage: $r('app.media.ic_share'),
           nClick: () => {
             this.share()
@@ -342,7 +336,7 @@ export struct PointsPage {
           points: "+5积分",
           unit: "/个",
           title: "看广告赚积分",
-          description: "  (看20个可兑换一天VIP)",
+          description:  ` (今日还剩${this.adTimes}次)`,
           buttonImage: this.adTimes > 0 && this.CsjHmAD?.hmAd?.rewardScan?.switchOff ? $r('app.media.ic_complete') :
           $r('app.media.ic_comple'),
           nClick: () => {
@@ -423,7 +417,7 @@ struct TaskCard {
   @State points: string = '';
   @State unit: string = '';
   @State title: string = '';
-  @State description: string = '';
+  @Prop description: string = '';
   @Prop buttonImage: Resource = $r('app.media.ic_share');
   nClick: () => void = () => {
   }
