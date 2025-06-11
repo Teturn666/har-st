@@ -182,12 +182,7 @@ export struct HomePage {
         //   }
         //
         // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-
-        Text("demo")
-          .onClick(() => {
-            const result = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1')
-            console.info(TAG, `查看一一: ${result}`);
-          })
+        
 
         List({ space: Const.SPACE_16 }) {
           ListItem() {
