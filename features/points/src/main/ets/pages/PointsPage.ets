@@ -342,6 +342,8 @@ export struct PointsPage {
           nClick: () => {
             if (this.adTimes > 0) {
               if (this.CsjHmAD?.hmAd?.rewardPoint?.switchOff) {
+                let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+                rewardAd.CsjSdkId=res?.hmAd?.rewardPoint?.csj
                 rewardAd.AdSlotBuilder((isVerify: boolean) => {
                   if (isVerify) {
                     this.getPointsByAd()
