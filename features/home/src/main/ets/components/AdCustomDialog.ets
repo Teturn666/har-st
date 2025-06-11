@@ -77,7 +77,6 @@ export struct AdCustomDialog {
               this.isVerify = isVerify
             })
           }
-          this.controller?.close()
         })
         .margin({ bottom: 13, top: 10 })
         .fontColor('#AF8050')
