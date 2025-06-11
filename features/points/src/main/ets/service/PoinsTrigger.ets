@@ -48,4 +48,14 @@ export enum PointsTrigger {
 
   //获取积分兑换列表
   URL_POINT_EXCHANGE_RULES = "/m/point/exchange/rules",
+
+  //看广告领积分 /m/point/ad
+  URL_POINT_AD = "/m/point/ad",
+
+  //查询还有多少次看广告的机会 /m/point/ad/count
+  URL_POINT_AD_COUNT = "/m/point/ad/count",
+
+  // 应用商店加分接口：/m/point/score/action
+  URL_POINT_SCORE_ACTION = "/m/point/score/action",
+
 }

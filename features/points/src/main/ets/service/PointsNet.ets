@@ -247,7 +247,7 @@ export class PointsNet {
           if (code === "0") {
             resolve("done");
           } else if(code === "300"){
-              resolve("您已注册超过30天，无法填写邀请码")
+            resolve("您已注册超过30天，无法填写邀请码")
           }
           else {
             resolve("绑定失败，请检查邀请码是否正确")
@@ -300,6 +300,56 @@ export class PointsNet {
     })
   }
 
+  //查询还有多少次看广告的机会 /m/point/ad/count
+  public getAdCount(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_AD_COUNT)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.msg);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  //看广告领积分 /m/point/ad
+  public getAdPoint(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_AD)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.msg);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  // 应用商店加分接口：/m/point/score/action
+  public getScoreAction(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_SCORE_ACTION)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
 
 
 }
