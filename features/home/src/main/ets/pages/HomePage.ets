@@ -1,9 +1,9 @@
 import { CommonConstants as Const, EmitterConstants, Logger, PreferencesConstants, preferencesUtils } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
-import { BusinessError, emitter } from '@kit.BasicServicesKit'
-import { fileIo, picker } from '@kit.CoreFileKit'
+import {  emitter } from '@kit.BasicServicesKit'
+
 import { image } from '@kit.ImageKit'
-import { faceDetector, textRecognition } from '@kit.CoreVisionKit'
+
 import { HomeModel } from '../model/HomeModel'
 import { HomeBankListRes } from '../model/HomeBankListRes'
 import { LoadingStatus } from 'utils'
@@ -21,8 +21,7 @@ import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
 import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
 import { BankListRes } from 'db'
-import {AdCustomDialog} from '../components/AdCustomDialog'
-import { CSJ_State } from 'utils/src/main/ets/constants/CSJState'
+import { AdCustomDialog } from '../components/AdCustomDialog'
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes'
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo'
 
@@ -69,9 +68,8 @@ export struct HomePage {
   @State bankList: BankListRes[] = [];
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
-  @State isVip:number=2
-  @StorageProp(CSJ_State.CSJ_HM_AD)
-  CsjHmAD:ConfigRes= {
+  @State isVip: number = 2
+  CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
   AdDialogController: CustomDialogController | null = new CustomDialogController({
@@ -98,6 +96,7 @@ export struct HomePage {
       offsetY: 10
     }),
   })
+
   // 打开选择题库对话框的方法
   async showSelectBankDialog() {
     this.dialogController = new CustomDialogController({
@@ -107,17 +106,25 @@ export struct HomePage {
         onConfirm: (selected: string[]) => {
           this.agreementChecked = this.agreementChecked;
         },
-        isVipDialog:()=>{
+        isVipDialog: () => {
           this.dialogController?.close()
           //弹窗
-          if (!this.isVip&&this.bankList.length>0&&this.CsjHmAD.hmAd.rewardScan.switchOff){
+          if (!this.isVip && this.bankList.length > 0 && this.CsjHmAD.hmAd.rewardScan.switchOff) {
             this.AdDialogController?.open()
-          }else {
-            router.pushNamedRoute({
-              name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+          } else {
+            if ( this.bankList.length > 0){
+              router.pushNamedRoute({
+                name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
-            })
+              })
+            }
           }
+        },
+        isChangeText: () => {
+          router.pushNamedRoute({
+            name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+
+          })
         }
       })
 
@@ -131,8 +138,8 @@ export struct HomePage {
   }
 
   aboutToAppear(): void {
-    this.isVip= preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
-    // this.initLottie()
+    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
+    this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
     this.loadResource()
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
       this.loadResource()
@@ -194,9 +201,17 @@ export struct HomePage {
                 if (!this.getIsShowDialog()) {
                   this.showSelectBankDialog()
 
-                }else {
-                  if (!this.isVip){
+                } else {
+                  if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff) {
                     this.AdDialogController?.open()
+                  } else {
+                    if ( this.bankList.length > 0){
+                      router.pushNamedRoute({
+                        name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+
+                      })
+                    }
+
                   }
                 }
 

@@ -1,9 +1,8 @@
 import { AdSlot, AdSlotBuilder, CSJAdCreator, CSJAdSdk, CSJRewardAd, RewardAdLoadListener } from "@csj/openadsdk"
 
-
 import { DemoConstants } from "."
-import { CSJ_State } from "../constants/CSJState"
-import { ConfigRes } from "../model/ConfigRes"
+import { PreferencesConstants } from "../common/PreferencesConstants"
+import { preferencesUtils } from "../common/PreferencesUtils"
 
 
 export class RewardAd {
@@ -16,9 +15,9 @@ export class RewardAd {
   }
 
   async AdSlotBuilder(callback: (isVerify: boolean) => void) {
-    let res= AppStorage.get(CSJ_State.CSJ_HM_AD) as ConfigRes
+    let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
     let adSlot = new AdSlotBuilder()
-      .setCodeId(res.hmAd.rewardScan.csj)//955804646
+      .setCodeId(res?.hmAd?.rewardScan?.csj)
       .setRewardName("金币")
       .setRewardAmount(1)
       .setBidAdm(this.mBiddingAdm)
@@ -26,8 +25,7 @@ export class RewardAd {
     this.loadAd(adSlot, callback)
 
   }
-
-  loadAd(adSlot: AdSlot, callback: (isVerify: boolean) => void) {
+    loadAd(adSlot: AdSlot, callback: (isVerify: boolean) => void) {
     this.isShow = callback
 
     this.mAdCreator.loadRewardAd(adSlot, this.mLoadListener) //加载广告

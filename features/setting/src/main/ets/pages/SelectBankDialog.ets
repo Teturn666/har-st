@@ -19,6 +19,8 @@ export struct selectBankDialog {
   @State selectedBankIds: string[] = []; // 统一管理选中的题库ID
   isVipDialog?: () => void = () => {
   }
+  isChangeText?: () => void = () => {
+  }
   @State loginState: string = ''
 
   //获取是否是VIP
@@ -176,7 +178,7 @@ export struct selectBankDialog {
       } else {
         preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
       }
-     const result = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
+      const result = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
       console.info(TAG, `查看一一: ${result}`);
     } catch (error) {
       console.error(TAG, 'Error saving selected bank IDs:', error);
@@ -450,6 +452,11 @@ export struct selectBankDialog {
               if (this.isVipDialog) {
                 this.isVipDialog()
               }
+            } else {
+              if (this.isChangeText){
+                this.isChangeText()
+              }
+
             }
             // 判断选择部分题库进行初始化
             if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
