@@ -101,7 +101,6 @@ class QuestionBankTable {
             tmp.downloadedState = resultSet.getDouble(resultSet.getColumnIndex('downloadedState'))
             //这个升级后插入的列
             tmp.bankType = resultSet.getDouble(resultSet.getColumnIndex('bankType'))
-            tmp.NewFlag = resultSet.getDouble(resultSet.getColumnIndex('NewFlag')) === 1; // 转换为布尔值
             result[i] = tmp
             resultSet.goToNextRow();
           }
@@ -141,7 +140,6 @@ function generateBucket(account: BankListRes): relationalStore.ValuesBucket {
   obj.downloadedState = account.downloadedState
   //这个升级后插入的列
   obj.bankType = account.bankType
-  obj.NewFlag = account.NewFlag ? 1 : 0
   return obj;
 }
 

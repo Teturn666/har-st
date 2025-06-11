@@ -7,6 +7,8 @@ import { PriceInfoRes } from '../model/PriceInfoRes'
 import { CreatePayInfoRes } from '../model/CreatePayInfoRes'
 import { CreatePayRes } from '../model/CreatePayRes'
 import { PreferencesConstants, preferencesUtils } from 'utils'
+import { UserDetailRes } from '../model/UserDetailRes'
+import { UserRes } from '../model/UserRes'
 
 const TAG = '[PayNet]'
 
@@ -47,6 +49,30 @@ export class PayNet {
           let code = res.data.errno
           let data = res.data.data
           if (code === 0) {
+            resolve(data)
+          } else {
+            reject("data is null")
+          }
+        }).catch((error: BusinessError) => {
+        reject(error)
+      })
+    })
+  }
+
+  //获取用户信息
+  public getUser(): Promise<UserDetailRes> {
+    let name = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    let openid = preferencesUtils.getString(PreferencesConstants.SP_OPEN_ID)
+    let unionid = preferencesUtils.getString(PreferencesConstants.SP_UNION_ID)
+    let udid = preferencesUtils.getString(PreferencesConstants.SP_UUID)
+    let data = "api=updateuser&tag=ksst&name=" + name + "&openid=" + openid
+      + "&unionid=" + unionid + "&id=" + udid
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getVipInstance()
+        .post(PayTrigger.PAY_PRICE_URL, data)
+        .then((res: AxiosResponse<UserRes>) => {
+          let data = res.data.data
+          if (res.data.errno === 0) {
             resolve(data)
           } else {
             reject("data is null")
