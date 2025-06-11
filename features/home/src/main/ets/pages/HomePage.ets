@@ -112,10 +112,12 @@ export struct HomePage {
           if (!this.isVip && this.bankList.length > 0 && this.CsjHmAD.hmAd.rewardScan.switchOff) {
             this.AdDialogController?.open()
           } else {
-            router.pushNamedRoute({
-              name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+            if ( this.bankList.length > 0){
+              router.pushNamedRoute({
+                name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
-            })
+              })
+            }
           }
         },
         isChangeText: () => {
@@ -203,10 +205,13 @@ export struct HomePage {
                   if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff) {
                     this.AdDialogController?.open()
                   } else {
-                    router.pushNamedRoute({
-                      name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+                    if ( this.bankList.length > 0){
+                      router.pushNamedRoute({
+                        name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
-                    })
+                      })
+                    }
+
                   }
                 }
 
