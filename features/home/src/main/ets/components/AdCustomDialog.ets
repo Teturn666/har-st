@@ -10,7 +10,7 @@ import HomeConstants from "../Constants/HomeConstants";
 export struct AdCustomDialog {
   @State @Watch('isClose') isVerify: boolean = false
   @State isVip: number = 0
-  @State AdInit:boolean=false
+  @State AdInit: boolean = false
   controller?: CustomDialogController;
   isShowDia: () => void = () => {
   }
@@ -72,14 +72,12 @@ export struct AdCustomDialog {
           offsetY: 4
         })
         .onClick(() => {
-          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff&&this.AdInit) {
+          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff && this.AdInit) {
             rewardAd.AdSlotBuilder((isVerify: boolean) => {
               this.isVerify = isVerify
-
             })
           }
-
-
+          this.controller?.close()
         })
         .margin({ bottom: 13, top: 10 })
         .fontColor('#AF8050')
@@ -116,6 +114,7 @@ export struct AdCustomDialog {
               name: "vipPage"
             })
           }
+          this.controller?.close()
         })
     }
     .linearGradient({

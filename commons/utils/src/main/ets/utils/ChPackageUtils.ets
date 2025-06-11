@@ -1,4 +1,5 @@
 import bundleManager from '@ohos.bundle.bundleManager';
+import { deviceInfo } from '@kit.BasicServicesKit'
 import { buffer, util } from '@kit.ArkTS';
 import { PreferencesConstants } from '../common/PreferencesConstants'
 import { preferencesUtils } from '../common/PreferencesUtils'
@@ -14,16 +15,22 @@ export class ChPackageUtils {
   static async getVersionName(): Promise<string> {
     let bundleInfo = await bundleManager.getBundleInfoForSelf(bundleManager.BundleFlag.GET_BUNDLE_INFO_DEFAULT)
     // Logger.info("---->" + bundleInfo.versionName)
+    preferencesUtils.putString(PreferencesConstants.SP_VERSION_NAME, bundleInfo.versionName)
     return bundleInfo.versionName
   }
 
-  static getDeviceId(): string {
-    let uuId: string = util.generateRandomUUID(true)
+  static async getDeviceId(): Promise<string> {
+    // let uuId =   await identifier.getOAID()
+    let uuId = deviceInfo.ODID
     preferencesUtils.putString(PreferencesConstants.SP_UUID, uuId)
-    let base64 = new util.Base64Helper()
-    let uint8Array = new Uint8Array(buffer.from(uuId).buffer)
-    let deviceId = base64.encodeToStringSync(uint8Array)
-    return deviceId
+    // let base64 = new util.Base64Helper()
+    // let uint8Array = new Uint8Array(buffer.from(uuId).buffer)
+    // let deviceId = base64.encodeToStringSync(uint8Array)
+    return uuId
+  }
+
+  static getDeviceModel(): string {
+    return deviceInfo.productModel
   }
 
   static getChannel(): string {
