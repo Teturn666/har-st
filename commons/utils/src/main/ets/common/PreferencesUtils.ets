@@ -4,7 +4,7 @@ import { ConfigRes } from '../model/ConfigRes'
 let dataPreferences: preferences.Preferences | null = null
 
 class PreferencesUtils {
-    context: Context | undefined
+  context: Context | undefined
   options: preferences.Options = {
     name: 'myStore'
   }
@@ -13,9 +13,9 @@ class PreferencesUtils {
     this.context = context
   }
 
-  getPreferences() {
+  getPreferences(ctx?: Context) {
     try {
-      dataPreferences = preferences.getPreferencesSync(this.context, this.options)
+      dataPreferences = preferences.getPreferencesSync(ctx || this.context, this.options)
       // console.info('success getPreferences' + dataPreferences)
 
     } catch (error) {
@@ -70,7 +70,8 @@ class PreferencesUtils {
       console.error(error)
     }
   }
-  putGenerics(key: string,value:ConfigRes) {
+
+  putGenerics(key: string, value: ConfigRes) {
     //判断preference对象是否存在
     if (!dataPreferences) {
       this.getPreferences()
@@ -83,13 +84,14 @@ class PreferencesUtils {
     } catch (error) {
       console.error(error)
     }
-
   }
+
   //获取string数据
-  getString(key: string, defValue: string = ''): string {
+  // ctx 上下文，多线程使用该方法时，需要传入上下文
+  getString(key: string, defValue: string = '', ctx?: Context): string {
     //判断preference对象是否存在
     if (!dataPreferences) {
-      this.getPreferences()
+      this.getPreferences(ctx)
     }
 
     let value = dataPreferences?.getSync(key, defValue)
@@ -121,13 +123,13 @@ class PreferencesUtils {
     return value as boolean
   }
 
-  getGenerics(key: string,defValue?:ConfigRes):ConfigRes {
+  getGenerics(key: string, defValue?: ConfigRes): ConfigRes {
     //判断preference对象是否存在
     if (!dataPreferences) {
       this.getPreferences()
     }
-    let value = dataPreferences?.getSync(key, defValue )
-    return value  as ConfigRes
+    let value = dataPreferences?.getSync(key, defValue)
+    return value as ConfigRes
   }
 
   //删除数据

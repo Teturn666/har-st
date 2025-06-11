@@ -1,6 +1,7 @@
 import { PayNet } from "../service/PayNet"
 import { CreatePayInfoRes } from "./CreatePayInfoRes"
 import { PriceInfoRes } from "./PriceInfoRes"
+import { UserDetailRes } from "./UserDetailRes"
 
 @Observed
 export class PayModel {
@@ -35,6 +36,16 @@ export class PayModel {
       return data
     } catch (e) {
       return new CreatePayInfoRes()
+    }
+  }
+
+  //获取用户信息
+  public async getUser(): Promise<UserDetailRes> {
+    try {
+      let data = await this.payNet.getUser()
+      return data
+    } catch (e) {
+      return new UserDetailRes()
     }
   }
 }

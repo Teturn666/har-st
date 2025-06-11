@@ -3,7 +3,7 @@
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebView Message Port Demo</title>
+    <title></title>
     <script src="./xlsx.full.min.js"></script>
   </head>
   <body></body>
@@ -18,7 +18,6 @@
      * 举例 const base64Data = "UEsDBBQABgAIAAAAIQ..."; // 省略完整 Base64
      * const result = parseExcelQuizBank(base64Data, "myQuiz.xlsx");
      */
-
     function generateShortTimestampNumber() {
       const now = new Date();
       return (
@@ -32,21 +31,48 @@
     }
 
     function parseExcelQuizBank(fileName, excelData) {
+      console.log(TAG, "开始解析:", fileName);
+      console.log(TAG, "数据类型:", typeof excelData);
+      console.log(
+        TAG,
+        "数据长度:",
+        excelData ? excelData.length || excelData.byteLength : "undefined"
+      );
+
       try {
         let data;
 
+        // 修复1: 改进数据处理逻辑
         if (typeof excelData === "string") {
+          console.log(TAG, "处理Base64字符串");
           const binStr = atob(excelData);
-          const buf = new Uint8Array(binStr.length);
+          const buf = new ArrayBuffer(binStr.length);
+          const view = new Uint8Array(buf);
           for (let i = 0; i < binStr.length; i++) {
-            buf[i] = binStr.charCodeAt(i);
+            view[i] = binStr.charCodeAt(i);
           }
           data = buf;
-        } else {
+        } else if (excelData instanceof ArrayBuffer) {
+          console.log(TAG, "处理ArrayBuffer");
           data = excelData;
+        } else if (excelData instanceof Uint8Array) {
+          console.log(TAG, "处理Uint8Array");
+          data = excelData;
+        } else {
+          console.error(TAG, "不支持的数据类型:", typeof excelData);
+          return null;
         }
 
+        console.log(TAG, "开始读取工作簿");
         const workbook = XLSX.read(data, { type: "array" });
+        console.log(TAG, "工作表数量:", workbook.SheetNames.length);
+        console.log(TAG, "工作表名称:", workbook.SheetNames);
+
+        if (workbook.SheetNames.length === 0) {
+          console.error(TAG, "没有找到工作表");
+          return null;
+        }
+
         const qid = generateShortTimestampNumber();
         const quizBank = {
           qid: qid,
@@ -66,48 +92,180 @@
         let globalQuestionIndex = 0;
 
         for (const sheetName of workbook.SheetNames) {
+          console.log(TAG, "处理工作表:", sheetName);
           const worksheet = workbook.Sheets[sheetName];
           const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-          if (
-            !rows[0] ||
-            rows[0].slice(0, 6).join(",") !==
-              "题干,答案,选项A,选项B,选项C,选项D"
-          ) {
-            console.warn(`工作表 "${sheetName}" 表头格式不正确，已跳过`);
+          console.log(TAG, `工作表 "${sheetName}" 行数:`, rows.length);
+
+          if (rows.length === 0) {
+            console.warn(TAG, `工作表 "${sheetName}" 为空，已跳过`);
             continue;
           }
 
-          const validRows = rows.slice(1).filter((row) => {
-            return !row.every(
-              (cell) => cell === undefined || String(cell).trim() === ""
+          console.log(TAG, "第一行数据:", rows[0]);
+
+          // 修复2: 改进表头检查逻辑，支持动态选项数量
+          const requiredHeaders = ["题干", "答案"];
+          const optionHeaders = [
+            "选项A",
+            "选项B",
+            "选项C",
+            "选项D",
+            "选项E",
+            "选项F",
+          ];
+
+          const actualHeaders = rows[0] || [];
+          console.log(TAG, "实际表头:", actualHeaders);
+
+          // 检查是否包含必要的列（题干、答案）
+          const hasRequiredHeaders = requiredHeaders.every((header) => {
+            return actualHeaders.some(
+              (actualHeader) =>
+                actualHeader && String(actualHeader).trim() === header
             );
           });
 
-          validRows.slice(1).forEach((row, rowIndex) => {
-            const actualRowNumber = rowIndex + 2;
-            const paddedRow = row.concat(Array(6 - row.length).fill(""));
-            const [question, answer, optionA, optionB, optionC, optionD] =
-              paddedRow;
+          // 动态检测选项列数
+          let detectedOptionCount = 0;
+          let optionStartIndex = -1;
 
-            // 拆分为具体错误判断
-            const isQuestionEmpty = !String(question).trim();
-            const isAnswerEmpty = !String(answer).trim();
-            const areAllOptionsEmpty = ![
-              optionA,
-              optionB,
-              optionC,
-              optionD,
-            ].some((opt) => String(opt).trim());
+          // 找到题干和答案的位置
+          const questionIndex = actualHeaders.findIndex(
+            (header) => header && String(header).trim() === "题干"
+          );
+          const answerIndex = actualHeaders.findIndex(
+            (header) => header && String(header).trim() === "答案"
+          );
+
+          if (questionIndex !== -1 && answerIndex !== -1) {
+            // 从表头中检测选项列
+            for (let i = 0; i < actualHeaders.length; i++) {
+              const header = actualHeaders[i];
+              if (
+                header &&
+                String(header)
+                  .trim()
+                  .match(/^选项[A-Z]$/)
+              ) {
+                if (optionStartIndex === -1) {
+                  optionStartIndex = i;
+                }
+                detectedOptionCount++;
+              }
+            }
+          }
+
+          console.log(TAG, `检测到选项数量: ${detectedOptionCount}`);
+          console.log(TAG, `选项起始索引: ${optionStartIndex}`);
+
+          if (!hasRequiredHeaders || detectedOptionCount === 0) {
+            console.warn(TAG, `工作表 "${sheetName}" 表头格式不正确`);
+            console.warn(TAG, "需要包含: 题干、答案、至少一个选项列");
+            console.warn(TAG, "实际表头:", actualHeaders);
+
+            // 尝试查找包含关键字的表头行
+            let headerRowIndex = -1;
+            for (let i = 0; i < Math.min(5, rows.length); i++) {
+              const row = rows[i] || [];
+              if (row.some((cell) => cell && String(cell).includes("题干"))) {
+                headerRowIndex = i;
+                break;
+              }
+            }
+
+            if (headerRowIndex === -1) {
+              console.warn(TAG, `工作表 "${sheetName}" 未找到有效表头，已跳过`);
+              continue;
+            } else {
+              console.log(TAG, `在第 ${headerRowIndex + 1} 行找到表头`);
+              // 重新设置表头并重新检测
+              const headerRow = rows[headerRowIndex];
+              rows.splice(0, headerRowIndex + 1);
+              rows.unshift(headerRow);
+
+              // 重新检测表头
+              const newHeaders = headerRow || [];
+              detectedOptionCount = 0;
+              optionStartIndex = -1;
+
+              for (let i = 0; i < newHeaders.length; i++) {
+                const header = newHeaders[i];
+                if (
+                  header &&
+                  String(header)
+                    .trim()
+                    .match(/^选项[A-Z]$/)
+                ) {
+                  if (optionStartIndex === -1) {
+                    optionStartIndex = i;
+                  }
+                  detectedOptionCount++;
+                }
+              }
+
+              if (detectedOptionCount === 0) {
+                console.warn(
+                  TAG,
+                  `工作表 "${sheetName}" 仍未找到有效选项列，已跳过`
+                );
+                continue;
+              }
+            }
+          }
+
+          // 修复3: 改进数据行处理
+          const validRows = rows.slice(1).filter((row) => {
+            if (!row) return false;
+            return !row.every(
+              (cell) =>
+                cell === undefined ||
+                cell === null ||
+                String(cell).trim() === ""
+            );
+          });
+
+          console.log(
+            TAG,
+            `工作表 "${sheetName}" 有效数据行数:`,
+            validRows.length
+          );
+
+          validRows.forEach((row, rowIndex) => {
+            const actualRowNumber = rowIndex + 2;
+
+            // 修复4: 动态处理选项数量
+            const question = row[questionIndex] || "";
+            const answer = row[answerIndex] || "";
+
+            // 动态提取选项
+            const options = [];
+            for (let i = 0; i < detectedOptionCount; i++) {
+              const optionIndex = optionStartIndex + i;
+              if (optionIndex < row.length) {
+                const option = String(row[optionIndex] || "").trim();
+                options.push(option);
+              } else {
+                options.push("");
+              }
+            }
+
+            // 修复5: 改进空值检查
+            const questionStr = String(question || "").trim();
+            const answerStr = String(answer || "").trim();
+            const validOptions = options.filter((opt) => opt.length > 0);
+            const hasValidOptions = validOptions.length > 0;
+
             let errorMsg = "";
 
-            if (isQuestionEmpty && isAnswerEmpty) {
-              errorMsg = " 无法提取,题干和答案均为空";
-            } else if (isQuestionEmpty) {
+            if (!questionStr && !answerStr) {
+              errorMsg = "无法提取,题干和答案均为空";
+            } else if (!questionStr) {
               errorMsg = "无法提取,题干为空";
-            } else if (isAnswerEmpty) {
+            } else if (!answerStr) {
               errorMsg = "无法提取,答案为空";
-            } else if (areAllOptionsEmpty) {
+            } else if (!hasValidOptions) {
               errorMsg = "无法提取,所有选项为空";
             }
 
@@ -116,17 +274,21 @@
                 sheetName: sheetName,
                 row: actualRowNumber,
                 error: errorMsg,
+                data: [questionStr, answerStr, ...options],
               });
+              console.warn(TAG, `第 ${actualRowNumber} 行: ${errorMsg}`, [
+                questionStr,
+                answerStr,
+                ...options,
+              ]);
               return;
             }
 
             questions.push({
               qId: qid,
-              question: question || "",
-              option: [optionA, optionB, optionC, optionD].filter(
-                (opt) => opt !== ""
-              ),
-              answer: answer || "",
+              question: questionStr,
+              option: validOptions, // 只包含非空选项
+              answer: answerStr,
               wrongAnswer: "",
               questionID: globalQuestionIndex + 1,
             });
@@ -136,10 +298,30 @@
         }
 
         quizBank.num = questions.length.toString();
-        return { quizBank, questions, questionErrorList };
+
+        console.log(TAG, "解析完成");
+        console.log(TAG, "题库信息:", quizBank);
+        console.log(TAG, "题目数量:", questions.length);
+        console.log(TAG, "错误列表数量:", questionErrorList.length);
+
+        const result = { quizBank, questions, questionErrorList };
+
+        // 修复6: 确保返回有效结果
+        if (questions.length === 0) {
+          console.warn(TAG, "没有解析到有效题目");
+          return {
+            quizBank,
+            questions: [],
+            questionErrorList,
+            warning: "没有解析到有效题目，请检查Excel文件格式",
+          };
+        }
+
+        return result;
       } catch (error) {
-        console.error(TAG, "解析失败:" + error);
-        throw error;
+        console.error(TAG, "解析失败:", error);
+        console.error(TAG, "错误堆栈:", error.stack);
+        return null;
       }
     }
   </script>

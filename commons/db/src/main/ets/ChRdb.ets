@@ -49,14 +49,6 @@ export default class ChRdb {
           // console.info(`Success to executeSql.`);
         }
       }
-      if (this.rdbStore.version === 2) {
-        if (DbConstants.QUESTION_BANK_TABLE.tableName === this.tableName) {
-          let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
-          this.rdbStore.query(predicates)
-          await this.rdbStore.executeSql('ALTER TABLE questionBank ADD COLUMN NewFlag BOOLEAN')
-          this.rdbStore.version = 3
-        }
-      }
       // Logger.info('getRdbStore() finished.');
       callback();
     } catch (e) {

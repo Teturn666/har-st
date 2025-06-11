@@ -1,3 +1,4 @@
+import { BankListRes, questionBankTable } from "db"
 import { LoginNet } from "../service/LoginNet"
 import { UserDetailRes } from "./UserDetailRes"
 
@@ -25,5 +26,11 @@ export class LoginModel {
     } catch (e) {
       return new UserDetailRes()
     }
+  }
+
+  //获取数据库下载的题库
+  public async getBankList(): Promise<BankListRes[]> {
+    let bankResultList = await questionBankTable.querySync(0) ?? [];
+    return bankResultList
   }
 }

@@ -1,6 +1,6 @@
 import { CommonConstants as Const, EmitterConstants, Logger, PreferencesConstants, preferencesUtils } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
-import {  emitter } from '@kit.BasicServicesKit'
+import { emitter } from '@kit.BasicServicesKit'
 
 import { image } from '@kit.ImageKit'
 
@@ -113,7 +113,7 @@ export struct HomePage {
           if (!this.isVip && this.bankList.length > 0 && !!this.CsjHmAD?.hmAd?.rewardScan?.switchOff&&this.CsjInit) {
             this.AdDialogController?.open()
           } else {
-            if ( this.bankList.length > 0){
+            if (this.bankList.length > 0) {
               router.pushNamedRoute({
                 name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
@@ -184,7 +184,7 @@ export struct HomePage {
         //   }
         //
         // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-
+        
 
         List({ space: Const.SPACE_16 }) {
           ListItem() {
@@ -208,7 +208,7 @@ export struct HomePage {
                   if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff&&this.CsjInit) {
                     this.AdDialogController?.open()
                   } else {
-                    if ( this.bankList.length > 0){
+                    if (this.bankList.length > 0) {
                       router.pushNamedRoute({
                         name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 

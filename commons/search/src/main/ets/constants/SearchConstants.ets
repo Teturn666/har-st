@@ -9,8 +9,6 @@ export default class SearchConstants {
   static readonly SEARCH_OPTIONS: dataPreferences.Options = {
     name: 'SearchEngine',
   }
-  // 当前选择搜索逻辑为all还是some
-  static readonly isAll = 'isAll'
 
   // 首选项mdataSize数量
   static readonly SEARCH_DATASIZE_ALL = 'Search_dataSize_all'

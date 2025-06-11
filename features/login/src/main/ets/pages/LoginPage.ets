@@ -20,6 +20,7 @@ import {
   APP_ID
 } from 'utils/Index'
 import { LoginModel } from '../model/LoginModel';
+import { BankListRes } from 'db';
 
 interface AccessTokenResponse {
   access_token?: string;
@@ -56,6 +57,7 @@ export struct LoginPage {
   @State unionId: string = '';
   @State openId: string = '';
   @State quickLoginAnonymousPhone: string = '';
+  @Prop bankList: BankListRes[];
   private wxEventHandler = WXEventHandler
   logTag: string = 'QuickLoginButtonComponent';
   domainId: number = 0x0000;
@@ -83,6 +85,27 @@ export struct LoginPage {
       this.unionId = response.unionID
       this.openId = response.openID
       this.spWrite('hw')
+      this.getSelectedBankIds()
+    }
+  }
+
+  // 判断是否全选
+  async getSelectedBankIds() {
+    try {
+      const idsJson = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK, '[]');
+      const savedIds = JSON.parse(idsJson) as string[];
+      this.bankList = await this.loginModel.getBankList();
+
+      const allBankIds = this.bankList.map(bank => String(bank.id || ''));
+      const isAllSelected = savedIds.length === allBankIds.length;
+
+      // 保存全选状态
+      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, isAllSelected ? '1' : '0');
+      return savedIds;
+    } catch (error) {
+      // 出错时默认选中所有题库
+      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1');
+      return;
     }
   }
 
@@ -190,6 +213,7 @@ export struct LoginPage {
 
         let finished = await this.wxApi.sendReq(getContext(this) as common.UIAbilityContext, req);
         hilog.info(0x0000, 'TAG', `发送授权请求完成: ${finished}`);
+        this.getSelectedBankIds()
       } else {
         promptAction.showToast({ message: '请安装微信' });
         hilog.warn(0x0000, 'TAG', '微信未安装');

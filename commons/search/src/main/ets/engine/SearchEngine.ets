@@ -79,8 +79,6 @@ export class SearchEngine {
     // 重置mDataSize的大小
     let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
     sp.putSync(SearchConstants.SEARCH_DATASIZE_SOME, questions.length)
-    // 设置搜索状态
-    sp.putSync(SearchConstants.isAll, false)
     sp.flushSync()
 
     questions.forEach((resultElement) => {
@@ -175,7 +173,9 @@ export class SearchEngine {
 
   /**
    * 初始化搜索引擎
+   *
    * @param context
+   * @param type 1添加题库 2删除题库
    */
   async initWithThread(ctx: common.Context, qid: number, type: number) {
     SearchEngine.getInstance().indexFromDatabase(ctx, qid, type)
@@ -249,7 +249,8 @@ export class SearchEngine {
     let sp = preferences.getPreferencesSync(context, SearchConstants.SEARCH_OPTIONS)
 
     let mDataSize: number = 0
-    if (sp.getSync(SearchConstants.isAll, true)) {
+    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1', context)
+    if (isAllNum === '1') {
       mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number
     } else {
       mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_SOME, 0) as number
@@ -449,7 +450,7 @@ export class SearchEngine {
     let mMatchScores = new TreeMap<number, number>()
     // 这里判断是否为全部题库
     let mDataText: Map<string, Set<number>>
-    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
+    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1')
     if (isAllNum === '1') {
       mDataSize = sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number
       mDataText =

@@ -1,6 +1,7 @@
 import { questionBankTable, QuestionTable, questionWrongTable, questionCollectionTable } from 'db'
 import { MainNet } from '../service/MainNet';
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
+import { ChPackageUtils } from 'utils/Index'
 
 export class MainModel {
   private mainNet: MainNet
@@ -22,6 +23,11 @@ export class MainModel {
     QuestionTable.getInstance().getRdbStore()
     questionWrongTable.getRdbStore()
     questionCollectionTable.getRdbStore()
+  }
+
+  public initHeadParams() {
+    ChPackageUtils.getDeviceId()
+    ChPackageUtils.getVersionName()
   }
 
   public async getConfigList(): Promise<ConfigRes> {

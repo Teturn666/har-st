@@ -12,6 +12,9 @@ import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { EmitterConstants, TimeUtils } from 'utils';
+import { preferences } from '@kit.ArkData';
+import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
+import { SearchEngine } from 'search';
 
 const TAG = 'CustomizedBankPage'
 
@@ -42,6 +45,7 @@ struct CustomizedBankPage {
     return questionResList;
   }
 
+  // 自定义题库导入逻辑
   async questionImport() {
     const documentPicker = new picker.DocumentViewPicker();
     const result = await documentPicker.select({
@@ -60,12 +64,24 @@ struct CustomizedBankPage {
     const filePreName = getPrefix(file.name);
 
     try {
+      let bankListRes: BankListRes | undefined;
       if (fileTypeName === 'xlsx' || fileTypeName === 'xls') {
-        await this.parseExcel(file, filePreName);
+        bankListRes = await this.parseExcel(file, filePreName);
       } else if (fileTypeName === 'txt') {
-        await this.parseTxt(file, filePreName);
+        bankListRes = await this.parseTxt(file, filePreName);
       } else {
         promptAction.showToast({ message: '不支持的文件格式', duration: 2000 });
+      }
+      // 进行搜索初始化逻辑
+      if (bankListRes) {
+        //更新mdataSize
+        let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
+        sp.putSync(SearchConstants.SEARCH_DATASIZE_ALL,
+          sp.getSync(SearchConstants.SEARCH_DATASIZE_ALL, 0) as number + Number(bankListRes.num))
+        sp.flushSync()
+
+        // 更新mdataText分词
+        await SearchEngine.getInstance().initWithThread(getContext(this), bankListRes.qid, 1)
       }
     } catch (error) {
       console.error('文件处理失败:', error);
@@ -75,7 +91,7 @@ struct CustomizedBankPage {
     }
   }
 
-  private async parseTxt(file: fs.File, filePreName: string) {
+  private async parseTxt(file: fs.File, filePreName: string): Promise<BankListRes | undefined> {
     try {
       const result = await this.parser.parseTxtFile(file.path);
       this.message = `开始处理TXT文件：${file.path}`;
@@ -121,7 +137,7 @@ struct CustomizedBankPage {
         this.importStatus = '失败';
         this.message = `插入题库失败: ${err.message}`;
         promptAction.showToast({ message: '插入题库失败', duration: 2000 });
-        return;
+        return
       }
 
       // 批量插入题目
@@ -137,6 +153,7 @@ struct CustomizedBankPage {
           const err: BusinessError = error as BusinessError;
           console.error(`插入题目失败: questionID=${item.questionID}, error=${err.message}`);
           result.logs.push(`插入题目失败: questionID=${item.questionID}, 错误: ${err.message}`);
+          return
         }
       }
 
@@ -160,9 +177,11 @@ struct CustomizedBankPage {
           : `成功导入 ${successCount} 道题目`;
         promptAction.showToast({ message: toastMessage, duration: 2000 });
         emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+        return bank;
       } else {
         this.importStatus = '失败';
         promptAction.showToast({ message: '导入失败', duration: 2000 });
+        return
       }
 
     } catch (error) {
@@ -171,10 +190,11 @@ struct CustomizedBankPage {
       this.message = `文件读取失败: ${err.message} (错误码: ${err.code})`;
       this.importStatus = '失败';
       promptAction.showToast({ message: '文件读取失败', duration: 2000 });
+      return
     }
   }
 
-  private async parseExcel(file: fs.File, filePreName: string) {
+  private async parseExcel(file: fs.File, filePreName: string): Promise<BankListRes | undefined> {
     try {
       const stat = fs.statSync(file.fd);
       let buffer = new ArrayBuffer(stat.size);
@@ -196,8 +216,8 @@ struct CustomizedBankPage {
               return;
             }
 
-            if (!excelData) {
-              reject(new Error('Excel数据为空'));
+            if (!excelData || excelData === 'null') {
+              reject(new Error('Excel符合格式的数据为空'));
               return;
             }
 
@@ -248,11 +268,13 @@ struct CustomizedBankPage {
         : `成功导入 ${excelDataObj.quizBank.num} 道题目`;
       promptAction.showToast({ message: toastMessage, duration: 2000 });
       emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+      return excelDataObj.quizBank
     } catch (error) {
       console.error(TAG, 'Excel处理失败:', error);
       this.importStatus = '失败';
       this.message = '导入失败';
       promptAction.showToast({ message: error.message || '文件解析失败', duration: 2000 });
+      return
     }
   }
 

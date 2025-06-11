@@ -2,6 +2,8 @@
 export class PreferencesConstants {
   //UUID
   static readonly SP_UUID = 'uuid'
+  //versionName
+  static readonly SP_VERSION_NAME = 'versionName'
   //是否第一次安装
   static readonly SP_IS_FIRST_INSTALL = 'isFirstInstall'
   //1=已登录
@@ -26,8 +28,6 @@ export class PreferencesConstants {
   static readonly SP_SELECT_VALUE = 'select_value'
   // setting 题目选择的弹窗是否显示
   static readonly SP_SELECT_DIALOG_SHOW = 'select_dialog_show'
-  //应用评分
-  static readonly SP_APP_RATING = 'app_rating'
   //保存题库选择
   static readonly SP_QUESTION_BANK = 'question_bank'
   //保存题库选择是否全选
