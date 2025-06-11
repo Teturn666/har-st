@@ -5,7 +5,6 @@ export default class DbConstants {
   /**
    * Rdb database config.
    */
-
   static readonly STORE_CONFIG: relationalStore.StoreConfig = {
     name: 'question.db',
     securityLevel: relationalStore.SecurityLevel.S1
