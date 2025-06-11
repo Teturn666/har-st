@@ -162,6 +162,7 @@ export class PointsModel {
       return ''
     }
   }
+
   //获取积分兑换列表
   public async getExchangeList(): Promise<ExchangeRes[]> {
     try {
@@ -210,6 +211,17 @@ export class PointsModel {
     }
   }
 
+  //先判断是否还能跳转应用商店 /m/point/score/select
+  public async getScoreSelect(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getScoreSelect()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
   // 应用商店加分接口：/m/point/score/action
   public async getScoreAction(): Promise<string> {
     try {
@@ -220,5 +232,4 @@ export class PointsModel {
       return ''
     }
   }
-
 }

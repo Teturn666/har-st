@@ -55,6 +55,9 @@ export enum PointsTrigger {
   //查询还有多少次看广告的机会 /m/point/ad/count
   URL_POINT_AD_COUNT = "/m/point/ad/count",
 
+  //先判断是否还能跳转应用商店 /m/point/score/select
+  URL_POINT_SCORE_SELECT = "/m/point/score/select",
+
   // 应用商店加分接口：/m/point/score/action
   URL_POINT_SCORE_ACTION = "/m/point/score/action",
 

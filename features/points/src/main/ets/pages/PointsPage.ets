@@ -9,6 +9,10 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { PreferencesConstants, preferencesUtils } from 'utils';
 import { systemShare } from '@kit.ShareKit';
+import { RewardAd, rewardAd } from 'utils/src/main/ets/utils/RewardAd';
+import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
+import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo';
+
 
 import('./MyHistoryPage')
 import('./MyInvitationPage')
@@ -25,18 +29,42 @@ export struct PointsPage {
   @State toSignToday: boolean = false
   @State loadingStatus: boolean = false
   @State AppScore: boolean = false
-  @State adTimes: string = ''
+  @State adTimes: number = 0
   @State myCode: string = ''
+  @State CsjHmAD: ConfigRes = {
+    hmAd: new HmAdInfo()
+  }
   static readonly APP_STORE_URL = 'https://appgallery.huawei.com/app/detail?id=com.chznai.ikst&channelId=SHARE'
+  rewardAd: RewardAd | null = new RewardAd()
 
-  //获取是否已经评分
-  getIsAppScore(): void {
-    this.AppScore = preferencesUtils.getBoolean(PreferencesConstants.SP_APP_RATING, false)
+  //判断可否应用评分
+  async getIsAppScore(): Promise<void> {
+    const scoreResult = await this.PointsModel.getScoreSelect();
+    if (scoreResult) {
+      this.AppScore = true
+    } else {
+      this.AppScore = false
+    }
   }
 
   //获取广告次数
   async getAdTimes(): Promise<void> {
-    this.adTimes = await this.PointsModel.getAdCount()
+    let data = await this.PointsModel.getAdCount()
+    if (data) {
+      this.adTimes = Number(data)
+    }
+  }
+
+  //看广告领积分
+  async getPointsByAd(): Promise<void> {
+    let data = await this.PointsModel.getAdPoint()
+    if (data) {
+      await this.gettingPointsInfo()
+      promptAction.showToast({
+        message: '积分已到账',
+        duration: 3000
+      });
+    }
   }
 
   //应用评分
@@ -52,7 +80,6 @@ export struct PointsPage {
       //调用应用商店加分接口
       const scoreResult = await this.PointsModel.getScoreAction();
       if (scoreResult) {
-        preferencesUtils.putBoolean(PreferencesConstants.SP_APP_RATING, true)
         this.AppScore = true
         await this.gettingPointsInfo();
         promptAction.showToast({
@@ -91,6 +118,7 @@ export struct PointsPage {
   }
 
   aboutToAppear(): void {
+    this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
     this.loadResources()
     this.getIsAppScore()
   }
@@ -107,7 +135,6 @@ export struct PointsPage {
     await this.gettingPointsInfo();
     await this.getAdTimes();
     this.myCode = await this.PointsModel.getMyCode();
-    console.log('所有资源加载完成, adTimes:', this.adTimes);
   }
 
   async gettingPointsInfo(): Promise<boolean> {
@@ -316,9 +343,18 @@ export struct PointsPage {
           unit: "/个",
           title: "看广告赚积分",
           description: "  (看20个可兑换一天VIP)",
-          buttonImage:  $r('app.media.ic_complete'),
+          buttonImage: this.adTimes > 0 && this.CsjHmAD?.hmAd?.rewardScan?.switchOff ? $r('app.media.ic_complete') :
+          $r('app.media.ic_comple'),
           nClick: () => {
-
+            if (this.adTimes > 0) {
+              if (this.CsjHmAD?.hmAd?.rewardScan?.switchOff) {
+                rewardAd.AdSlotBuilder((isVerify: boolean) => {
+                  if (isVerify) {
+                    this.getPointsByAd()
+                  }
+                })
+              }
+            }
           }
         })
 
@@ -327,9 +363,9 @@ export struct PointsPage {
           unit: "/周",
           title: "应用评分",
           description: "  (应用商店评分，我们需要您的支持)",
-          buttonImage: this.AppScore ? $r('app.media.ic_comple') : $r('app.media.ic_share'),
+          buttonImage: this.AppScore ? $r('app.media.ic_share') : $r('app.media.ic_comple'),
           nClick: () => {
-            if (!this.AppScore) {
+            if (this.AppScore) {
               this.jumpToApplication()
             }
           }
@@ -388,7 +424,7 @@ struct TaskCard {
   @State unit: string = '';
   @State title: string = '';
   @State description: string = '';
-  @State buttonImage: Resource = $r('app.media.ic_share');
+  @Prop buttonImage: Resource = $r('app.media.ic_share');
   nClick: () => void = () => {
   }
 
