@@ -16,9 +16,6 @@ export struct SearchIntroductionPage {
   }
 
   aboutToDisappear(): void {
-    let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
-    sp.putSync(SearchConstants.isAll, true)
-    sp.flushSync()
   }
 
   build() {
