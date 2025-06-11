@@ -249,6 +249,22 @@ export struct SettingPage {
       .alignItems(HorizontalAlign.Start)
       .justifyContent(FlexAlign.Start)
 
+      // Column() {
+      //   Text('登录设置')
+      //     .fontWeight(FontWeight.Bold)
+      //     .fontSize(18)
+      //     .fontColor("#3e3e3e")
+      //     .textAlign(TextAlign.Start)
+      //     .padding({ left: 16, top: 16, bottom: 16 })
+      //     .lineHeight(20)
+      //     .margin({ left: 20 })
+      // }
+      // .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+      // .margin({ top: 5 })
+      // .width('90%')
+      // .alignItems(HorizontalAlign.Start)
+      // .justifyContent(FlexAlign.Start)
+
       Column() {
         Row() {
           Text("退出登录")
@@ -257,21 +273,22 @@ export struct SettingPage {
             .textAlign(TextAlign.Start)
             .padding({ left: 16, top: 16, bottom: 16 })
             .lineHeight(20)
+
           Blank()
           Image($r('app.media.ic_enter')).width(6).height(10)
             .margin({ right: 12 })
         }
         .width('100%')
+        .onClick(() => {
+          this.loginDialog('退出登录', '你确定要退出登录吗？')
+        })
       }
       .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
       .width('90%')
-      .margin({ top: 1, left: 20 })
       .alignItems(HorizontalAlign.Start)
       .backgroundColor('#f9f9f9')
       .borderRadius(5)
-      .onClick(() => {
-        this.loginDialog('退出登录', '你确定要退出登录吗？')
-      })
+
 
       Column() {
         Row() {
@@ -281,21 +298,23 @@ export struct SettingPage {
             .textAlign(TextAlign.Start)
             .padding({ left: 16, top: 16, bottom: 16 })
             .lineHeight(20)
+
           Blank()
           Image($r('app.media.ic_enter')).width(6).height(10)
             .margin({ right: 12 })
         }
         .width('100%')
+        .onClick(() => {
+          this.loginDialog('注销登录', '你确定要注销登录吗？')
+        })
+
       }
       .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+      .margin({ top: 8 })
       .width('90%')
-      .margin({ top: 1, left: 20 })
       .alignItems(HorizontalAlign.Start)
       .backgroundColor('#f9f9f9')
       .borderRadius(5)
-      .onClick(() => {
-        this.loginDialog('注销登录', '你确定要注销登录吗？')
-      })
     }
     .alignItems(HorizontalAlign.Center)
     .width('100%')
