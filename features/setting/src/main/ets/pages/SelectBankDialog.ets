@@ -12,7 +12,7 @@ const TAG = 'SelectBankDialog';
 export struct selectBankDialog {
   controller?: CustomDialogController;
   @Prop bankList: BankListRes[];
-  @Prop isVip: boolean = true; // 从外部传入VIP状态
+  @Prop isVip: boolean = false; // 从外部传入VIP状态
   onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {
   };
   @State agreementChecked: boolean = false;

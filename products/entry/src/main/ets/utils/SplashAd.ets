@@ -14,7 +14,6 @@ import { Content, window } from "@kit.ArkUI"
 import { DemoConstants, PreferencesConstants, preferencesUtils, UIUtil } from "utils"
 
 
-
 export class SplashAd {
   private mAdCreator: CSJAdCreator | null = null
   private screenWidth: number = UIUtil.getScreenWidthVp()
@@ -28,7 +27,7 @@ export class SplashAd {
   private mWindow: window.Window | undefined = undefined
   globalBuilder: WrappedBuilder<[]> = wrapBuilder(bottomViewBuilder)
   globalCloseBtnBuilder: WrappedBuilder<[closeBlock: () => Promise<void>]> = wrapBuilder(closeBtnBuilder)
-  ctx?: Content
+  ctx?: UIContext
   adSlot: AdSlot | undefined = undefined
   TimeOut: number = 3000
   useCustomCloseBtn: boolean = false
@@ -49,7 +48,7 @@ export class SplashAd {
   }
 
   private asSLOTaD(callback: (ids: boolean) => void) {
-  let res=  preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+    let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
     this.adSlot = new AdSlotBuilder()
       .setCodeId(res?.hmAd?.splash?.csj)
       .setAcceptSize(this.adWidth, this.adHeight)
