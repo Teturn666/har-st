@@ -76,7 +76,11 @@ export struct PayPage {
   private async jumpToWxPay() {
     let payInfo = await this.payModel.getCreatePay(this.selectedCard)
 
-    ToastUtils.showToast("调起微信支付")
+
+    if (payInfo.partner_id === "") {
+      ToastUtils.showToast("服务或网络异常，请稍后重试")
+      return
+    }
 
     let req = new wxOpenSdk.PayReq()
     req.partnerId = payInfo.partner_id

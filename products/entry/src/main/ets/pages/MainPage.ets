@@ -35,6 +35,8 @@ struct MainPage {
     //初始化sp实例
     preferencesUtils.setContext(context)
     this.showDialog = preferencesUtils.getBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, true)
+    this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
+    this.AdInit = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL)
   }
 
   // 修改布尔值的方法
@@ -45,19 +47,14 @@ struct MainPage {
   aboutToAppear(): void {
     this.initPreferences()
     this.mainModel.initDb()
-    this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
-    this.AdInit = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL)
+    this.mainModel.initHeadParams()
     this.getCSJ()
-
-
 
     this.ShowSplash()
   }
 
   async getCSJ() {
     await MainModel.getInstance().getConfigList()
-
-
   }
 
   ShowSplash() {
