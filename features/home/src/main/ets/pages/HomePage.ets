@@ -68,7 +68,8 @@ export struct HomePage {
   @State bankList: BankListRes[] = [];
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
-  @State isVip: number = 2
+  @State isVip: number = 0
+  @State CsjInit:boolean=false
   CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
@@ -109,7 +110,7 @@ export struct HomePage {
         isVipDialog: () => {
           this.dialogController?.close()
           //弹窗
-          if (!this.isVip && this.bankList.length > 0 && this.CsjHmAD.hmAd.rewardScan.switchOff) {
+          if (!this.isVip && this.bankList.length > 0 && !!this.CsjHmAD?.hmAd?.rewardScan?.switchOff&&this.CsjInit) {
             this.AdDialogController?.open()
           } else {
             if ( this.bankList.length > 0){
@@ -117,7 +118,7 @@ export struct HomePage {
                 name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
               })
-            }
+          }
           }
         },
         isChangeText: () => {
@@ -140,6 +141,7 @@ export struct HomePage {
   aboutToAppear(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
+    this.CsjInit = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL);
     this.loadResource()
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
       this.loadResource()
@@ -198,11 +200,12 @@ export struct HomePage {
           ListItem() {
             SearchList({
               nClick: () => {
+               // preferencesUtils.deleteData(PreferencesConstants.CSJ_AD_PARAMS)
                 if (!this.getIsShowDialog()) {
                   this.showSelectBankDialog()
 
                 } else {
-                  if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff) {
+                  if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff&&this.CsjInit) {
                     this.AdDialogController?.open()
                   } else {
                     if ( this.bankList.length > 0){

@@ -4,6 +4,7 @@ import { window } from '@kit.ArkUI';
 import { PreferencesConstants, preferencesUtils, WXApi, WXEventHandler } from 'utils/Index';
 import { DemoConstants } from 'utils';
 import { cSJAdSdkAd } from '../utils/CSJAdSdk';
+import { MainModel } from '../model/MainModel';
 
 
 export default class EntryAbility extends UIAbility {
@@ -11,7 +12,7 @@ export default class EntryAbility extends UIAbility {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
     this.handleWeChatCallIfNeed(want)
     cSJAdSdkAd.ctx = this.context
-    preferencesUtils.context=this.context
+    preferencesUtils.context = this.context
   }
 
 
@@ -36,10 +37,11 @@ export default class EntryAbility extends UIAbility {
     let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
     if (res?.hmAd?.adconfig?.csjAppId) {
       cSJAdSdkAd.ConfigSDK()
+      AppStorage.setOrCreate('isInit', true)
       preferencesUtils.putBoolean(PreferencesConstants.CSJ_INIT_FAIL, true)
     } else {
       preferencesUtils.putBoolean(PreferencesConstants.CSJ_INIT_FAIL, false)
-
+      AppStorage.setOrCreate('isInit', false)
     }
 
   }

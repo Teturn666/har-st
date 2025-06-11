@@ -13,6 +13,7 @@ import { emitter } from '@kit.BasicServicesKit';
 import { splashAd } from '../utils/SplashAd';
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo';
+import { CSJStartResult } from 'utils/src/main/ets/model/StartResult';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -26,9 +27,15 @@ struct MainPage {
   @State isShow: boolean = false
   @State timer: number = 0
   @State configRes: ConfigRes = new ConfigRes()
-  @State AdInit: boolean = false
+  @State isVip: number = 0
+  @State csjFail: boolean = false
   @State CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
+  }
+  @StorageProp("isInit")
+  AdInit: CSJStartResult = {
+    code: 0,
+    msg: ""
   }
 
   private initPreferences() {
@@ -43,14 +50,14 @@ struct MainPage {
   }
 
   aboutToAppear(): void {
+    splashAd.ctx = this.getUIContext()
     this.initPreferences()
     this.mainModel.initDb()
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
-    this.AdInit = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL)
+    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP);
+    this.csjFail = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL);
+
     this.getCSJ()
-
-
-
     this.ShowSplash()
   }
 
@@ -61,7 +68,7 @@ struct MainPage {
   }
 
   ShowSplash() {
-    if (this.CsjHmAD?.hmAd?.splash?.switchOff && this.AdInit) {
+    if (this.CsjHmAD?.hmAd?.splash?.switchOff && !this.AdInit?.code && !this.isVip) {
       this.timer = setTimeout(() => {
         splashAd.ShowSplash((ids: boolean) => {
           this.isShow = ids
@@ -77,7 +84,7 @@ struct MainPage {
   }
 
   build() {
-    if (this.isShow) {
+    if (!!this.isVip || this.isShow) {
       RelativeContainer() {
         Navigation(this.appPathStack) {
           Flex({

@@ -1,5 +1,4 @@
 import { AdSlot, AdSlotBuilder, CSJAdCreator, CSJAdSdk, CSJRewardAd, RewardAdLoadListener } from "@csj/openadsdk"
-
 import { DemoConstants } from "."
 import { PreferencesConstants } from "../common/PreferencesConstants"
 import { preferencesUtils } from "../common/PreferencesUtils"
@@ -25,7 +24,8 @@ export class RewardAd {
     this.loadAd(adSlot, callback)
 
   }
-    loadAd(adSlot: AdSlot, callback: (isVerify: boolean) => void) {
+
+  loadAd(adSlot: AdSlot, callback: (isVerify: boolean) => void) {
     this.isShow = callback
 
     this.mAdCreator.loadRewardAd(adSlot, this.mLoadListener) //加载广告

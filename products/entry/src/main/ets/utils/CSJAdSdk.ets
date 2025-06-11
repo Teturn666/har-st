@@ -4,8 +4,10 @@ import {
   MediationUserInfoForSegmentBuilder,
   SDKConfig,
   SDKConfigBuilder,
+  StartResult,
 } from "@csj/openadsdk"
 import { PreferencesConstants, preferencesUtils } from "utils"
+import { CSJStartResult } from "utils/src/main/ets/model/StartResult";
 
 
 export class CSJAdSdkAd {
@@ -35,9 +37,9 @@ export class CSJAdSdkAd {
           .build()
       )
       .build()
-    CSJAdSdk.init(getContext() || this.ctx, config)
+    CSJAdSdk.init(this.ctx, config)
     CSJAdSdk.start().then((res) => {
-
+      AppStorage.setOrCreate('isInit', res as CSJStartResult) // StartResult
     }) //启动sdk
 
   }

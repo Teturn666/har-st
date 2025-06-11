@@ -1,8 +1,9 @@
 import { router } from "@kit.ArkUI";
 import { PreferencesConstants, preferencesUtils } from "utils";
 import { ConfigRes } from "utils/src/main/ets/model/ConfigRes";
-import { HmAdInfo } from "utils/src/main/ets/model/HmAdInfo";
+import { HmAdInfo ,} from "utils/src/main/ets/model/HmAdInfo";
 import { rewardAd, RewardAd } from "utils/src/main/ets/utils/RewardAd";
+import { CSJStartResult} from "utils/src/main/ets/model/StartResult";
 import HomeConstants from "../Constants/HomeConstants";
 
 
@@ -10,7 +11,11 @@ import HomeConstants from "../Constants/HomeConstants";
 export struct AdCustomDialog {
   @State @Watch('isClose') isVerify: boolean = false
   @State isVip: number = 0
-  @State AdInit:boolean=false
+  @StorageProp("isInit")
+   AdInit:CSJStartResult= {
+     code: 0,
+     msg: ""
+   }
   controller?: CustomDialogController;
   isShowDia: () => void = () => {
   }
@@ -21,18 +26,23 @@ export struct AdCustomDialog {
 
   isClose() {
     this.controller?.close()
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+    if (this.isVerify){
+       router.pushNamedRoute({
+        name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
-    })
+      })
+    }
+
   }
 
   aboutToAppear(): void {
+   }
+  onPageShow(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmParams = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
-    this.AdInit = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL)
-  }
 
+
+  }
   build() {
     Column({ space: 10 }) {
       Row() {
@@ -72,11 +82,13 @@ export struct AdCustomDialog {
           offsetY: 4
         })
         .onClick(() => {
-          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff&&this.AdInit) {
+
+          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff&&  !this.AdInit.code) {
             rewardAd.AdSlotBuilder((isVerify: boolean) => {
               this.isVerify = isVerify
 
             })
+
           }
 
 
