@@ -93,7 +93,7 @@ struct CustomizedBankPage {
 
   private async parseTxt(file: fs.File, filePreName: string): Promise<BankListRes | undefined> {
     try {
-      const result = await this.parser.parseTxtFile(file.path);
+      const result = await this.parser.parseTxtFile(file.path)
       this.message = `开始处理TXT文件：${file.path}`;
 
       if (!result) {

@@ -60,6 +60,7 @@ export struct PointsPage {
     let data = await this.PointsModel.getAdPoint()
     if (data) {
       await this.gettingPointsInfo()
+      await this.getAdTimes();
     }
   }
 
