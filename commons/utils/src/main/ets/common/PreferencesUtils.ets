@@ -1,9 +1,10 @@
 import { preferences } from '@kit.ArkData'
+import { ConfigRes } from '../model/ConfigRes'
 
 let dataPreferences: preferences.Preferences | null = null
 
 class PreferencesUtils {
-  private context: Context | undefined
+    context: Context | undefined
   options: preferences.Options = {
     name: 'myStore'
   }
@@ -69,7 +70,21 @@ class PreferencesUtils {
       console.error(error)
     }
   }
+  putGenerics(key: string,value:ConfigRes) {
+    //判断preference对象是否存在
+    if (!dataPreferences) {
+      this.getPreferences()
+    }
+    try {
+      dataPreferences?.putSync(key, value);
 
+      //持久化存储
+      dataPreferences?.flushSync()
+    } catch (error) {
+      console.error(error)
+    }
+
+  }
   //获取string数据
   getString(key: string, defValue: string = ''): string {
     //判断preference对象是否存在
@@ -104,6 +119,15 @@ class PreferencesUtils {
     let value = dataPreferences?.getSync(key, defValue)
 
     return value as boolean
+  }
+
+  getGenerics(key: string,defValue?:ConfigRes):ConfigRes {
+    //判断preference对象是否存在
+    if (!dataPreferences) {
+      this.getPreferences()
+    }
+    let value = dataPreferences?.getSync(key, defValue )
+    return value  as ConfigRes
   }
 
   //删除数据

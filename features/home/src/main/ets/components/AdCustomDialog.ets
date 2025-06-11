@@ -1,7 +1,5 @@
-
 import { router } from "@kit.ArkUI";
 import { PreferencesConstants, preferencesUtils } from "utils";
-import { CSJ_State } from "utils/src/main/ets/constants/CSJState";
 import { ConfigRes } from "utils/src/main/ets/model/ConfigRes";
 import { HmAdInfo } from "utils/src/main/ets/model/HmAdInfo";
 import { rewardAd, RewardAd } from "utils/src/main/ets/utils/RewardAd";
@@ -9,47 +7,55 @@ import HomeConstants from "../Constants/HomeConstants";
 
 
 @CustomDialog
-export  struct AdCustomDialog {
-  @State @Watch('isClose') isVerify:boolean=false
-  @State isVip:number=0
+export struct AdCustomDialog {
+  @State @Watch('isClose') isVerify: boolean = false
+  @State isVip: number = 0
+  @State AdInit:boolean=false
   controller?: CustomDialogController;
-  isShowDia:()=>void=()=>{}
-  rewardAd:RewardAd|null =new RewardAd()
-  @StorageProp(CSJ_State.CSJ_HM_AD)
-  CsjHmAD:ConfigRes= {
+  isShowDia: () => void = () => {
+  }
+  rewardAd: RewardAd | null = new RewardAd()
+  CsjHmParams: ConfigRes = {
     hmAd: new HmAdInfo()
   }
-  isClose(){
+
+  isClose() {
     this.controller?.close()
     router.pushNamedRoute({
       name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
     })
   }
+
   aboutToAppear(): void {
-   this.isVip= preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
+    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
+    this.CsjHmParams = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+    this.AdInit = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL)
   }
+
   build() {
-    Column({space:10}){
-      Row(){
+    Column({ space: 10 }) {
+      Row() {
         Image($r('sys.media.ohos_ic_public_close'))
           .width(20)
           .height(20)
 
-          .onClick(()=>{
+          .onClick(() => {
             this.isShowDia()
           })
-      }  .margin({bottom:9})
+      }.margin({ bottom: 9 })
       .justifyContent(FlexAlign.End)
       .width('100%')
-      Row(){
+
+      Row() {
         Image($r('app.media.vip'))
           .width(120)
           .height(90)
       }
 
-      .margin({bottom:20})
-      Column(){
+      .margin({ bottom: 20 })
+
+      Column() {
         Text('看一小段视频广告')
           .fontSize(14)
           .fontColor('#A3885D')
@@ -57,6 +63,7 @@ export  struct AdCustomDialog {
           .fontSize(14)
           .fontColor('#A3885D')
       }
+
       Text('看广告继续使用')
         .shadow({
           radius: 8,
@@ -64,19 +71,17 @@ export  struct AdCustomDialog {
           offsetX: 0,
           offsetY: 4
         })
-        .onClick(()=>{
-          if (this.CsjHmAD.hmAd.rewardScan.switchOff){
-            rewardAd.AdSlotBuilder((isVerify:boolean)=>{
-              this.isVerify=isVerify
+        .onClick(() => {
+          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff&&this.AdInit) {
+            rewardAd.AdSlotBuilder((isVerify: boolean) => {
+              this.isVerify = isVerify
 
             })
           }
 
 
-
-
         })
-        .margin({bottom:13,top:10})
+        .margin({ bottom: 13, top: 10 })
         .fontColor('#AF8050')
         .textAlign(TextAlign.Center)
         .borderRadius(5)
@@ -99,16 +104,16 @@ export  struct AdCustomDialog {
         .linearGradient({
           angle: 90, // 横向渐变
           colors: [
-            ['#EDCF8F', 0.1],   // 左
-            ['#FFFFD6', 0.4],   // 中
-            ['#cdcf9c34', 0.7]    // 右
+            ['#EDCF8F', 0.1], // 左
+            ['#FFFFD6', 0.4], // 中
+            ['#cdcf9c34', 0.7]// 右
           ]
         })
-        .onClick(()=>{
-          if (!this.isVip){
+        .onClick(() => {
+          if (!this.isVip) {
             this.controller?.close()
             router.pushNamedRoute({
-              name:"vipPage"
+              name: "vipPage"
             })
           }
         })
@@ -116,9 +121,9 @@ export  struct AdCustomDialog {
     .linearGradient({
       angle: 180, // 横向渐变
       colors: [
-        ['#FEFCEF', 0.1],   // 左
+        ['#FEFCEF', 0.1], // 左
 
-        ['#FFFFFF', 0.9]    // 右
+        ['#FFFFFF', 0.9]// 右
       ]
     })
     .borderRadius(5)

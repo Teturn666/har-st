@@ -11,9 +11,8 @@ import {
 } from "@csj/openadsdk"
 
 import { Content, window } from "@kit.ArkUI"
-import { DemoConstants, UIUtil } from "utils"
-import { CSJ_State } from "utils/src/main/ets/constants/CSJState"
-import { ConfigRes } from "utils/src/main/ets/model/ConfigRes"
+import { DemoConstants, PreferencesConstants, preferencesUtils, UIUtil } from "utils"
+
 
 
 export class SplashAd {
@@ -39,22 +38,20 @@ export class SplashAd {
 
   ShowSplash(callback: (ids: boolean) => void) {
     this.mAdCreator = CSJAdSdk.getAdCreator() //初始化广告创建器
-
     this.adLoadSuccess = false;
     this.startLoad = true;
 
     this.asSLOTaD(callback)
     let param = new CSJSplashAdLoadParam(this.adSlot!, this.mLoadListener!, this.ctx as UIContext, this.TimeOut!)
-
     this.mAdCreator.loadSplashAd(param)
 
 
   }
 
   private asSLOTaD(callback: (ids: boolean) => void) {
-    let res = AppStorage.get(CSJ_State.CSJ_HM_AD) as ConfigRes
+  let res=  preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
     this.adSlot = new AdSlotBuilder()
-      .setCodeId(res.hmAd.splash.csj)
+      .setCodeId(res?.hmAd?.splash?.csj)
       .setAcceptSize(this.adWidth, this.adHeight)
       .setBidAdm(this.mBiddingAdm)
       .build()

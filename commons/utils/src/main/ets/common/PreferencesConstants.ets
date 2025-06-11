@@ -26,4 +26,8 @@ export class PreferencesConstants {
   static readonly SP_SELECT_VALUE = 'select_value'
   // setting 题目选择的弹窗是否显示
   static readonly SP_SELECT_DIALOG_SHOW = 'select_dialog_show'
+  //广告SDK初始化失败
+  static  readonly  CSJ_INIT_FAIL='csj_init_fail'
+  //广告sdk
+  static  readonly  CSJ_AD_PARAMS='csj_ad_params'
 }

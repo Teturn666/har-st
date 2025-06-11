@@ -1,5 +1,5 @@
 export class AdInfo {
-  csj: string = ''
+  csj: string = '' //888906709
   gdt: string = ''
-  switchOff: boolean = false
+  switchOff: boolean = true
 }
