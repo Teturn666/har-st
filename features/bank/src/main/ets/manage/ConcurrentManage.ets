@@ -57,7 +57,7 @@ export async function deleteTableTask(context: common.Context, qid: number): Pro
   }
 
   // 初始化搜索
-  await BankModel.getInstance().initSearchEnginTask(context, 0, 0, 2)
+  await BankModel.getInstance().initSearchEnginTask(context, 0, 2)
   Logger.debug('ConcurrentManage', 'deleteData-------- 删除成功')
 }
 
