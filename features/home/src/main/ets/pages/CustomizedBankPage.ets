@@ -27,11 +27,14 @@ struct CustomizedBankPage {
   @State message: string = '等待解析文件...';
   private parser: ParseTxtManage = new ParseTxtManage();
   @State importStatus: string = '未完成'; //'成功'、'失败'、'未完成'
+  @State isLoading: boolean = false; // 添加loading状态
+  @State loadingMessage: string = '正在导入...'; // loading提示信息
 
   // 将QuestionModel列表转换为QuestionRes列表
   private toQuestionResList(importResult: ImportWithLog): QuestionRes[] {
-    const questionResList: QuestionRes[] = [];
-    importResult.items.forEach((item: QuestionModel, index: number) => {
+    const questionResList: QuestionRes[] = new Array(importResult.items.length);
+    for (let i = 0; i < importResult.items.length; i++) {
+      const item = importResult.items[i];
       const questionRes = new QuestionRes();
       questionRes.question = item.q;
       questionRes.option = item.a;
@@ -39,9 +42,9 @@ struct CustomizedBankPage {
       questionRes.questionID = item.questionID;
       questionRes.qId = item.qid;
       questionRes.wrongAnswer = "";
-      questionResList.push(questionRes);
-      console.log("查看questionResList：" + JSON.stringify(questionResList));
-    });
+      questionResList[i] = questionRes;
+    }
+    console.log("查看questionResList：" + JSON.stringify(questionResList));
     return questionResList;
   }
 
@@ -63,6 +66,9 @@ struct CustomizedBankPage {
     const fileTypeName = getFileExtension(file.name);
     const filePreName = getPrefix(file.name);
 
+    this.isLoading = true; // 开始loading
+    this.loadingMessage = '正在解析文件...';
+
     try {
       let bankListRes: BankListRes | undefined;
       if (fileTypeName === 'xlsx' || fileTypeName === 'xls') {
@@ -71,9 +77,13 @@ struct CustomizedBankPage {
         bankListRes = await this.parseTxt(file, filePreName);
       } else {
         promptAction.showToast({ message: '不支持的文件格式', duration: 2000 });
+        this.isLoading = false;
+        return;
       }
+
       // 进行搜索初始化逻辑
       if (bankListRes) {
+        this.loadingMessage = '正在初始化搜索...';
         //更新mdataSize
         let sp = preferences.getPreferencesSync(getContext(this), SearchConstants.SEARCH_OPTIONS)
         sp.putSync(SearchConstants.SEARCH_DATASIZE_ALL,
@@ -88,11 +98,14 @@ struct CustomizedBankPage {
       this.importStatus = '失败';
       this.message = '文件处理失败';
       promptAction.showToast({ message: '文件处理失败', duration: 2000 });
+    } finally {
+      this.isLoading = false; // 结束loading
     }
   }
 
   private async parseTxt(file: fs.File, filePreName: string): Promise<BankListRes | undefined> {
     try {
+      this.loadingMessage = '正在解析TXT文件...';
       const result = await this.parser.parseTxtFile(file.path)
       this.message = `开始处理TXT文件：${file.path}`;
 
@@ -112,6 +125,8 @@ struct CustomizedBankPage {
         this.importStatus = '未完成';
         return;
       }
+
+      this.loadingMessage = '正在创建题库...';
 
       // 创建题库对象
       const bank: BankListRes = {
@@ -140,21 +155,35 @@ struct CustomizedBankPage {
         return
       }
 
-      // 批量插入题目
+      this.loadingMessage = '正在导入题目...';
+
       const questionResList: QuestionRes[] = this.toQuestionResList(result);
       let successCount = 0;
 
-      for (let item of questionResList) {
-        try {
+      // 批量插入题目
+      try {
+        const insertPromises = questionResList.map(async (item): Promise<number> => {
           item.qName = bank.name;
-          await QuestionTable.getInstance().insertDataAwait(item);
-          successCount++;
-        } catch (error) {
-          const err: BusinessError = error as BusinessError;
-          console.error(`插入题目失败: questionID=${item.questionID}, error=${err.message}`);
-          result.logs.push(`插入题目失败: questionID=${item.questionID}, 错误: ${err.message}`);
-          return
-        }
+          return QuestionTable.getInstance().insertDataAwait(item);
+        });
+        const insertResults = await Promise.all(insertPromises);
+        successCount = insertResults.reduce((sum, result) => sum + (result > 0 ? 1 : 0), 0);
+
+        // 处理插入失败的题目
+        insertResults.forEach((results, index) => {
+          if (results <= 0) {
+            const item = questionResList[index];
+            result.logs.push(`插入题目失败: questionID=${item.questionID}, 错误: 插入未成功`);
+          }
+        });
+      } catch (error) {
+        const err: BusinessError = error as BusinessError;
+        console.error(`批量插入题目失败: ${err.message}`);
+        result.logs.push(`批量插入题目失败: 错误: ${err.message}`);
+        this.importStatus = '失败';
+        this.message = `批量插入题目失败: ${err.message}`;
+        promptAction.showToast({ message: '批量插入题目失败', duration: 2000 });
+        return;
       }
 
       // 处理错误日志
@@ -167,8 +196,6 @@ struct CustomizedBankPage {
         };
       });
 
-      await this.importSuccess(successCount);
-
       // 设置最终状态
       if (successCount > 0) {
         this.importStatus = '成功';
@@ -177,6 +204,12 @@ struct CustomizedBankPage {
           : `成功导入 ${successCount} 道题目`;
         promptAction.showToast({ message: toastMessage, duration: 2000 });
         emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+
+        // 在loading结束后显示成功弹窗
+        setTimeout(() => {
+          this.importSuccess(successCount);
+        }, 100);
+
         return bank;
       } else {
         this.importStatus = '失败';
@@ -196,6 +229,7 @@ struct CustomizedBankPage {
 
   private async parseExcel(file: fs.File, filePreName: string): Promise<BankListRes | undefined> {
     try {
+      this.loadingMessage = '正在读取Excel文件...';
       const stat = fs.statSync(file.fd);
       let buffer = new ArrayBuffer(stat.size);
       fs.readSync(file.fd, buffer);
@@ -205,6 +239,7 @@ struct CustomizedBankPage {
       const helper = new util.Base64Helper();
       const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
 
+      this.loadingMessage = '正在解析Excel数据...';
       // Promise化Excel解析过程
       const excelDataObj = await new Promise<ExcelDataObj>((resolve, reject) => {
         WebClass.webviewController.runJavaScript(
@@ -243,6 +278,8 @@ struct CustomizedBankPage {
         return;
       }
 
+      this.loadingMessage = '正在保存题库数据...';
+
       // 设置题库信息
       excelDataObj.quizBank.name = bankName;
       excelDataObj.quizBank.desc = bankName;
@@ -257,8 +294,6 @@ struct CustomizedBankPage {
       });
       await Promise.all(insertPromises);
 
-      await this.importSuccess(Number(excelDataObj.quizBank.num));
-
       // 设置导入结果
       this.questionErrorList = excelDataObj.questionErrorList || [];
       this.importStatus = '成功';
@@ -268,6 +303,12 @@ struct CustomizedBankPage {
         : `成功导入 ${excelDataObj.quizBank.num} 道题目`;
       promptAction.showToast({ message: toastMessage, duration: 2000 });
       emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+
+      // 在loading结束后显示成功弹窗
+      setTimeout(() => {
+        this.importSuccess(Number(excelDataObj.quizBank.num));
+      }, 100);
+
       return excelDataObj.quizBank
     } catch (error) {
       console.error(TAG, 'Excel处理失败:', error);
@@ -360,52 +401,72 @@ struct CustomizedBankPage {
       .height($r('app.float.float_50vp'))
       .backgroundColor($r('app.color.c_F75A23'))
 
-      // 文件路径信息
-      Text(this.message)
-        .fontSize(12)
-        .fontColor($r('app.color.c_9d9d9d'))
-        .margin({
-          top: 10,
-          bottom: 10,
-          left: 20,
-          right: 20
-        })
-        .textAlign(TextAlign.Start)
+      // Loading状态显示
+      if (this.isLoading) {
+        Column() {
+          LoadingProgress()
+            .width(40)
+            .height(40)
+            .margin({ bottom: 10 })
+            .color($r('app.color.c_F75A23'))
 
-      List({ space: 5 }) {
-        ForEach(
-          this.questionErrorList,
-          (item: QuestionError) => {
-            ListItem() {
-              Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
+          Text(this.loadingMessage)
+            .fontSize(14)
+            .fontColor($r('app.color.c_9d9d9d'))
+        }
+        .justifyContent(FlexAlign.Center)
+        .width('100%')
+        .height(200)
+      } else {
+        // 文件路径信息
+        Text(this.message)
+          .fontSize(12)
+          .fontColor($r('app.color.c_9d9d9d'))
+          .margin({
+            top: 10,
+            bottom: 10,
+            left: 20,
+            right: 20
+          })
+          .textAlign(TextAlign.Start)
+
+        List({ space: 5 }) {
+          ForEach(
+            this.questionErrorList,
+            (item: QuestionError) => {
+              ListItem() {
+                Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
+                  .fontSize(12)
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .margin({ bottom: 10, left: 20, right: 20 })
+                  .textAlign(TextAlign.Start)
+              }
+            },
+          )
+          ListItem() {
+            // 动态显示导入结果
+            if (this.importStatus === '成功') {
+              Text('导入完成')
+                .fontSize(12)
+                .fontColor($r('app.color.c_9d9d9d'))
+                .margin({ bottom: 10, left: 20, right: 20 })
+                .textAlign(TextAlign.Start)
+            } else if (this.importStatus === '失败') {
+              Text('导入失败')
                 .fontSize(12)
                 .fontColor($r('app.color.c_9d9d9d'))
                 .margin({ bottom: 10, left: 20, right: 20 })
                 .textAlign(TextAlign.Start)
             }
-          },
-        )
-      }
-      .height("auto")
-      .width("100%")
+          }
+        }
+        // .height("auto")
+        .layoutWeight(1)
+        .width("100%")
 
-      // 动态显示导入结果
-      if (this.importStatus === '成功') {
-        Text('导入完成')
-          .fontSize(12)
-          .fontColor($r('app.color.c_9d9d9d'))
-          .margin({ bottom: 10, left: 20, right: 20 })
-          .textAlign(TextAlign.Start)
-      } else if (this.importStatus === '失败') {
-        Text('导入失败')
-          .fontSize(12)
-          .fontColor($r('app.color.c_9d9d9d'))
-          .margin({ bottom: 10, left: 20, right: 20 })
-          .textAlign(TextAlign.Start)
       }
 
     }
-
     .alignItems(HorizontalAlign.Start)
   }
 }
