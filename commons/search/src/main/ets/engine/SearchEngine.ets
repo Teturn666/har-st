@@ -43,14 +43,14 @@ export class SearchEngine {
     // 如果是删除逻辑
     if (type === 2) {
       questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
-      preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_ALL, questions.length, context)
+      preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions.length, context)
       // 清空文件内容
       await SearchMapManage.getInstance().clearTreeMapFileContent(context, SearchConstants.SEARCH_FILE_ALL)
     } else {
       // 添加逻辑
       questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, qid, false, false)
-      const oldMdataSize = preferencesUtils.getNumber(SearchConstants.SEARCH_DATASIZE_ALL, 0, context)
-      preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_ALL, oldMdataSize + questions.length, context)
+      const oldMdataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0, context)
+      preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, oldMdataSize + questions.length, context)
     }
     let questionList: ArrayList<QuestionRes> = new ArrayList<QuestionRes>()
 
@@ -78,7 +78,7 @@ export class SearchEngine {
     let questionList: ArrayList<QuestionRes> = new ArrayList<QuestionRes>()
 
     // 重置mDataSize的大小
-    preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_SOME, questions?.length, context)
+    preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length, context)
     questions.forEach((resultElement) => {
       questionList.add(resultElement)
     })
@@ -248,9 +248,9 @@ export class SearchEngine {
     let mDataSize: number = 0
     let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1', context)
     if (isAllNum === '1') {
-      mDataSize = preferencesUtils.getNumber(SearchConstants.SEARCH_DATASIZE_ALL, 0, context)
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0, context)
     } else {
-      mDataSize = preferencesUtils.getNumber(SearchConstants.SEARCH_DATASIZE_SOME, 0, context)
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, 0, context)
     }
 
     if (mDataSize === 0) {
@@ -258,9 +258,9 @@ export class SearchEngine {
       let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
       const questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
       if (isAllNum === '1') {
-        preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_ALL, questions?.length, context)
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions?.length, context)
       } else {
-        preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_SOME, questions?.length, context)
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length, context)
       }
       mDataSize = questions?.length
     }
@@ -461,12 +461,12 @@ export class SearchEngine {
     let mDataText: Map<string, Set<number>>
     let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1')
     if (isAllNum === '1') {
-      mDataSize = preferencesUtils.getNumber(SearchConstants.SEARCH_DATASIZE_ALL, 0)
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0)
       mDataText =
         await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL) ||
         new Map<string, Set<number>>()
     } else {
-      mDataSize = preferencesUtils.getNumber(SearchConstants.SEARCH_DATASIZE_SOME, 0)
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, 0)
       mDataText =
         await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME) ||
         new Map<string, Set<number>>()
@@ -478,9 +478,9 @@ export class SearchEngine {
       let rdbStore = await relationalStore.getRdbStore(getContext(this), DbConstants.STORE_CONFIG);
       const questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
       if (isAllNum === '1') {
-        preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_ALL, questions?.length)
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions?.length)
       } else {
-        preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_SOME, questions?.length)
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length)
       }
       mDataSize = questions?.length
     }

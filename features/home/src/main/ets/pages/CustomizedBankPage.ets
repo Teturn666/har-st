@@ -11,7 +11,7 @@ import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
 import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
-import { EmitterConstants, preferencesUtils, TimeUtils } from 'utils';
+import { EmitterConstants, PreferencesConstants, preferencesUtils, TimeUtils } from 'utils';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { SearchEngine } from 'search';
 
@@ -84,8 +84,8 @@ struct CustomizedBankPage {
       if (bankListRes) {
         this.loadingMessage = '正在初始化搜索...';
         //更新mdataSize
-        let oldMdataSize = preferencesUtils.getNumber(SearchConstants.SEARCH_DATASIZE_ALL, 0)
-        preferencesUtils.putNumber(SearchConstants.SEARCH_DATASIZE_ALL, oldMdataSize + Number(bankListRes.num))
+        let oldMdataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0)
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, oldMdataSize + Number(bankListRes.num))
 
         // 更新mdataText分词
         await SearchEngine.getInstance().initWithThread(getContext(this), bankListRes.qid, 1)

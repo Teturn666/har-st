@@ -35,7 +35,9 @@ export class PreferencesConstants {
   //广告SDK初始化失败
   static  readonly  CSJ_INIT_FAIL='csj_init_fail'
   //广告sdk
-  static  readonly  CSJ_AD_PARAMS='csj_ad_params'
-
-
+  static readonly CSJ_AD_PARAMS = 'csj_ad_params'
+  // mdataSize 全部文件的数量
+  static readonly SEARCH_DATASIZE_ALL = 'Search_dataSize_all'
+  // mdataSize 部分文件的数量
+  static readonly SEARCH_DATASIZE_SOME = 'Search_dataSize_some'
 }
