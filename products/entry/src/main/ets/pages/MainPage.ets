@@ -133,7 +133,7 @@ struct MainPage {
                   .fontSize(18).onClick(() => {
                   router.pushNamedRoute({
                     name: "webPage", params: {
-                      url: "https://ti.iksdt.com/static/doc/yszc.html",
+                      url: "https://ti.iksdt.com/static/doc/yhxy.html",
                       title: "用户协议"
                     }
                   })
@@ -145,7 +145,7 @@ struct MainPage {
                   router.pushNamedRoute({
                     name: "webPage", params: {
                       url: "https://ti.iksdt.com/static/doc/yszc.html",
-                      title: "用户协议"
+                      title: "隐私政策"
                     }
                   })
                 })
