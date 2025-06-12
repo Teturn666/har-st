@@ -136,6 +136,81 @@
           return null;
         }
 
+        /**
+         * 检查是否为判断题
+         * @param {string} answer - 答案内容
+         * @returns {boolean} - 是否为判断题
+         */
+        function isJudgmentQuestion(answer) {
+          if (!answer) return false;
+
+          const normalizedAnswer = String(answer).toLowerCase().trim();
+          const judgmentKeywords = [
+            "正确",
+            "错误",
+            "对",
+            "错",
+            "是",
+            "否",
+            "true",
+            "false",
+            "yes",
+            "no",
+            "√",
+            "×",
+            "right",
+            "wrong",
+            "correct",
+            "incorrect",
+          ];
+
+          return judgmentKeywords.some((keyword) =>
+            normalizedAnswer.includes(keyword.toLowerCase())
+          );
+        }
+
+        /**
+         * 标准化判断题答案格式
+         * @param {string} originalAnswer - 原始答案
+         * @returns {string} - 标准化后的答案
+         */
+        function standardizeJudgmentAnswer(originalAnswer) {
+          if (!originalAnswer) return originalAnswer;
+
+          const answer = String(originalAnswer).toLowerCase().trim();
+
+          // 正确类答案
+          if (
+            answer.includes("正确") ||
+            answer.includes("对") ||
+            answer.includes("是") ||
+            answer.includes("true") ||
+            answer.includes("yes") ||
+            answer.includes("√") ||
+            answer.includes("right") ||
+            answer.includes("correct")
+          ) {
+            return "正确";
+          }
+
+          // 错误类答案
+          if (
+            answer.includes("错误") ||
+            answer.includes("错") ||
+            answer.includes("否") ||
+            answer.includes("false") ||
+            answer.includes("no") ||
+            answer.includes("×") ||
+            answer.includes("wrong") ||
+            answer.includes("incorrect")
+          ) {
+            return "错误";
+          }
+
+          // 如果无法识别，返回原答案
+          return originalAnswer;
+        }
+
         for (const sheetName of workbook.SheetNames) {
           console.log(TAG, "处理工作表:", sheetName);
           const worksheet = workbook.Sheets[sheetName];
@@ -204,9 +279,9 @@
               .join(", ")
           );
 
-          if (!hasRequiredHeaders || detectedOptions.length === 0) {
+          if (!hasRequiredHeaders) {
             console.warn(TAG, `工作表 "${sheetName}" 表头格式不正确`);
-            console.warn(TAG, "需要包含: 题干、答案、至少一个选项列");
+            console.warn(TAG, "需要包含: 题干、答案");
             console.warn(TAG, "实际表头:", actualHeaders);
 
             // 尝试查找包含关键字的表头行 - 使用包含匹配
@@ -263,14 +338,6 @@
                   a.letter.localeCompare(b.letter)
                 );
               }
-
-              if (detectedOptions.length === 0) {
-                console.warn(
-                  TAG,
-                  `工作表 "${sheetName}" 仍未找到有效选项列，已跳过`
-                );
-                continue;
-              }
             }
           }
 
@@ -312,6 +379,8 @@
             const hasValidOptions = validOptions.length > 0;
 
             let errorMsg = "";
+            let finalOptions = validOptions; // 最终使用的选项数组
+            let finalAnswer = answerStr; // 最终使用的答案
 
             if (!questionStr && !answerStr) {
               errorMsg = "无法提取,题干和答案均为空";
@@ -320,7 +389,36 @@
             } else if (!answerStr) {
               errorMsg = "无法提取,答案为空";
             } else if (!hasValidOptions) {
-              errorMsg = "无法提取,所有选项为空";
+              // ===== 新增：判断题处理逻辑 =====
+
+              if (isJudgmentQuestion(answerStr)) {
+                console.log(
+                  TAG,
+                  `第 ${actualRowNumber} 行识别为判断题，自动生成选项`
+                );
+
+                // 为判断题自动生成"正确"和"错误"选项
+                finalOptions = ["正确", "错误"];
+
+                // 标准化答案格式
+                finalAnswer = standardizeJudgmentAnswer(answerStr);
+
+                console.log(
+                  TAG,
+                  `判断题处理结果 - 原答案: "${answerStr}", 标准化答案: "${finalAnswer}"`
+                );
+              } else {
+                errorMsg = "无法提取,所有选项为空且非判断题";
+              }
+            } else {
+              // 如果有选项但可能是判断题，也进行答案标准化
+              if (isJudgmentQuestion(answerStr)) {
+                finalAnswer = standardizeJudgmentAnswer(answerStr);
+                console.log(
+                  TAG,
+                  `第 ${actualRowNumber} 行检测为判断题类型，答案已标准化: "${finalAnswer}"`
+                );
+              }
             }
 
             if (errorMsg) {
@@ -341,8 +439,8 @@
             questions.push({
               qId: qid,
               question: questionStr,
-              option: validOptions, // 只包含非空选项
-              answer: answerStr,
+              option: finalOptions, // 使用处理后的选项（可能是自动生成的）
+              answer: finalAnswer, // 使用标准化后的答案
               wrongAnswer: "",
               questionID: globalQuestionIndex + 1,
             });
