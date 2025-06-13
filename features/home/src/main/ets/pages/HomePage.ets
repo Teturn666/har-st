@@ -25,6 +25,7 @@ import { AdCustomDialog } from '../components/AdCustomDialog'
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes'
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo'
 import { OcrToText } from '../utils/OcrToText'
+import { CSJStartResult } from 'utils/src/main/ets/model/StartResult'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -70,15 +71,23 @@ export struct HomePage {
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
   @State isVip: number = 0
-  @State CsjInit:boolean=false
+  @State CsjId: string = ""
+  @State CsjIsShow: boolean = false
   CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
+  @StorageProp("isInit")
+  AdInit: CSJStartResult = {
+    code: 0,
+    msg: ""
+  }
   AdDialogController: CustomDialogController | null = new CustomDialogController({
     builder: AdCustomDialog({
-      isShowDia: () => {
+      isShowDia: (() => {
         this.AdDialogController?.close()
-      }
+      }),
+      CsjId: this.CsjId,
+      CsjIsShow: this.CsjIsShow
     }),
     autoCancel: false,
     alignment: DialogAlignment.Center,
@@ -111,7 +120,8 @@ export struct HomePage {
         isVipDialog: () => {
           this.dialogController?.close()
           //弹窗
-          if (!this.isVip && this.bankList.length > 0 && !!this.CsjHmAD?.hmAd?.rewardScan?.switchOff&&this.CsjInit) {
+          if (!this.isVip && this.bankList.length > 0 && !!this.CsjHmAD?.hmAd?.rewardScan?.switchOff &&
+            !this.AdInit?.code) {
             this.AdDialogController?.open()
           } else {
             if (this.bankList.length > 0) {
@@ -119,7 +129,7 @@ export struct HomePage {
                 name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
 
               })
-          }
+            }
           }
         },
         isChangeText: () => {
@@ -142,7 +152,6 @@ export struct HomePage {
   aboutToAppear(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
-    this.CsjInit = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL);
     this.loadResource()
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
       this.loadResource()
@@ -201,12 +210,15 @@ export struct HomePage {
           ListItem() {
             SearchList({
               nClick: () => {
-               // preferencesUtils.deleteData(PreferencesConstants.CSJ_AD_PARAMS)
+
                 if (!this.getIsShowDialog()) {
                   this.showSelectBankDialog()
 
                 } else {
-                  if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff&&this.CsjInit) {
+                  if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.AdInit?.code) {
+
+                    this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
+                    this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
                     this.AdDialogController?.open()
                   } else {
                     if (this.bankList.length > 0) {
@@ -219,6 +231,22 @@ export struct HomePage {
                   }
                 }
 
+              },
+              ScreenReader: () => {
+
+                if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.AdInit?.code) {
+
+                  this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
+                  this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
+                  this.AdDialogController?.open()
+                } else {
+                  router.pushNamedRoute({
+                    name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+
+                  })
+
+
+                }
               }
             })
           }
@@ -501,6 +529,8 @@ struct Banner {
 struct SearchList {
   nClick: () => void = () => {
   }
+  ScreenReader: () => void = () => {
+  }
 
   build() {
     Row({ space: 20 }) {
@@ -529,11 +559,7 @@ struct SearchList {
             top: 4
           })
       }
-      .onClick(() => {
-        // 弹出广告
-
-
-      })
+      .onClick(() => this.ScreenReader())
     }
 
 
