@@ -16,6 +16,8 @@ export struct AdCustomDialog {
      code: 0,
      msg: ""
    }
+   @Prop CsjId:string=""
+   @Prop CsjIsShow:boolean=false
   controller?: CustomDialogController;
   isShowDia: () => void = () => {
   }
@@ -83,15 +85,13 @@ export struct AdCustomDialog {
         })
         .onClick(() => {
 
-          if (this.CsjHmParams?.hmAd?.rewardScan?.switchOff&& !this.AdInit.code) {
-            let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
-            rewardAd.CsjSdkId=res?.hmAd?.rewardScan?.csj
+          if (this.CsjIsShow&& !this.AdInit?.code) {
+            rewardAd.CsjSdkId=this.CsjId
             rewardAd.AdSlotBuilder((isVerify: boolean) => {
               this.isVerify = isVerify
 
             })
-
-          }
+           }
 
 
         })
