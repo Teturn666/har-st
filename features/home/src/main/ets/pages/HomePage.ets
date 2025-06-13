@@ -24,6 +24,7 @@ import { BankListRes } from 'db'
 import { AdCustomDialog } from '../components/AdCustomDialog'
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes'
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo'
+import { OcrToText } from '../utils/OcrToText'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -184,7 +185,7 @@ export struct HomePage {
         //   }
         //
         // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-        
+
 
         List({ space: Const.SPACE_16 }) {
           ListItem() {
@@ -502,7 +503,7 @@ struct SearchList {
   }
 
   build() {
-    Row() {
+    Row({ space: 20 }) {
       Column() {
         Image($r('app.media.ic_scan_search'))
           .width(82)
@@ -516,7 +517,25 @@ struct SearchList {
 
       }
       .onClick(() => this.nClick())
+
+      Column() {
+        Image($r('app.media.ic_read_search'))
+          .width(82)
+          .height(82)
+        Text($r('app.string.read_search'))
+          .fontColor($r('app.color.c_8a8a8a'))
+          .fontSize(14)
+          .margin({
+            top: 4
+          })
+      }
+      .onClick(() => {
+        // 弹出广告
+
+
+      })
     }
+
 
     .margin({
       left: 15
