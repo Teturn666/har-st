@@ -10,13 +10,13 @@ export class RewardAd {
   private mAd: CSJRewardAd | undefined
   private adSlot: AdSlot | null = null
   isClose: boolean = false
+  CsjSdkId:string=""
   isShow: (isVerify: boolean) => void = () => {
   }
 
   async AdSlotBuilder(callback: (isVerify: boolean) => void) {
-    let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
-    let adSlot = new AdSlotBuilder()
-      .setCodeId(res?.hmAd?.rewardScan?.csj)
+   let adSlot = new AdSlotBuilder()
+      .setCodeId(this.CsjSdkId)
       .setRewardName("金币")
       .setRewardAmount(1)
       .setBidAdm(this.mBiddingAdm)

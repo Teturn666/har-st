@@ -37,6 +37,10 @@
       "value": "扫描搜题"
     },
     {
+      "name": "read_search",
+      "value": "读屏搜题"
+    },
+    {
       "name": "photo_search",
       "value": "拍照搜题"
     },

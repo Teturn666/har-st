@@ -42,7 +42,7 @@
       try {
         let data;
 
-        // 修复1: 改进数据处理逻辑
+        // 改进数据处理逻辑
         if (typeof excelData === "string") {
           console.log(TAG, "处理Base64字符串");
           const binStr = atob(excelData);
@@ -91,6 +91,126 @@
         const questionErrorList = [];
         let globalQuestionIndex = 0;
 
+        // 改进表头匹配函数 - 使用包含匹配
+        function containsHeader(actualHeader, targetHeader) {
+          if (!actualHeader) return false;
+          const headerStr = String(actualHeader).trim();
+          return headerStr.includes(targetHeader);
+        }
+
+        // 改进选项列识别函数
+        function isOptionHeader(header) {
+          if (!header) return false;
+          const headerStr = String(header).trim();
+
+          // 匹配包含 "选项A", "选项B" 等格式（支持前后有其他字符）
+          if (headerStr.includes("选项") && headerStr.match(/选项[A-Z]/)) {
+            return true;
+          }
+
+          // 匹配单独的字母 "A", "B", "C", "D" 等格式（完全匹配字母，避免误匹配）
+          if (headerStr.match(/^[A-Z][\*\s]*$/)) {
+            return true;
+          }
+
+          return false;
+        }
+
+        // 从选项表头中提取字母
+        function extractOptionLetter(header) {
+          if (!header) return null;
+          const headerStr = String(header).trim();
+
+          // 从包含 "选项A" 格式中提取字母
+          const longFormatMatch = headerStr.match(/选项([A-Z])/);
+          if (longFormatMatch) {
+            return longFormatMatch[1];
+          }
+
+          // 从 "A" 格式中提取字母（可能包含星号等特殊字符）
+          const shortFormatMatch = headerStr.match(/^([A-Z])/);
+          if (shortFormatMatch) {
+            return shortFormatMatch[1];
+          }
+
+          return null;
+        }
+
+        /**
+         * 检查是否为判断题
+         * @param {string} answer - 答案内容
+         * @returns {boolean} - 是否为判断题
+         */
+        function isJudgmentQuestion(answer) {
+          if (!answer) return false;
+
+          const normalizedAnswer = String(answer).toLowerCase().trim();
+          const judgmentKeywords = [
+            "正确",
+            "错误",
+            "对",
+            "错",
+            "是",
+            "否",
+            "true",
+            "false",
+            "yes",
+            "no",
+            "√",
+            "×",
+            "right",
+            "wrong",
+            "correct",
+            "incorrect",
+          ];
+
+          return judgmentKeywords.some((keyword) =>
+            normalizedAnswer.includes(keyword.toLowerCase())
+          );
+        }
+
+        /**
+         * 标准化判断题答案格式
+         * @param {string} originalAnswer - 原始答案
+         * @returns {string} - 标准化后的答案
+         */
+        function standardizeJudgmentAnswer(originalAnswer) {
+          if (!originalAnswer) return originalAnswer;
+
+          const answer = String(originalAnswer).toLowerCase().trim();
+
+          // 正确类答案
+          if (
+            answer.includes("正确") ||
+            answer.includes("对") ||
+            answer.includes("是") ||
+            answer.includes("true") ||
+            answer.includes("yes") ||
+            answer.includes("√") ||
+            answer.includes("right") ||
+            answer.includes("correct")
+          ) {
+            return "正确";
+          }
+
+          // 错误类答案
+          if (
+            answer.includes("错误") ||
+            answer.includes("错") ||
+            answer.includes("否") ||
+            answer.includes("false") ||
+            answer.includes("no") ||
+            answer.includes("×") ||
+            answer.includes("wrong") ||
+            answer.includes("incorrect")
+          ) {
+            return "错误";
+          }
+
+          // 如果无法识别，返回原答案
+          return originalAnswer;
+        }
+
         for (const sheetName of workbook.SheetNames) {
           console.log(TAG, "处理工作表:", sheetName);
           const worksheet = workbook.Sheets[sheetName];
@@ -105,71 +225,70 @@
 
           console.log(TAG, "第一行数据:", rows[0]);
 
-          // 修复2: 改进表头检查逻辑，支持动态选项数量
+          // 改进表头检查逻辑，使用包含匹配支持动态选项数量
           const requiredHeaders = ["题干", "答案"];
-          const optionHeaders = [
-            "选项A",
-            "选项B",
-            "选项C",
-            "选项D",
-            "选项E",
-            "选项F",
-          ];
-
           const actualHeaders = rows[0] || [];
           console.log(TAG, "实际表头:", actualHeaders);
 
-          // 检查是否包含必要的列（题干、答案）
+          // 检查是否包含必要的列（题干、答案）- 使用包含匹配
           const hasRequiredHeaders = requiredHeaders.every((header) => {
-            return actualHeaders.some(
-              (actualHeader) =>
-                actualHeader && String(actualHeader).trim() === header
+            return actualHeaders.some((actualHeader) =>
+              containsHeader(actualHeader, header)
             );
           });
 
-          // 动态检测选项列数
-          let detectedOptionCount = 0;
-          let optionStartIndex = -1;
+          // 动态检测选项列数和位置
+          let detectedOptions = [];
+          let optionPositions = {};
 
-          // 找到题干和答案的位置
-          const questionIndex = actualHeaders.findIndex(
-            (header) => header && String(header).trim() === "题干"
+          // 找到题干和答案的位置 - 使用包含匹配
+          const questionIndex = actualHeaders.findIndex((header) =>
+            containsHeader(header, "题干")
           );
-          const answerIndex = actualHeaders.findIndex(
-            (header) => header && String(header).trim() === "答案"
+          const answerIndex = actualHeaders.findIndex((header) =>
+            containsHeader(header, "答案")
           );
 
           if (questionIndex !== -1 && answerIndex !== -1) {
-            // 从表头中检测选项列
+            // 从表头中检测所有选项列
             for (let i = 0; i < actualHeaders.length; i++) {
               const header = actualHeaders[i];
-              if (
-                header &&
-                String(header)
-                  .trim()
-                  .match(/^选项[A-Z]$/)
-              ) {
-                if (optionStartIndex === -1) {
-                  optionStartIndex = i;
+              if (isOptionHeader(header)) {
+                const letter = extractOptionLetter(header);
+                if (letter) {
+                  detectedOptions.push({
+                    letter: letter,
+                    index: i,
+                    originalHeader: String(header).trim(),
+                  });
+                  optionPositions[letter] = i;
                 }
-                detectedOptionCount++;
               }
             }
           }
 
-          console.log(TAG, `检测到选项数量: ${detectedOptionCount}`);
-          console.log(TAG, `选项起始索引: ${optionStartIndex}`);
+          // 按字母顺序排序选项
+          detectedOptions.sort((a, b) => a.letter.localeCompare(b.letter));
 
-          if (!hasRequiredHeaders || detectedOptionCount === 0) {
+          console.log(TAG, `检测到选项数量: ${detectedOptions.length}`);
+          console.log(
+            TAG,
+            `检测到的选项:`,
+            detectedOptions
+              .map((opt) => `${opt.letter}(${opt.originalHeader})`)
+              .join(", ")
+          );
+
+          if (!hasRequiredHeaders) {
             console.warn(TAG, `工作表 "${sheetName}" 表头格式不正确`);
-            console.warn(TAG, "需要包含: 题干、答案、至少一个选项列");
+            console.warn(TAG, "需要包含: 题干、答案");
             console.warn(TAG, "实际表头:", actualHeaders);
 
-            // 尝试查找包含关键字的表头行
+            // 尝试查找包含关键字的表头行 - 使用包含匹配
             let headerRowIndex = -1;
             for (let i = 0; i < Math.min(5, rows.length); i++) {
               const row = rows[i] || [];
-              if (row.some((cell) => cell && String(cell).includes("题干"))) {
+              if (row.some((cell) => containsHeader(cell, "题干"))) {
                 headerRowIndex = i;
                 break;
               }
@@ -187,35 +306,42 @@
 
               // 重新检测表头
               const newHeaders = headerRow || [];
-              detectedOptionCount = 0;
-              optionStartIndex = -1;
+              detectedOptions = [];
+              optionPositions = {};
 
-              for (let i = 0; i < newHeaders.length; i++) {
-                const header = newHeaders[i];
-                if (
-                  header &&
-                  String(header)
-                    .trim()
-                    .match(/^选项[A-Z]$/)
-                ) {
-                  if (optionStartIndex === -1) {
-                    optionStartIndex = i;
+              // 重新查找题干和答案位置
+              const newQuestionIndex = newHeaders.findIndex((header) =>
+                containsHeader(header, "题干")
+              );
+              const newAnswerIndex = newHeaders.findIndex((header) =>
+                containsHeader(header, "答案")
+              );
+
+              if (newQuestionIndex !== -1 && newAnswerIndex !== -1) {
+                // 重新检测选项列
+                for (let i = 0; i < newHeaders.length; i++) {
+                  const header = newHeaders[i];
+                  if (isOptionHeader(header)) {
+                    const letter = extractOptionLetter(header);
+                    if (letter) {
+                      detectedOptions.push({
+                        letter: letter,
+                        index: i,
+                        originalHeader: String(header).trim(),
+                      });
+                      optionPositions[letter] = i;
+                    }
                   }
-                  detectedOptionCount++;
                 }
-              }
 
-              if (detectedOptionCount === 0) {
-                console.warn(
-                  TAG,
-                  `工作表 "${sheetName}" 仍未找到有效选项列，已跳过`
+                detectedOptions.sort((a, b) =>
+                  a.letter.localeCompare(b.letter)
                 );
-                continue;
               }
             }
           }
 
-          // 修复3: 改进数据行处理
+          // 改进数据行处理
           const validRows = rows.slice(1).filter((row) => {
             if (!row) return false;
             return !row.every(
@@ -235,29 +361,26 @@
           validRows.forEach((row, rowIndex) => {
             const actualRowNumber = rowIndex + 2;
 
-            // 修复4: 动态处理选项数量
+            // 处理题干和答案
             const question = row[questionIndex] || "";
             const answer = row[answerIndex] || "";
 
-            // 动态提取选项
+            // 按字母顺序提取选项
             const options = [];
-            for (let i = 0; i < detectedOptionCount; i++) {
-              const optionIndex = optionStartIndex + i;
-              if (optionIndex < row.length) {
-                const option = String(row[optionIndex] || "").trim();
-                options.push(option);
-              } else {
-                options.push("");
-              }
-            }
+            detectedOptions.forEach((optionInfo) => {
+              const optionValue = String(row[optionInfo.index] || "").trim();
+              options.push(optionValue);
+            });
 
-            // 修复5: 改进空值检查
+            // 改进空值检查
             const questionStr = String(question || "").trim();
             const answerStr = String(answer || "").trim();
             const validOptions = options.filter((opt) => opt.length > 0);
             const hasValidOptions = validOptions.length > 0;
 
             let errorMsg = "";
+            let finalOptions = validOptions; // 最终使用的选项数组
+            let finalAnswer = answerStr; // 最终使用的答案
 
             if (!questionStr && !answerStr) {
               errorMsg = "无法提取,题干和答案均为空";
@@ -266,7 +389,36 @@
             } else if (!answerStr) {
               errorMsg = "无法提取,答案为空";
             } else if (!hasValidOptions) {
-              errorMsg = "无法提取,所有选项为空";
+              // ===== 新增：判断题处理逻辑 =====
+
+              if (isJudgmentQuestion(answerStr)) {
+                console.log(
+                  TAG,
+                  `第 ${actualRowNumber} 行识别为判断题，自动生成选项`
+                );
+
+                // 为判断题自动生成"正确"和"错误"选项
+                finalOptions = ["正确", "错误"];
+
+                // 标准化答案格式
+                finalAnswer = standardizeJudgmentAnswer(answerStr);
+
+                console.log(
+                  TAG,
+                  `判断题处理结果 - 原答案: "${answerStr}", 标准化答案: "${finalAnswer}"`
+                );
+              } else {
+                errorMsg = "无法提取,所有选项为空且非判断题";
+              }
+            } else {
+              // 如果有选项但可能是判断题，也进行答案标准化
+              if (isJudgmentQuestion(answerStr)) {
+                finalAnswer = standardizeJudgmentAnswer(answerStr);
+                console.log(
+                  TAG,
+                  `第 ${actualRowNumber} 行检测为判断题类型，答案已标准化: "${finalAnswer}"`
+                );
+              }
             }
 
             if (errorMsg) {
@@ -287,8 +439,8 @@
             questions.push({
               qId: qid,
               question: questionStr,
-              option: validOptions, // 只包含非空选项
-              answer: answerStr,
+              option: finalOptions, // 使用处理后的选项（可能是自动生成的）
+              answer: finalAnswer, // 使用标准化后的答案
               wrongAnswer: "",
               questionID: globalQuestionIndex + 1,
             });
@@ -306,7 +458,7 @@
 
         const result = { quizBank, questions, questionErrorList };
 
-        // 修复6: 确保返回有效结果
+        // 确保返回有效结果
         if (questions.length === 0) {
           console.warn(TAG, "没有解析到有效题目");
           return {
