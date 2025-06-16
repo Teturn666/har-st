@@ -26,12 +26,9 @@ export class ParseTxtManage {
   private ANSWERLABEL: string = 'ABCDEFGHI';
   private SKIPSTR: string = ' 、.．，,\t';
   private labels: string = 'ABCDEFGHI对错√×✔X正确错误YN';
-  // 支持的编码格式列表
   private readonly supportedEncodings = ['UTF-8', 'UTF-16le', 'UTF-16be', 'gb18030', 'gbk', 'gb2312'];
 
-  // 检测文件编码
   private detectEncoding(buffer: Uint8Array): string {
-    // 检查BOM
     if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
       return 'UTF-8';
     }
@@ -42,32 +39,25 @@ export class ParseTxtManage {
       return 'UTF-16be';
     }
 
-    // 检测UTF-16（无BOM）
     if (this.isLikelyUTF16(buffer)) {
-      // 简单判断字节序，通常小端序更常见
       return 'UTF-16le';
     }
 
-    // 尝试检测GB18030/GBK编码
     if (this.isLikelyGB18030(buffer)) {
       return 'gb18030';
     }
 
-    // 尝试检测UTF-8（无BOM）
     if (this.isValidUTF8(buffer)) {
       return 'UTF-8';
     }
 
-    // 检查是否为ASCII
     if (this.isASCII(buffer)) {
-      return 'UTF-8'; // ASCII兼容UTF-8
+      return 'UTF-8';
     }
 
-    // 默认返回GB18030
     return 'gb18030';
   }
 
-  // 检测是否可能是UTF-16编码
   private isLikelyUTF16(buffer: Uint8Array): boolean {
     if (buffer.length < 4) {
       return false;
@@ -82,11 +72,9 @@ export class ParseTxtManage {
       }
     }
 
-    // 如果null字节占比超过20%，可能是UTF-16
     return (nullCount / totalBytes) > 0.2;
   }
 
-  // 检测是否为纯ASCII
   private isASCII(buffer: Uint8Array): boolean {
     for (let i = 0; i < Math.min(buffer.length, 1000); i++) {
       if (buffer[i] > 127) {
@@ -96,7 +84,6 @@ export class ParseTxtManage {
     return true;
   }
 
-  // 检测是否可能是GB18030编码
   private isLikelyGB18030(buffer: Uint8Array): boolean {
     let gb18030Count = 0;
     let totalBytes = 0;
@@ -105,25 +92,21 @@ export class ParseTxtManage {
       const byte = buffer[i];
       totalBytes++;
 
-      // GB18030/GBK双字节字符范围
       if (byte >= 0x81 && byte <= 0xFE) {
         if (i + 1 < buffer.length) {
           const nextByte = buffer[i + 1];
-          // 检查是否符合GBK编码规则
           if ((nextByte >= 0x40 && nextByte <= 0x7E) || (nextByte >= 0x80 && nextByte <= 0xFE)) {
             gb18030Count += 2;
-            i++; // 跳过下一个字节
+            i++;
             totalBytes++;
           }
         }
       }
     }
 
-    // 如果GB18030字符占比超过30%，认为是GB18030编码
     return totalBytes > 0 && (gb18030Count / totalBytes) > 0.3;
   }
 
-  // 检测是否是有效的UTF-8编码
   private isValidUTF8(buffer: Uint8Array): boolean {
     let i = 0;
     let validUTF8Count = 0;
@@ -134,11 +117,9 @@ export class ParseTxtManage {
       totalSequences++;
 
       if (byte <= 0x7F) {
-        // ASCII字符
         validUTF8Count++;
         i++;
       } else if ((byte & 0xE0) === 0xC0) {
-        // 2字节UTF-8序列
         if (i + 1 < buffer.length && (buffer[i + 1] & 0xC0) === 0x80) {
           validUTF8Count++;
           i += 2;
@@ -146,7 +127,6 @@ export class ParseTxtManage {
           i++;
         }
       } else if ((byte & 0xF0) === 0xE0) {
-        // 3字节UTF-8序列
         if (i + 2 < buffer.length &&
           (buffer[i + 1] & 0xC0) === 0x80 &&
           (buffer[i + 2] & 0xC0) === 0x80) {
@@ -156,7 +136,6 @@ export class ParseTxtManage {
           i++;
         }
       } else if ((byte & 0xF8) === 0xF0) {
-        // 4字节UTF-8序列
         if (i + 3 < buffer.length &&
           (buffer[i + 1] & 0xC0) === 0x80 &&
           (buffer[i + 2] & 0xC0) === 0x80 &&
@@ -174,14 +153,12 @@ export class ParseTxtManage {
     return totalSequences > 0 && (validUTF8Count / totalSequences) > 0.7;
   }
 
-  // 尝试用支持的编码解码文本
   private tryDecodeTextWithSupportedEncodings(buffer: Uint8Array): GeneratedTypeLiteralInterface | null {
     for (const encoding of this.supportedEncodings) {
       try {
         const decoder = util.TextDecoder.create(encoding, { ignoreBOM: true });
         const text = decoder.decodeToString(buffer);
 
-        // 检查解码结果是否包含有效中文字符或看起来合理
         if (this.isValidDecodedText(text)) {
           console.info(`成功使用编码 ${encoding} 解码文本`);
           return { text, encoding };
@@ -195,31 +172,25 @@ export class ParseTxtManage {
     return null;
   }
 
-  // 更严格的文本有效性检查
   private isValidDecodedText(text: string): boolean {
     if (!text || text.length === 0) {
       return false;
     }
 
-    // 检查是否包含过多的乱码字符
     const invalidChars = text.match(/[������]/g);
     const invalidRatio = invalidChars ? invalidChars.length / text.length : 0;
 
-    // 如果乱码字符超过5%，认为解码失败
     if (invalidRatio > 0.05) {
       return false;
     }
 
-    // 检查是否包含过多控制字符（除了常见的换行、制表符）
     const controlChars = text.match(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g);
     const controlRatio = controlChars ? controlChars.length / text.length : 0;
 
-    // 如果控制字符超过1%，认为解码失败
     if (controlRatio > 0.01) {
       return false;
     }
 
-    // 检查是否包含常见的中文字符、数字或字母
     const hasValidContent = /[\u4e00-\u9fff\d\w\s]/.test(text);
 
     return hasValidContent;
@@ -556,7 +527,7 @@ export class ParseTxtManage {
     return res;
   }
 
-  // 解析TXT文件 - 支持多种编码格式
+  // 解析TXT文件
   async parseTxtFile(filePath: string): Promise<ImportWithLog | null> {
     if (!filePath || typeof filePath !== 'string') {
       console.error('文件路径无效');
@@ -573,7 +544,6 @@ export class ParseTxtManage {
         let stat: fs.Stat = fs.statSync(file.path);
         console.info(`文件状态: size=${stat.size}, mtime=${stat.mtime}`);
 
-        // 检查文件大小，防止空文件
         if (stat.size === 0) {
           console.error('文件为空');
           promptAction.showToast({ message: '导入失败: 文件不存在或者内容格式异常', duration: 2000 });
@@ -584,7 +554,6 @@ export class ParseTxtManage {
         let bytesRead: number = fs.readSync(file.fd, buffer);
         let bufferView = new Uint8Array(buffer).slice(0, bytesRead);
 
-        // 检测文件编码
         let detectedEncoding = this.detectEncoding(bufferView);
         console.info(`检测到编码: ${detectedEncoding}`);
 
@@ -602,7 +571,6 @@ export class ParseTxtManage {
         let actualEncoding = detectedEncoding;
 
         try {
-          // 首先尝试检测到的编码
           let decoder = util.TextDecoder.create(detectedEncoding, { ignoreBOM: true });
           text = decoder.decodeToString(bufferView);
 
@@ -678,7 +646,6 @@ export class ParseTxtManage {
 
         // 添加编码信息到日志
         // result.logs.unshift(`文件编码: ${actualEncoding}`);
-
         this.generateQuestionIDs(result);
         console.info(`解析完成: items=${result.items.length}, logs=${result.logs.length}, encoding=${actualEncoding}`);
         return result;

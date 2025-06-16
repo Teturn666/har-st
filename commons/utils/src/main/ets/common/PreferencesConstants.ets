@@ -30,12 +30,11 @@ export class PreferencesConstants {
   static readonly SP_SELECT_DIALOG_SHOW = 'select_dialog_show'
   //保存题库选择
   static readonly SP_QUESTION_BANK = 'question_bank'
+  static readonly SP_QUESTION_BANK_ = 'question_bank'
   //保存题库选择是否全选
   static readonly SP_QUESTION_BANK_ALL = 'question_bank_all'
   //广告SDK初始化失败
-  static  readonly  CSJ_INIT_FAIL='csj_init_fail'
+  static readonly CSJ_INIT_FAIL = 'csj_init_fail'
   //广告sdk
-  static  readonly  CSJ_AD_PARAMS='csj_ad_params'
-
-
+  static readonly CSJ_AD_PARAMS = 'csj_ad_params'
 }
