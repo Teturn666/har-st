@@ -4,6 +4,7 @@ import { BankListRes } from 'db';
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage';
 import { SearchEngine } from 'search';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
+import { UserBankSelection } from '../model/UserBankSelection';
 
 
 const TAG = 'SelectBankDialog';
@@ -165,61 +166,83 @@ export struct selectBankDialog {
     }
   }
 
-  // 保存选中的题库ID到本地
-  private saveSelectedBankIds(selectedIds: string[]) {
-    try {
-      const idsJson = JSON.stringify(selectedIds);
-      preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK, idsJson);
-      console.info(TAG, `Saved selected bank IDs: ${idsJson}`);
-
-      //保存是否全选
-      if (this.selectedBankIds.length === this.bankList.length) {
-        preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1')
-      } else {
-        preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ALL, '0')
-      }
-    } catch (error) {
-      console.error(TAG, 'Error saving selected bank IDs:', error);
-    }
-  }
-
-  // 从本地读取选中的题库ID
-  private getSelectedBankIds(): string[] {
-    try {
-      const idsJson = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK, '[]');
-      const savedIds = JSON.parse(idsJson) as string[];
-      console.info(TAG, `Loaded selected bank IDs: ${idsJson}`);
-
-      // 验证保存的ID是否在当前题库列表中存在
-      const currentBankIds = this.bankList.map(bank => String(bank.id || ''));
-      const validIds = savedIds.filter(id => currentBankIds.includes(id));
-
-      // 如果没有有效的保存记录，默认选中所有题库
-      if (validIds.length === 0) {
-        return currentBankIds;
-      }
-
-      return validIds;
-    } catch (error) {
-      console.error(TAG, 'Error loading selected bank IDs:', error);
-      // 出错时默认选中所有题库
-      return this.bankList.map(bank => String(bank.id || ''));
-    }
+  saveUserBankSelection(uid: string, selectedBankIds: string[], isAllSelected: boolean) {
+    const key = `${uid}`;
+    const selection: UserBankSelection = {
+      uid,
+      selectedBankIds,
+      isAllSelected,
+      lastModified: new Date().getTime(),
+    };
+    preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_ + `${key}`, JSON.stringify(selection));
+    console.info(`[saveUserBankSelection] key=${key}, data=${JSON.stringify(selection)}`);
   }
 
   aboutToAppear() {
-    this.getIsVip()
-    // 从本地读取选中的题库ID，如果没有则默认选中所有  //一：登录 是会员 显示本地存储的  二：登录 非会员  默认全选 三：退出登录的话默认选中所有题库
-    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
-    if (this.loginState === '1') {
-      if (this.isVip) {
-        this.selectedBankIds = this.getSelectedBankIds();
+    this.getIsVip();
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0');
 
-      } else {
-        this.selectedBankIds = this.bankList.map(bank => String(bank.id || ''));
+    const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+    const allBankIds = this.bankList.map(bank => String(bank.id || ''));
+
+    if (this.loginState === '1') {
+      let selection = this.getUserBankSelection(currentUid, allBankIds, this.isVip);
+
+      // 🛠 如果用户保存的 selectedBankIds 不在当前题库中，强制全选
+      const currentValidIds = this.bankList.map(bank => String(bank.id || ''));
+      const matchedIds = selection.selectedBankIds.filter(id => currentValidIds.includes(id));
+
+      if (matchedIds.length === 0) {
+        // 强制全选
+        selection = {
+          uid: currentUid,
+          selectedBankIds: currentValidIds,
+          isAllSelected: true,
+          lastModified: new Date().getTime()
+        };
       }
+
+      this.selectedBankIds = selection.selectedBankIds;
     } else {
-      this.selectedBankIds = this.bankList.map(bank => String(bank.id || ''));
+      this.selectedBankIds = allBankIds;
+    }
+  }
+
+  getUserBankSelection(uid: string, defaultIds: string[], isVip: boolean): UserBankSelection {
+    const key = `${uid}`;
+    try {
+      const raw = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ + `${key}`, '');
+      if (raw) {
+        const parsed: UserBankSelection = JSON.parse(raw);
+
+        // 非会员但之前是会员并未全选，自动改为全选
+        if (!isVip && parsed.isAllSelected === false) {
+          return {
+            uid,
+            selectedBankIds: defaultIds,
+            isAllSelected: true,
+            lastModified: new Date().getTime(),
+          };
+        }
+
+        return parsed;
+      } else {
+        // 没有记录，默认全选
+        return {
+          uid,
+          selectedBankIds: defaultIds,
+          isAllSelected: true,
+          lastModified: new Date().getTime(),
+        };
+      }
+    } catch (e) {
+      console.error(`[getUserBankSelection] 解析失败，使用默认值`, e);
+      return {
+        uid,
+        selectedBankIds: defaultIds,
+        isAllSelected: true,
+        lastModified: new Date().getTime(),
+      };
     }
   }
 
@@ -437,8 +460,9 @@ export struct selectBankDialog {
                 });
                 return;
               }
-              //将选择的题库列表存入本地
-              this.saveSelectedBankIds(this.selectedBankIds);
+              const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+              this.saveUserBankSelection(currentUid, this.selectedBankIds,
+                this.selectedBankIds.length === this.bankList.length);
             }
             // 去重并返回选中的题库ID
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));
