@@ -18,6 +18,7 @@ export struct AdCustomDialog {
    }
    @Prop CsjId:string=""
    @Prop CsjIsShow:boolean=false
+   @Prop SearText:string=""
   controller?: CustomDialogController;
   isShowDia: () => void = () => {
   }
@@ -30,7 +31,7 @@ export struct AdCustomDialog {
     this.controller?.close()
     if (this.isVerify){
        router.pushNamedRoute({
-        name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+        name:this.SearText,
 
       })
     }
