@@ -6,8 +6,6 @@ import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
-import preferences from '@ohos.data.preferences'
-import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 import { taskpool } from '@kit.ArkTS'
 import { deleteTableTask } from '../manage/ConcurrentManage'
 
@@ -175,6 +173,50 @@ export class BankModel {
     }
   }
 
+  //题库详情介绍
+  public async getBankDesc(qid: number, fileUrl: string): Promise<BankQuestionRes[]> {
+    let questionRes = await QuestionTable.getInstance().queryCountSync(qid)
+    if (questionRes.length > 0) {
+      let questionList: Array<BankQuestionRes> = []
+      for (let i = 0; i < questionRes.length; i++) {
+        let item = questionRes[i]
+        let res = new BankQuestionRes()
+        res.qId = item.qId.toString()
+        res.q = item.question
+        res.a = item.option
+        res.ans = item.answer
+        questionList.push(res)
+      }
+      return questionList
+    } else {
+      return await this.getNetBankQuestion(fileUrl)
+    }
+  }
+
+  //走网络请求获取题库的前10道题
+  private async getNetBankQuestion(fileUrl: string): Promise<BankQuestionRes[]> {
+    try {
+      let subTxtName = StringUtils.subUrl(fileUrl)
+      let fileContent = await this.bankNet.getBankDesc(subTxtName);
+      let suffix = StringUtils.subLastIndex(subTxtName, '.')
+      let trStr = await SearchDecryptUtils.getTrText(suffix, fileContent, subTxtName)
+      let lines = trStr.split('\n')
+      let questionList: Array<BankQuestionRes> = []
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i]
+        if (line !== '') {
+          const questionRes = plainToClass(BankQuestionRes, JSON.parse(line))
+          console.info('instance:', JSON.stringify(questionRes))
+          questionList.push(questionRes)
+        }
+      }
+      return questionList
+    } catch (e) {
+      Logger.error(TAG, `Error in getSearchBankList: ${e}`);
+      return []
+    }
+  }
+
   //点击题库下载的操作
   public async downLoadBank(bankListRes: BankListRes): Promise<boolean> {
     try {
@@ -192,7 +234,6 @@ export class BankModel {
       Logger.info(TAG, 'trStr--------' + trStr)
       //转换成 题目的对象
       let lines = trStr.split('\n')
-      let qaNum = 0
       for (let i = 0; i < lines.length; i++) {
         let line = lines[i]
 
@@ -209,7 +250,6 @@ export class BankModel {
           questionDb.questionID = qid + i + 1
           let ret = await QuestionTable.getInstance().insertDataAwait(questionDb)
           Logger.info(TAG, 'ret--------' + ret)
-          qaNum++
         }
       }
       //插入题库表,下载成功后的状态

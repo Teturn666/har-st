@@ -180,4 +180,23 @@ export class BankNet {
       })
     })
   }
+
+  //获取题库详情介绍页
+  public getBankDesc(fileName: string): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance()
+        .get(BankTrigger.BANK_DESC, { params: { "fileName": fileName } })
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        })
+        .catch((error: BusinessError) => {
+          reject(error);
+        })
+    })
+  }
 }
