@@ -39,6 +39,10 @@ export class ParseTxtManage {
       return 'UTF-16be';
     }
 
+    if (this.isASCII(buffer)) {
+      return 'UTF-8';
+    }
+
     if (this.isLikelyUTF16(buffer)) {
       return 'UTF-16le';
     }
@@ -51,13 +55,15 @@ export class ParseTxtManage {
       return 'UTF-8';
     }
 
-    if (this.isASCII(buffer)) {
-      return 'UTF-8';
+    if (this.isLikelyGB18030(buffer)) {
+      return 'gb18030';
     }
 
-    return 'gb18030';
+    return 'UTF-8';
   }
 
+
+  // 检测是否可能是UTF-16编码
   private isLikelyUTF16(buffer: Uint8Array): boolean {
     if (buffer.length < 4) {
       return false;
@@ -85,73 +91,111 @@ export class ParseTxtManage {
   }
 
   private isLikelyGB18030(buffer: Uint8Array): boolean {
-    let gb18030Count = 0;
-    let totalBytes = 0;
+    let validGB18030Pairs = 0;
+    let totalPairs = 0;
+    let hasGBChars = false;
 
-    for (let i = 0; i < Math.min(buffer.length, 1000); i++) {
-      const byte = buffer[i];
-      totalBytes++;
+    for (let i = 0; i < Math.min(buffer.length - 1, 1000); i++) {
+      const byte1 = buffer[i];
+      const byte2 = buffer[i + 1];
 
-      if (byte >= 0x81 && byte <= 0xFE) {
-        if (i + 1 < buffer.length) {
-          const nextByte = buffer[i + 1];
-          if ((nextByte >= 0x40 && nextByte <= 0x7E) || (nextByte >= 0x80 && nextByte <= 0xFE)) {
-            gb18030Count += 2;
-            i++;
-            totalBytes++;
+      // 跳过ASCII字符
+      if (byte1 <= 0x7F) {
+        continue;
+      }
+
+      totalPairs++;
+
+      // 检查GB18030/GBK双字节字符范围
+      if (byte1 >= 0x81 && byte1 <= 0xFE) {
+        if ((byte2 >= 0x40 && byte2 <= 0x7E) || (byte2 >= 0x80 && byte2 <= 0xFE)) {
+          if ((byte1 & 0xF0) === 0xE0 && (byte2 & 0xC0) === 0x80) {
+            continue;
           }
+
+          validGB18030Pairs++;
+          hasGBChars = true;
+          i++;
         }
       }
     }
 
-    return totalBytes > 0 && (gb18030Count / totalBytes) > 0.3;
+    return hasGBChars && totalPairs > 0 && (validGB18030Pairs / totalPairs) > 0.8;
   }
 
   private isValidUTF8(buffer: Uint8Array): boolean {
     let i = 0;
-    let validUTF8Count = 0;
-    let totalSequences = 0;
+    let validSequences = 0;
+    let totalChecked = 0;
+    let hasMultiByteChars = false;
 
-    while (i < Math.min(buffer.length, 1000)) {
+    while (i < Math.min(buffer.length, 2000)) {
       const byte = buffer[i];
-      totalSequences++;
+      totalChecked++;
 
       if (byte <= 0x7F) {
-        validUTF8Count++;
+        validSequences++;
         i++;
       } else if ((byte & 0xE0) === 0xC0) {
-        if (i + 1 < buffer.length && (buffer[i + 1] & 0xC0) === 0x80) {
-          validUTF8Count++;
+        if (i + 1 < buffer.length &&
+          (buffer[i + 1] & 0xC0) === 0x80 &&
+          byte >= 0xC2) {
+          validSequences++;
+          hasMultiByteChars = true;
           i += 2;
         } else {
-          i++;
+          return false;
         }
       } else if ((byte & 0xF0) === 0xE0) {
         if (i + 2 < buffer.length &&
           (buffer[i + 1] & 0xC0) === 0x80 &&
           (buffer[i + 2] & 0xC0) === 0x80) {
-          validUTF8Count++;
-          i += 3;
+          const codepoint = ((byte & 0x0F) << 12) |
+            ((buffer[i + 1] & 0x3F) << 6) |
+            (buffer[i + 2] & 0x3F);
+          if (codepoint >= 0x800) {
+            validSequences++;
+            hasMultiByteChars = true;
+            i += 3;
+          } else {
+            return false;
+          }
         } else {
-          i++;
+          return false;
         }
       } else if ((byte & 0xF8) === 0xF0) {
         if (i + 3 < buffer.length &&
           (buffer[i + 1] & 0xC0) === 0x80 &&
           (buffer[i + 2] & 0xC0) === 0x80 &&
           (buffer[i + 3] & 0xC0) === 0x80) {
-          validUTF8Count++;
-          i += 4;
+          const codepoint = ((byte & 0x07) << 18) |
+            ((buffer[i + 1] & 0x3F) << 12) |
+            ((buffer[i + 2] & 0x3F) << 6) |
+            (buffer[i + 3] & 0x3F);
+          if (codepoint >= 0x10000 && codepoint <= 0x10FFFF) {
+            validSequences++;
+            hasMultiByteChars = true;
+            i += 4;
+          } else {
+            return false;
+          }
         } else {
-          i++;
+          return false;
         }
       } else {
-        i++;
+
+        return false;
       }
     }
 
-    return totalSequences > 0 && (validUTF8Count / totalSequences) > 0.7;
+    const validRatio = validSequences / totalChecked;
+    if (hasMultiByteChars) {
+      return validRatio >= 0.98;
+    } else {
+      return validRatio >= 0.95;
+    }
   }
+
 
   private tryDecodeTextWithSupportedEncodings(buffer: Uint8Array): GeneratedTypeLiteralInterface | null {
     for (const encoding of this.supportedEncodings) {
@@ -207,7 +251,8 @@ export class ParseTxtManage {
       .replace(/Ｄ/g, 'D')
       .replace(/．/g, '.')
       .replace(/\(/g, '（')
-      .replace(/\)/g, '）');
+      .replace(/\)/g, '）')
+      .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFF10)); // 全角数字转半角
   }
 
   // 规范化答案
@@ -395,11 +440,13 @@ export class ParseTxtManage {
       } else {
         q.type = q.ans.length > 1 ? 'multiple' : 'single';
       }
-      let lastAns = q.ans[q.ans.length - 1];
-      if (this.ANSWERLABEL.includes(lastAns)) {
-        let idx = this.ANSWERLABEL.indexOf(lastAns);
-        if (idx >= q.a.length) {
-          return null;
+      if (q.a.length > 0) {
+        let lastAns = q.ans[q.ans.length - 1];
+        if (this.ANSWERLABEL.includes(lastAns)) {
+          let idx = this.ANSWERLABEL.indexOf(lastAns);
+          if (idx >= q.a.length) {
+            return null;
+          }
         }
       }
       return q;
@@ -441,22 +488,34 @@ export class ParseTxtManage {
         console.info(`第${lineid + 1}行: 预处理后为空，跳过`);
         continue;
       }
-      if (/\d/.test(ss[0])) {
+
+      if (/[\d０-９]/.test(ss[0])) {
+        // 处理上一题
         if (cur) {
-          cur = this.formatQuestion(cur);
-          if (cur) {
-            res.items.push(cur);
-            console.info(`第${lineid + 1}行: 完成题目: ${JSON.stringify(cur)}`);
+          let formattedCur = this.formatQuestion(cur);
+          if (formattedCur) {
+            res.items.push(formattedCur);
+            console.info(`第${lineid + 1}行: 完成上一题: ${JSON.stringify(formattedCur)}`);
           } else {
-            console.info(`第${lineid + 1}行: formatQuestion 返回 null`);
-            res.logs.push(`第${lineid + 1}行: 题目格式化失败: ${s}`);
+            console.info(`第${lineid + 1}行: 上一题格式化失败，跳过上一题`);
+            if (!cur.ans || cur.ans.trim() === '') {
+              res.logs.push(`题目缺少答案，已跳过: ${cur.q}`);
+            } else {
+              res.logs.push(`题目格式化失败，已跳过: ${cur.q}`);
+            }
           }
-          cur = null;
         }
+
+        // 开始处理新题目
+        cur = null;
         ss = this.removeQid(ss);
         console.info(`第${lineid + 1}行: 移除题号后: ${ss}`);
-        cur = this.parseQuestion(ss);
-        if (!cur || !cur.q) {
+
+        let parsedQuestion = this.parseQuestion(ss);
+        if (parsedQuestion && parsedQuestion.q) {
+          cur = parsedQuestion;
+          console.info(`第${lineid + 1}行: parseQuestion成功: ${JSON.stringify(cur)}`);
+        } else {
           cur = {
             q: ss,
             a: [],
@@ -465,29 +524,32 @@ export class ParseTxtManage {
             qid: 0,
             questionID: 0
           };
-          console.info(`第${lineid + 1}行: parseQuestion 返回 null，初始化默认题目`);
-        } else {
-          console.info(`第${lineid + 1}行: parseQuestion: ${JSON.stringify(cur)}`);
+          console.info(`第${lineid + 1}行: parseQuestion失败，创建基础题目结构`);
         }
+
       } else if (this.ANSWERLABEL.includes(ss[0])) {
-        let pa = this.parseAnswers(ss);
+        // 处理选项行
         if (cur) {
+          let pa = this.parseAnswers(ss);
           cur.a.push(...pa);
           console.info(`第${lineid + 1}行: 解析选项: ${JSON.stringify(pa)}`);
         } else {
           console.info(`第${lineid + 1}行: 无当前题目，选项行被忽略: ${ss}`);
           res.logs.push(`第${lineid + 1}行: 无题目上下文，选项行被忽略: ${ss}`);
         }
+
       } else if (ss.startsWith('答案') || ss.startsWith('正确答案') || ss.startsWith('参考答案')) {
+        // 处理答案行
         if (!cur) {
           console.info(`第${lineid + 1}行: 无当前题目，答案行被忽略: ${ss}`);
           res.logs.push(`第${lineid + 1}行: 没识别到题干答案。即将跳过这道题: ${s}`);
           continue;
         }
+
         let ans = '';
-        ss = ss.replace('正确答案', '').replace('参考答案', '').replace('答案', '');
-        for (let i = 0; i < ss.length; i++) {
-          let t = ss[i].toUpperCase();
+        let cleanSs = ss.replace('正确答案', '').replace('参考答案', '').replace('答案', '');
+        for (let i = 0; i < cleanSs.length; i++) {
+          let t = cleanSs[i].toUpperCase();
           if (this.labels.includes(t)) {
             ans += t;
           }
