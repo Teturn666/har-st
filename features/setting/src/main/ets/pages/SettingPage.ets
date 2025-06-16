@@ -6,6 +6,7 @@ import { emitter } from '@kit.BasicServicesKit';
 import { BankListRes } from 'db';
 import { SettingModel } from '../model/SettingModel';
 import { selectBankDialog } from './SelectBankDialog';
+import { SettingColor } from '../components/SettingColor';
 
 @Entry({ routeName: 'settingPage' })
 @Component
@@ -42,6 +43,7 @@ export struct SettingPage {
     this.loadResource()
     this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
     this.getIsShowDialog()
+
   }
 
   //获取是否显示弹窗
@@ -102,6 +104,40 @@ export struct SettingPage {
           router.back()
         }
       }).width('100%')
+      Column() {
+        Text('显示设置')
+          .fontWeight(FontWeight.Bold)
+          .fontSize(18)
+          .fontColor("#3e3e3e")
+          .textAlign(TextAlign.Start)
+          .padding({ left: 16, top: 16, bottom: 16 })
+          .lineHeight(20)
+          .margin({ left: 20 })
+      }
+      .margin({ top: 5 })
+      .width('100%')
+      .alignItems(HorizontalAlign.Start)
+      .justifyContent(FlexAlign.Start)
+
+      Column() {
+        Row() {
+          SettingColor({ TextColorSetting: '题目颜色设置', Usage: '设置悬浮窗普通文本颜色', TypeSetting: 0 })
+
+        }
+        .justifyContent(FlexAlign.Center)
+        .height(55)
+         Divider()
+        // SettingColor({TextColorSetting:'选项颜色设置',Usage:'设置悬浮窗答案文本颜色',TypeSetting:1})
+        // SettingColor({TextColorSetting:'题目颜色设置',Usage:'设置悬浮窗颜色和透明度',TypeSetting:2})
+
+
+      }
+      .justifyContent(FlexAlign.Center)
+      .alignItems(HorizontalAlign.Start)
+      .padding({ left: 16, right: 16, })
+      .width('90%')
+      .backgroundColor('#f9f9f9')
+
       // 考试设置标题
       Column() {
         Text('考试设置')

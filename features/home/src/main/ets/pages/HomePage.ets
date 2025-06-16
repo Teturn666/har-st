@@ -73,6 +73,7 @@ export struct HomePage {
   @State isVip: number = 0
   @State CsjId: string = ""
   @State CsjIsShow: boolean = false
+  @State SearchText:string=''
   CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
@@ -87,7 +88,8 @@ export struct HomePage {
         this.AdDialogController?.close()
       }),
       CsjId: this.CsjId,
-      CsjIsShow: this.CsjIsShow
+      CsjIsShow: this.CsjIsShow,
+      SearText:this.SearchText
     }),
     autoCancel: false,
     alignment: DialogAlignment.Center,
@@ -219,6 +221,7 @@ export struct HomePage {
 
                     this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
                     this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+                    this.SearchText=HomeConstants.ROUTER_SEARCH_INTRODUCTION
                     this.AdDialogController?.open()
                   } else {
                     if (this.bankList.length > 0) {
