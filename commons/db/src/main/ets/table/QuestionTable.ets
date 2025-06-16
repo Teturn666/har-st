@@ -59,8 +59,8 @@ export class QuestionTable {
   }
 
   // 抽取的公共查询函数
-  private async executeQuestionQuery(rdbStore: relationalStore.RdbStore, id: number, isSearch: boolean = false,
-    isAll: boolean = true): Promise<Array<QuestionRes>> {
+  private async executeQuestionQuery(rdbStore: relationalStore.RdbStore, id: number, searchCount: boolean = false,
+    isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
     const predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
 
     if (!isAll) {
@@ -74,10 +74,17 @@ export class QuestionTable {
     }
 
     try {
-      const count: number = resultSet.rowCount;
+      let count: number = resultSet.rowCount;
       if (count === 0 || typeof count === 'string') {
         console.log(`${DbConstants.TABLE_TAG} Query no results!`);
         return [];
+      }
+
+      //指定搜索的长度
+      if (searchCount) {
+        if (count > 10) {
+          count = 10
+        }
       }
 
       resultSet.goToFirstRow();
@@ -111,14 +118,25 @@ export class QuestionTable {
     }
   }
 
-  async querySync(id: number, isSearch: boolean = false, isAll: boolean = true): Promise<Array<QuestionRes>> {
+  //不走多线程,题库详情搜索前10题
+  async queryCountSync(id: number, searchCount: boolean = true, isSearch: boolean = false,
+    isAll: boolean = false): Promise<Array<QuestionRes>> {
     let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
-    return this.executeQuestionQuery(rdb, id, isSearch, isAll);
+    return this.executeQuestionQuery(rdb, id, searchCount, isSearch, isAll);
   }
 
-  async querySyncTaskPool(rdbStore: relationalStore.RdbStore, id: number, isSearch: boolean = false,
+  //不走多线程
+  async querySync(id: number, searchCount: boolean = false, isSearch: boolean = false,
     isAll: boolean = true): Promise<Array<QuestionRes>> {
-    return this.executeQuestionQuery(rdbStore, id, isSearch, isAll);
+    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
+    return this.executeQuestionQuery(rdb, id, searchCount, isSearch, isAll);
+  }
+
+  //多线程
+  async querySyncTaskPool(rdbStore: relationalStore.RdbStore, id: number,
+    isSearch: boolean = false,
+    isAll: boolean = true): Promise<Array<QuestionRes>> {
+    return this.executeQuestionQuery(rdbStore, id, false, isSearch, isAll);
   }
 
   /**
