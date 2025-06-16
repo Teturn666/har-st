@@ -41,4 +41,10 @@ export class PreferencesConstants {
   static readonly SEARCH_DATASIZE_ALL = 'Search_dataSize_all'
   // mdataSize 部分文件的数量
   static readonly SEARCH_DATASIZE_SOME = 'Search_dataSize_some'
+  //题目颜色设置
+  static readonly  TITLE_COLOR_SETTING = 'title_color_setting'
+  //选项颜色设置
+  static readonly OPTION_COLOR_SETTING = 'option_color_setting'
+  //悬浮窗颜色设置
+  static readonly FLOATING_COLOR_SETTING = 'floating_color_setting'
 }
