@@ -2,7 +2,8 @@ import { TitleBar } from 'widget'
 import { promptAction, router } from '@kit.ArkUI'
 import { PointsModel } from '../model/PointsModel';
 import { ExchangeRes } from '../model/ExchangeRes';
-import { Logger, PreferencesConstants, preferencesUtils } from 'utils';
+import { EmitterConstants, Logger, PreferencesConstants, preferencesUtils } from 'utils';
+import { emitter } from '@kit.BasicServicesKit';
 
 
 @Entry({ routeName: 'pointExchangePage' })
@@ -39,6 +40,8 @@ struct PointExchangePage {
           });
           // 刷新积分
           this.userPoints = await this.pointsModel.getMyNumb()
+
+          this.loadUser()
         } else {
           Logger.info('兑换失败或已提示用户');
         }
@@ -46,6 +49,23 @@ struct PointExchangePage {
     });
   }
 
+  private async loadUser() {
+    let usrInfo = await this.pointsModel.getUser()
+    let nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    let avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL)
+    let loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    preferencesUtils.putNumber(PreferencesConstants.SP_IS_VIP, usrInfo.vip)
+    preferencesUtils.putString(PreferencesConstants.SP_VIP_TIME, usrInfo.vip_expire)
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': nickName,
+        'avatarUrl': avatarUrl,
+        'isLogin': loginState,
+        'isVip': usrInfo.vip,
+        'vipTime': usrInfo.vip_expire
+      }
+    })
+  }
 
   async getExchangeList(): Promise<void> {
     try {
@@ -62,8 +82,6 @@ struct PointExchangePage {
       this.isLoading = false
     }
   }
-
-
 
   build() {
     Column() {
@@ -93,14 +111,15 @@ struct PointExchangePage {
               .padding({ left: 16, right: 8 })
               .lineHeight(20)
 
-            if(this.userVip){
+            if (this.userVip) {
               Image($r('app.media.ic_VIP'))
                 .width(18)
                 .height(12)
             }
 
           }
-          Text(this.userVip ?"VIP用户" :"普通用户")
+
+          Text(this.userVip ? "VIP用户" : "普通用户")
             .fontSize(10)
             .fontColor($r("app.color.c_9d9d9d"))
             .textAlign(TextAlign.Start)
@@ -217,6 +236,7 @@ struct PointExchangePage {
                 }
                 .justifyContent(FlexAlign.Center)
                 .width('20%')
+
                 // .opacity(this.userPoints >= item.cost ? 1.0 : 0.5)
               }
               .justifyContent(FlexAlign.SpaceAround)

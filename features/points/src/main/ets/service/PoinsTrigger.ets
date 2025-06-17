@@ -60,5 +60,6 @@ export enum PointsTrigger {
 
   // 应用商店加分接口：/m/point/score/action
   URL_POINT_SCORE_ACTION = "/m/point/score/action",
-
+  //获取用户信息
+  PAY_PRICE_URL = "/pay.php",
 }
