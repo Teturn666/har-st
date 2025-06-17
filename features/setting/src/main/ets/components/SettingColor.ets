@@ -7,10 +7,11 @@ export struct SettingColor {
   @State titleColor: string = ''
   @State optionColor: string = ''
   @State floatingColor: string = ''
+  @State defaultColor: ResourceColor = ''
   @Prop TypeSetting: number = 0
   @Prop TextColorSetting: string = ''
   @Prop Usage: string = ''
-  ShowColor:boolean=false  //是否展示颜色
+  ShowColor: boolean = false //是否展示颜色
   ColorDialogController: CustomDialogController | null = new CustomDialogController({
     builder: SettingColorDialog({
       TypeSetting: this.TypeSetting
@@ -72,15 +73,15 @@ export struct SettingColor {
       }
       .alignItems(HorizontalAlign.Start)
 
-      if (this.ShowColor){
+      if (this.ShowColor) {
         Text()
           .width(30)
           .height(30)
           .borderRadius(18)
-          .onClick(()=>{
+          .onClick(() => {
             this.ColorDialogController?.open()
           })
-          .backgroundColor(this.getColor()||'#000')
+          .backgroundColor(this.getColor() || this.defaultColor)
       }
     }
     .width('100%')
