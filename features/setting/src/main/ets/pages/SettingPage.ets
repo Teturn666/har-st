@@ -142,24 +142,45 @@ export struct SettingPage {
 
       Column() {
         Row() {
-          SettingColor({ TextColorSetting: '题目颜色设置', Usage: '设置悬浮窗普通文本颜色', TypeSetting: 0,ShowColor: true })
+          SettingColor({
+            TextColorSetting: '题目颜色设置',
+            Usage: '设置悬浮窗普通文本颜色',
+            TypeSetting: 0,
+            ShowColor: true,
+            defaultColor: Color.Red
+          })
         }
         .justifyContent(FlexAlign.Center)
         .height(55)
-         Divider()
-        Row(){
-          SettingColor({TextColorSetting:'选项颜色设置',Usage:'设置悬浮窗答案文本颜色',TypeSetting:1,ShowColor: true})
-        }
-        .justifyContent(FlexAlign.Center)
-        .height(55)
-         Divider()
 
-        Row(){
-          SettingColor({TextColorSetting:'题目颜色设置',Usage:'设置悬浮窗颜色和透明度',TypeSetting:2,ShowColor: true})
-         }
+        Divider()
+        Row() {
+          SettingColor({
+            TextColorSetting: '选项颜色设置',
+            Usage: '设置悬浮窗答案文本颜色',
+            TypeSetting: 1,
+            ShowColor: true,
+            defaultColor: "#fffadf07"
+          })
+        }
         .justifyContent(FlexAlign.Center)
         .height(55)
-         Divider()
+
+        Divider()
+
+        Row() {
+          SettingColor({
+            TextColorSetting: '悬浮窗颜色设置',
+            Usage: '设置悬浮窗颜色和透明度',
+            TypeSetting: 2,
+            ShowColor: true,
+            defaultColor: Color.Black
+          })
+        }
+        .justifyContent(FlexAlign.Center)
+        .height(55)
+
+        Divider()
         Row() {
           SettingColor({ TextColorSetting: '悬浮窗字体大小设置', ShowColor: false })
         }
@@ -168,7 +189,8 @@ export struct SettingPage {
         })
         .justifyContent(FlexAlign.Center)
         .height(55)
-         Divider()
+
+        Divider()
 
 
       }
