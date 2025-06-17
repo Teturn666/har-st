@@ -42,7 +42,7 @@
     },
     {
       "name": "photo_search",
-      "value": "拍照搜题"
+      "value": "AI搜题"
     },
     {
       "name": "order_exercise",
@@ -106,7 +106,7 @@
     },
     {
       "name": "almighty_search",
-      "value": "拍照搜题"
+      "value": "AI搜题"
     }
   ]
 }
