@@ -363,11 +363,54 @@ export class ParseTxtManage {
     return ss;
   }
 
+  // 在parseQuestion函数中添加更严格的验证
+  private isValidQuestionFormat(s: string): boolean {
+    if (!s || !s.trim()) {
+      return false;
+    }
+
+    const ss = s.trim();
+
+    // 检查题目长度，太短的可能不是有效题目
+    if (ss.length < 10) {
+      return false;
+    }
+
+    // 检查是否包含过多的乱码字符
+    const randomChars = ss.match(/[^\u4e00-\u9fff\w\s()（）、，。.!?；：""''【】\[\]]/g);
+    if (randomChars && randomChars.length > ss.length * 0.3) {
+      return false;
+    }
+
+    // 检查是否有基本的题目结构（问号、冒号等）
+    const hasQuestionStructure = /[？?：:]/.test(ss) || ss.includes('选择') || ss.includes('判断') || ss.includes('下列');
+
+    // 如果包含答案括号，但没有明显的题目结构，可能是乱码
+    const hasAnswerPattern = /[（(][ABCD对错√×✔XYN正确错误]+[）)]/g.test(ss);
+    const answerMatches = ss.match(/[（(][ABCD对错√×✔XYN正确错误]+[）)]/g);
+
+    if (hasAnswerPattern && !hasQuestionStructure) {
+      // 如果有多个答案括号但没有题目结构，很可能是乱码
+      if (answerMatches && answerMatches.length > 1) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   // 解析题干
   private parseQuestion(s: string): QuestionModel | null {
     if (!s) {
       return null;
     }
+
+    // 添加格式验证
+    if (!this.isValidQuestionFormat(s)) {
+      console.info(`题目格式验证失败，跳过: ${s}`);
+      return null;
+    }
+
     let ss = this.format(s.trim());
     let q: QuestionModel | null = null;
 
