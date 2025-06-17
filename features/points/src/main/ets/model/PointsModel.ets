@@ -3,6 +3,7 @@ import { PointsNet } from '../service/PointsNet'
 import CheckDataRes, { PointEventRes } from './CheckDataRes'
 import { ExchangeRes } from './ExchangeRes'
 import { promptAction } from '@kit.ArkUI'
+import { UserDetailRes } from './UserDetailRes'
 
 const TAG = '[PointsModel]'
 
@@ -230,6 +231,16 @@ export class PointsModel {
     } catch (e) {
       Logger.info(TAG, 'err--------' + e)
       return ''
+    }
+  }
+
+  //获取用户信息
+  public async getUser(): Promise<UserDetailRes> {
+    try {
+      let data = await this.PointsNet.getUser()
+      return data
+    } catch (e) {
+      return new UserDetailRes()
     }
   }
 }

@@ -1,69 +1,16 @@
 import { PointsTrigger } from './PoinsTrigger';
 import { BaseResponse, HttpUtils } from 'network/Index';
-import axios, { AxiosResponse, AxiosProgressEvent } from '@ohos/axios';
-
+import { AxiosResponse } from '@ohos/axios';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { BankListRes } from 'db'
-import { Logger } from 'utils'
-import fs, { ReadTextOptions } from '@ohos.file.fs';
 import CheckDataRes, { PointEventRes } from '../model/CheckDataRes';
 import { ExchangeRes } from '../model/ExchangeRes';
-
+import { PreferencesConstants, preferencesUtils } from 'utils'
+import { UserRes } from '../model/UserRes';
+import { UserDetailRes } from '../model/UserDetailRes';
 
 const TAG = '[PointsNet]'
 
 export class PointsNet {
-  // //搜索题目
-  // public getSearchQuestionList(content: string, pageNo: string): Promise<SearchQuestionRes[]> {
-  //   return new Promise((resolve: Function, reject: Function) => {
-  //     HttpUtils.getInstance()
-  //       .get(BankTrigger.HOME_SEARCH_TITLE_LIST_URL, {
-  //         params: {
-  //           "word": content,
-  //           "pageNum": pageNo,
-  //           "pageSize": "10"
-  //         }
-  //       })
-  //       .then((res: AxiosResponse<BaseResponse<SearchQuestionRes[]>>) => {
-  //         const code = res.data.code;
-  //         if (code === "0" && res.data.data) {
-  //           resolve(res.data.data);
-  //         } else {
-  //           reject(new Error(`Request failed with code: ${code}`));
-  //         }
-  //       })
-  //       .catch((error: BusinessError) => {
-  //         reject(error);
-  //       });
-  //   });
-  // }
-  //
-  // //搜索题库
-  // public getSearchBankList(content: string, pageNo: number): Promise<BankListRes[]> {
-  //   return new Promise((resolve: Function, reject: Function) => {
-  //     HttpUtils.getInstance()
-  //       .get(BankTrigger.HOME_SEARCH_BANK_LIST_URL, {
-  //         params: {
-  //           "word": content,
-  //           "pageNo": pageNo,
-  //           "pageSize": 10
-  //         }
-  //       })
-  //       .then((res: AxiosResponse<BaseResponse<BankListRes[]>>) => {
-  //         const code = res.data.code;
-  //         if (code === "0" && res.data.data) {
-  //           resolve(res.data.data);
-  //         } else {
-  //           reject(new Error(`Request failed with code: ${code}`));
-  //         }
-  //       })
-  //       .catch((error: BusinessError) => {
-  //         reject(error);
-  //       });
-  //   });
-  // }
-  //
-
   // 获取签到积分列表
   public getListSignMap(vib: boolean): Promise<CheckDataRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -364,6 +311,30 @@ export class PointsNet {
           }
         }).catch((error: BusinessError) => {
         reject(error);
+      })
+    })
+  }
+
+  //获取用户信息
+  public getUser(): Promise<UserDetailRes> {
+    let name = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    let openid = preferencesUtils.getString(PreferencesConstants.SP_OPEN_ID)
+    let unionid = preferencesUtils.getString(PreferencesConstants.SP_UNION_ID)
+    let udid = preferencesUtils.getString(PreferencesConstants.SP_UUID)
+    let data = "api=updateuser&tag=ksst&name=" + name + "&openid=" + openid
+      + "&unionid=" + unionid + "&id=" + udid
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getVipInstance()
+        .post(PointsTrigger.PAY_PRICE_URL, data)
+        .then((res: AxiosResponse<UserRes>) => {
+          let data = res.data.data
+          if (res.data.errno === 0) {
+            resolve(data)
+          } else {
+            reject("data is null")
+          }
+        }).catch((error: BusinessError) => {
+        reject(error)
       })
     })
   }
