@@ -28,11 +28,8 @@ export class PreferencesConstants {
   static readonly SP_SELECT_VALUE = 'select_value'
   // setting 题目选择的弹窗是否显示
   static readonly SP_SELECT_DIALOG_SHOW = 'select_dialog_show'
-  //保存题库选择
-  static readonly SP_QUESTION_BANK = 'question_bank'
   static readonly SP_QUESTION_BANK_ = 'question_bank'
   //保存题库选择是否全选
-  static readonly SP_QUESTION_BANK_ALL = 'question_bank_all'
   //广告SDK初始化失败
   static readonly CSJ_INIT_FAIL = 'csj_init_fail'
   //广告sdk
@@ -42,7 +39,7 @@ export class PreferencesConstants {
   // mdataSize 部分文件的数量
   static readonly SEARCH_DATASIZE_SOME = 'Search_dataSize_some'
   //题目颜色设置
-  static readonly  TITLE_COLOR_SETTING = 'title_color_setting'
+  static readonly TITLE_COLOR_SETTING = 'title_color_setting'
   //选项颜色设置
   static readonly OPTION_COLOR_SETTING = 'option_color_setting'
   //悬浮窗颜色设置

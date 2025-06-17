@@ -1,9 +1,9 @@
-import { router } from "@kit.ArkUI";
+import { promptAction, router } from "@kit.ArkUI";
 import { PreferencesConstants, preferencesUtils } from "utils";
 import { ConfigRes } from "utils/src/main/ets/model/ConfigRes";
-import { HmAdInfo ,} from "utils/src/main/ets/model/HmAdInfo";
+import { HmAdInfo, } from "utils/src/main/ets/model/HmAdInfo";
 import { rewardAd, RewardAd } from "utils/src/main/ets/utils/RewardAd";
-import { CSJStartResult} from "utils/src/main/ets/model/StartResult";
+import { CSJStartResult } from "utils/src/main/ets/model/StartResult";
 import HomeConstants from "../Constants/HomeConstants";
 
 
@@ -18,9 +18,10 @@ export struct AdCustomDialog {
    }
    @Prop CsjId:string=""
    @Prop CsjIsShow:boolean=false
-   @Prop SearText:string=""
   controller?: CustomDialogController;
-  isShowDia: () => void = () => {
+  isShowDialog: () => void = () => {
+  }
+  isCloseFun: () => void = () => {
   }
   rewardAd: RewardAd | null = new RewardAd()
   CsjHmParams: ConfigRes = {
@@ -30,22 +31,20 @@ export struct AdCustomDialog {
   isClose() {
     this.controller?.close()
     if (this.isVerify){
-       router.pushNamedRoute({
-        name:this.SearText,
-
-      })
+      this.isCloseFun()
     }
-
   }
 
   aboutToAppear(): void {
-   }
+  }
+
   onPageShow(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmParams = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
 
 
   }
+
   build() {
     Column({ space: 10 }) {
       Row() {
@@ -54,7 +53,7 @@ export struct AdCustomDialog {
           .height(20)
 
           .onClick(() => {
-            this.isShowDia()
+            this.isShowDialog()
           })
       }.margin({ bottom: 9 })
       .justifyContent(FlexAlign.End)
@@ -86,13 +85,13 @@ export struct AdCustomDialog {
         })
         .onClick(() => {
 
-          if (this.CsjIsShow&& !this.AdInit?.code) {
-            rewardAd.CsjSdkId=this.CsjId
+          if (this.CsjIsShow && !this.AdInit?.code) {
+            rewardAd.CsjSdkId = this.CsjId
             rewardAd.AdSlotBuilder((isVerify: boolean) => {
               this.isVerify = isVerify
 
             })
-           }
+          }
 
 
         })
