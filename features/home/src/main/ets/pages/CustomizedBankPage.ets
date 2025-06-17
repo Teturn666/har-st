@@ -105,7 +105,6 @@ struct CustomizedBankPage {
       this.loadingMessage = '正在解析TXT文件...';
       const result = await this.parser.parseTxtFile(file.path)
       this.message = `开始处理TXT文件：${file.path}`;
-
       if (!result) {
         this.message = '解析失败';
         promptAction.showToast({ message: '解析失败', duration: 2000 });
@@ -199,7 +198,7 @@ struct CustomizedBankPage {
         const toastMessage = this.questionErrorList.length > 0
           ? `成功导入 ${successCount} 道题目，存在 ${this.questionErrorList.length} 个错误`
           : `成功导入 ${successCount} 道题目`;
-        promptAction.showToast({ message: toastMessage, duration: 2000 });
+        // promptAction.showToast({ message: toastMessage, duration: 2000 });
         emitter.emit(EmitterConstants.EM_REFRESH_HOME)
 
         // 在loading结束后显示成功弹窗
@@ -210,7 +209,7 @@ struct CustomizedBankPage {
         return bank;
       } else {
         this.importStatus = '失败';
-        promptAction.showToast({ message: '导入失败', duration: 2000 });
+        // promptAction.showToast({ message: '导入失败', duration: 2000 });
         return
       }
 
@@ -219,7 +218,7 @@ struct CustomizedBankPage {
       console.error(`读取文件失败: code=${err.code}, message=${err.message}`);
       this.message = `文件读取失败: ${err.message} (错误码: ${err.code})`;
       this.importStatus = '失败';
-      promptAction.showToast({ message: '文件读取失败', duration: 2000 });
+      // promptAction.showToast({ message: '文件读取失败', duration: 2000 });
       return
     }
   }
@@ -298,7 +297,7 @@ struct CustomizedBankPage {
       const toastMessage = this.questionErrorList.length > 0
         ? `成功导入 ${excelDataObj.quizBank.num} 道题目，存在 ${this.questionErrorList.length} 个错误`
         : `成功导入 ${excelDataObj.quizBank.num} 道题目`;
-      promptAction.showToast({ message: toastMessage, duration: 2000 });
+      // promptAction.showToast({ message: toastMessage, duration: 2000 });
       emitter.emit(EmitterConstants.EM_REFRESH_HOME)
 
       // 在loading结束后显示成功弹窗
@@ -311,7 +310,7 @@ struct CustomizedBankPage {
       console.error(TAG, 'Excel处理失败:', error);
       this.importStatus = '失败';
       this.message = '导入失败';
-      promptAction.showToast({ message: error.message || '文件解析失败', duration: 2000 });
+      // promptAction.showToast({ message: error.message || '文件解析失败', duration: 2000 });
       return
     }
   }
@@ -348,7 +347,7 @@ struct CustomizedBankPage {
     if (!isConfirmed) {
       this.message = '取消导入';
       this.importStatus = '失败';
-      promptAction.showToast({ message: '取消导入', duration: 2000 });
+      // promptAction.showToast({ message: '取消导入', duration: 2000 });
       throw new Error('用户取消导入');
     }
     return bankName;
