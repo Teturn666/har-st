@@ -28,7 +28,7 @@ export struct SearchQuestions {
     // 判断从哪个文件里取 mDataText 以及 mDataSize
     let mDataText: SharedArrayBuffer | null = null
 
-    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ALL, '1')
+    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_, '1')
     if (isAllNum === '1') {
       mDataText =
         await SearchMapManage.getInstance()
@@ -42,6 +42,7 @@ export struct SearchQuestions {
     console.debug(TAG, '分词处理数据已拿到')
     emitter.on("dataText", async (event) => {
       this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
+      console.debug(TAG, 'dataValue' + this.dataValue)
       // this.dataValue = "1415A 模拟考试 重置进度 0/119 ☆ 保守国家秘密法》自 G 2010年1月1日 2010年4月29日 2010年5月1日 2010年10月1日"
       if (mDataText && mDataText?.byteLength !== 0) {
         await this.searchResult(mDataText)
