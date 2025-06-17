@@ -126,10 +126,10 @@ export class QuestionTable {
   }
 
   //不走多线程
-  async querySync(id: number, searchCount: boolean = false, isSearch: boolean = false,
+  async querySync(id: number, isSearch: boolean = false,
     isAll: boolean = true): Promise<Array<QuestionRes>> {
     let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
-    return this.executeQuestionQuery(rdb, id, searchCount, isSearch, isAll);
+    return this.executeQuestionQuery(rdb, id, false, isSearch, isAll);
   }
 
   //多线程
