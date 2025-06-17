@@ -1,4 +1,6 @@
-import { CommonConstants as Const, EmitterConstants, Logger, PreferencesConstants, preferencesUtils } from 'utils/Index'
+import { CommonConstants as Const, EmitterConstants,
+  GetAllSelectedUtil,
+  Logger, PreferencesConstants, preferencesUtils } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { emitter } from '@kit.BasicServicesKit'
 
@@ -196,6 +198,9 @@ export struct HomePage {
     }
   }
 
+  /**
+   * 点击读屏搜题处理逻辑
+   */
   private async readSearch() {
     // 读屏搜题
     const screenCaptureManager = ScreenCaptureManager.getInstance(getContext(this) as common.ApplicationContext);
@@ -210,16 +215,6 @@ export struct HomePage {
 
     // 开启读屏幕
     screenCaptureManager?.startScreenCapture();
-
-    await PipManager.getInstance().init(getContext(this));
-    // 创建画中画控制器
-    PipManager.getInstance().setAutoStart(true);
-    PipManager.getInstance().startPip();
-    PipManager.getInstance().stopCallBack = () => {
-      // 设置回调，关闭画中画时停止读屏幕
-      console.log(TAG, '画中画关闭')
-      screenCaptureManager?.stopScreenCapture();
-    };
   }
 
   // 读屏搜题处理逻辑
@@ -598,8 +593,8 @@ struct SearchList {
     // 判断从哪个文件里取 mDataText 以及 mDataSize
     let mDataText: SharedArrayBuffer | null = null
 
-    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_, '1')
-    if (isAllNum === '1') {
+    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+    if (isAllSelect) {
       mDataText =
         await SearchMapManage.getInstance()
           .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
@@ -616,10 +611,10 @@ struct SearchList {
       // 进行搜索，然后返回给画中画
       if (mDataText && mDataText?.byteLength !== 0) {
         // 过滤掉画中画的text
-        const filterData = QuestionUtil.analyzeTextMatch(ocrText, this.pipAnswer, 0.7);
+        const filterData = QuestionUtil.analyzeTextMatch(ocrText, this.pipAnswer, 0.5);
         // console.log(TAG, "ocrText = " + ocrText)
-        // console.log(TAG, "data.remainingText = " + data.remainingText)
         // console.log(TAG, "this.answerAndQuestion = " + this.answerAndQuestion)
+        console.log(TAG, "data.remainingText = " + filterData.remainingText)
         this.searchResult(filterData.remainingText, mDataText)
       }
     })

@@ -1,4 +1,4 @@
-export  interface UserBankSelection {
+export interface UserBankSelection {
   uid: string;
   selectedBankIds: string[];
   isAllSelected: boolean;

@@ -53,7 +53,6 @@ class TextNodeController extends NodeController {
   private message: Params;
   private textNode: BuilderNode<[Params]> | null = null;
 
-
   constructor(message: Params) {
     super();
     this.message = message;
@@ -83,6 +82,7 @@ export class PipManager {
   private curState: string = '';
   stopCallBack: Function = () => {
   };
+
   public static getInstance(): PipManager {
     return PipManager.instance;
   }
@@ -134,6 +134,7 @@ export class PipManager {
         break;
       case PiPWindow.PiPState.STOPPED:
         curState = "STOPPED";
+        this.setAutoStart(false)
         this.stopCallBack()
         break;
       case PiPWindow.PiPState.ABOUT_TO_RESTORE:

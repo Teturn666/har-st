@@ -1,6 +1,6 @@
 import { ArrayList, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
 import { QuestionRes, QuestionTable } from 'db/Index'
-import { Logger, PreferencesConstants, preferencesUtils, StringUtils } from 'utils/Index'
+import { GetAllSelectedUtil, Logger, PreferencesConstants, preferencesUtils, StringUtils } from 'utils/Index'
 import { SegmentEngine } from './SegmentEngine'
 
 import { StringFilter } from './StringFilter'
@@ -246,8 +246,8 @@ export class SearchEngine {
     let mMatchScores = new TreeMap<number, number>()
 
     let mDataSize: number = 0
-    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_, '1', context)
-    if (isAllNum === '1') {
+    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+    if (isAllSelect) {
       mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0, context)
     } else {
       mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, 0, context)
@@ -257,7 +257,7 @@ export class SearchEngine {
       // 查询数据库，获取题目数量
       let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
       const questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
-      if (isAllNum === '1') {
+      if (isAllSelect) {
         preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions?.length, context)
       } else {
         preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length, context)
@@ -459,8 +459,8 @@ export class SearchEngine {
     let mMatchScores = new TreeMap<number, number>()
     // 这里判断是否为全部题库
     let mDataText: Map<string, Set<number>>
-    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_, '1')
-    if (isAllNum === '1') {
+    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+    if (isAllSelect) {
       mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0)
       mDataText =
         await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL) ||
@@ -477,7 +477,7 @@ export class SearchEngine {
       // 查询数据库，获取题目数量
       let rdbStore = await relationalStore.getRdbStore(getContext(this), DbConstants.STORE_CONFIG);
       const questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
-      if (isAllNum === '1') {
+      if (isAllSelect) {
         preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions?.length)
       } else {
         preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length)
