@@ -1,18 +1,26 @@
-import { PreferencesConstants, preferencesUtils } from "utils";
-import { UserBankSelection } from "../model/UserBankSelection";
+import { PreferencesConstants } from "../common/PreferencesConstants";
+import { preferencesUtils } from "../common/PreferencesUtils";
 
-export  class GetAllSelectedUtil {
+interface UserBankSelection {
+  uid: string;
+  selectedBankIds: string[];
+  isAllSelected: boolean;
+  lastModified: number;
+}
+
+
+export class GetAllSelectedUtil {
   /**
    * 检查用户是否全选
-   * @returns boolean - 如果未登录返回false，已登录返回用户的isAllSelected状态
+   * @returns boolean - 如果未登录返回true，已登录返回用户的isAllSelected状态
    */
-  isUserBankAllSelected(): boolean {
+  static isUserBankAllSelected(): boolean {
     // 先判断是否已登录
     const loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0');
 
-    // 如果未登录，返回false
+    // 如果未登录，返回true
     if (loginState === '0') {
-      return false;
+      return true;
     }
 
     // 如果已登录，获取当前用户ID

@@ -263,10 +263,26 @@ export class ScreenCaptureManager {
 
       this.logInfo(`开始屏幕录制，间隔时间: ${intervalTime}秒`);
 
+      let firstTime = true;
+
       // 数据回调函数
       const dataCallback = async (fileNum: number) => {
         const captureFilePath = `${this.cacheBasePath}/getPngName${fileNum}.png`;
         this.logInfo(`收到截图回调: ${captureFilePath}`);
+
+        // 只用第一次执行
+        if (firstTime) {
+          // 创建画中画控制器
+          await PipManager.getInstance().init(getContext(this));
+          PipManager.getInstance().setAutoStart(true);
+          PipManager.getInstance().startPip();
+          PipManager.getInstance().stopCallBack = () => {
+            // 设置回调，关闭画中画时停止读屏幕
+            console.log(TAG, '画中画关闭')
+            this?.stopScreenCapture();
+          };
+          firstTime = false
+        }
 
         // 异步处理截图
         await this.processScreenCapture(captureFilePath);

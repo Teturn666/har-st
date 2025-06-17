@@ -7,7 +7,7 @@ import { SearchEngine } from "search";
 import { QuestionRes } from "db";
 import { SearchMapManage } from "search/src/main/ets/manage/SearchMapManage";
 import SearchConstants from "search/src/main/ets/constants/SearchConstants";
-import { PreferencesConstants, preferencesUtils } from "utils";
+import { GetAllSelectedUtil, PreferencesConstants, preferencesUtils } from "utils";
 
 const TAG = "SearchQuestions";
 
@@ -28,8 +28,8 @@ export struct SearchQuestions {
     // 判断从哪个文件里取 mDataText 以及 mDataSize
     let mDataText: SharedArrayBuffer | null = null
 
-    let isAllNum = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_, '1')
-    if (isAllNum === '1') {
+    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+    if (isAllSelect) {
       mDataText =
         await SearchMapManage.getInstance()
           .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)

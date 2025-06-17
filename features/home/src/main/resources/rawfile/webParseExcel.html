@@ -98,13 +98,13 @@
           return headerStr.includes(targetHeader);
         }
 
-        // 改进选项列识别函数
+        // 改进选项列识别函数 - 支持带空格的选项格式
         function isOptionHeader(header) {
           if (!header) return false;
           const headerStr = String(header).trim();
 
-          // 匹配包含 "选项A", "选项B" 等格式（支持前后有其他字符）
-          if (headerStr.includes("选项") && headerStr.match(/选项[A-Z]/)) {
+          // 匹配包含 "选项A", "选项 A", "选项B" 等格式（支持选项和字母之间有无空格）
+          if (headerStr.includes("选项") && headerStr.match(/选项\s*[A-Z]/)) {
             return true;
           }
 
@@ -116,13 +116,13 @@
           return false;
         }
 
-        // 从选项表头中提取字母
+        // 从选项表头中提取字母 - 支持带空格的格式
         function extractOptionLetter(header) {
           if (!header) return null;
           const headerStr = String(header).trim();
 
-          // 从包含 "选项A" 格式中提取字母
-          const longFormatMatch = headerStr.match(/选项([A-Z])/);
+          // 从包含 "选项A" 或 "选项 A" 格式中提取字母（允许空格）
+          const longFormatMatch = headerStr.match(/选项\s*([A-Z])/);
           if (longFormatMatch) {
             return longFormatMatch[1];
           }
@@ -225,31 +225,26 @@
 
           console.log(TAG, "第一行数据:", rows[0]);
 
-          // 改进表头检查逻辑，使用包含匹配支持动态选项数量
-          const requiredHeaders = ["题干", "答案"];
+          // 改进表头检查逻辑，第一列默认为题干，只校验答案列
           const actualHeaders = rows[0] || [];
           console.log(TAG, "实际表头:", actualHeaders);
 
-          // 检查是否包含必要的列（题干、答案）- 使用包含匹配
-          const hasRequiredHeaders = requiredHeaders.every((header) => {
-            return actualHeaders.some((actualHeader) =>
-              containsHeader(actualHeader, header)
-            );
-          });
+          // 【修改】第一列默认为题干列，不校验"题干"字样
+          const questionIndex = 0;
+
+          // 查找答案列位置 - 使用包含匹配
+          const answerIndex = actualHeaders.findIndex((header) =>
+            containsHeader(header, "答案")
+          );
+
+          // 只检查是否包含答案列
+          const hasRequiredHeaders = answerIndex !== -1;
 
           // 动态检测选项列数和位置
           let detectedOptions = [];
           let optionPositions = {};
 
-          // 找到题干和答案的位置 - 使用包含匹配
-          const questionIndex = actualHeaders.findIndex((header) =>
-            containsHeader(header, "题干")
-          );
-          const answerIndex = actualHeaders.findIndex((header) =>
-            containsHeader(header, "答案")
-          );
-
-          if (questionIndex !== -1 && answerIndex !== -1) {
+          if (answerIndex !== -1) {
             // 从表头中检测所有选项列
             for (let i = 0; i < actualHeaders.length; i++) {
               const header = actualHeaders[i];
