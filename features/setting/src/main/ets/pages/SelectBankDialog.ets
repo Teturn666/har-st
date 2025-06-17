@@ -477,8 +477,8 @@ export struct selectBankDialog {
               if (this.isChangeText) {
                 this.isChangeText()
               }
-
             }
+
             // 判断选择部分题库进行初始化
             if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
               await SearchMapManage.getInstance()
