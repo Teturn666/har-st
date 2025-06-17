@@ -398,7 +398,6 @@ export struct SettingPage {
     }).then(async (data) => {
       if (data.index === 1) {
         this.loginOut()
-        preferencesUtils.putString(PreferencesConstants.SP_QUESTION_BANK_, '1')
       }
     })
   }

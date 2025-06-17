@@ -1,12 +1,13 @@
 import { BankModel } from '../model/BankModel'
 import { BankCategory } from '../model/BankCategory';
 import { BankList } from './BankList';
-import { LoadingStatus, Logger } from 'utils';
+import { EmitterConstants, LoadingStatus, Logger } from 'utils';
 import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
 import BankConstants from '../Constants/BankConstants';
 import { router } from '@kit.ArkUI';
+import { emitter } from '@kit.BasicServicesKit';
 
 const context = (getContext(this) as common.UIAbilityContext)
 let jsonData = null
@@ -33,6 +34,9 @@ export struct BankPage {
   aboutToAppear(): void {
     this.initLottie()
     this.loadResources()
+    emitter.on(EmitterConstants.EM_REFRESH_BANK, () => {
+      this.loadResources()
+    })
   }
 
   aboutToDisappear(): void {
