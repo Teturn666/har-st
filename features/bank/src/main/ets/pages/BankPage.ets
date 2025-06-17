@@ -12,7 +12,6 @@ import { emitter } from '@kit.BasicServicesKit';
 const context = (getContext(this) as common.UIAbilityContext)
 let jsonData = null
 
-
 @Entry
 @Component
 export struct BankPage {
@@ -47,7 +46,6 @@ export struct BankPage {
     router.pushNamedRoute({ name: BankConstants.ROUTER_HOT_Search })
   }
 
-
   @Builder
   subTabBuilder(tab: BankCategory, tabIndex: number) {
     Row() {
@@ -77,21 +75,21 @@ export struct BankPage {
 
   build() {
     Column() {
-      Stack(){
+      Stack() {
         Image($r('app.media.search_bg'))
           .objectFit(ImageFit.Cover)
           .width('auto')
-        Stack({alignContent:Alignment.Start}){
+        Stack({ alignContent: Alignment.Start }) {
           Image($r('app.media.search'))
             .objectFit(ImageFit.Cover)
             .width(340)
             .height(36)
-          Row(){
+          Row() {
             Image($r('app.media.ic_search'))
               .objectFit(ImageFit.Cover)
               .width(24)
               .height(24)
-              .margin({left:10,right:10})
+              .margin({ left: 10, right: 10 })
 
             Text("请输入题库名称或关键词")
               .fontSize(14)
@@ -122,9 +120,7 @@ export struct BankPage {
                 animationData: jsonData,
               })
             })
-
         }
-
       } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
         Row() {
           List({ initialIndex: 0, scroller: this.listScroller, space: 20 }) {
@@ -139,32 +135,31 @@ export struct BankPage {
           .friction(0.6)
         }
 
-    if (this.ShowText){
-      Row() {
-        Text("搜题前请先下载对应题库")
-          .fontSize(14)
-          .fontColor(Color.White)
-          .textAlign(TextAlign.Center)
-          .layoutWeight(1)
-          .margin({
-            left: 20
-          })
-        Row() {
-          Image($r("sys.media.ohos_ic_public_cancel"))
-            .fillColor(Color.White)
-            .width(15)
-            .aspectRatio(1)
+        if (this.ShowText) {
+          Row() {
+            Text("搜题前请先下载对应题库")
+              .fontSize(14)
+              .fontColor(Color.White)
+              .textAlign(TextAlign.Center)
+              .layoutWeight(1)
+              .margin({
+                left: 20
+              })
+            Row() {
+              Image($r("sys.media.ohos_ic_public_cancel"))
+                .fillColor(Color.White)
+                .width(15)
+                .aspectRatio(1)
+            }
+            .onClick(() => {
+              this.ShowText = false
+            })
+            .width(40)
+          }
+          .height(30)
+          .width('100%')
+          .backgroundColor('#F2B772')
         }
-        .onClick(() => {
-          this.ShowText =false
-        })
-        .width(40)
-      }
-
-      .height(30)
-      .width('100%')
-      .backgroundColor('#F2B772')
-    }
 
         Tabs({ barPosition: BarPosition.Start, controller: this.subController }) {
           ForEach(this.categoryList, (item: BankCategory) => {
@@ -172,11 +167,9 @@ export struct BankPage {
               BankList({
                 aid: item.aid
               })
-
             }
             .backgroundColor(Color.White)
             .margin({ bottom: 30 })
-
           }, (item: BankCategory, index: number) => JSON.stringify(item) + index)
         }
         .barHeight(0)
@@ -201,10 +194,47 @@ export struct BankPage {
 
     if (list.length > 0) {
       this.loadingStatus = LoadingStatus.SUCCESS
+      // 保存当前选中的categoryId
+      const currentSelectedId = this.selectedCategoryId
+      // 更新categoryList
       this.categoryList = list
+      // 重新同步状态
+      this.syncTabState(currentSelectedId)
     } else {
       this.loadingStatus = LoadingStatus.FAILED
     }
+  }
+
+  //同步Tab状态
+  private syncTabState(previousSelectedId: string) {
+    let newSelectedIndex = this.categoryList.findIndex(item => item.aid === previousSelectedId)
+    if (newSelectedIndex === -1) {
+      if (this.categoryList.length > 0) {
+        const hotIndex = this.categoryList.findIndex(item => item.aid === "hot")
+        if (hotIndex !== -1) {
+          newSelectedIndex = hotIndex
+          this.selectedCategoryId = "hot"
+        } else {
+          newSelectedIndex = 0
+          this.selectedCategoryId = this.categoryList[0].aid
+        }
+      } else {
+        newSelectedIndex = 0
+        this.selectedCategoryId = "hot"
+      }
+    } else {
+      this.selectedCategoryId = this.categoryList[newSelectedIndex].aid
+    }
+    this.focusIndex = newSelectedIndex
+    setTimeout(() => {
+      if (this.subController && newSelectedIndex >= 0) {
+        this.subController.changeIndex(newSelectedIndex)
+      }
+
+      if (this.listScroller && newSelectedIndex >= 0) {
+        this.listScroller.scrollToIndex(newSelectedIndex, true, ScrollAlign.CENTER)
+      }
+    }, 100)
   }
 
   //加载 lottie 动画
@@ -228,10 +258,10 @@ struct CategoryTabContent {
 
   build() {
     TabContent() {
-      Text(this.category.name)// 显示 Category 的名称
+      Text(this.category.name)
         .fontSize(30).fontColor(this.isSelected ? '#F75A23' : '#6665DD');
     }
-    .tabBar(this.tabBuilder(this.category.name)); // 设置 TabBar 的标题为 Category 的名称
+    .tabBar(this.tabBuilder(this.category.name));
   }
 
   @Builder
@@ -245,4 +275,3 @@ struct CategoryTabContent {
     .justifyContent(FlexAlign.Center)
   }
 }
-
