@@ -17,7 +17,7 @@
     "widget": "file:../../commons/widget",
     "bank": 'file:../../features/bank',
     "setting": 'file:../setting',
-
+    "libscrcap2pixel.so": "file:./src/main/cpp/types/libscrcap2pixel"
   }
 }
 
