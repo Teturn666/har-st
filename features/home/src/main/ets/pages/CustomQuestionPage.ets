@@ -61,11 +61,13 @@ struct CustomQuestionPage {
     } // 防止重复操作
     this.isLoading = true;
     try {
-      console.log(`Attempting to delete qid: ${qid}`);
       await this.homeModel.deleteTable(qid);
       console.log(`Deleted qid: ${qid}`);
-      this.questionBanks = [];
-      await this.getimportList();
+      // 按索引删除特定项目，而不是清空整个数组
+      const index = this.questionBanks.findIndex(bank => bank.qid === qid);
+      if (index !== -1) {
+        this.questionBanks.splice(index, 1);
+      }
       promptAction.showToast({ message: '删除成功', duration: 2000 });
       emitter.emit(EmitterConstants.EM_REFRESH_HOME)
     } catch (error) {

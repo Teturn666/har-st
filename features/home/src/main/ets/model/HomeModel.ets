@@ -7,6 +7,8 @@ import {
   QuestionRes
 } from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
+import { taskpool } from '@kit.ArkTS'
+import { deleteTableTask } from 'bank/src/main/ets/manage/ConcurrentManage'
 
 const TAG = '[HomeModel]'
 
@@ -25,27 +27,38 @@ export class HomeModel {
     return HomeModel.instance
   }
 
-
   //删除数据库
-  async deleteTable(qid: number) {
-    //删除相应的题库表
-    let bankResultList = await questionBankTable.querySync(qid, false) ?? [];
-    if (bankResultList.length > 0) {
-      let bankRes = bankResultList[0]
-      questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
-        Logger.info(TAG, '题库deleteData--------' + resFlag)
-      })
-    }
-    //删除相应的题目表
-    let bankQaResultList = await QuestionTable.getInstance().querySync(qid, false,false) ?? [];
-    if (bankQaResultList.length > 0) {
-      bankQaResultList.forEach((item) => {
-        QuestionTable.getInstance().deleteData(item, (resFlag: boolean) => {
-          Logger.info(TAG, '题目deleteData--------' + resFlag)
-        })
-      })
+  deleteTable(qid: number) {
+    try {
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(deleteTableTask, getContext(this), qid);
+      taskpool.execute(task);
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
     }
   }
+
+
+  //删除数据库
+  // async deleteTable(qid: number) {
+  //   //删除相应的题库表
+  //   let bankResultList = await questionBankTable.querySync(qid, false) ?? [];
+  //   if (bankResultList.length > 0) {
+  //     let bankRes = bankResultList[0]
+  //     questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
+  //       Logger.info(TAG, '题库deleteData--------' + resFlag)
+  //     })
+  //   }
+  //   //删除相应的题目表
+  //   let bankQaResultList = await QuestionTable.getInstance().querySync(qid, false,false) ?? [];
+  //   if (bankQaResultList.length > 0) {
+  //     bankQaResultList.forEach((item) => {
+  //       QuestionTable.getInstance().deleteData(item, (resFlag: boolean) => {
+  //         Logger.info(TAG, '题目deleteData--------' + resFlag)
+  //       })
+  //     })
+  //   }
+  // }
 
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
