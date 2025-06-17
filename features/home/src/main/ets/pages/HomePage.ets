@@ -594,39 +594,20 @@ struct SearchList {
   ScreenReader: () => void = () => {
   }
   @State pipAnswer: string = '暂未搜索到该题'
+  mDataText: SharedArrayBuffer | null = null
 
   async aboutToAppear() {
-    let firstTime = true
-    // 判断从哪个文件里取 mDataText 以及 mDataSize
-    let mDataText: SharedArrayBuffer | null = null
-
     // 注册回调，从ocr拿到文字信息
     emitter.on("dataText", async (event) => {
       const ocrText: string = event.data!["text"].replace(/\r?\n/g, '')
-
-      if (firstTime) {
-        let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
-        if (isAllSelect) {
-          mDataText =
-            await SearchMapManage.getInstance()
-              .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-        } else {
-          mDataText =
-            await SearchMapManage.getInstance()
-              .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
-        }
-        firstTime = false
-      }
-
-      // console.log(TAG, "ocrText = " + ocrText)
       // 进行搜索，然后返回给画中画
-      if (mDataText && mDataText?.byteLength !== 0) {
+      if (this.mDataText && this.mDataText?.byteLength !== 0) {
         // 过滤掉画中画的text
         const filterData = QuestionUtil.analyzeTextMatch(ocrText, this.pipAnswer, 0.5);
         // console.log(TAG, "ocrText = " + ocrText)
         // console.log(TAG, "this.answerAndQuestion = " + this.answerAndQuestion)
-        // console.log(TAG, "data.remainingText = " + filterData.remainingText)
-        this.searchResult(filterData.remainingText, mDataText)
+        console.log(TAG, "data.remainingText = " + filterData.remainingText)
+        this.searchResult(filterData.remainingText, this.mDataText)
       }
     })
   }
@@ -684,6 +665,20 @@ struct SearchList {
           })
       }
       .onClick(async () => {
+        // 获取首选戏的题目颜色 选项颜色 悬浮窗颜色
+        PipManager.titleColor = preferencesUtils.getString(PreferencesConstants.TITLE_COLOR_SETTING)
+        PipManager.optionColor = preferencesUtils.getString(PreferencesConstants.OPTION_COLOR_SETTING)
+        PipManager.floatingColor = preferencesUtils.getString(PreferencesConstants.FLOATING_COLOR_SETTING)
+        // 获取mDataText
+        let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+        if (isAllSelect) {
+          this.mDataText = await SearchMapManage.getInstance()
+            .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+        } else {
+          this.mDataText =
+            await SearchMapManage.getInstance()
+              .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+        }
         // 弹出广告
         this.ScreenReader()
       })

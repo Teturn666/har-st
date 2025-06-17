@@ -29,21 +29,26 @@ function buildPipUI(params: Params) {
   Column() {
     Text(params.answer)
       .fontSize(20)
-      .fontColor('#fffadf07')
-      .onAppear(() => {
-      })
+      .fontColor(PipManager.optionColor || '#fffadf07')
+      .minFontSize(15)
+      .maxFontSize(30)
+      .maxLines(2)
+      .textOverflow({ overflow: TextOverflow.Ellipsis })
+      .heightAdaptivePolicy(TextHeightAdaptivePolicy.LAYOUT_CONSTRAINT_FIRST)
     Text(params.question)
       .fontSize(20)
-      .fontColor(Color.Red)
-      .minFontSize(8)
-      .maxFontSize(18)
-      .maxLines(10)
-      .heightAdaptivePolicy(TextHeightAdaptivePolicy.MAX_LINES_FIRST)
-      .height('70%')
+      .fontColor(PipManager.titleColor || Color.Red)
+      .minFontSize(12)
+      .maxFontSize(30)
+      .maxLines(5)
+      .textOverflow({ overflow: TextOverflow.Ellipsis })
+      .heightAdaptivePolicy(TextHeightAdaptivePolicy.LAYOUT_CONSTRAINT_FIRST)
+      .layoutWeight(1)
   }
   .width('100%')
   .height('100%')
-  .backgroundColor(Color.Black)
+  .padding(15)
+  .backgroundColor(PipManager.floatingColor || Color.Black)
   .alignItems(HorizontalAlign.Center)
   .justifyContent(FlexAlign.Center)
 }
@@ -80,6 +85,9 @@ export class PipManager {
   private nodeController?: TextNodeController;
   private readonly mXComponentController: CustomXComponentController;
   private curState: string = '';
+  static titleColor: string = '';
+  static optionColor: string = '';
+  static floatingColor: string = '';
   stopCallBack: Function = () => {
   };
 

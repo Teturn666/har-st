@@ -82,7 +82,7 @@ export class QuestionUtil {
     });
 
     // 构建返回字符串
-    let result = `答案：`;
+    let result = `[${answer}] `;
 
     // 添加每个选项到结果中
     selectedOptions.forEach(optionText => {
