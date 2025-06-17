@@ -7,6 +7,7 @@ import { BankListRes } from 'db';
 import { SettingModel } from '../model/SettingModel';
 import { selectBankDialog } from './SelectBankDialog';
 import { SettingColor } from '../components/SettingColor';
+import { TextSizeDialog } from '../components/TextSizeDialog';
 
 @Entry({ routeName: 'settingPage' })
 @Component
@@ -22,6 +23,26 @@ export struct SettingPage {
   @State bankList: BankListRes[] = [];
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
+  TextDialogController: CustomDialogController | null = new CustomDialogController({
+    builder: TextSizeDialog({}),
+    autoCancel: false,
+    alignment: DialogAlignment.Center,
+    offset: { dx: 0, dy: -20 },
+    gridCount: 4,
+    customStyle: false,
+    backgroundColor: 0xd9ffffff,
+    cornerRadius: 5,
+    width: 310,
+    height: 430,
+    maskColor: "#88000000",
+    borderStyle: BorderStyle.Dashed,
+    shadow: ({
+      radius: 20,
+      color: Color.Grey,
+      offsetX: 10,
+      offsetY: 10
+    }),
+  })
 
   // 打开选择题库对话框的方法
   async showSelectBankDialog() {
@@ -122,8 +143,16 @@ export struct SettingPage {
       Column() {
         Row() {
           SettingColor({ TextColorSetting: '题目颜色设置', Usage: '设置悬浮窗普通文本颜色', TypeSetting: 0 })
-
         }
+        .justifyContent(FlexAlign.Center)
+        .height(55)
+         Divider()
+        Row() {
+          SettingColor({ TextColorSetting: '悬浮窗字体大小设置', ShowColor: false })
+        }
+        .onClick(() => {
+          this.TextDialogController?.open()
+        })
         .justifyContent(FlexAlign.Center)
         .height(55)
          Divider()
