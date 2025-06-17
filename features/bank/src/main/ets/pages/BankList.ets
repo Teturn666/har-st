@@ -2,8 +2,8 @@
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
 import { EmitterConstants, Logger } from 'utils';
-import { BankListRes } from 'db'
-import { ComponentContent } from '@kit.ArkUI';
+import { BankListRes, QuestionRes } from 'db'
+import { ComponentContent, router } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
 import { FinishDialog } from './FinishDialog';
 import lottie from '@ohos/lottie';
@@ -13,6 +13,9 @@ import { onEventObject } from '@umeng/analytics';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
 import { DotLoading } from '../components/DotLoading';
 import { emitter } from '@kit.BasicServicesKit';
+import BankConstants from '../Constants/BankConstants';
+
+import('./BankDetailsPage')
 
 
 const TAG = '[BankList]'
@@ -200,6 +203,7 @@ export struct BankList {
   dialogDeleteController?: CustomDialogController
   dialogDownloadController?: CustomDialogController
   @State updateStatusMap: Map<number, boolean> = new Map();
+  @State isUpDate:boolean = false
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
@@ -240,6 +244,38 @@ export struct BankList {
       })
     });
     this.dialogDownloadController.open();
+
+  }
+
+  async jumpToBankDetail(item: BankListRes,isUpDate:boolean) {
+
+    if(item.downloadedState === 1){
+      //已下载
+      const bankQuestionList = await this.bankModel.getBankQuestionList(item.qid)
+      //只截取前10道题目
+      let  questionList = bankQuestionList.slice(0, 10)
+      router.pushNamedRoute({
+        name: BankConstants.ROUTER_BANK_DETAILS,
+        params: {
+          isUpDate:true,
+          downloadedState:0,
+          bankDetails: item,
+          questionList: questionList
+        }
+      })
+    }else {
+      //未下载
+      let  bankDesc = await this.bankModel.getBankDesc(item.qid,item.url)
+      console.log("返回的：" + JSON.stringify(bankDesc))
+      router.pushNamedRoute({
+        name: BankConstants.ROUTER_BANK_DETAILS,
+        params: {
+          downloadedState:1,
+          bankDetails: item,
+          questionListtwo: bankDesc
+        }
+      })
+    }
 
   }
 
@@ -393,6 +429,7 @@ export struct BankList {
                   async () => {
                     this.mCurBank = item
                     const needUpdate = this.updateStatusMap.get(item.qid) ?? false;
+                    this.isUpDate = needUpdate;
 
                     if (item.downloadedState === 1) {
                       if (this.fromType === 2) {
@@ -484,6 +521,9 @@ export struct BankList {
               }
             }
           }
+          .onClick(() => {
+            this.jumpToBankDetail(item,this.isUpDate)
+          })
         })
       }.onReachEnd(() => {
         if (this.loadMore) {

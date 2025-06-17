@@ -11,6 +11,7 @@
     "search": "file:../../commons/search",
     "encryption": "file:../../commons/encryption",
     "db": "file:../../commons/db",
+    "widget": "file:../../commons/widget"
   }
 }
 

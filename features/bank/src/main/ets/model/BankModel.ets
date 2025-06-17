@@ -173,6 +173,14 @@ export class BankModel {
     }
   }
 
+  //获取题库中的题目
+  public async getBankQuestionList(qid: number): Promise<QuestionRes[]> {
+    let resultList = await QuestionTable.getInstance().querySync(qid, false, false) ?? [];
+
+    Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
+    return resultList
+  }
+
   //题库详情介绍
   public async getBankDesc(qid: number, fileUrl: string): Promise<BankQuestionRes[]> {
     let questionRes = await QuestionTable.getInstance().queryCountSync(qid)
