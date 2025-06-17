@@ -257,7 +257,7 @@ export struct BankList {
       router.pushNamedRoute({
         name: BankConstants.ROUTER_BANK_DETAILS,
         params: {
-          isUpDate:true,
+          isUpDate:this.isUpDate,
           downloadedState:0,
           bankDetails: item,
           questionList: questionList

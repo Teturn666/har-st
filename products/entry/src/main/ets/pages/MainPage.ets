@@ -111,6 +111,8 @@ struct MainPage {
               this.currentIndex = index
               if (index === TabBarType.HOME) {
                 emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+              }else if(index === TabBarType.BANK) {
+                emitter.emit(EmitterConstants.EM_REFRESH_BANK)
               }
             })
 

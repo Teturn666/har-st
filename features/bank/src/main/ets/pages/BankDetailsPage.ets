@@ -2,7 +2,7 @@ import { onEventObject } from '@umeng/analytics';
 import { TitleBar } from 'widget/Index';
 import { ComponentContent, router } from '@kit.ArkUI';
 import { BankListRes, QuestionRes } from 'db';
-import { Logger } from 'utils';
+import { EmitterConstants, Logger } from 'utils';
 import { LoadingDialog } from './LoadingDialog';
 import { BankModel } from '../model/BankModel';
 import BankMobClickConstants from '../Constants/BankMobClickConstants';
@@ -10,6 +10,8 @@ import { DotLoading } from '../components/DotLoading';
 import lottie from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { FinishDialog } from './FinishDialog';
+import BankConstants from '../Constants/BankConstants';
+import { emitter } from '@kit.BasicServicesKit';
 
 // 第二种数据格式
 interface QuestionItem {
@@ -20,7 +22,7 @@ interface QuestionItem {
 }
 
 interface generatedType {
-  isUpDate:boolean
+  isUpDate: boolean
   bankDetails: BankListRes;
   downloadedState: number;
   questionList: Array<QuestionRes>
@@ -75,16 +77,25 @@ struct BankDetailsPage {
   private contentNode1: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildFinishText));
 
-  showDownloadOverDialog(success: boolean, isUpdate: boolean) {
+  showDownloadOverDialog(success: boolean, isUpdate: boolean, fromPractice: boolean = false,
+    practiceType: string = '') {
     this.dialogDownloadController = new CustomDialogController({
-
       builder: DownloadOverDialog({
-
-        bank: this.mCurBank, success: success, isUpdate: isUpdate
+        bank: this.mCurBank,
+        success: success,
+        isUpdate: isUpdate,
+        fromPractice: fromPractice,
+        practiceType: practiceType,
+        onStartPractice: () => {
+          // 跳转到练习页面的逻辑
+          router.pushNamedRoute({
+            name: BankConstants.ROUTER_EXERCISE_LIST,
+            params: { qid: this.mCurBank.qid }
+          }, router.RouterMode.Single)
+        }
       })
     });
     this.dialogDownloadController.open();
-
   }
 
   aboutToAppear(): void {
@@ -108,7 +119,9 @@ struct BankDetailsPage {
   }
 
   formatFirstTypeOption(option: string, optionIndex: number): string {
-    if (!option) return '';
+    if (!option) {
+      return '';
+    }
 
     const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     const label = optionLabels[optionIndex] || (optionIndex + 1).toString();
@@ -117,10 +130,14 @@ struct BankDetailsPage {
 
   // 在 BankDetailsPage 组件中添加此方法
   formatOptionText(option: string, optionIndex: number): string {
-    if (!option) return '';
+    if (!option) {
+      return '';
+    }
 
     const trimmedOption = option.trim();
-    if (trimmedOption === '') return '';
+    if (trimmedOption === '') {
+      return '';
+    }
 
     // 检查是否以 "A-"、"A."、"A、"、"A "、"A："等开头
     const hasPrefix = /^[A-Z][-.\s、：]/.test(trimmedOption);
@@ -135,7 +152,6 @@ struct BankDetailsPage {
       return `${label}. ${trimmedOption}`;
     }
   }
-
 
   private initDialog() {
     LoadingDialog.setContext(this.ctx);
@@ -194,7 +210,7 @@ struct BankDetailsPage {
                 Text("题库状态：")
                   .fontColor($r('app.color.c_9d9d9d'))
                   .fontSize($r('app.float.font_size_10fp'))
-                if (this.bankDetails.downloadedState === 1) {
+                if (this.downloadedState === 0) {
                   Text("已下载")
                     .fontColor(Color.Blue)
                     .fontSize($r('app.float.font_size_10fp'))
@@ -242,10 +258,100 @@ struct BankDetailsPage {
                 Image($r('app.media.ic_question_bank_exercise'))
                   .width(60)
                   .height(60)
+                  .onClick(async () => {
+                    this.mCurBank = this.bankDetails;
+                    if (this.downloadedState === 1) {
+                      //下载
+                      LoadingDialog.openDialog()
+                      try {
+                        const success = await this.bankModel.downLoadBank(this.bankDetails!);
+                        if (success) {
+                          //更新状态为已下载
+                          this.downloadedState = 0
+                          this.bankUpdate = false
+                          this.updateStatusMap.set(this.bankDetails!.qid, false);
+                          this.refreshTrigger++; // 触发UI更新
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(true, false, true, 'exercise')
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                            "question_bank_id": this.bankDetails!.qid
+                          })
+                          emitter.emit(EmitterConstants.EM_REFRESH_BANK)
+                        } else {
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(false, false)
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                            "question_bank_id": this.bankDetails!.qid
+                          })
+                        }
+                      } catch (error) {
+                        Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
+                        LoadingDialog.closeDialog()
+                        this.showDownloadOverDialog(false, false)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                          "question_bank_id": this.bankDetails!.qid
+                        })
+                      }
+                    } else {
+                      // 已下载，直接跳转到练习
+                      router.pushNamedRoute({
+                        name: BankConstants.ROUTER_EXERCISE_LIST,
+                        params: { qid: this.mCurBank.qid }
+                      }, router.RouterMode.Single)
+                    }
+                  })
                 Image($r('app.media.ic_practice'))
                   .width(60)
                   .height(60)
                   .margin({ left: 18 })
+
+                  .onClick(async () => {
+                    this.mCurBank = this.bankDetails;
+                    if (this.downloadedState === 1) {
+                      //下载
+                      LoadingDialog.openDialog()
+                      try {
+                        const success = await this.bankModel.downLoadBank(this.bankDetails!);
+                        if (success) {
+                          //更新状态为已下载
+                          this.downloadedState = 0
+                          this.bankUpdate = false
+                          this.updateStatusMap.set(this.bankDetails!.qid, false);
+                          this.refreshTrigger++; // 触发UI更新
+                          LoadingDialog.closeDialog()
+                          // 修改：传递模拟考试类型参数
+                          this.showDownloadOverDialog(true, false, true, 'exam')
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                            "question_bank_id": this.bankDetails!.qid
+                          })
+                          emitter.emit(EmitterConstants.EM_REFRESH_BANK)
+                        } else {
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(false, false)
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                            "question_bank_id": this.bankDetails!.qid
+                          })
+                        }
+                      } catch (error) {
+                        Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
+                        LoadingDialog.closeDialog()
+                        this.showDownloadOverDialog(false, false)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                          "question_bank_id": this.bankDetails!.qid
+                        })
+                      }
+                    } else {
+                      // 已下载，直接跳转到模拟考试
+                      router.pushNamedRoute({
+                        name: BankConstants.ROUTER_EXERCISE_COMMON_LIST,
+                        params: {
+                          practiceMode: 1,
+                          qid: this.mCurBank.qid
+                        }
+                      }, router.RouterMode.Single)
+                    }
+
+                  })
               }
               .width('100%')
               .margin({ top: 18 })
@@ -269,7 +375,7 @@ struct BankDetailsPage {
                 .fontWeight(600)
                 .margin({ bottom: 10 })
 
-              if(this.downloadedState === 0 ) {
+              if (this.questionList.length > 0) {
                 Column() {
                   // 遍历显示所有题目
                   ForEach(this.questionList, (item: QuestionRes, index: number) => {
@@ -335,7 +441,7 @@ struct BankDetailsPage {
                 }
                 .width('100%')
                 .alignItems(HorizontalAlign.Start)
-              }else {
+              } else {
                 Column() {
                   // 遍历显示所有题目
                   ForEach(this.questionListtwo, (item: QuestionItem, index: number) => {
@@ -418,30 +524,31 @@ struct BankDetailsPage {
 
         Blank()
         Stack() {
-          Image(this.bankDetails.downloadedState === 1 ?
-            this.bankUpdate ?  $r('app.media.ic_bank_detail_bg'):
-          $r('app.media.ic_bank_detail_bgs') : $r('app.media.ic_bank_detail_bg'))
+          Image(this.downloadedState === 0 ?
+            this.bankUpdate ? $r('app.media.ic_bank_detail_bg') :
+            $r('app.media.ic_bank_detail_bgs') : $r('app.media.ic_bank_detail_bg'))
             .objectFit(ImageFit.Cover)
             .width(282)
             .onClick(async () => {
-              Logger.info(TAG, '题库内容11--------' + this.bankDetails!.downloadedState)
-              if (this.bankDetails!.downloadedState === 2) {
+              this.mCurBank = this.bankDetails;
+
+              if (this.downloadedState === 1) {
                 Logger.info(TAG, '题库内容--------' + JSON.stringify(this.bankDetails))
                 LoadingDialog.openDialog()
                 try {
                   const success = await this.bankModel.downLoadBank(this.bankDetails!);
                   if (success) {
-                    // Logger.info(TAG, '下载成功' + item)
                     //更新状态为已下载
-                    this.bankDetails!.downloadedState = 1
+                    this.downloadedState = 0
+                    this.bankUpdate = false
                     this.updateStatusMap.set(this.bankDetails!.qid, false);
                     this.refreshTrigger++; // 触发UI更新
                     LoadingDialog.closeDialog()
                     this.showDownloadOverDialog(true, false)
-
                     onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
                       "question_bank_id": this.bankDetails!.qid
                     })
+                    emitter.emit(EmitterConstants.EM_REFRESH_BANK)
                   } else {
                     // Logger.info(TAG, '下载失败' + item)
                     LoadingDialog.closeDialog()
@@ -459,17 +566,14 @@ struct BankDetailsPage {
                   })
                 }
               } else {
-                Logger.info(TAG, '更更新--------' + JSON.stringify(this.bankDetails))
-
-                const needUpdate = this.updateStatusMap.get(this.bankDetails!.qid) ?? false;
-                //更新
-                if (needUpdate) {
+                if (this.bankUpdate) {
                   LoadingDialog.setContentNode(this.contentNodeUpdate);
                   LoadingDialog.openDialog()
                   try {
                     const success = await this.bankModel.refreshBank(this.bankDetails!)
                     if (success) {
-                      this.bankDetails!.downloadedState = 1
+                      this.downloadedState = 0
+                      this.bankUpdate = false
                       this.updateStatusMap.set(this.bankDetails!.qid, false); // 更新成功后重置更新状态
                       this.refreshTrigger++; // 触发UI更新
                       LoadingDialog.closeDialog()
@@ -477,6 +581,7 @@ struct BankDetailsPage {
                       onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
                         "question_bank_id": this.bankDetails!.qid
                       })
+                      emitter.emit(EmitterConstants.EM_REFRESH_BANK)
                     } else {
                       LoadingDialog.closeDialog()
                       this.showDownloadOverDialog(false, true)
@@ -494,7 +599,7 @@ struct BankDetailsPage {
                 }
               }
             })
-          Text(this.bankDetails.downloadedState === 1 ? this.bankUpdate ? "更新" : "已最新"  : "下载")
+          Text(this.bankDetails.downloadedState === 1 ? this.bankUpdate ? "更新" : "已最新" : "下载")
             .fontColor($r('app.color.white'))
             .fontSize($r('app.float.font_size_14fp'))
         }
@@ -521,8 +626,11 @@ struct BankDetailsPage {
 struct DownloadOverDialog {
   success: boolean = false
   isUpdate: boolean = false
+  fromPractice: boolean = false // 新增：是否来自练习点击
+  practiceType: string = '' // 新增：练习类型
   controller: CustomDialogController
   bank: BankListRes = {} as BankListRes
+  onStartPractice?: () => void // 新增：开始练习回调
 
   constructor(controller: CustomDialogController, bank: BankListRes) {
     super();
@@ -539,14 +647,19 @@ struct DownloadOverDialog {
         : "导入失败：文件不存在或者内容格式异常").fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 20 })
-      Text("确定")
+
+      // 修改按钮文字和点击行为
+      Text(this.success && this.fromPractice ? "开始练习" : "确定")
         .width(80)
         .height(30)
+        .fontSize(14)
         .borderRadius(5)
         .backgroundColor($r('app.color.c_fce8e8'))
         .onClick(() => {
-
           this.controller.close()
+          if (this.success && this.fromPractice && this.onStartPractice) {
+            this.onStartPractice();
+          }
         })
         .textAlign(TextAlign.Center)
         .margin({ top: 25, bottom: 15 })

@@ -6,6 +6,8 @@ export class EmitterConstants {
   static readonly EM_USER_LOGIN = 'userLogin'
   //刷新首页
   static readonly EM_REFRESH_HOME = 'refreshHome'
+  //刷新题库广场
+  static readonly EM_REFRESH_BANK = 'refreshBank'
   //刷新修改颜色
   static readonly SETTING_COLOR = 'color_setting'
 }
