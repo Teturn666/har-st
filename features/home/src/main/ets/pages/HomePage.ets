@@ -1,6 +1,11 @@
-import { CommonConstants as Const, EmitterConstants,
+import {
+  CommonConstants as Const,
+  EmitterConstants,
   GetAllSelectedUtil,
-  Logger, PreferencesConstants, preferencesUtils } from 'utils/Index'
+  Logger,
+  PreferencesConstants,
+  preferencesUtils
+} from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { emitter } from '@kit.BasicServicesKit'
 
@@ -137,7 +142,7 @@ export struct HomePage {
   }
 
   // 打开选择题库对话框的方法
-  async showSelectBankDialog(callBack: Function) {
+  async showSelectBankDialog(isVipDialogCallBack: Function, isChangeTextCallBack: Function) {
     this.dialogController = new CustomDialogController({
       builder: selectBankDialog({
         bankList: this.bankList,
@@ -153,14 +158,12 @@ export struct HomePage {
             this.AdDialogController?.open()
           } else {
             if (this.bankList.length > 0) {
-              callBack()
+              isVipDialogCallBack()
             }
           }
         },
         isChangeText: () => {
-          router.pushNamedRoute({
-            name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-          })
+          isChangeTextCallBack()
         }
       })
 
@@ -174,6 +177,10 @@ export struct HomePage {
 
     if (!this.getIsShowDialog()) {
       this.showSelectBankDialog(() => {
+        router.pushNamedRoute({
+          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+        })
+      }, () => {
         router.pushNamedRoute({
           name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
         })
@@ -208,7 +215,6 @@ export struct HomePage {
     // 设置回调
     screenCaptureManager?.setCallback({
       onPixelMapReady: async (pixelMap: image.PixelMap) => {
-        console.log(TAG, '收到截图');
         ocrToText.loadImage(pixelMap)
       }
     });
@@ -222,7 +228,7 @@ export struct HomePage {
     this.currentSearchMode = SearchMode.SCREEN_READ;
 
     if (!this.getIsShowDialog()) {
-      this.showSelectBankDialog(this.readSearch)
+      this.showSelectBankDialog(this.readSearch, this.readSearch)
     } else {
       // 判断是否为vip,不是vip则看广告，是vip则直接跳转
       if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.AdInit?.code) {
@@ -587,34 +593,39 @@ struct SearchList {
   }
   ScreenReader: () => void = () => {
   }
-  @State pipAnswer: string = ''
+  @State pipAnswer: string = '暂未搜索到该题'
 
   async aboutToAppear() {
+    let firstTime = true
     // 判断从哪个文件里取 mDataText 以及 mDataSize
     let mDataText: SharedArrayBuffer | null = null
 
-    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
-    if (isAllSelect) {
-      mDataText =
-        await SearchMapManage.getInstance()
-          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-    } else {
-      mDataText =
-        await SearchMapManage.getInstance()
-          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
-    }
     // 注册回调，从ocr拿到文字信息
     emitter.on("dataText", async (event) => {
       const ocrText: string = event.data!["text"].replace(/\r?\n/g, '')
 
-      console.log(TAG, "ocrText = " + ocrText)
+      if (firstTime) {
+        let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+        if (isAllSelect) {
+          mDataText =
+            await SearchMapManage.getInstance()
+              .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+        } else {
+          mDataText =
+            await SearchMapManage.getInstance()
+              .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+        }
+        firstTime = false
+      }
+
+      // console.log(TAG, "ocrText = " + ocrText)
       // 进行搜索，然后返回给画中画
       if (mDataText && mDataText?.byteLength !== 0) {
         // 过滤掉画中画的text
         const filterData = QuestionUtil.analyzeTextMatch(ocrText, this.pipAnswer, 0.5);
         // console.log(TAG, "ocrText = " + ocrText)
         // console.log(TAG, "this.answerAndQuestion = " + this.answerAndQuestion)
-        console.log(TAG, "data.remainingText = " + filterData.remainingText)
+        // console.log(TAG, "data.remainingText = " + filterData.remainingText)
         this.searchResult(filterData.remainingText, mDataText)
       }
     })
