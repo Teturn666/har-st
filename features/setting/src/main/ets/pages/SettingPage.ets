@@ -142,8 +142,21 @@ export struct SettingPage {
 
       Column() {
         Row() {
-          SettingColor({ TextColorSetting: '题目颜色设置', Usage: '设置悬浮窗普通文本颜色', TypeSetting: 0 })
+          SettingColor({ TextColorSetting: '题目颜色设置', Usage: '设置悬浮窗普通文本颜色', TypeSetting: 0,ShowColor: true })
         }
+        .justifyContent(FlexAlign.Center)
+        .height(55)
+         Divider()
+        Row(){
+          SettingColor({TextColorSetting:'选项颜色设置',Usage:'设置悬浮窗答案文本颜色',TypeSetting:1,ShowColor: true})
+        }
+        .justifyContent(FlexAlign.Center)
+        .height(55)
+         Divider()
+
+        Row(){
+          SettingColor({TextColorSetting:'题目颜色设置',Usage:'设置悬浮窗颜色和透明度',TypeSetting:2,ShowColor: true})
+         }
         .justifyContent(FlexAlign.Center)
         .height(55)
          Divider()
@@ -156,8 +169,6 @@ export struct SettingPage {
         .justifyContent(FlexAlign.Center)
         .height(55)
          Divider()
-        // SettingColor({TextColorSetting:'选项颜色设置',Usage:'设置悬浮窗答案文本颜色',TypeSetting:1})
-        // SettingColor({TextColorSetting:'题目颜色设置',Usage:'设置悬浮窗颜色和透明度',TypeSetting:2})
 
 
       }
