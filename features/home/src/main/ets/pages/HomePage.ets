@@ -386,12 +386,11 @@ export struct HomePage {
       this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
       this.isShowAd = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
-      this.showSelectBankDialog(this.readSearch, this.readSearch)
       this.TypeRead = () => {
         this.readSearch()
       }
       this.TypeSearch = true
-
+      await this.showSelectBankDialog(this.readSearch, this.readSearch)
     } else {
       // 判断是否为vip,不是vip则看广告，是vip则直接跳转
       if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.AdInit?.code) {
@@ -409,33 +408,40 @@ export struct HomePage {
         }
       }
     }
+  }
+
+  private getMdataText = async () => {
     // 获取mDataText
     let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
     if (isAllSelect) {
       this.mDataText = await SearchMapManage.getInstance()
         .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+      console.log(TAG, 'this.mDataText 修改成功')
     } else {
       this.mDataText = await SearchMapManage.getInstance()
         .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+      console.log(TAG, 'this.mDataText 修改成功')
     }
   }
 
   /**
    * 点击读屏搜题处理逻辑
    */
-  private async readSearch() {
+  private readSearch = async () => {
+    await this.getMdataText()
+
     // 读屏搜题
     const screenCaptureManager = ScreenCaptureManager.getInstance(getContext(this) as common.ApplicationContext);
 
     // 设置回调
-    screenCaptureManager?.setCallback({
+    screenCaptureManager.setCallback({
       onPixelMapReady: async (pixelMap: image.PixelMap) => {
         ocrToText.loadImage(pixelMap)
       }
     });
 
     // 开启读屏幕
-    screenCaptureManager?.startScreenCapture();
+    screenCaptureManager.startScreenCapture();
   }
 
   private async searchResult(ocrText: string, mDataText: SharedArrayBuffer) {
