@@ -3,7 +3,6 @@ import { PreferencesConstants, preferencesUtils } from "utils";
 import { ConfigRes } from "utils/src/main/ets/model/ConfigRes";
 import { HmAdInfo, } from "utils/src/main/ets/model/HmAdInfo";
 import { rewardAd, RewardAd } from "utils/src/main/ets/utils/RewardAd";
-import { CSJStartResult } from "utils/src/main/ets/model/StartResult";
 import HomeConstants from "../Constants/HomeConstants";
 
 
@@ -11,17 +10,14 @@ import HomeConstants from "../Constants/HomeConstants";
 export struct AdCustomDialog {
   @State @Watch('isClose') isVerify: boolean = false
   @State isVip: number = 0
-  @StorageProp("isInit")
-   AdInit:CSJStartResult= {
-     code: 0,
-     msg: ""
-   }
-   @Prop CsjId:string=""
-   @Prop CsjIsShow:boolean=false
+  @State CsjCode: number = 0
+  @Prop TypeSearch: boolean = false
+  @Prop CsjId: string = ""
+  @Prop CsjIsShow: boolean = false
   controller?: CustomDialogController;
   isShowDialog: () => void = () => {
   }
-  isCloseFun: () => void = () => {
+  readSearch: () => void = () => {
   }
   rewardAd: RewardAd | null = new RewardAd()
   CsjHmParams: ConfigRes = {
@@ -30,8 +26,16 @@ export struct AdCustomDialog {
 
   isClose() {
     this.controller?.close()
-    if (this.isVerify){
-      this.isCloseFun()
+    if (this.isVerify) {
+      if (this.TypeSearch) {
+        this.readSearch()
+
+      } else {
+        router.pushNamedRoute({
+          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+        })
+      }
+
     }
   }
 
@@ -40,6 +44,7 @@ export struct AdCustomDialog {
 
   onPageShow(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
+    this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
     this.CsjHmParams = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
 
 
@@ -85,7 +90,7 @@ export struct AdCustomDialog {
         })
         .onClick(() => {
 
-          if (this.CsjIsShow && !this.AdInit?.code) {
+          if (this.CsjIsShow && !this.CsjCode) {
             rewardAd.CsjSdkId = this.CsjId
             rewardAd.AdSlotBuilder((isVerify: boolean) => {
               this.isVerify = isVerify

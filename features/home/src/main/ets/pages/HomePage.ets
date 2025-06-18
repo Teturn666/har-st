@@ -35,7 +35,6 @@ import { SearchEngine } from 'search'
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 import { Params, PipManager } from '../manage/PipManage'
-import { CSJStartResult } from 'utils/src/main/ets/model/StartResult'
 import { ocrToText } from '../utils/OcrToText'
 import { ScreenCaptureManager } from '../manage/ScreenCaptureManager'
 import { QuestionUtil } from '../utils/QuestionUtil'
@@ -98,54 +97,51 @@ export struct HomePage {
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
   @State isVip: number = 0
+  @State CsjCode: number = 0
   @State CsjId: string = ""
   @State CsjIsShow: boolean = false
   @State currentSearchMode: SearchMode | null = null; // 当前搜题模式
+  @State TypeSearch: boolean = false
+  TypeRead: () => void = () => {
+  }
   CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
-  @StorageProp("isInit")
-  AdInit: CSJStartResult = {
-    code: 0,
-    msg: ""
-  }
   @State pipAnswer: string = '暂未搜索到该题'
   mDataText: SharedArrayBuffer | null = null
-  private AdDialogController: CustomDialogController | null = null
-  // 更新广告弹窗控制器
-  private updateAdDialogController = (isCloseFun: () => void) => {
-    this.AdDialogController = new CustomDialogController({
-      builder: AdCustomDialog({
-        isShowDialog: (() => {
-          this.AdDialogController?.close()
-        }),
-        isCloseFun: isCloseFun, // 使用传入的回调
-        CsjId: this.CsjId,
-        CsjIsShow: this.CsjIsShow
+  AdDialogController = new CustomDialogController({
+    builder: AdCustomDialog({
+      isShowDialog: (() => {
+        this.AdDialogController?.close()
       }),
-      autoCancel: false,
-      alignment: DialogAlignment.Center,
-      offset: { dx: 0, dy: -20 },
-      gridCount: 4,
-      customStyle: false,
-      backgroundColor: 0xd9ffffff,
-      cornerRadius: 5,
-      width: 300,
-      height: 350,
-      maskColor: "#88000000",
-      borderStyle: BorderStyle.Dashed,
-      shadow: ({
-        radius: 20,
-        color: Color.Grey,
-        offsetX: 10,
-        offsetY: 10
-      }),
-    });
-  }
+      readSearch: this.TypeRead,
+      CsjId: this.CsjId,
+      CsjIsShow: this.CsjIsShow,
+      TypeSearch: this.TypeSearch
+    }),
+    autoCancel: false,
+    alignment: DialogAlignment.Center,
+    offset: { dx: 0, dy: -20 },
+    gridCount: 4,
+    customStyle: false,
+    backgroundColor: 0xd9ffffff,
+    cornerRadius: 5,
+    width: 300,
+    height: 350,
+    maskColor: "#88000000",
+    borderStyle: BorderStyle.Dashed,
+    shadow: ({
+      radius: 20,
+      color: Color.Grey,
+      offsetX: 10,
+      offsetY: 10
+    }),
+  });
 
   aboutToAppear(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
+    this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
     this.loadResource()
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
       this.loadResource()
@@ -310,8 +306,8 @@ export struct HomePage {
         isVipDialog: () => {
           this.dialogController?.close()
           //弹窗
-          if (!this.isVip && this.bankList.length > 0 && !!this.CsjHmAD?.hmAd?.rewardScan?.switchOff &&
-            !this.AdInit?.code) {
+          if (!this.isVip && this.bankList.length > 0 && this.CsjIsShow &&
+            !this.CsjCode) {
             this.AdDialogController?.open()
           } else {
             if (this.bankList.length > 0) {
@@ -338,6 +334,9 @@ export struct HomePage {
       emitter.off(EmitterConstants.EM_DATA_TEXT)
     }
     if (!this.getIsShowDialog()) {
+      this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
+      this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+      this.TypeSearch = false
       this.showSelectBankDialog(() => {
         router.pushNamedRoute({
           name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
@@ -348,19 +347,17 @@ export struct HomePage {
         })
       })
     } else {
-      // 判断是否为vip,不是vip则看广告，是vip则直接跳转
-      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.AdInit?.code) {
+
+      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.CsjCode) {
         this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
         this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+        this.TypeSearch = false
+
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {
-          // 关闭广告弹窗执行回调事件
-          this.updateAdDialogController(() => {
-            // 跳转到扫描搜题页面
-            router.pushNamedRoute({
-              name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-            })
+          router.pushNamedRoute({
+            name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
           })
         }
       }
@@ -387,12 +384,22 @@ export struct HomePage {
     this.currentSearchMode = SearchMode.SCREEN_READ;
 
     if (!this.getIsShowDialog()) {
+      this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
+      this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
+      this.TypeRead = () => {
+        this.readSearch()
+      }
+      this.TypeSearch = true
       await this.showSelectBankDialog(this.readSearch, this.readSearch)
     } else {
       // 判断是否为vip,不是vip则看广告，是vip则直接跳转
-      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.AdInit?.code) {
-        this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
-        this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.CsjCode) {
+        this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
+        this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
+        this.TypeSearch = true
+        this.TypeRead = () => {
+          this.readSearch()
+        }
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {

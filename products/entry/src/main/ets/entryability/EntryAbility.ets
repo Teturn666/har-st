@@ -37,12 +37,7 @@ export default class EntryAbility extends UIAbility {
     let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
     if (res?.hmAd?.adconfig?.csjAppId) {
       cSJAdSdkAd.ConfigSDK()
-      AppStorage.setOrCreate('isInit', true)
-      preferencesUtils.putBoolean(PreferencesConstants.CSJ_INIT_FAIL, true)
-    } else {
-      preferencesUtils.putBoolean(PreferencesConstants.CSJ_INIT_FAIL, false)
-      AppStorage.setOrCreate('isInit', false)
-    }
+      }
 
   }
 

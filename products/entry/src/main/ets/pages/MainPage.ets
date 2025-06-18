@@ -13,7 +13,7 @@ import { emitter } from '@kit.BasicServicesKit';
 import { splashAd } from '../utils/SplashAd';
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo';
-import { CSJStartResult } from 'utils/src/main/ets/model/StartResult';
+
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -26,16 +26,11 @@ struct MainPage {
   @State mainModel: MainModel = MainModel.getInstance()
   @State isShow: boolean = false
   @State timer: number = 0
+  @State CsjCode: number = 0
   @State configRes: ConfigRes = new ConfigRes()
   @State isVip: number = 0
-  @State csjFail: boolean = false
   @State CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
-  }
-  @StorageProp("isInit")
-  AdInit: CSJStartResult = {
-    code: 0,
-    msg: ""
   }
 
   private initPreferences() {
@@ -55,8 +50,7 @@ struct MainPage {
     this.mainModel.initDb()
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP);
-    this.csjFail = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL);
-
+    this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
     this.getCSJ()
     this.ShowSplash()
   }
@@ -68,7 +62,7 @@ struct MainPage {
   }
 
   ShowSplash() {
-    if (this.CsjHmAD?.hmAd?.splash?.switchOff && !this.AdInit?.code && !this.isVip) {
+    if (this.CsjHmAD?.hmAd?.splash?.switchOff && !this.CsjCode && !this.isVip) {
       this.timer = setTimeout(() => {
         splashAd.ShowSplash((ids: boolean) => {
           this.isShow = ids
@@ -111,7 +105,7 @@ struct MainPage {
               this.currentIndex = index
               if (index === TabBarType.HOME) {
                 emitter.emit(EmitterConstants.EM_REFRESH_HOME)
-              }else if(index === TabBarType.BANK) {
+              } else if (index === TabBarType.BANK) {
                 emitter.emit(EmitterConstants.EM_REFRESH_BANK)
               }
             })
