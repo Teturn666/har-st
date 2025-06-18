@@ -19,6 +19,10 @@ export class MainNet {
           const code = res.data.code
           if (code === "0" && res.data.data) {
             let jsonObj = JSON.parse(res.data.data) as ConfigRes
+
+            //TODO 上线需注释，切记！！！！广告测试开关及数据。
+            // this.testAd(jsonObj)
+
             preferencesUtils.putGenerics(PreferencesConstants.CSJ_AD_PARAMS, jsonObj)
             resolve(jsonObj)
           } else {
@@ -29,5 +33,16 @@ export class MainNet {
           reject(error)
         })
     })
+  }
+
+  //广告测试数据
+  private testAd(jsonObj: ConfigRes) {
+    jsonObj.hmAd.adconfig.csjAppId = '5477447'
+    jsonObj.hmAd.rewardScan.csj = '955804646'
+    jsonObj.hmAd.rewardScan.switchOff = true
+    jsonObj.hmAd.rewardRead.csj = '955804646'
+    jsonObj.hmAd.rewardRead.switchOff = true
+    jsonObj.hmAd.rewardPoint.csj = '955804646'
+    jsonObj.hmAd.rewardPoint.switchOff = false
   }
 }

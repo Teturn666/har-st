@@ -333,27 +333,28 @@ export struct PointsPage {
           }
         })
 
-        // TaskCard({
-        //   points: "+5积分",
-        //   unit: "/个",
-        //   title: "看广告赚积分",
-        //   description:  ` (今日还剩${this.adTimes}次)`,
-        //   buttonImage: this.adTimes > 0 && this.CsjHmAD?.hmAd?.rewardPoint?.switchOff ? $r('app.media.ic_complete') :
-        //   $r('app.media.ic_comple'),
-        //   nClick: () => {
-        //     if (this.adTimes > 0) {
-        //       if (this.CsjHmAD?.hmAd?.rewardPoint?.switchOff) {
-        //         let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
-        //         rewardAd.CsjSdkId=res?.hmAd?.rewardPoint?.csj
-        //         rewardAd.AdSlotBuilder((isVerify: boolean) => {
-        //           if (isVerify) {
-        //             this.getPointsByAd()
-        //           }
-        //         })
-        //       }
-        //     }
-        //   }
-        // })
+        TaskCard({
+          isVisibility: this.CsjHmAD?.hmAd?.rewardPoint?.switchOff,
+          points: "+5积分",
+          unit: "/个",
+          title: "看广告赚积分",
+          description: ` (今日还剩${this.adTimes}次)`,
+          buttonImage: this.adTimes > 0 ? $r('app.media.ic_complete') :
+          $r('app.media.ic_comple'),
+          nClick: () => {
+            if (this.adTimes > 0) {
+              if (this.CsjHmAD?.hmAd?.rewardPoint?.switchOff) {
+                let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+                rewardAd.CsjSdkId = res?.hmAd?.rewardPoint?.csj
+                rewardAd.AdSlotBuilder((isVerify: boolean) => {
+                  if (isVerify) {
+                    this.getPointsByAd()
+                  }
+                })
+              }
+            }
+          }
+        })
 
         TaskCard({
           points: "+10积分",
@@ -420,6 +421,7 @@ struct TaskCard {
   @State points: string = '';
   @State unit: string = '';
   @State title: string = '';
+  @State isVisibility: boolean = true;
   @Prop description: string = '';
   @Prop buttonImage: Resource = $r('app.media.ic_share');
   nClick: () => void = () => {
@@ -464,5 +466,6 @@ struct TaskCard {
     .height('70')
     .borderRadius(5)
     .backgroundColor('#ecebeb')
+    .visibility(this.isVisibility ? Visibility.Visible : Visibility.None)
   }
 }
