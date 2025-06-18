@@ -5,6 +5,7 @@ import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage';
 import { SearchEngine } from 'search';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { UserBankSelection } from '../model/UserBankSelection';
+import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage';
 
 
 const TAG = 'SelectBankDialog';
@@ -479,6 +480,15 @@ export struct selectBankDialog {
 
               await SearchEngine.getInstance()
                 .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+
+              let data = await SearchMapManage.getInstance()
+                .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+              // 存入部分题库的缓存
+              MDataTextManage.getInstance().saveDataText(data)
+            } else {
+              let data = await SearchMapManage.getInstance()
+                .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+              MDataTextManage.getInstance().saveDataText(data)
             }
 
             if (!this.isVip) {
