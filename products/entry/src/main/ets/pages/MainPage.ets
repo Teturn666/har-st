@@ -28,7 +28,6 @@ struct MainPage {
   @State timer: number = 0
   @State configRes: ConfigRes = new ConfigRes()
   @State isVip: number = 0
-  @State csjFail: boolean = false
   @State CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
@@ -55,7 +54,7 @@ struct MainPage {
     this.mainModel.initDb()
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP);
-    this.csjFail = preferencesUtils.getBoolean(PreferencesConstants.CSJ_INIT_FAIL);
+
 
     this.getCSJ()
     this.ShowSplash()
@@ -111,7 +110,7 @@ struct MainPage {
               this.currentIndex = index
               if (index === TabBarType.HOME) {
                 emitter.emit(EmitterConstants.EM_REFRESH_HOME)
-              }else if(index === TabBarType.BANK) {
+              } else if (index === TabBarType.BANK) {
                 emitter.emit(EmitterConstants.EM_REFRESH_BANK)
               }
             })
