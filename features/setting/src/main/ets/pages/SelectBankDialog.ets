@@ -469,16 +469,6 @@ export struct selectBankDialog {
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
 
-            if (!this.isVip) {
-              if (this.isVipDialog) {
-                this.isVipDialog()
-              }
-            } else {
-              if (this.isChangeText) {
-                this.isChangeText()
-              }
-            }
-
             // 判断选择部分题库进行初始化
             if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
               await SearchMapManage.getInstance()
@@ -489,6 +479,16 @@ export struct selectBankDialog {
 
               await SearchEngine.getInstance()
                 .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+            }
+
+            if (!this.isVip) {
+              if (this.isVipDialog) {
+                this.isVipDialog()
+              }
+            } else {
+              if (this.isChangeText) {
+                this.isChangeText()
+              }
             }
           })
       }
