@@ -35,7 +35,6 @@ import { SearchEngine } from 'search'
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 import { Params, PipManager } from '../manage/PipManage'
-import { CSJStartResult } from 'utils/src/main/ets/model/StartResult'
 import { ocrToText } from '../utils/OcrToText'
 import { ScreenCaptureManager } from '../manage/ScreenCaptureManager'
 import { QuestionUtil } from '../utils/QuestionUtil'
@@ -98,20 +97,15 @@ export struct HomePage {
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
   @State isVip: number = 0
+  @State CsjCode: number = 0
   @State CsjId: string = ""
   @State CsjIsShow: boolean = false
-  @State isShowAd: boolean = false
   @State currentSearchMode: SearchMode | null = null; // 当前搜题模式
   @State TypeSearch: boolean = false
   TypeRead: () => void = () => {
   }
   CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
-  }
-  @StorageProp("isInit")
-  AdInit: CSJStartResult = {
-    code: 0,
-    msg: ""
   }
   @State pipAnswer: string = '暂未搜索到该题'
   mDataText: SharedArrayBuffer | null = null
@@ -147,6 +141,7 @@ export struct HomePage {
   aboutToAppear(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
+    this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
     this.loadResource()
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
       this.loadResource()
@@ -323,8 +318,8 @@ export struct HomePage {
         isVipDialog: () => {
           this.dialogController?.close()
           //弹窗
-          if (!this.isVip && this.bankList.length > 0 && this.isShowAd &&
-            !this.AdInit?.code) {
+          if (!this.isVip && this.bankList.length > 0 && this.CsjIsShow &&
+            !this.CsjCode) {
             this.AdDialogController?.open()
           } else {
             if (this.bankList.length > 0) {
@@ -348,7 +343,6 @@ export struct HomePage {
     if (!this.getIsShowDialog()) {
       this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
-      this.isShowAd = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
       this.TypeSearch = false
       this.showSelectBankDialog(() => {
         router.pushNamedRoute({
@@ -360,17 +354,15 @@ export struct HomePage {
         })
       })
     } else {
-      // 判断是否为vip,不是vip则看广告，是vip则直接跳转
-      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.AdInit?.code) {
+
+      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.CsjCode) {
         this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
         this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
-        this.isShowAd = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
         this.TypeSearch = false
 
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {
-          // 关闭广告弹窗执行回调事件
           router.pushNamedRoute({
             name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
           })
@@ -385,7 +377,6 @@ export struct HomePage {
     if (!this.getIsShowDialog()) {
       this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
-      this.isShowAd = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
       this.TypeRead = () => {
         this.readSearch()
       }
@@ -393,10 +384,9 @@ export struct HomePage {
       await this.showSelectBankDialog(this.readSearch, this.readSearch)
     } else {
       // 判断是否为vip,不是vip则看广告，是vip则直接跳转
-      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.AdInit?.code) {
+      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.CsjCode) {
         this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
         this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
-        this.isShowAd = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
         this.TypeSearch = true
         this.TypeRead = () => {
           this.readSearch()
@@ -409,7 +399,6 @@ export struct HomePage {
       }
     }
   }
-
   private getMdataText = async () => {
     // 获取mDataText
     let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
@@ -423,7 +412,6 @@ export struct HomePage {
       console.log(TAG, 'this.mDataText 修改成功')
     }
   }
-
   /**
    * 点击读屏搜题处理逻辑
    */
