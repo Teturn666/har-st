@@ -100,7 +100,11 @@ export struct HomePage {
   @State isVip: number = 0
   @State CsjId: string = ""
   @State CsjIsShow: boolean = false
+  @State isShowAd: boolean = false
   @State currentSearchMode: SearchMode | null = null; // 当前搜题模式
+  @State TypeSearch: boolean = false
+  TypeRead: () => void = () => {
+  }
   CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
@@ -111,37 +115,34 @@ export struct HomePage {
   }
   @State pipAnswer: string = '暂未搜索到该题'
   mDataText: SharedArrayBuffer | null = null
-  private AdDialogController: CustomDialogController | null = null
-  // 更新广告弹窗控制器
-  private updateAdDialogController = (isCloseFun: () => void) => {
-    this.AdDialogController = new CustomDialogController({
-      builder: AdCustomDialog({
-        isShowDialog: (() => {
-          this.AdDialogController?.close()
-        }),
-        isCloseFun: isCloseFun, // 使用传入的回调
-        CsjId: this.CsjId,
-        CsjIsShow: this.CsjIsShow
+  AdDialogController = new CustomDialogController({
+    builder: AdCustomDialog({
+      isShowDialog: (() => {
+        this.AdDialogController?.close()
       }),
-      autoCancel: false,
-      alignment: DialogAlignment.Center,
-      offset: { dx: 0, dy: -20 },
-      gridCount: 4,
-      customStyle: false,
-      backgroundColor: 0xd9ffffff,
-      cornerRadius: 5,
-      width: 300,
-      height: 350,
-      maskColor: "#88000000",
-      borderStyle: BorderStyle.Dashed,
-      shadow: ({
-        radius: 20,
-        color: Color.Grey,
-        offsetX: 10,
-        offsetY: 10
-      }),
-    });
-  }
+      readSearch: this.TypeRead,
+      CsjId: this.CsjId,
+      CsjIsShow: this.CsjIsShow,
+      TypeSearch: this.TypeSearch
+    }),
+    autoCancel: false,
+    alignment: DialogAlignment.Center,
+    offset: { dx: 0, dy: -20 },
+    gridCount: 4,
+    customStyle: false,
+    backgroundColor: 0xd9ffffff,
+    cornerRadius: 5,
+    width: 300,
+    height: 350,
+    maskColor: "#88000000",
+    borderStyle: BorderStyle.Dashed,
+    shadow: ({
+      radius: 20,
+      color: Color.Grey,
+      offsetX: 10,
+      offsetY: 10
+    }),
+  });
 
   aboutToAppear(): void {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
@@ -322,7 +323,7 @@ export struct HomePage {
         isVipDialog: () => {
           this.dialogController?.close()
           //弹窗
-          if (!this.isVip && this.bankList.length > 0 && !!this.CsjHmAD?.hmAd?.rewardScan?.switchOff &&
+          if (!this.isVip && this.bankList.length > 0 && this.isShowAd &&
             !this.AdInit?.code) {
             this.AdDialogController?.open()
           } else {
@@ -345,6 +346,10 @@ export struct HomePage {
     this.currentSearchMode = SearchMode.SCAN;
 
     if (!this.getIsShowDialog()) {
+      this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
+      this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+      this.isShowAd = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+      this.TypeSearch = false
       this.showSelectBankDialog(() => {
         router.pushNamedRoute({
           name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
@@ -359,15 +364,15 @@ export struct HomePage {
       if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.AdInit?.code) {
         this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
         this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+        this.isShowAd = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+        this.TypeSearch = false
+
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {
           // 关闭广告弹窗执行回调事件
-          this.updateAdDialogController(() => {
-            // 跳转到扫描搜题页面
-            router.pushNamedRoute({
-              name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-            })
+          router.pushNamedRoute({
+            name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
           })
         }
       }
@@ -378,12 +383,25 @@ export struct HomePage {
     this.currentSearchMode = SearchMode.SCREEN_READ;
 
     if (!this.getIsShowDialog()) {
+      this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
+      this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
+      this.isShowAd = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
       this.showSelectBankDialog(this.readSearch, this.readSearch)
+      this.TypeRead = () => {
+        this.readSearch()
+      }
+      this.TypeSearch = true
+
     } else {
       // 判断是否为vip,不是vip则看广告，是vip则直接跳转
-      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.AdInit?.code) {
-        this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
-        this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
+      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.AdInit?.code) {
+        this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
+        this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
+        this.isShowAd = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
+        this.TypeSearch = true
+        this.TypeRead = () => {
+          this.readSearch()
+        }
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {

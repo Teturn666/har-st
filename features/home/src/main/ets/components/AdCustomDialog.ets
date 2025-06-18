@@ -11,17 +11,18 @@ import HomeConstants from "../Constants/HomeConstants";
 export struct AdCustomDialog {
   @State @Watch('isClose') isVerify: boolean = false
   @State isVip: number = 0
+  @Prop TypeSearch: boolean = false
   @StorageProp("isInit")
-   AdInit:CSJStartResult= {
-     code: 0,
-     msg: ""
-   }
-   @Prop CsjId:string=""
-   @Prop CsjIsShow:boolean=false
+  AdInit: CSJStartResult = {
+    code: 0,
+    msg: ""
+  }
+  @Prop CsjId: string = ""
+  @Prop CsjIsShow: boolean = false
   controller?: CustomDialogController;
   isShowDialog: () => void = () => {
   }
-  isCloseFun: () => void = () => {
+  readSearch: () => void = () => {
   }
   rewardAd: RewardAd | null = new RewardAd()
   CsjHmParams: ConfigRes = {
@@ -30,8 +31,16 @@ export struct AdCustomDialog {
 
   isClose() {
     this.controller?.close()
-    if (this.isVerify){
-      this.isCloseFun()
+    if (this.isVerify) {
+      if (this.TypeSearch) {
+        this.readSearch()
+
+      } else {
+        router.pushNamedRoute({
+          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
+        })
+      }
+
     }
   }
 
