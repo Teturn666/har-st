@@ -342,139 +342,151 @@ struct ExerciseCommonPage {
         .margin({ top: 10 })
         .padding(10);
 
-        // 内容部分
-        Row() {
-          Image(this.getQuestionTypeImage())
-            .height(24)
-            .objectFit(ImageFit.Cover)
-          Blank();
+        List(){
+          ListItem(){
+            // 内容部分
+            Row() {
+              Image(this.getQuestionTypeImage())
+                .height(24)
+                .objectFit(ImageFit.Cover)
+              Blank();
 
-          if (this.practiceMode === 1 || this.practiceMode === 3) {
-            Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
-            $r('app.media.star'))
-              .width(18)
-              .height(18)
-              .onClick(() => {
-                this.toggleFavorite();
-              })
-              .margin({ right: 5 })
-          }
-          if (this.practiceMode === 1 || this.practiceMode === 3) {
-            Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
-              .fontSize(12)
-          }
-          if (this.practiceMode === 2) {
-            Image($r('app.media.ic_del'))
-              .width(18)
-              .height(18)
-              .onClick(() => {
-                // 移除逻辑
-                this.removeCurrentQuestion()
-              })
-              .margin({ right: 5 });
-          }
+              if (this.practiceMode === 1 || this.practiceMode === 3) {
+                Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
+                $r('app.media.star'))
+                  .width(18)
+                  .height(18)
+                  .onClick(() => {
+                    this.toggleFavorite();
+                  })
+                  .margin({ right: 5 })
+              }
+              if (this.practiceMode === 1 || this.practiceMode === 3) {
+                Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
+                  .fontSize(12)
+              }
+              if (this.practiceMode === 2) {
+                Image($r('app.media.ic_del'))
+                  .width(18)
+                  .height(18)
+                  .onClick(() => {
+                    // 移除逻辑
+                    this.removeCurrentQuestion()
+                  })
+                  .margin({ right: 5 });
+              }
 
-          if (this.practiceMode === 2) {
-            Text("移除")
-              .fontColor('#F2B771')
-              .fontSize(12);
+              if (this.practiceMode === 2) {
+                Text("移除")
+                  .fontColor('#F2B771')
+                  .fontSize(12);
+              }
+            }
+            .justifyContent(FlexAlign.SpaceBetween)
+            .padding(10)
+            .backgroundColor(Color.White)
+            .borderRadius(8)
+            .margin({ top: 20 })
+            .width('100%');
           }
-        }
-        .justifyContent(FlexAlign.SpaceBetween)
-        .padding(10)
-        .backgroundColor(Color.White)
-        .borderRadius(8)
-        .margin({ top: 20 })
-        .width('90%');
-
-        // 问题描述
-        Text(this.questions[this.currentQuestionIndex].question)
-          .fontSize(16)
-          .padding({ left: 10, right: 10, top: 10 })
-          .textAlign(TextAlign.Start)
-          .width('90%');
-
-        // 选项列表
-        ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
-          Row() {
-            Text(this.getOptionLabel(idx))
-              .width(30)
-              .height(30)
-              .textAlign(TextAlign.Center)
+          ListItem(){
+            // 问题描述
+            Text(this.questions[this.currentQuestionIndex].question)
               .fontSize(16)
-              .fontColor('#000000')
-              .borderRadius(15)
-              .backgroundColor(
-                this.selectedIndex === 1
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                  '#F2F2F2')
-                  : (this.hasSubmitted
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                    ? '#DFF5E3'
-                    : (this.isMultipleChoice()
-                      ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                      : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                  : (this.isMultipleChoice()
-                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                    : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-              )
-              .margin({ right: 10 });
-            Text(item)
-              .fontSize(16)
+              .padding({ left: 10, right: 10, top: 10 })
+              .textAlign(TextAlign.Start)
+              .width('100%');
+          }
+          ListItem(){
+            // 选项列表
+            Column(){
+              ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
+                Row() {
+                  Text(this.getOptionLabel(idx))
+                    .width(30)
+                    .height(30)
+                    .textAlign(TextAlign.Center)
+                    .fontSize(16)
+                    .fontColor('#000000')
+                    .borderRadius(15)
+                    .backgroundColor(
+                      this.selectedIndex === 1
+                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
+                        '#F2F2F2')
+                        : (this.hasSubmitted
+                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
+                          ? '#DFF5E3'
+                          : (this.isMultipleChoice()
+                            ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
+                            : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
+                        : (this.isMultipleChoice()
+                          ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
+                          : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
+                    )
+                    .margin({ right: 10 });
+                  Text(item)
+                    .fontSize(16)
+                    .padding(10)
+                    .width('80%')
+                    .borderRadius(8)
+                    .backgroundColor(
+                      this.selectedIndex === 1
+                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
+                        '#F2F2F2')
+                        : (this.hasSubmitted
+                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
+                          ? '#DFF5E3'
+                          : (this.isMultipleChoice()
+                            ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
+                            : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
+                        : (this.isMultipleChoice()
+                          ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
+                          : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
+                    );
+                }
+                .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
+                .margin({ top: 12, left: 16, right: 16 });
+              });
+            }
+          }
+          ListItem(){
+            //按钮
+            if (((this.practiceMode === 3 || this.practiceMode === 2) && this.hasSubmitted)) {
+              Row() {
+                Button() {
+                  Text('上一题')
+                    .fontSize(16)
+                    .fontColor('#F2B771')
+                }
+                .width(100)
+                .height(30)
+                .backgroundColor(Color.White)
+                .borderRadius(20)
+                .border({ width: 1, color: '#F2B771' })
+                .onClick(() => this.goToPreviousQuestion())
+
+                Button() {
+                  Text('下一题')
+                    .fontSize(16)
+                    .fontColor('#F2B771')
+                }
+                .backgroundColor(Color.White)
+                .width(100)
+                .height(30)
+                .borderRadius(20)
+                .border({ width: 1, color: '#F2B771' })
+                .onClick(() => this.goToNextQuestion())
+              }
+              .justifyContent(FlexAlign.SpaceAround)
+              .alignItems(VerticalAlign.Center)
               .padding(10)
-              .width('80%')
-              .borderRadius(8)
-              .backgroundColor(
-                this.selectedIndex === 1
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                  '#F2F2F2')
-                  : (this.hasSubmitted
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                    ? '#DFF5E3'
-                    : (this.isMultipleChoice()
-                      ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                      : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                  : (this.isMultipleChoice()
-                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                    : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-              );
-          }
-          .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
-          .margin({ top: 12, left: 16, right: 16 });
-        });
-        //按钮
-        if (((this.practiceMode === 3 || this.practiceMode === 2) && this.hasSubmitted)) {
-          Row() {
-            Button() {
-              Text('上一题')
-                .fontSize(16)
-                .fontColor('#F2B771')
+              .width('100%')
+              .margin({ top: 18 })
             }
-            .width(100)
-            .height(30)
-            .backgroundColor(Color.White)
-            .borderRadius(20)
-            .border({ width: 1, color: '#F2B771' })
-            .onClick(() => this.goToPreviousQuestion())
-
-            Button() {
-              Text('下一题')
-                .fontSize(16)
-                .fontColor('#F2B771')
-            }
-            .backgroundColor(Color.White)
-            .width(100)
-            .height(30)
-            .borderRadius(20)
-            .border({ width: 1, color: '#F2B771' })
-            .onClick(() => this.goToNextQuestion())
           }
-          .justifyContent(FlexAlign.SpaceAround)
-          .alignItems(VerticalAlign.Center)
-          .padding(10)
-          .width('80%')
-          .margin({ top: 18 })
         }
+        .width('90%')
+        .layoutWeight(1)
       }
     }
     .width('100%')
