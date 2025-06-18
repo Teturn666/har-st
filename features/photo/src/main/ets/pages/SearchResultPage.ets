@@ -197,7 +197,7 @@ struct ListView {
     if (this.isLoading) {
       ProgressLoading()
     } else {
-      if (this.resultList.length > 0) {
+      if (this.resultList?.length > 0) {
 
         // ListItem() {
         //   //TODO 显示ocr识别后的文本，上线后需删除
