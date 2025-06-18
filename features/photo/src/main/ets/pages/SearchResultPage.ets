@@ -197,7 +197,7 @@ struct ListView {
     if (this.isLoading) {
       ProgressLoading()
     } else {
-      if (this.resultList.length > 0) {
+      if (this.resultList?.length > 0) {
 
         // ListItem() {
         //   //TODO 显示ocr识别后的文本，上线后需删除
@@ -278,9 +278,6 @@ struct ListView {
         .cachedCount(5)
 
       } else {
-        if (!this.resultList.length) {
-          ProgressLoading()
-        }
         Text($r('app.string.search_nodata'))
           .fontSize(16)
           .align(Alignment.Start)

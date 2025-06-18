@@ -1,8 +1,9 @@
-import { promptAction, router, } from "@kit.ArkUI";
+import { router, } from "@kit.ArkUI";
 import { TitleBar } from "widget";
 import HomeConstants from "../Constants/HomeConstants";
-import { preferences } from "@kit.ArkData";
-import SearchConstants from "search/src/main/ets/constants/SearchConstants";
+import { PipManager } from "../manage/PipManage";
+import { EmitterConstants } from "utils";
+import { emitter } from "@kit.BasicServicesKit";
 
 
 @Entry({ routeName: "searchIntroductionPage" })
@@ -137,6 +138,12 @@ export struct SearchIntroductionPage {
         })
         .margin({ top: 32 })
         .onClick(() => {
+          // 关闭画中画,以及读屏的事件注册
+          if (PipManager.getInstance()) {
+            PipManager.getInstance().stopPip()
+            emitter.off(EmitterConstants.EM_DATA_TEXT)
+          }
+
           // TODO: 扫描搜题逻辑
           router.pushNamedRoute({
             name: HomeConstants.ROUTER_SEARCH_QUESTIONS,

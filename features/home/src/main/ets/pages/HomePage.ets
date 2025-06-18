@@ -328,11 +328,6 @@ export struct HomePage {
   private handleScanSearch = () => {
     this.currentSearchMode = SearchMode.SCAN;
 
-    // 关闭画中画
-    if (PipManager.getInstance()) {
-      PipManager.getInstance().stopPip()
-      emitter.off(EmitterConstants.EM_DATA_TEXT)
-    }
     if (!this.getIsShowDialog()) {
       this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
