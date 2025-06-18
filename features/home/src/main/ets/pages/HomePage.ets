@@ -151,19 +151,7 @@ export struct HomePage {
       this.loadResource()
     })
 
-    // 注册回调，从ocr拿到文字信息
-    emitter.on("dataText", async (event) => {
-      const ocrText: string = event.data!["text"].replace(/\r?\n/g, '')
-      // 进行搜索，然后返回给画中画
-      if (this.mDataText && this.mDataText?.byteLength !== 0) {
-        // 过滤掉画中画的text
-        const filterData = QuestionUtil.analyzeTextMatch(ocrText, this.pipAnswer, 0.5);
-        // console.log(TAG, "ocrText = " + ocrText)
-        // console.log(TAG, "this.answerAndQuestion = " + this.answerAndQuestion)
-        console.log(TAG, "data.remainingText = " + filterData.remainingText)
-        this.searchResult(filterData.remainingText, this.mDataText)
-      }
-    })
+
   }
 
   aboutToDisappear(): void {
@@ -344,6 +332,11 @@ export struct HomePage {
   private handleScanSearch = () => {
     this.currentSearchMode = SearchMode.SCAN;
 
+    // 关闭画中画
+    if (PipManager.getInstance()) {
+      PipManager.getInstance().stopPip()
+      emitter.off(EmitterConstants.EM_DATA_TEXT)
+    }
     if (!this.getIsShowDialog()) {
       this.showSelectBankDialog(() => {
         router.pushNamedRoute({
@@ -375,6 +368,22 @@ export struct HomePage {
   }
   // 读屏搜题处理逻辑
   private handleScreenReadSearch = async () => {
+    // 方案1: 移除已存在的监听器
+    emitter.off("dataText");
+
+    // 注册回调，从ocr拿到文字信息
+    emitter.on("dataText", async (event) => {
+      const ocrText: string = event.data!["text"].replace(/\r?\n/g, '')
+      // 进行搜索，然后返回给画中画
+      if (this.mDataText && this.mDataText?.byteLength !== 0) {
+        // 过滤掉画中画的text
+        const filterData = QuestionUtil.analyzeTextMatch(ocrText, this.pipAnswer, 0.5);
+        // console.log(TAG, "ocrText = " + ocrText)
+        // console.log(TAG, "this.answerAndQuestion = " + this.answerAndQuestion)
+        console.log(TAG, "data.remainingText = " + filterData.remainingText)
+        this.searchResult(filterData.remainingText, this.mDataText)
+      }
+    })
     this.currentSearchMode = SearchMode.SCREEN_READ;
 
     if (!this.getIsShowDialog()) {
@@ -392,7 +401,6 @@ export struct HomePage {
       }
     }
   }
-
   private getMdataText = async () => {
     // 获取mDataText
     let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
@@ -406,13 +414,10 @@ export struct HomePage {
       console.log(TAG, 'this.mDataText 修改成功')
     }
   }
-
   /**
    * 点击读屏搜题处理逻辑
    */
   private readSearch = async () => {
-    await this.getMdataText()
-
     // 读屏搜题
     const screenCaptureManager = ScreenCaptureManager.getInstance(getContext(this) as common.ApplicationContext);
 
@@ -425,6 +430,8 @@ export struct HomePage {
 
     // 开启读屏幕
     screenCaptureManager.startScreenCapture();
+
+    await this.getMdataText()
   }
 
   private async searchResult(ocrText: string, mDataText: SharedArrayBuffer) {
@@ -626,7 +633,7 @@ struct SearchList {
         PipManager.optionColor = preferencesUtils.getString(PreferencesConstants.OPTION_COLOR_SETTING)
         PipManager.floatingColor = preferencesUtils.getString(PreferencesConstants.FLOATING_COLOR_SETTING)
 
-        // 弹出广告
+        // 执行传入的逻辑
         this.ScreenReader()
       })
     }

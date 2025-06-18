@@ -52,7 +52,8 @@ export struct SearchQuestions {
 
   aboutToDisappear(): void {
     cameraManager.releaseCamera()
-    emitter.off("dataText")
+    console.log(TAG, "aboutToDisappear")
+    // emitter.off("dataText")
   }
 
   private async searchResult(mDataText: SharedArrayBuffer) {

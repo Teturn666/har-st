@@ -117,6 +117,7 @@ export struct MinePage {
 
   aboutToDisappear(): void {
     emitter.off(EmitterConstants.EM_USER_LOGIN)
+    emitter.off(EmitterConstants.EM_DATA_TEXT)
   }
 
   private initData() {
