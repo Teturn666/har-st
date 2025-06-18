@@ -275,36 +275,45 @@ struct ExercisePage {
       })
 
       if (this.questions.length > 0) {
-        QuestionContent({
-          question: this.questions[this.currentQuestionIndex],
-          isStarred: this.isQuestionStarred(this.currentQuestionIndex),
-          onToggleStar: () => {
-            this.toggleFavorite()
+        List(){
+          ListItem(){
+            QuestionContent({
+              question: this.questions[this.currentQuestionIndex],
+              isStarred: this.isQuestionStarred(this.currentQuestionIndex),
+              onToggleStar: () => {
+                this.toggleFavorite()
+              }
+            })
           }
-        })
-
-        OptionList({
-          options: this.questions[this.currentQuestionIndex].option,
-          selectedOptions: this.selectedOptions,
-          selectedOption: this.selectedOption,
-          hasSubmitted: this.hasSubmitted,
-          isMultipleChoice: this.isMultipleChoice(),
-          correctAnswers: this.questions[this.currentQuestionIndex].answer,
-          isReviewMode: this.selectedIndex === 1,
-          onOptionClick: (option) => {
-            this.handleOptionClick(option)
+          ListItem(){
+            OptionList({
+              options: this.questions[this.currentQuestionIndex].option,
+              selectedOptions: this.selectedOptions,
+              selectedOption: this.selectedOption,
+              hasSubmitted: this.hasSubmitted,
+              isMultipleChoice: this.isMultipleChoice(),
+              correctAnswers: this.questions[this.currentQuestionIndex].answer,
+              isReviewMode: this.selectedIndex === 1,
+              onOptionClick: (option) => {
+                this.handleOptionClick(option)
+              }
+            })
           }
-        })
-        NavigationButtons({
-          canGoPrevious: this.currentQuestionIndex > 0,
-          canGoNext: this.currentQuestionIndex < this.questions.length - 1,
-          onPrevious: () => {
-            this.goToPreviousQuestion()
-          },
-          onNext: () => {
-            this.goToNextQuestion()
+          ListItem(){
+            NavigationButtons({
+              canGoPrevious: this.currentQuestionIndex > 0,
+              canGoNext: this.currentQuestionIndex < this.questions.length - 1,
+              onPrevious: () => {
+                this.goToPreviousQuestion()
+              },
+              onNext: () => {
+                this.goToNextQuestion()
+              }
+            })
           }
-        })
+        }
+        .width('100%')
+        .layoutWeight(1)
       }
     }
     .width('100%')
@@ -591,6 +600,7 @@ export struct NavigationButtons {
         .backgroundColor(Color.White)
         .borderRadius(20)
         .border({ width: 1, color: $r('app.color.c_F2B771') })
+        .margin({left : this.canGoPrevious? 20 : 0})
         .onClick(() => this.onPrevious())
       } else {
         Blank()
@@ -608,15 +618,16 @@ export struct NavigationButtons {
         .height($r('app.float.float_30vp'))
         .borderRadius(20)
         .border({ width: 1, color: $r('app.color.c_F2B771') })
+        .margin({right : this.canGoNext? 20 : 0})
         .onClick(() => this.onNext())
       } else {
         Blank()
       }
     }
-    .justifyContent(FlexAlign.SpaceAround)
+    .justifyContent(FlexAlign.SpaceBetween)
     .alignItems(VerticalAlign.Center)
     .padding(10)
-    .width('80%')
+    .width('100%')
     .margin({ top: 18, bottom: 20 })
   }
 }
