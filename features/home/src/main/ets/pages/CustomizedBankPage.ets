@@ -2,7 +2,7 @@ import fs from '@ohos.file.fs';
 import { TitleBar } from 'widget'
 import { promptAction, router } from '@kit.ArkUI'
 import { getFileExtension, getPrefix } from '../manage/SelectFileManage';
-import { WebClass } from '../components/WebParseExcel';
+import { WebClass, WebParseExcel } from '../components/WebParseExcel';
 import { questionBankTable, QuestionTable } from 'db';
 import picker from '@ohos.file.picker';
 import { util } from '@kit.ArkTS';
@@ -14,6 +14,7 @@ import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { EmitterConstants, PreferencesConstants, preferencesUtils, TimeUtils } from 'utils';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { SearchEngine } from 'search';
+import { fileIo } from '@kit.CoreFileKit';
 
 const TAG = 'CustomizedBankPage'
 
@@ -28,7 +29,6 @@ export struct CustomizedBankPage {
   @State importStatus: string = '未完成'; //'成功'、'失败'、'未完成'
   @State isLoading: boolean = false; // 添加loading状态
   @State loadingMessage: string = '正在导入...'; // loading提示信息
-
   // 新增：支持外部文件URI
   @State externalFileUri: string = '';
   @State externalFileName: string = '';
@@ -94,7 +94,7 @@ export struct CustomizedBankPage {
     await this.processSelectedFile(result[0]);
   }
 
-  // 新增：处理选择文件的方法（原有逻辑）
+  // 处理选择文件的方法（原有逻辑）
   private async processSelectedFile(filePath: string) {
     let file = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
     const fileTypeName = getFileExtension(file.name);
@@ -146,7 +146,6 @@ export struct CustomizedBankPage {
         bankListRes = await this.parseExcel(file, filePreName);
       } else if (fileTypeName === 'txt') {
         bankListRes = await this.parseTxt(file, filePreName);
-        // bankListRes = await this.parseTxt(fileUri, filePreName);
       } else {
         promptAction.showToast({ message: '不支持的文件格式', duration: 2000 });
         this.isLoading = false;
@@ -171,11 +170,9 @@ export struct CustomizedBankPage {
   }
 
   private async parseTxt(file: fs.File, filePreName: string): Promise<BankListRes | undefined> {
-
     try {
       this.loadingMessage = '正在解析TXT文件...';
-      const result = await this.parser.parseTxtFile(file.path)
-      // const result = await this.parser.parseTxtFile(file)
+      const result = await this.parser.parseTxtFile(file)
       this.message = `开始处理TXT文件：${file.path}`;
       if (!result) {
         this.message = '解析失败';
@@ -443,6 +440,7 @@ export struct CustomizedBankPage {
 
   async aboutToAppear() {
     this.questionImport()
+    WebParseExcel();
   }
 
   aboutToDisappear() {

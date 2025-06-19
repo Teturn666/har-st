@@ -43,44 +43,9 @@
             "uris": [
               {
                 "scheme": "file",
-                "type": "text/plain",
-                "linkFeature": "FileOpen"
-              },
-              {
-                "scheme": "file",
-                "type": "text/*",
-                "linkFeature": "FileOpen"
-              },
-              {
-                "scheme": "file",
-                "type": "general.plain-text",
-                "linkFeature": "FileOpen"
-              },
-              {
-                "scheme": "file",
-                "type": "application/vnd.ms-excel",
-                "linkFeature": "FileOpen"
-              },
-              {
-                "scheme": "file",
-                "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "linkFeature": "FileOpen"
-              },
-              {
-                "scheme": "file",
-                "type": "application/excel",
-                "linkFeature": "FileOpen"
-              },
-              {
-                "scheme": "file",
                 "type": "*/*",
                 "linkFeature": "FileOpen"
               },
-              {
-                "scheme": "file",
-                "type": "application/msword", // Indicates supported file types for opening
-                "linkFeature": "FileOpen"
-              }
             ]
           }
         ]
