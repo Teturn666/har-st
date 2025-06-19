@@ -246,12 +246,14 @@ export class SearchEngine {
     let mMatchScores = new TreeMap<number, number>()
 
     let mDataSize: number = 0
-    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected(context)
     if (isAllSelect) {
       mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0, context)
     } else {
       mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, 0, context)
     }
+    console.debug('ConcurrentManage', "是否全选" + isAllSelect)
+    console.debug('ConcurrentManage', "mDataSize =" + mDataSize)
 
     if (mDataSize === 0) {
       // 查询数据库，获取题目数量

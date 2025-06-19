@@ -7,6 +7,7 @@ import { router } from "@kit.ArkUI"
 import { onEventObject } from "@umeng/analytics"
 import HomeMobClickConstants from "../Constants/HomeMobClickConstants"
 import HomeConstants from "../Constants/HomeConstants"
+import { EmitterConstants } from "utils"
 
 export class OcrToText {
   private imageSource?: image.ImageSource
@@ -60,7 +61,7 @@ export class OcrToText {
           hilog.info(0x0000, 'OCRDemo', `Succeeded in recognizing text：${recognitionString}`)
           // 将结果更新到Text中显示
           // this.dataValues = data.value
-          emitter.emit("dataText", { data: { "text": data.value } })
+          emitter.emit(EmitterConstants.EM_DATA_TEXT, { data: { "text": data.value } })
           if (search) {
             AppStorage.setOrCreate("ocr", data.value)
             this.jumpToSearchResult()

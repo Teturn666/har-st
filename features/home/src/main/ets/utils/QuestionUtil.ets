@@ -38,32 +38,6 @@ export class QuestionUtil {
       return '';
     }
 
-    // 判断是否为判断题（包含特定关键词）
-    const isJudgmentQuestion = answer.includes("正确") ||
-    answer.includes("对") ||
-    answer.includes("是") ||
-    answer.includes("true") ||
-    answer.includes("yes") ||
-    answer.includes("√") ||
-    answer.includes("right") ||
-    answer.includes("correct") ||
-    answer.includes("错误") ||
-    answer.includes("错") ||
-    answer.includes("否") ||
-    answer.includes("false") ||
-    answer.includes("no") ||
-    answer.includes("×");
-
-    // 如果是判断题，直接返回答案
-    if (isJudgmentQuestion) {
-      return `答案：${answer}`;
-    }
-
-    // 如果选项数组为空，返回只有答案的字符串
-    if (!option || option.length === 0) {
-      return `答案：${answer}`;
-    }
-
     // 将答案字符串转换为字符数组，如 "ABD" -> ['A', 'B', 'D']
     const answerChars = answer.split('');
 
@@ -77,12 +51,12 @@ export class QuestionUtil {
 
       // 检查索引是否有效且对应的选项存在
       if (index >= 0 && index < option.length) {
-        selectedOptions.push(char + ' ' + option[index]);
+        selectedOptions.push(` ${char} ${option[index]}`);
       }
     });
 
     // 构建返回字符串
-    let result = `[${answer}] `;
+    let result = `[${answer}]`;
 
     // 添加每个选项到结果中
     selectedOptions.forEach(optionText => {
