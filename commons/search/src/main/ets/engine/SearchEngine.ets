@@ -4,15 +4,15 @@ import { GetAllSelectedUtil, Logger, PreferencesConstants, preferencesUtils, Str
 import { SegmentEngine } from './SegmentEngine'
 
 import { StringFilter } from './StringFilter'
-import { QuestionBean } from '../model/QuestionBean';
 import systemDateTime from '@ohos.systemDateTime';
 import SearchConstants from '../constants/SearchConstants'
 import { taskpool } from '@kit.ArkTS';
 import { searchInitCurrent, searchTask } from '../manage/ConcurrentManage'
 import { common } from '@kit.AbilityKit'
-import { preferences, relationalStore } from '@kit.ArkData'
+import { relationalStore } from '@kit.ArkData'
 import DbConstants from 'db/src/main/ets/constants/DbConstants'
 import { SearchMapManage } from '../manage/SearchMapManage'
+import { MDataTextManage } from '../manage/MDataTextManage'
 
 const TAG = 'SearchEngine'
 
@@ -148,27 +148,6 @@ export class SearchEngine {
     console.debug(TAG, "保存成功")
   }
 
-  // TODO 这个方法还得完善，差单线程
-  // async initIfNotInit() {
-  //   // 在多线程中执行初始化
-  //   if (!this.mIsInitFinish) {
-  //     await this.initWithThreadTask();
-  //   }
-  // }
-
-
-  /**
-   * 初始化搜索引擎
-   * @param context
-   */
-  // async initWithThread(context: common.Context): Promise<boolean> {
-  //   this.mIsInitFinish = false
-  //   let isFinish = await this.indexFromDatabase(context)
-  //   this.mIsInitFinish = true
-  //   return isFinish
-  // }
-
-
   /**
    * 初始化搜索引擎
    *
@@ -189,6 +168,13 @@ export class SearchEngine {
       // 创建任务并在 TaskPool 中执行
       const task: taskpool.Task = new taskpool.Task(searchInitCurrent, getContext(this), qid, type);
       await taskpool.execute(task) as number;
+
+      // 判断是否为全选,如果是全选设置mdataText给唯一变量
+      if (GetAllSelectedUtil.isUserBankAllSelected()) {
+        const mdataText = await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+        MDataTextManage.getInstance().saveDataText(mdataText)
+      }
       SearchEngine.getInstance().mIsInitFinish = true
     } catch (error) {
       SearchEngine.getInstance().mIsInitFinish = false
@@ -213,33 +199,6 @@ export class SearchEngine {
       return null
     }
   }
-
-  // /**
-  //  * 返回一个最匹配的结果
-  //  * @param qStr 搜索内容
-  //  * @returns 返回结果
-  //  */
-  // public async queryTextWithIndexInThread(qStr: string): Promise<QuestionRes | null> {
-  //   // if (!this.mIsInitFinish) {
-  //   //   Logger.error("搜索引擎初还未初始化完成")
-  //   //   return null
-  //   // }
-  //   try {
-  //     let id = await SearchEngine.getInstance().searchTextWithIndex(qStr)
-  //     if (id === -1) {
-  //       return null
-  //     } else {
-  //       let result = await QuestionTable.getInstance()?.querySync(id, true, false) ?? []
-  //       Logger.info('题目表获取到的数据====>' + result.length)
-  //       if (result.length > 0) {
-  //         return result[0]
-  //       }
-  //     }
-  //   } catch (e) {
-  //     return null
-  //   }
-  //   return null
-  // }
 
   async searchTextWithIndex(q: string, context: common.Context,
     mDataText: SharedArrayBuffer): Promise<QuestionRes | null> {
@@ -369,54 +328,6 @@ export class SearchEngine {
   }
 
   /**
-   * 获取题目拼接的数据，读屏搜题会用到
-   * @param q 检索字符串
-   * @returns 结果
-   */
-  private async fetchTop1Question(q: string): Promise<Array<QuestionBean> | null> {
-    // if (!this.mIsInitFinish) {
-    //   Logger.error("搜索引擎初还未初始化完成")
-    //   return null;
-    // }
-    let qStr = StringFilter.formatString(q);
-    const mDataText =
-      await SearchMapManage.getInstance()
-        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-    if (!mDataText) {
-      return null
-    }
-    let result = await this.searchTextWithIndex(qStr, getContext(this), mDataText);
-    let questions = new Array<QuestionBean>()
-    // let result = await QuestionTable.getInstance()?.querySync(id, true, false) ?? []
-    Logger.info('题目表获取到的数据====>' + result)
-    if (result) {
-      let record: QuestionRes = result
-      const qItem = new QuestionBean()
-      qItem.q = "【" + record.answer + "】" + record.question
-      let options = record.option
-      options.forEach((optionsElement) => {
-        qItem.a.add(optionsElement)
-      })
-      questions.push(qItem)
-    }
-    return questions
-  }
-
-  /**
-   * 获取拼接后的题目数据（读屏搜题）
-   * @param q
-   * @param callback
-   */
-  async queryTextWithIndexInThreadTwo(q: string): Promise<Array<QuestionBean>> {
-    try {
-      let questions = await this.fetchTop1Question(q) ?? []
-      return questions;
-    } catch (e) {
-      return []
-    }
-  }
-
-  /**
    * 异步方法，根据输入内容获取
    * @param q
    * @returns
@@ -430,7 +341,7 @@ export class SearchEngine {
     }
   }
 
-  //查找相似题目
+  // 拍照搜题-本地题库-查找相似题目
   private async fetchQuestions(q: string): Promise<QuestionRes[]> {
     // if (!this.mIsInitFinish) {
     //   Logger.error("搜索引擎初还未初始化完成")

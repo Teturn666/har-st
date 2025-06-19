@@ -368,8 +368,7 @@ export struct HomePage {
       const ocrText: string = event.data!["text"].replace(/\r?\n/g, '')
       const mDataText = MDataTextManage.getInstance().getDataText()
 
-      // 多线程入参 ocrText mDataText pipAnswer
-      // 返回参数 resultSearchRes pipAnswer
+      // 多线程入参 ocrText mDataText pipAnswer 返回参数 resultSearchRes pipAnswer
       if (mDataText && mDataText?.byteLength !== 0) {
         // 调用多线程函数
         this.readSearchTask(ocrText, this.pipAnswer, mDataText)
@@ -445,22 +444,6 @@ export struct HomePage {
 
     // 开启读屏幕
     screenCaptureManager.startScreenCapture();
-
-    await this.setMdataText()
-  }
-
-  private setMdataText = async () => {
-    // 获取mDataText
-    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
-    let mDataText: SharedArrayBuffer | null
-    if (isAllSelect) {
-      mDataText = await SearchMapManage.getInstance()
-        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-    } else {
-      mDataText = await SearchMapManage.getInstance()
-        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
-    }
-    MDataTextManage.getInstance().saveDataText(mDataText)
   }
 
   //获取是否显示弹窗

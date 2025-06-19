@@ -5,9 +5,8 @@ import { cameraManager } from "../utils/CameraManager";
 import window from '@ohos.window';
 import { SearchEngine } from "search";
 import { QuestionRes } from "db";
-import { SearchMapManage } from "search/src/main/ets/manage/SearchMapManage";
-import SearchConstants from "search/src/main/ets/constants/SearchConstants";
-import { EmitterConstants, GetAllSelectedUtil, PreferencesConstants, preferencesUtils } from "utils";
+import { EmitterConstants } from "utils";
+import { MDataTextManage } from "search/src/main/ets/manage/MDataTextManage";
 
 const TAG = "SearchQuestions";
 
@@ -24,21 +23,8 @@ export struct SearchQuestions {
   map: PixelMap | null = null
 
   async aboutToAppear() {
-    // 做分词处理，处理完毕后再搜索
-    // 判断从哪个文件里取 mDataText 以及 mDataSize
-    let mDataText: SharedArrayBuffer | null = null
-
-    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
-    if (isAllSelect) {
-      mDataText =
-        await SearchMapManage.getInstance()
-          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-    } else {
-      mDataText =
-        await SearchMapManage.getInstance()
-          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
-    }
-
+    // 取出最新的分词处理数据
+    let mDataText = MDataTextManage.getInstance().getDataText()
     console.debug(TAG, '分词处理数据已拿到')
     emitter.on(EmitterConstants.EM_DATA_TEXT, async (event) => {
       this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
