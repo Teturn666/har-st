@@ -461,7 +461,7 @@ export struct CustomizedBankPage {
       }).width('100%')
 
       Column() {
-        Text("个人制作和导入题库遇到问题\n请联系QQ：2885403085")
+        Text("个人制作和导入题库遇到问题\n请联系QQ：1729868682")
           .fontSize($r('app.float.float_12vp'))
           .fontColor($r('app.color.c_f2f7ff'))
       }
