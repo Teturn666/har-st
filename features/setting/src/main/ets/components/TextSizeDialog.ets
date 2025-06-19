@@ -8,7 +8,7 @@ export struct TextSizeDialog {
   @State sliderValue: number = 16;
 
   aboutToAppear(): void {
-    let size = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE,)
+    let size = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE)
     if (size) {
       this.sliderValue = size
     }
@@ -85,7 +85,7 @@ export struct TextSizeDialog {
           Slider({
             value: this.sliderValue,
             min: 13,
-            max: 20
+            max: 30
           })
             .selectedColor('#000')// 已选择部分颜色
             .trackThickness(1)// 轨道粗细

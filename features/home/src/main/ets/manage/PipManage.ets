@@ -28,21 +28,21 @@ export class Params {
 function buildPipUI(params: Params) {
   Column() {
     Text(params.answer)
-      .fontSize(20)
+      .fontSize(PipManager.fontSize || 20)
       .fontColor(PipManager.optionColor || '#fffadf07')
-      .minFontSize(15)
-      .maxFontSize(30)
+      .minFontSize(PipManager.fontSize || 15)
+      .maxFontSize(PipManager.fontSize || 30)
       .maxLines(2)
       .textOverflow({ overflow: TextOverflow.Ellipsis })
-      .heightAdaptivePolicy(TextHeightAdaptivePolicy.LAYOUT_CONSTRAINT_FIRST)
+      .heightAdaptivePolicy(TextHeightAdaptivePolicy.MAX_LINES_FIRST)
     Text(params.question)
-      .fontSize(20)
+      .fontSize(PipManager.fontSize || 20)
       .fontColor(PipManager.titleColor || Color.Red)
-      .minFontSize(12)
-      .maxFontSize(30)
+      .minFontSize(PipManager.fontSize || 12)
+      .maxFontSize(PipManager.fontSize || 30)
       .maxLines(5)
       .textOverflow({ overflow: TextOverflow.Ellipsis })
-      .heightAdaptivePolicy(TextHeightAdaptivePolicy.LAYOUT_CONSTRAINT_FIRST)
+      .heightAdaptivePolicy(TextHeightAdaptivePolicy.MAX_LINES_FIRST)
       .layoutWeight(1)
   }
   .width('100%')
@@ -88,6 +88,7 @@ export class PipManager {
   static titleColor: string = '';
   static optionColor: string = '';
   static floatingColor: string = '';
+  static fontSize: number = 0;
   stopCallBack: Function = () => {
   };
 
