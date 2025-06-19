@@ -56,6 +56,14 @@ struct ExerciseCommonPage {
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
+  private isTrueFalseQuestion(): boolean {
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+    const options = currentQuestion.option;
+    return options.length === 2 &&
+    options.includes('正确') &&
+    options.includes('错误');
+  }
+
   // 启动正向计时器
   private startTimer(): void {
     if (this.timerId !== null) {
@@ -409,40 +417,14 @@ struct ExerciseCommonPage {
                     .fontSize(16)
                     .fontColor('#000000')
                     .borderRadius(15)
-                    .backgroundColor(
-                      this.selectedIndex === 1
-                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                        '#F2F2F2')
-                        : (this.hasSubmitted
-                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                          ? '#DFF5E3'
-                          : (this.isMultipleChoice()
-                            ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                            : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                        : (this.isMultipleChoice()
-                          ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                          : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-                    )
+                    .backgroundColor(this.getOptionBackgroundColor(idx))
                     .margin({ right: 10 });
                   Text(item)
                     .fontSize(16)
                     .padding(10)
                     .width('80%')
                     .borderRadius(8)
-                    .backgroundColor(
-                      this.selectedIndex === 1
-                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                        '#F2F2F2')
-                        : (this.hasSubmitted
-                        ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                          ? '#DFF5E3'
-                          : (this.isMultipleChoice()
-                            ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                            : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                        : (this.isMultipleChoice()
-                          ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                          : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-                    );
+                    .backgroundColor(this.getOptionBackgroundColor(idx))
                 }
                 .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
                 .margin({ top: 12, left: 16, right: 16 });
@@ -494,6 +476,45 @@ struct ExerciseCommonPage {
     .backgroundColor(Color.White);
 
   }
+  private getOptionBackgroundColor(idx: number): string {
+    const optionLabel = this.getOptionLabel(idx);
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+
+    const isSelected = this.isMultipleChoice()
+      ? this.selectedOptions.includes(optionLabel)
+      : this.selectedOption === optionLabel;
+
+    // 修复：根据题目类型判断是否正确
+    let isCorrect = false;
+    if (this.isTrueFalseQuestion()) {
+      // 判断题：比较选项内容
+      const optionContent = currentQuestion.option[idx];
+      isCorrect = optionContent === currentQuestion.answer;
+    } else {
+      // 单选/多选题：比较选项标签
+      isCorrect = currentQuestion.answer.includes(optionLabel);
+    }
+
+    if (this.selectedIndex === 1) {
+      return isCorrect ? '#DFF5E3' : '#F2F2F2';
+    }
+
+    if (this.hasSubmitted) {
+      if (isCorrect) {
+        return '#DFF5E3';
+      }
+      if (isSelected && !isCorrect) {
+        return '#FDECEC';
+      }
+      return '#F2F2F2';
+    } else {
+      if (this.isMultipleChoice()) {
+        return this.selectedOptions.includes(optionLabel) ? '#B3E5FC' : '#F2F2F2';
+      } else {
+        return this.selectedOption === optionLabel ? '#E0E0E0' : '#F2F2F2';
+      }
+    }
+  }
 
   private async handleOptionClick(optionLabel: string) {
     if (this.selectedIndex === 0 && !this.hasSubmitted) {
@@ -501,7 +522,7 @@ struct ExerciseCommonPage {
       const isLastQuestion = this.currentQuestionIndex === this.questions.length - 1;
 
       if (this.isMultipleChoice()) {
-        // 多选：切换选项状态
+        // 多选逻辑保持不变
         if (this.selectedOptions.includes(optionLabel)) {
           this.selectedOptions = this.selectedOptions.filter(opt => opt !== optionLabel);
         } else {
@@ -543,12 +564,29 @@ struct ExerciseCommonPage {
         // 单选：设置选项并提交
         this.selectedOption = optionLabel;
         this.hasSubmitted = true;
-        const isCorrect = optionLabel === currentQuestion.answer;
+
+        // 修复：根据题目类型判断答案
+        let isCorrect = false;
+
+        if (this.isTrueFalseQuestion()) {
+          // 判断题：比较选项内容与答案
+          const optionIndex = optionLabel.charCodeAt(0) - 65; // A=0, B=1
+          const selectedContent = currentQuestion.option[optionIndex];
+          isCorrect = selectedContent === currentQuestion.answer;
+        } else {
+          // 单选题：比较选项标签与答案
+          isCorrect = optionLabel === currentQuestion.answer;
+        }
+
         if (isCorrect && this.practiceMode === 2) {
           // 在错题练习模式下，如果答对，从错题表中移除
           await this.deleteFromWrongTable(currentQuestion);
         } else if (!isCorrect && this.practiceMode !== 2) {
-          await this.saveToWrongTable(currentQuestion, optionLabel);
+          // 插入错题表时，对于判断题传递选项内容
+          const wrongAnswer = this.isTrueFalseQuestion()
+            ? currentQuestion.option[optionLabel.charCodeAt(0) - 65]
+            : optionLabel;
+          await this.saveToWrongTable(currentQuestion, wrongAnswer);
         }
         this.saveQuestionState(); // 记录单选提交状态
         if (isLastQuestion) {

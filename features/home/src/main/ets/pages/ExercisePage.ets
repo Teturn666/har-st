@@ -59,9 +59,19 @@ struct ExercisePage {
     }
   }
 
+  //判断是否为判断题的方法
+  private isTrueFalseQuestion(): boolean {
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+    const options = currentQuestion.option;
+    return options.length === 2 &&
+    options.includes('正确') &&
+    options.includes('错误');
+  }
+
   private async handleOptionClick(optionLabel: string) {
     if (this.selectedIndex === 0 && !this.hasSubmitted) {
       const currentQuestion = this.questions[this.currentQuestionIndex];
+
       if (this.isMultipleChoice()) {
         // 多选：切换选项状态
         if (this.selectedOptions.includes(optionLabel)) {
@@ -91,10 +101,26 @@ struct ExercisePage {
         // 单选：设置选项并提交
         this.selectedOption = optionLabel;
         this.hasSubmitted = true;
-        const isCorrect = optionLabel === currentQuestion.answer;
+
+        // 修复：根据题目类型判断答案
+        let isCorrect = false;
+
+        if (this.isTrueFalseQuestion()) {
+          // 判断题：比较选项内容与答案
+          const optionIndex = optionLabel.charCodeAt(0) - 65; // A=0, B=1
+          const selectedContent = currentQuestion.option[optionIndex];
+          isCorrect = selectedContent === currentQuestion.answer;
+        } else {
+          // 单选题：比较选项标签与答案
+          isCorrect = optionLabel === currentQuestion.answer;
+        }
+
         if (!isCorrect) {
-          // 插入错题表
-          await this.saveToWrongTable(currentQuestion, optionLabel);
+          // 插入错题表时，对于判断题传递选项内容
+          const wrongAnswer = this.isTrueFalseQuestion()
+            ? currentQuestion.option[optionLabel.charCodeAt(0) - 65]
+            : optionLabel;
+          await this.saveToWrongTable(currentQuestion, wrongAnswer);
         }
         this.saveQuestionState(); // 记录单选提交状态
       }
@@ -557,7 +583,14 @@ export struct OptionList {
     const isSelected = this.isMultipleChoice
       ? this.selectedOptions.includes(optionLabel)
       : this.selectedOption === optionLabel;
-    const isCorrect = this.correctAnswers.includes(optionLabel);
+
+    let isCorrect = false;
+    if (this.correctAnswers.includes('正确') || this.correctAnswers.includes('错误')) {
+      const optionContent = this.options[idx];
+      isCorrect = optionContent === this.correctAnswers;
+    } else {
+      isCorrect = this.correctAnswers.includes(optionLabel);
+    }
 
     if (this.isReviewMode) {
       return isCorrect ? '#DFF5E3' : '#F2F2F2';
