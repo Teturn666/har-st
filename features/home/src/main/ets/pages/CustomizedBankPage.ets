@@ -51,6 +51,7 @@ export struct CustomizedBankPage {
     return questionResList;
   }
 
+
   // 自定义题库导入逻辑
   async questionImport() {
     let fileUri: string = '';
@@ -438,9 +439,10 @@ export struct CustomizedBankPage {
     });
   }
 
-  async aboutToAppear() {
-    this.questionImport()
-    WebParseExcel();
+   aboutToAppear() {
+    setTimeout(() => {
+      this.questionImport()
+    }, 500)
   }
 
   aboutToDisappear() {
@@ -450,6 +452,7 @@ export struct CustomizedBankPage {
 
   build() {
     Column() {
+      WebParseExcel()
       TitleBar({
         title: '自定义题库',
         backClick: () => {

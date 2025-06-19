@@ -46,6 +46,21 @@
                 "type": "*/*",
                 "linkFeature": "FileOpen"
               },
+              {
+                "scheme": "file",
+                "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "linkFeature": "FileOpen"
+              },
+              {
+                "scheme": "file",
+                "type": "application/vnd.ms-excel",
+                "linkFeature": "FileOpen"
+              },
+              {
+                "scheme": "file",
+                "type": "text/plain",
+                "linkFeature": "FileOpen"
+              }
             ]
           }
         ]
