@@ -23,8 +23,8 @@ export async function readSearchCurrent(context: common.Context, ocrText: string
   const filterData = QuestionUtil.analyzeTextMatch(ocrText, pipAnswer, 0.5);
   // console.log(TAG, "ocrText = " + ocrText)
   // console.log(TAG, "answerAndQuestion = " + answerAndQuestion)
-  console.log('ConcurrentManage', "data.remainingText = " + filterData.remainingText)
-  console.log('mDataText', "mDataText = " + mDataText.byteLength)
+  console.debug('ConcurrentManage', "data.remainingText = " + filterData.remainingText)
+  // console.debug('mDataText', "mDataText = " + mDataText.byteLength)
 
   const resultSearchRes =
     await SearchEngine.getInstance().searchTextWithIndex(filterData.remainingText, context, mDataText);
