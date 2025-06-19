@@ -88,8 +88,69 @@ struct ExerciseDetailsPage {
     });
   }
 
+  // 判断是否为判断题
+  private isTrueFalseQuestion(question: QuestionRes): boolean {
+    const options = question.option;
+    return options.length === 2 &&
+    options.includes('正确') &&
+    options.includes('错误');
+  }
 
+  // 将判断题的答案内容转换为选项标签
+  private convertAnswerToLabel(question: QuestionRes, answer: string): string {
+    if (this.isTrueFalseQuestion(question)) {
+      // 判断题：将"正确"/"错误"转换为"A"/"B"
+      const correctIndex = question.option.findIndex(option => option === answer);
+      if (correctIndex !== -1) {
+        return String.fromCharCode(65 + correctIndex);
+      }
+    }
+    return answer; // 非判断题直接返回原答案
+  }
 
+  // 将用户答案转换为显示格式
+  private convertUserAnswerToLabel(question: QuestionRes, userAnswer: string): string {
+    if (!userAnswer || userAnswer === '未答') {
+      return '未答';
+    }
+
+    if (this.isTrueFalseQuestion(question)) {
+      // 判断题：如果用户答案是选项内容，转换为标签
+      if (userAnswer === '正确' || userAnswer === '错误') {
+        const answerIndex = question.option.findIndex(option => option === userAnswer);
+        if (answerIndex !== -1) {
+          return String.fromCharCode(65 + answerIndex);
+        }
+      }
+      // 如果用户答案已经是标签格式（A、B），直接返回
+      if (/^[A-Z]$/.test(userAnswer)) {
+        return userAnswer;
+      }
+    }
+
+    return userAnswer; // 非判断题或其他情况直接返回
+  }
+
+  private isAnswerCorrect(question: QuestionRes, userAnswer: string): boolean {
+    if (!userAnswer || userAnswer === '未答') {
+      return false;
+    }
+
+    if (this.isTrueFalseQuestion(question)) {
+      // 判断题：需要特殊处理
+      const correctAnswerLabel = this.convertAnswerToLabel(question, question.answer);
+      const userAnswerLabel = this.convertUserAnswerToLabel(question, userAnswer);
+      return correctAnswerLabel === userAnswerLabel;
+    } else if (question.answer.length > 1 && question.answer.includes(',')) {
+      // 多选题
+      const correctAnswers = question.answer.split(',').sort().join(',');
+      const userAnswers = userAnswer.split(',').sort().join(',');
+      return correctAnswers === userAnswers;
+    } else {
+      // 单选题
+      return question.answer === userAnswer;
+    }
+  }
 
   build() {
     if (this.isLoading) {
@@ -203,7 +264,10 @@ struct ExerciseDetailsPage {
                     Text('正确答案：')
                       .fontColor('#333333')
                       .fontSize(14);
-                    Text(item.answer)
+                    // Text(item.answer)
+                    //   .fontColor(Color.Blue)
+                    //   .fontSize(14);
+                    Text(this.convertAnswerToLabel(item, item.answer))
                       .fontColor(Color.Blue)
                       .fontSize(14);
                   }
@@ -218,17 +282,7 @@ struct ExerciseDetailsPage {
                       .fontSize(14);
                   }
                 }
-                .backgroundColor(
-                  item.wrongAnswer && item.wrongAnswer !== '未答'
-                    ? (item.answer.length > 1 && item.wrongAnswer.includes(',')
-                    ? (item.wrongAnswer.split(',').sort().join(',') === item.answer.split(',').sort().join(',')
-                      ? '#ebf4e6'
-                      : '#f7e9e9')
-                    : (item.wrongAnswer === item.answer
-                      ? '#ebf4e6'
-                      : '#f7e9e9'))
-                    : '#f7e9e9'
-                )
+                .backgroundColor(this.isAnswerCorrect(item, item.wrongAnswer || '') ? '#ebf4e6' : '#f7e9e9')
                 .justifyContent(FlexAlign.SpaceAround)
                 .margin({ top: 8 })
                 .borderRadius(8)
