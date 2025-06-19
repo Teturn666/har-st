@@ -5,8 +5,9 @@ import { WebParseExcel } from '../components/WebParseExcel';
 import { HomeModel } from '../model/HomeModel';
 import { BankListRes } from 'db';
 import promptAction from '@ohos.promptAction';
-import { emitter } from '@kit.BasicServicesKit';
-import { EmitterConstants } from 'utils';
+import { BusinessError, emitter } from '@kit.BasicServicesKit';
+import { common, Want } from '@kit.AbilityKit';
+import { ToastUtils, EmitterConstants, } from 'utils/Index'
 
 import('./HelpPage');
 import('./CustomizedBankPage');
@@ -75,6 +76,46 @@ struct CustomQuestionPage {
       promptAction.showToast({ message: '删除失败', duration: 2000 });
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  // 跳转QQ
+  private jumpToQQ() {
+    let want: Want = {
+      bundleName: 'com.tencent.mqq',
+      abilityName: 'EntryAbility'
+    }
+    try {
+      (getContext(this) as common.UIAbilityContext).startAbility(want, (err: BusinessError) => {
+        if (err.code) {
+          // 处理业务逻辑错误
+          ToastUtils.showToast('应用程序未安装')
+          return
+        }
+      });
+    } catch (err) {
+      // 唤起失败
+      ToastUtils.showToast('应用程序未安装')
+    }
+  }
+
+  // 跳转wx
+  private async jumpToWX() {
+    let want: Want = {
+      bundleName: 'com.tencent.wechat',
+      abilityName: 'EntryAbility'
+    }
+    try {
+      (getContext(this) as common.UIAbilityContext).startAbility(want, (err: BusinessError) => {
+        if (err.code) {
+          // 处理业务逻辑错误
+          ToastUtils.showToast('应用程序未安装')
+          return
+        }
+      });
+    } catch (err) {
+      // 唤起失败
+      ToastUtils.showToast('应用程序未安装')
     }
   }
 
@@ -155,12 +196,12 @@ struct CustomQuestionPage {
                     }
 
                     Row() {
-                      if(parseInt(item.num)>0){
+                      if (parseInt(item.num) > 0) {
                         Text(`题目数量：${item.num}`)
                           .fontColor($r('app.color.c_9d9d9d'))
                           .fontSize($r('app.float.font_size_10fp'))
                           .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') });
-                      }else {
+                      } else {
                         Blank()
                       }
                       Text(`导入时间：${item.time}`)
