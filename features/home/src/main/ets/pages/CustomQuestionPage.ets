@@ -1,13 +1,16 @@
 import { TitleBar } from 'widget';
 import { router } from '@kit.ArkUI';
+import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import HomeConstants from '../Constants/HomeConstants';
 import { WebParseExcel } from '../components/WebParseExcel';
 import { HomeModel } from '../model/HomeModel';
-import { BankListRes } from 'db';
+import { BankListRes, QuestionRes } from 'db';
 import promptAction from '@ohos.promptAction';
 import { EmitterConstants, ToastUtils } from 'utils';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { common, Want } from '@kit.AbilityKit';
+import fs from '@ohos.file.fs';
+import { systemShare } from '@kit.ShareKit';
 
 import('./HelpPage');
 import('./CustomizedBankPage');
@@ -119,6 +122,70 @@ struct CustomQuestionPage {
     }
   }
 
+  // 分享题库功能
+  async handleShare(bank: BankListRes): Promise<void> {
+    if (this.isLoading) {
+      return;
+    }
+
+    this.isLoading = true;
+    try {
+      // 获取题库的具体题目数据
+      const questionData = await this.homeModel.getBankQuestionList(bank.qid);
+
+      if (!questionData || questionData.length === 0) {
+        promptAction.showToast({ message: '该题库暂无题目数据', duration: 2000 });
+        return;
+      }
+
+      // 将题目数据转换为JSON格式
+      const jsonContent: string = questionData.map((item: QuestionRes) => {
+        return JSON.stringify({
+          q: item.question, // 题目内容
+          a: item.option || [], // 选项数组
+          ans: item.answer || '' // 正确答案
+        });
+      }).join('\n');
+
+      // 创建临时文件
+      const context = getContext(this) as common.UIAbilityContext;
+      const cacheDir: string = context.cacheDir;
+      const fileName: string = `${bank.name}_题库_${new Date().getTime()}.txt`;
+      const filePath: string = `${cacheDir}/${fileName}`;
+
+      // 写入文件
+      const file = fs.openSync(filePath, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY);
+      fs.writeSync(file.fd, jsonContent);
+      fs.closeSync(file.fd);
+
+      // 使用官方系统分享API
+      let shareData: systemShare.SharedData = new systemShare.SharedData({
+        utd: utd.UniformDataType.FILE_URI,
+        uri:filePath,
+        title: `${bank.name} - 题库分享`,
+        description: `分享题库：${bank.name}，包含 ${bank.num} 道题目。使用快搜搜题导入此题库文件。`,
+      });
+
+      let controller: systemShare.ShareController = new systemShare.ShareController(shareData);
+      controller.show(context, {
+        selectionMode: systemShare.SelectionMode.SINGLE,
+        previewMode: systemShare.SharePreviewMode.DEFAULT,
+      }).then(() => {
+        promptAction.showToast({ message: '分享成功', duration: 2000 });
+        console.log('Share success');
+      }).catch((error: BusinessError) => {
+        console.error(`Share failed: ${error.message}`);
+        promptAction.showToast({ message: '分享失败', duration: 2000 });
+      });
+
+    } catch (error) {
+      console.error(`Share error: ${error}`);
+      promptAction.showToast({ message: '分享失败，请重试', duration: 2000 });
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
   build() {
     Column() {
       TitleBar({
@@ -168,9 +235,13 @@ struct CustomQuestionPage {
       Row() {
         Image($r('app.media.ic_import'))
           .width(85);
+        Blank()
+        Text("管理")
+          .fontSize($r('app.float.font_size_12fp'))
+          .fontColor('#060606')
       }
       .width('90%')
-      .margin({ top: 10, left: 10 })
+      .margin({ top: 10, left: 10, right: 10 })
       .alignItems(VerticalAlign.Top)
       .justifyContent(FlexAlign.Start);
 
@@ -221,10 +292,16 @@ struct CustomQuestionPage {
                   });
 
                   Column() {
-                    Image($r('app.media.ic_remove'))
+                    // Image($r('app.media.ic_remove'))
+                    //   .objectFit(ImageFit.Contain)
+                    //   .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
+                    //   .onClick(() => this.handleDelete(item.qid));
+                    Image($r('app.media.ic_share'))
                       .objectFit(ImageFit.Contain)
-                      .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                      .onClick(() => this.handleDelete(item.qid));
+                      .size({ width: $r('app.float.float_24vp'), height: $r('app.float.float_24vp') })
+                      .onClick(() => {
+                        this.handleShare(item)
+                      })
                   }
                   .margin({ right: $r('app.float.float_20vp') });
                 }
@@ -262,7 +339,7 @@ struct CustomQuestionPage {
               .justifyContent(FlexAlign.SpaceBetween)
             }
             .width('50%')
-            .onClick(() =>{
+            .onClick(() => {
               this.jumpToQQ()
             })
 
@@ -283,12 +360,12 @@ struct CustomQuestionPage {
               .justifyContent(FlexAlign.SpaceBetween)
             }
             .width('50%')
-            .onClick(() =>{
+            .onClick(() => {
               this.jumpToWX()
             })
           }
           .width('100%')
-          .margin({ top: 20 }) 
+          .margin({ top: 20 })
 
           Text("导入方式：将题库发送至QQ/微信--打开题库--点击右上角--选择其它应用打开--选择【快搜搜题】\n\n" +
             "注：导入文件支持txt、excel格式，word格式请转为txt再导入\n\n" +
