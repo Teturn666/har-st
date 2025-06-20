@@ -41,6 +41,7 @@ import { QuestionUtil } from '../utils/QuestionUtil'
 import { Log } from '@tencent/wechat_open_sdk'
 import { readSearchCurrent, ReadSearchResult } from '../manage/ConcurrentManage'
 import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
+import { accessManager } from '../utils/AccessManager'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -49,6 +50,7 @@ import('./MyDownloadPage')
 import('./CustomQuestionPage')
 import('./SearchQuestions')
 import('./SearchIntroductionPage')
+import('./PhotoSearchPage')
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
 let arr: number[] = [1]
@@ -76,7 +78,7 @@ export function HomePageBuilder() {
   HomePage()
 }
 
-@Entry()
+@Entry({ routeName: 'homePage' })
 @Component
 export struct HomePage {
   private imageSource: image.ImageSource | undefined = undefined
@@ -157,6 +159,10 @@ export struct HomePage {
     this.TopHeight = 0
   }
 
+  onBackPress(): boolean | void {
+    return true
+  }
+
   build() {
     RelativeContainer() {
 
@@ -205,12 +211,11 @@ export struct HomePage {
           ListItem() {
             SearchHelper({
               isLoading: this.loading,
-              handleClick: async () => {
-                // this.selectImage()
-                this.loading = true
-
-                selectImage.selectImg().then(() => {
-                  this.loading = false
+              handleClick: () => {
+                accessManager.CheckCamera(['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO'], () => {
+                  router.pushNamedRoute({
+                    name: HomeConstants.ROUTER_PHOTO_SEARCH,
+                  })
                 })
               }
             })
