@@ -5,9 +5,8 @@ import { cameraManager } from "../utils/CameraManager";
 import window from '@ohos.window';
 import { SearchEngine } from "search";
 import { QuestionRes } from "db";
-import { SearchMapManage } from "search/src/main/ets/manage/SearchMapManage";
-import SearchConstants from "search/src/main/ets/constants/SearchConstants";
-import { GetAllSelectedUtil, PreferencesConstants, preferencesUtils } from "utils";
+import { EmitterConstants } from "utils";
+import { MDataTextManage } from "search/src/main/ets/manage/MDataTextManage";
 
 const TAG = "SearchQuestions";
 
@@ -24,23 +23,10 @@ export struct SearchQuestions {
   map: PixelMap | null = null
 
   async aboutToAppear() {
-    // 做分词处理，处理完毕后再搜索
-    // 判断从哪个文件里取 mDataText 以及 mDataSize
-    let mDataText: SharedArrayBuffer | null = null
-
-    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
-    if (isAllSelect) {
-      mDataText =
-        await SearchMapManage.getInstance()
-          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-    } else {
-      mDataText =
-        await SearchMapManage.getInstance()
-          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
-    }
-
+    // 取出最新的分词处理数据
+    let mDataText = MDataTextManage.getInstance().getDataText()
     console.debug(TAG, '分词处理数据已拿到')
-    emitter.on("dataText", async (event) => {
+    emitter.on(EmitterConstants.EM_DATA_TEXT, async (event) => {
       this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
       console.debug(TAG, 'dataValue' + this.dataValue)
       // this.dataValue = "1415A 模拟考试 重置进度 0/119 ☆ 保守国家秘密法》自 G 2010年1月1日 2010年4月29日 2010年5月1日 2010年10月1日"
@@ -53,7 +39,6 @@ export struct SearchQuestions {
   aboutToDisappear(): void {
     cameraManager.releaseCamera()
     console.log(TAG, "aboutToDisappear")
-    // emitter.off("dataText")
   }
 
   private async searchResult(mDataText: SharedArrayBuffer) {
@@ -214,7 +199,6 @@ export struct SearchQuestions {
                   if (this.CameraChange) {
                     this.CameraChange = false
                     cameraManager.releaseCamera()
-                    // emitter.off('dataText')
                   } else {
                     this.CameraChange = true
                     cameraManager.initCamera(this.controller.getXComponentSurfaceId())

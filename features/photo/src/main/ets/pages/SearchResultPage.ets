@@ -278,9 +278,6 @@ struct ListView {
         .cachedCount(5)
 
       } else {
-        if (!this.resultList.length) {
-          ProgressLoading()
-        }
         Text($r('app.string.search_nodata'))
           .fontSize(16)
           .align(Alignment.Start)

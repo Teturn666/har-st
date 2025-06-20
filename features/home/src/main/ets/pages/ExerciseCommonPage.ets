@@ -56,6 +56,14 @@ struct ExerciseCommonPage {
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
+  private isTrueFalseQuestion(): boolean {
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+    const options = currentQuestion.option;
+    return options.length === 2 &&
+    options.includes('正确') &&
+    options.includes('错误');
+  }
+
   // 启动正向计时器
   private startTimer(): void {
     if (this.timerId !== null) {
@@ -342,145 +350,170 @@ struct ExerciseCommonPage {
         .margin({ top: 10 })
         .padding(10);
 
-        // 内容部分
-        Row() {
-          Image(this.getQuestionTypeImage())
-            .height(24)
-            .objectFit(ImageFit.Cover)
-          Blank();
+        List(){
+          ListItem(){
+            // 内容部分
+            Row() {
+              Image(this.getQuestionTypeImage())
+                .height(24)
+                .objectFit(ImageFit.Cover)
+              Blank();
 
-          if (this.practiceMode === 1 || this.practiceMode === 3) {
-            Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
-            $r('app.media.star'))
-              .width(18)
-              .height(18)
-              .onClick(() => {
-                this.toggleFavorite();
-              })
-              .margin({ right: 5 })
-          }
-          if (this.practiceMode === 1 || this.practiceMode === 3) {
-            Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
-              .fontSize(12)
-          }
-          if (this.practiceMode === 2) {
-            Image($r('app.media.ic_del'))
-              .width(18)
-              .height(18)
-              .onClick(() => {
-                // 移除逻辑
-                this.removeCurrentQuestion()
-              })
-              .margin({ right: 5 });
-          }
+              if (this.practiceMode === 1 || this.practiceMode === 3) {
+                Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
+                $r('app.media.star'))
+                  .width(18)
+                  .height(18)
+                  .onClick(() => {
+                    this.toggleFavorite();
+                  })
+                  .margin({ right: 5 })
+              }
+              if (this.practiceMode === 1 || this.practiceMode === 3) {
+                Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
+                  .fontSize(12)
+              }
+              if (this.practiceMode === 2) {
+                Image($r('app.media.ic_del'))
+                  .width(18)
+                  .height(18)
+                  .onClick(() => {
+                    // 移除逻辑
+                    this.removeCurrentQuestion()
+                  })
+                  .margin({ right: 5 });
+              }
 
-          if (this.practiceMode === 2) {
-            Text("移除")
-              .fontColor('#F2B771')
-              .fontSize(12);
+              if (this.practiceMode === 2) {
+                Text("移除")
+                  .fontColor('#F2B771')
+                  .fontSize(12);
+              }
+            }
+            .justifyContent(FlexAlign.SpaceBetween)
+            .padding(10)
+            .backgroundColor(Color.White)
+            .borderRadius(8)
+            .margin({ top: 20 })
+            .width('100%');
           }
-        }
-        .justifyContent(FlexAlign.SpaceBetween)
-        .padding(10)
-        .backgroundColor(Color.White)
-        .borderRadius(8)
-        .margin({ top: 20 })
-        .width('90%');
-
-        // 问题描述
-        Text(this.questions[this.currentQuestionIndex].question)
-          .fontSize(16)
-          .padding({ left: 10, right: 10, top: 10 })
-          .textAlign(TextAlign.Start)
-          .width('90%');
-
-        // 选项列表
-        ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
-          Row() {
-            Text(this.getOptionLabel(idx))
-              .width(30)
-              .height(30)
-              .textAlign(TextAlign.Center)
+          ListItem(){
+            // 问题描述
+            Text(this.questions[this.currentQuestionIndex].question)
               .fontSize(16)
-              .fontColor('#000000')
-              .borderRadius(15)
-              .backgroundColor(
-                this.selectedIndex === 1
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                  '#F2F2F2')
-                  : (this.hasSubmitted
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                    ? '#DFF5E3'
-                    : (this.isMultipleChoice()
-                      ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                      : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                  : (this.isMultipleChoice()
-                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                    : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-              )
-              .margin({ right: 10 });
-            Text(item)
-              .fontSize(16)
+              .padding({ left: 10, right: 10, top: 10 })
+              .textAlign(TextAlign.Start)
+              .width('100%');
+          }
+          ListItem(){
+            // 选项列表
+            Column(){
+              ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
+                Row() {
+                  Text(this.getOptionLabel(idx))
+                    .width(30)
+                    .height(30)
+                    .textAlign(TextAlign.Center)
+                    .fontSize(16)
+                    .fontColor('#000000')
+                    .borderRadius(15)
+                    .backgroundColor(this.getOptionBackgroundColor(idx))
+                    .margin({ right: 10 });
+                  Text(item)
+                    .fontSize(16)
+                    .padding(10)
+                    .width('80%')
+                    .borderRadius(8)
+                    .backgroundColor(this.getOptionBackgroundColor(idx))
+                }
+                .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
+                .margin({ top: 12, left: 16, right: 16 });
+              });
+            }
+          }
+          ListItem(){
+            //按钮
+            if (((this.practiceMode === 3 || this.practiceMode === 2) && this.hasSubmitted)) {
+              Row() {
+                Button() {
+                  Text('上一题')
+                    .fontSize(16)
+                    .fontColor('#F2B771')
+                }
+                .width(100)
+                .height(30)
+                .backgroundColor(Color.White)
+                .borderRadius(20)
+                .border({ width: 1, color: '#F2B771' })
+                .onClick(() => this.goToPreviousQuestion())
+
+                Button() {
+                  Text('下一题')
+                    .fontSize(16)
+                    .fontColor('#F2B771')
+                }
+                .backgroundColor(Color.White)
+                .width(100)
+                .height(30)
+                .borderRadius(20)
+                .border({ width: 1, color: '#F2B771' })
+                .onClick(() => this.goToNextQuestion())
+              }
+              .justifyContent(FlexAlign.SpaceAround)
+              .alignItems(VerticalAlign.Center)
               .padding(10)
-              .width('80%')
-              .borderRadius(8)
-              .backgroundColor(
-                this.selectedIndex === 1
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx)) ? '#DFF5E3' :
-                  '#F2F2F2')
-                  : (this.hasSubmitted
-                  ? (this.questions[this.currentQuestionIndex].answer.includes(this.getOptionLabel(idx))
-                    ? '#DFF5E3'
-                    : (this.isMultipleChoice()
-                      ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#FDECEC' : '#F2F2F2')
-                      : (this.selectedOption === this.getOptionLabel(idx) ? '#FDECEC' : '#F2F2F2')))
-                  : (this.isMultipleChoice()
-                    ? (this.selectedOptions.includes(this.getOptionLabel(idx)) ? '#B3E5FC' : '#F2F2F2')
-                    : (this.selectedOption === this.getOptionLabel(idx) ? '#E0E0E0' : '#F2F2F2')))
-              );
-          }
-          .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
-          .margin({ top: 12, left: 16, right: 16 });
-        });
-        //按钮
-        if (((this.practiceMode === 3 || this.practiceMode === 2) && this.hasSubmitted)) {
-          Row() {
-            Button() {
-              Text('上一题')
-                .fontSize(16)
-                .fontColor('#F2B771')
+              .width('100%')
+              .margin({ top: 18 })
             }
-            .width(100)
-            .height(30)
-            .backgroundColor(Color.White)
-            .borderRadius(20)
-            .border({ width: 1, color: '#F2B771' })
-            .onClick(() => this.goToPreviousQuestion())
-
-            Button() {
-              Text('下一题')
-                .fontSize(16)
-                .fontColor('#F2B771')
-            }
-            .backgroundColor(Color.White)
-            .width(100)
-            .height(30)
-            .borderRadius(20)
-            .border({ width: 1, color: '#F2B771' })
-            .onClick(() => this.goToNextQuestion())
           }
-          .justifyContent(FlexAlign.SpaceAround)
-          .alignItems(VerticalAlign.Center)
-          .padding(10)
-          .width('80%')
-          .margin({ top: 18 })
         }
+        .width('90%')
+        .layoutWeight(1)
       }
     }
     .width('100%')
     .height('100%')
     .backgroundColor(Color.White);
 
+  }
+  private getOptionBackgroundColor(idx: number): string {
+    const optionLabel = this.getOptionLabel(idx);
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+
+    const isSelected = this.isMultipleChoice()
+      ? this.selectedOptions.includes(optionLabel)
+      : this.selectedOption === optionLabel;
+
+    // 修复：根据题目类型判断是否正确
+    let isCorrect = false;
+    if (this.isTrueFalseQuestion()) {
+      // 判断题：比较选项内容
+      const optionContent = currentQuestion.option[idx];
+      isCorrect = optionContent === currentQuestion.answer;
+    } else {
+      // 单选/多选题：比较选项标签
+      isCorrect = currentQuestion.answer.includes(optionLabel);
+    }
+
+    if (this.selectedIndex === 1) {
+      return isCorrect ? '#DFF5E3' : '#F2F2F2';
+    }
+
+    if (this.hasSubmitted) {
+      if (isCorrect) {
+        return '#DFF5E3';
+      }
+      if (isSelected && !isCorrect) {
+        return '#FDECEC';
+      }
+      return '#F2F2F2';
+    } else {
+      if (this.isMultipleChoice()) {
+        return this.selectedOptions.includes(optionLabel) ? '#B3E5FC' : '#F2F2F2';
+      } else {
+        return this.selectedOption === optionLabel ? '#E0E0E0' : '#F2F2F2';
+      }
+    }
   }
 
   private async handleOptionClick(optionLabel: string) {
@@ -489,7 +522,7 @@ struct ExerciseCommonPage {
       const isLastQuestion = this.currentQuestionIndex === this.questions.length - 1;
 
       if (this.isMultipleChoice()) {
-        // 多选：切换选项状态
+        // 多选逻辑保持不变
         if (this.selectedOptions.includes(optionLabel)) {
           this.selectedOptions = this.selectedOptions.filter(opt => opt !== optionLabel);
         } else {
@@ -531,12 +564,29 @@ struct ExerciseCommonPage {
         // 单选：设置选项并提交
         this.selectedOption = optionLabel;
         this.hasSubmitted = true;
-        const isCorrect = optionLabel === currentQuestion.answer;
+
+        // 修复：根据题目类型判断答案
+        let isCorrect = false;
+
+        if (this.isTrueFalseQuestion()) {
+          // 判断题：比较选项内容与答案
+          const optionIndex = optionLabel.charCodeAt(0) - 65; // A=0, B=1
+          const selectedContent = currentQuestion.option[optionIndex];
+          isCorrect = selectedContent === currentQuestion.answer;
+        } else {
+          // 单选题：比较选项标签与答案
+          isCorrect = optionLabel === currentQuestion.answer;
+        }
+
         if (isCorrect && this.practiceMode === 2) {
           // 在错题练习模式下，如果答对，从错题表中移除
           await this.deleteFromWrongTable(currentQuestion);
         } else if (!isCorrect && this.practiceMode !== 2) {
-          await this.saveToWrongTable(currentQuestion, optionLabel);
+          // 插入错题表时，对于判断题传递选项内容
+          const wrongAnswer = this.isTrueFalseQuestion()
+            ? currentQuestion.option[optionLabel.charCodeAt(0) - 65]
+            : optionLabel;
+          await this.saveToWrongTable(currentQuestion, wrongAnswer);
         }
         this.saveQuestionState(); // 记录单选提交状态
         if (isLastQuestion) {

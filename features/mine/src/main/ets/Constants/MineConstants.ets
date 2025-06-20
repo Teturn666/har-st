@@ -21,7 +21,7 @@ export default class MineConstants {
   //支持我们跳转应用商店链接
   static readonly APP_STORE_URL = 'https://appgallery.huawei.com/app/detail?id=com.chznai.ikst&channelId=SHARE'
   //帮助中心
-  static readonly USER_HELP_URL = 'https://ti.iksdt.com/static/doc/help/help.html'
+  static readonly USER_HELP_URL = 'https://ti.iksdt.com/static/doc/help/harmony-help.html'
   //意见反馈
   static readonly FEEDBACK_URL =
     'https://crmeb.yweiai.com/chat/pc?noCanClose=1&kefu_id=12&token=075774b0dae195a3b971d8f98388d502&openid=harmony&nickName=harmony'

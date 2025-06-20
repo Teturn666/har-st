@@ -19,7 +19,7 @@ import common from '@ohos.app.ability.common'
 import router from '@ohos.router'
 import { PayView } from 'view/Index'
 import lottie, { AnimationItem } from '@ohos/lottie'
-import { util } from '@kit.ArkTS'
+import { taskpool, util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
 import { promptAction, window } from '@kit.ArkUI'
@@ -39,6 +39,8 @@ import { ocrToText } from '../utils/OcrToText'
 import { ScreenCaptureManager } from '../manage/ScreenCaptureManager'
 import { QuestionUtil } from '../utils/QuestionUtil'
 import { Log } from '@tencent/wechat_open_sdk'
+import { readSearchCurrent, ReadSearchResult } from '../manage/ConcurrentManage'
+import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -108,7 +110,6 @@ export struct HomePage {
     hmAd: new HmAdInfo()
   }
   @State pipAnswer: string = '暂未搜索到该题'
-  mDataText: SharedArrayBuffer | null = null
   AdDialogController = new CustomDialogController({
     builder: AdCustomDialog({
       isShowDialog: (() => {
@@ -319,7 +320,6 @@ export struct HomePage {
           isChangeTextCallBack()
         }
       })
-
     });
     this.dialogController.open();
   }
@@ -328,11 +328,6 @@ export struct HomePage {
   private handleScanSearch = () => {
     this.currentSearchMode = SearchMode.SCAN;
 
-    // 关闭画中画
-    if (PipManager.getInstance()) {
-      PipManager.getInstance().stopPip()
-      emitter.off(EmitterConstants.EM_DATA_TEXT)
-    }
     if (!this.getIsShowDialog()) {
       this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
@@ -366,31 +361,30 @@ export struct HomePage {
   // 读屏搜题处理逻辑
   private handleScreenReadSearch = async () => {
     // 方案1: 移除已存在的监听器
-    emitter.off("dataText");
+    emitter.off(EmitterConstants.EM_DATA_TEXT);
 
     // 注册回调，从ocr拿到文字信息
-    emitter.on("dataText", async (event) => {
+    emitter.on(EmitterConstants.EM_DATA_TEXT, async (event) => {
       const ocrText: string = event.data!["text"].replace(/\r?\n/g, '')
-      // 进行搜索，然后返回给画中画
-      if (this.mDataText && this.mDataText?.byteLength !== 0) {
-        // 过滤掉画中画的text
-        const filterData = QuestionUtil.analyzeTextMatch(ocrText, this.pipAnswer, 0.5);
-        // console.log(TAG, "ocrText = " + ocrText)
-        // console.log(TAG, "this.answerAndQuestion = " + this.answerAndQuestion)
-        console.log(TAG, "data.remainingText = " + filterData.remainingText)
-        this.searchResult(filterData.remainingText, this.mDataText)
+      const mDataText = MDataTextManage.getInstance().getDataText()
+
+      // 多线程入参 ocrText mDataText pipAnswer 返回参数 resultSearchRes pipAnswer
+      if (mDataText && mDataText?.byteLength !== 0) {
+        // 调用多线程函数
+        this.readSearchTask(ocrText, this.pipAnswer, mDataText)
       }
     })
+
     this.currentSearchMode = SearchMode.SCREEN_READ;
 
     if (!this.getIsShowDialog()) {
       this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
       this.TypeRead = () => {
-        this.readSearch()
+        this.startScreenCapture()
       }
       this.TypeSearch = true
-      await this.showSelectBankDialog(this.readSearch, this.readSearch)
+      await this.showSelectBankDialog(this.startScreenCapture, this.startScreenCapture)
     } else {
       // 判断是否为vip,不是vip则看广告，是vip则直接跳转
       if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.CsjCode) {
@@ -398,33 +392,46 @@ export struct HomePage {
         this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
         this.TypeSearch = true
         this.TypeRead = () => {
-          this.readSearch()
+          this.startScreenCapture()
         }
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {
-          this.readSearch()
+          this.startScreenCapture()
         }
       }
     }
   }
-  private getMdataText = async () => {
-    // 获取mDataText
-    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
-    if (isAllSelect) {
-      this.mDataText = await SearchMapManage.getInstance()
-        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-      console.log(TAG, 'this.mDataText 修改成功')
-    } else {
-      this.mDataText = await SearchMapManage.getInstance()
-        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
-      console.log(TAG, 'this.mDataText 修改成功')
+
+  /**
+   * 读屏搜题
+   * @param qStr 搜索内容
+   * @returns 返回结果
+   */
+  private async readSearchTask(ocrText: string, pipAnswer: string,
+    mDataText: SharedArrayBuffer) {
+    try {
+      // 在这里读取内容
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(readSearchCurrent, getContext(this), ocrText, pipAnswer, mDataText);
+      const res = await taskpool.execute(task) as ReadSearchResult;
+
+      PipManager.getInstance()
+        .updatePipUI(new Params({
+          answer: res.answer,
+          question: res.question
+        }));
+
+      this.pipAnswer = res.answer + res.question
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
     }
   }
+
   /**
    * 点击读屏搜题处理逻辑
    */
-  private readSearch = async () => {
+  private startScreenCapture = async () => {
     // 读屏搜题
     const screenCaptureManager = ScreenCaptureManager.getInstance(getContext(this) as common.ApplicationContext);
 
@@ -437,24 +444,6 @@ export struct HomePage {
 
     // 开启读屏幕
     screenCaptureManager.startScreenCapture();
-
-    await this.getMdataText()
-  }
-
-  private async searchResult(ocrText: string, mDataText: SharedArrayBuffer) {
-    const resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(ocrText, mDataText)
-
-    // 将结果返回给画中画
-    if (resultSearchRes?.answer && resultSearchRes?.question) {
-      let answer = QuestionUtil.filterOptionsByAnswer(resultSearchRes)
-      PipManager.getInstance()
-        .updatePipUI(new Params({
-          answer: answer,
-          question: resultSearchRes?.question
-        }));
-
-      this.pipAnswer = answer + resultSearchRes.question
-    }
   }
 
   //获取是否显示弹窗
@@ -639,7 +628,7 @@ struct SearchList {
         PipManager.titleColor = preferencesUtils.getString(PreferencesConstants.TITLE_COLOR_SETTING)
         PipManager.optionColor = preferencesUtils.getString(PreferencesConstants.OPTION_COLOR_SETTING)
         PipManager.floatingColor = preferencesUtils.getString(PreferencesConstants.FLOATING_COLOR_SETTING)
-
+        PipManager.fontSize = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE)
         // 执行传入的逻辑
         this.ScreenReader()
       })

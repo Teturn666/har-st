@@ -1,9 +1,10 @@
-import { promptAction, router } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 import { preferencesUtils, PreferencesConstants } from 'utils/Index';
 import { BankListRes } from 'db';
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage';
 import { SearchEngine } from 'search';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
+import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage';
 import { UserBankSelection } from '../model/UserBankSelection';
 
 
@@ -469,7 +470,7 @@ export struct selectBankDialog {
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
 
-            // 判断选择部分题库进行初始化
+            // 判断选择部分题库进行初始化，全选则直接赋值all文件数据
             if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
               await SearchMapManage.getInstance()
                 .clearTreeMapFileContent(getContext(this), SearchConstants.SEARCH_FILE_SOME)
@@ -479,6 +480,15 @@ export struct selectBankDialog {
 
               await SearchEngine.getInstance()
                 .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+
+              let mdataText = await SearchMapManage.getInstance()
+                .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+              // 存入部分题库的缓存
+              MDataTextManage.getInstance().saveDataText(mdataText)
+            } else {
+              let mdataText = await SearchMapManage.getInstance()
+                .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+              MDataTextManage.getInstance().saveDataText(mdataText)
             }
 
             if (!this.isVip) {
