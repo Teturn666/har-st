@@ -109,6 +109,16 @@
             "EntryAbility"
           ]
         }
+      },
+      {
+        "name": "ohos.permission.READ_IMAGEVIDEO",
+        "reason": "$string:app_imagevideo",
+        "usedScene": {
+          "when": "always",
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
       }
     ]
   }

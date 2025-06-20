@@ -1,0 +1,10 @@
+export  class cameraAppStorage{
+  //重启相机
+  static  readonly  CAMERA_RESTART_CAMERA= 'restartCamera'
+  //选择图片
+  static  readonly  CAMERA_CAMERA_URI= 'CameraUri'
+  //缩略图
+  static  readonly  CAMERA_THUMBNAIL= 'thumbnail'
+
+
+}

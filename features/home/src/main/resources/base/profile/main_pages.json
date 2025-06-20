@@ -2,6 +2,8 @@
   "src": [
     "pages/HomePage",
     "pages/SearchQuestions",
-    "pages/SearchIntroductionPage"
+    "pages/SearchIntroductionPage",
+    "pages/PhotoSearchPage",
+    "pages/CropImagePage"
   ]
 }
