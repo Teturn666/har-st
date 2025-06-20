@@ -20,9 +20,9 @@ export async function readSearchCurrent(context: common.Context, ocrText: string
   mDataText: SharedArrayBuffer): Promise<ReadSearchResult> {
   // 进行搜索，然后返回给画中画
   // 过滤掉画中画的text
-  const filterData = QuestionUtil.analyzeTextMatch(ocrText, pipAnswer, 0.5);
-  // console.log(TAG, "ocrText = " + ocrText)
-  // console.log(TAG, "answerAndQuestion = " + answerAndQuestion)
+  const filterData = QuestionUtil.analyzeTextMatch(ocrText, pipAnswer, 0.3);
+  console.debug('ConcurrentManage', "ocrText = " + ocrText)
+  console.debug('ConcurrentManage', "pipAnswer = " + pipAnswer)
   console.debug('ConcurrentManage', "data.remainingText = " + filterData.remainingText)
   // console.debug('mDataText', "mDataText = " + mDataText.byteLength)
 
