@@ -78,7 +78,7 @@ export function HomePageBuilder() {
   HomePage()
 }
 
-@Entry({ routeName: 'homePage' })
+@Entry()
 @Component
 export struct HomePage {
   private imageSource: image.ImageSource | undefined = undefined
@@ -212,7 +212,8 @@ export struct HomePage {
             SearchHelper({
               isLoading: this.loading,
               handleClick: () => {
-                accessManager.CheckCamera(['ohos.permission.CAMERA', 'ohos.permission.READ_IMAGEVIDEO'], () => {
+                //'ohos.permission.READ_IMAGEVIDEO'
+                accessManager.CheckCamera(['ohos.permission.CAMERA', ], () => {
                   router.pushNamedRoute({
                     name: HomeConstants.ROUTER_PHOTO_SEARCH,
                   })
