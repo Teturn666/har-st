@@ -11,6 +11,7 @@ import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { common, Want } from '@kit.AbilityKit';
 import fs from '@ohos.file.fs';
 import { systemShare } from '@kit.ShareKit';
+import { fileUri } from '@kit.CoreFileKit';
 
 import('./HelpPage');
 import('./CustomizedBankPage');
@@ -24,6 +25,9 @@ struct CustomQuestionPage {
   @State homeModel: HomeModel = HomeModel.getInstance();
   @State questionBanks: BankListRes[] = [];
   @State isLoading: boolean = false;
+  @State management: boolean = false;
+  @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
+  @State selectAll: boolean = false; // 全选状态
 
   async getimportList() {
     this.isLoading = true;
@@ -59,27 +63,97 @@ struct CustomQuestionPage {
       });
   }
 
-  async handleDelete(qid: number) {
+  // 删除
+  async handleBatchDelete() {
+    if (this.selectedItems.size === 0) {
+      promptAction.showToast({ message: '请选择后再进行删除', duration: 2000 });
+      return;
+    }
+
     if (this.isLoading) {
       return;
-    } // 防止重复操作
-    this.isLoading = true;
+    }
+
     try {
-      await this.homeModel.deleteTable(qid);
-      console.log(`Deleted qid: ${qid}`);
-      // 按索引删除特定项目，而不是清空整个数组
-      const index = this.questionBanks.findIndex(bank => bank.qid === qid);
-      if (index !== -1) {
-        this.questionBanks.splice(index, 1);
+      await new Promise<void>((resolve, reject) => {
+        promptAction.showDialog({
+          title: '提示',
+          message: `确定删除这${this.selectedItems.size}个题库吗？`,
+          buttons: [
+            { text: '取消', color: '#666666' },
+            { text: '确定', color: '#F75A23' }
+          ]
+        }).then((data) => {
+          if (data.index === 1) {
+            resolve();
+          } else {
+            reject();
+          }
+        });
+      });
+
+      this.isLoading = true;
+
+      // 批量删除 - 逐个删除而不是使用Promise.all
+      for (const qid of this.selectedItems) {
+        try {
+          await this.homeModel.deleteTable(qid);
+          console.log(`Deleted qid: ${qid}`);
+        } catch (deleteError) {
+          console.error(`Failed to delete qid ${qid}:`, deleteError);
+        }
       }
-      promptAction.showToast({ message: '删除成功', duration: 2000 });
-      emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+
+      // 从列表中移除已删除的项目
+      this.questionBanks = this.questionBanks.filter(bank => !this.selectedItems.has(bank.qid));
+
+      // 清空选择状态
+      this.selectedItems.clear();
+      this.selectAll = false;
+      emitter.emit(EmitterConstants.EM_REFRESH_HOME);
     } catch (error) {
-      console.error(`Delete failed: ${error}`);
-      promptAction.showToast({ message: '删除失败', duration: 2000 });
+      if (error !== undefined) { // 不是用户取消
+        console.error(`Batch delete failed: ${error}`);
+        promptAction.showToast({ message: '批量删除失败', duration: 2000 });
+      }
     } finally {
       this.isLoading = false;
     }
+  }
+
+  // 切换单项选择
+  toggleItemSelection(qid: number) {
+    if (this.selectedItems.has(qid)) {
+      this.selectedItems.delete(qid);
+    } else {
+      this.selectedItems.add(qid);
+    }
+
+    // 更新全选状态
+    this.selectAll = this.selectedItems.size === this.questionBanks.length && this.questionBanks.length > 0;
+  }
+
+  // 切换全选
+  toggleSelectAll() {
+    if (this.selectAll) {
+      // 取消全选
+      this.selectedItems.clear();
+      this.selectAll = false;
+    } else {
+      // 全选
+      this.selectedItems.clear();
+      this.questionBanks.forEach(bank => {
+        this.selectedItems.add(bank.qid);
+      });
+      this.selectAll = true;
+    }
+  }
+
+  // 退出管理模式
+  exitManagement() {
+    this.management = false;
+    this.selectedItems.clear();
+    this.selectAll = false;
   }
 
   // 跳转QQ
@@ -158,12 +232,13 @@ struct CustomQuestionPage {
       fs.writeSync(file.fd, jsonContent);
       fs.closeSync(file.fd);
 
+      let uri = fileUri.getUriFromPath(filePath)
+
       // 使用官方系统分享API
       let shareData: systemShare.SharedData = new systemShare.SharedData({
         utd: utd.UniformDataType.FILE_URI,
-        uri:filePath,
-        title: `${bank.name} - 题库分享`,
-        description: `分享题库：${bank.name}，包含 ${bank.num} 道题目。使用快搜搜题导入此题库文件。`,
+        uri: uri,
+        title: `${bank.name}`,
       });
 
       let controller: systemShare.ShareController = new systemShare.ShareController(shareData);
@@ -232,18 +307,23 @@ struct CustomQuestionPage {
       .margin({ top: 10 });
 
       // 我的导入
-      Row() {
-        Image($r('app.media.ic_import'))
-          .width(85);
-        Blank()
-        Text("管理")
-          .fontSize($r('app.float.font_size_12fp'))
-          .fontColor('#060606')
+      if(this.questionBanks.length > 0) {
+        Row() {
+          Image($r('app.media.ic_import'))
+            .width(85);
+          Blank()
+          Text(this.management ? "退出管理" : "管理")
+            .fontSize($r('app.float.font_size_12fp'))
+            .fontColor('#060606')
+            .onClick(() => {
+              this.management = !this.management;
+            });
+        }
+        .width('90%')
+        .margin({ top: 10, left: 10, right: 10 })
+        .alignItems(VerticalAlign.Top)
+        .justifyContent(FlexAlign.Start);
       }
-      .width('90%')
-      .margin({ top: 10, left: 10, right: 10 })
-      .alignItems(VerticalAlign.Top)
-      .justifyContent(FlexAlign.Start);
 
       if (this.questionBanks.length > 0) {
         List() {
@@ -255,6 +335,16 @@ struct CustomQuestionPage {
                   justifyContent: FlexAlign.SpaceAround,
                   alignItems: ItemAlign.Center,
                 }) {
+                  if (this.management) {
+                    Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
+                    $r('app.media.ic_check_box'))
+                      .objectFit(ImageFit.Contain)
+                      .size({ width: 32, height: 32 })
+                      .margin({ left: 15 })
+                      .onClick(() => {
+                        this.toggleItemSelection(item.qid);
+                      });
+                  }
                   Column() {
                     Row() {
                       Image($r('app.media.ic_question_bank'))
@@ -292,10 +382,6 @@ struct CustomQuestionPage {
                   });
 
                   Column() {
-                    // Image($r('app.media.ic_remove'))
-                    //   .objectFit(ImageFit.Contain)
-                    //   .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                    //   .onClick(() => this.handleDelete(item.qid));
                     Image($r('app.media.ic_share'))
                       .objectFit(ImageFit.Contain)
                       .size({ width: $r('app.float.float_24vp'), height: $r('app.float.float_24vp') })
@@ -310,6 +396,45 @@ struct CustomQuestionPage {
           });
         }
         .layoutWeight(1)
+
+        if (this.management) {
+          Row() {
+            Image(this.selectAll ? $r('app.media.ic_check_box_selected') : $r('app.media.ic_check_box'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: 32, height: 32 })
+              .onClick(() => {
+                this.toggleSelectAll();
+              });
+
+
+            Text("全选")
+              .fontColor($r('app.color.c_99000000'))
+              .fontSize($r('app.float.font_size_14fp'))
+              .margin({ left: 10, })
+              .onClick(() => {
+                this.toggleSelectAll();
+              });
+
+
+            Text(`（已选${this.selectedItems.size}项）`)
+              .fontColor($r('app.color.c_99000000'))
+              .fontSize($r('app.float.font_size_14fp'))
+
+            Blank()
+
+            Image($r('app.media.ic_d'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: 60, height: 22 })
+              .onClick(() => {
+                this.handleBatchDelete();
+              });
+          }
+          .padding({ left: 10, right: 10 })
+          .width('100%')
+          .height(72)
+          .backgroundColor('#fffaee')
+        }
+
       } else {
         Column() {
           Image($r('app.media.hotsearch'))

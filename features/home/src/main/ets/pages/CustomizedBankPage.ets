@@ -51,7 +51,6 @@ export struct CustomizedBankPage {
     return questionResList;
   }
 
-
   // 自定义题库导入逻辑
   async questionImport() {
     let fileUri: string = '';
@@ -304,7 +303,6 @@ export struct CustomizedBankPage {
       // 转成base64编码的字符串
       const helper = new util.Base64Helper();
       const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
-
       this.loadingMessage = '正在解析Excel数据...';
       // Promise化Excel解析过程
       const excelDataObj = await new Promise<ExcelDataObj>((resolve, reject) => {
@@ -439,7 +437,7 @@ export struct CustomizedBankPage {
     });
   }
 
-   aboutToAppear() {
+  aboutToAppear() {
     setTimeout(() => {
       this.questionImport()
     }, 500)
