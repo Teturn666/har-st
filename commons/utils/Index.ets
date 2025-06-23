@@ -18,6 +18,8 @@ export { GetAllSelectedUtil } from './src/main/ets/utils/GetAllSelectedUtil'
 
 export { EmitterConstants } from './src/main/ets/common/EmitterConstants'
 
+export { PromptActionClass } from './src/main/ets/components/PromptActionClass'
+
 export { OnWXResp, APP_ID, WXApi, WXEventHandler } from './src/main/ets/utils/WXApiWrap'
 
 export {
