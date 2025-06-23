@@ -12,6 +12,7 @@
     "db": "file:../../commons/db",
     "network": "file:../../commons/network",
     "login": "file:../login",
-  }
-}
+    "@candies/image_cropper": "^1.1.1"
+  },
 
+}

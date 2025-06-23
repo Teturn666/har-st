@@ -7,12 +7,17 @@ import { QuestionRes } from 'db'
 import { SearchEngine } from 'search'
 
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
+import { routerHome } from '../constants/RouterHome'
 
 @Entry({ routeName: 'searchResultPage' })
 @Component
 export struct SearchResultPage {
   aboutToDisappear(): void {
     AppStorage.delete("ocr")
+  }
+
+  onBackPress(): boolean | void {
+    return true
   }
 
   controller: TabsController = new TabsController()
@@ -34,7 +39,9 @@ export struct SearchResultPage {
       TitleBar({
         title: '搜索结果',
         backClick: () => {
-          router.back()
+          router.replaceUrl({
+            url: routerHome.ROUTER_HOME_PAGE
+          })
         }
       })
 
@@ -152,7 +159,6 @@ struct LocalView {
           ListItem() {
             BottomBar({
               searchClick: () => {
-                router.back()
               }
             })
           }
@@ -270,7 +276,9 @@ struct ListView {
           ListItem() {
             BottomBar({
               searchClick: () => {
-                router.back()
+                router.replaceUrl({
+                  url: routerHome.ROUTER_PhotoSearch_Page
+                })
               }
             })
           }
