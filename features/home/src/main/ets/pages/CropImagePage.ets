@@ -134,7 +134,13 @@ struct CropImagePage {
     }
     .bindSheet($$this.SearchText, this.SearchTextBuilder, {
       showClose: false,
-      height: '80%',
+      height: '88%',
+      dragBar: true,
+      onWillDismiss: (dismissSheetAction: DismissSheetAction) => {
+        if (dismissSheetAction.reason !== DismissReason.SLIDE_DOWN) {
+          dismissSheetAction.dismiss()
+        }
+      }
     })
     .backgroundColor('#000000')
     .height('100%')

@@ -209,7 +209,6 @@ export default class EntryAbility extends UIAbility {
     let camera =AppStorage.get(cameraAppStorage.CAMERA_RESTART_CAMERA) as boolean
     if (camera){
       createAtManager.cameraShooting()
-      AppStorage.setOrCreate(cameraAppStorage.CAMERA_RESTART_CAMERA,false )
     }
 
   }
@@ -217,7 +216,6 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
-    AppStorage.setOrCreate(cameraAppStorage.CAMERA_RESTART_CAMERA,true )
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
