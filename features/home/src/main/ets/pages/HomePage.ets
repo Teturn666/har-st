@@ -1,7 +1,6 @@
 import {
   CommonConstants as Const,
   EmitterConstants,
-  GetAllSelectedUtil,
   Logger,
   PreferencesConstants,
   preferencesUtils
@@ -22,23 +21,18 @@ import lottie, { AnimationItem } from '@ohos/lottie'
 import { taskpool, util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
-import { promptAction, window } from '@kit.ArkUI'
+import { window } from '@kit.ArkUI'
 import { selectImage } from '../utils/SelectImage'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
 import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
-import { BankListRes, QuestionRes } from 'db'
+import { BankListRes } from 'db'
 import { AdCustomDialog } from '../components/AdCustomDialog'
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes'
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo'
-import { SearchEngine } from 'search'
-import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
-import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 import { Params, PipManager } from '../manage/PipManage'
 import { ocrToText } from '../utils/OcrToText'
 import { ScreenCaptureManager } from '../manage/ScreenCaptureManager'
-import { QuestionUtil } from '../utils/QuestionUtil'
-import { Log } from '@tencent/wechat_open_sdk'
 import { readSearchCurrent, ReadSearchResult } from '../manage/ConcurrentManage'
 import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
 import { accessManager } from '../utils/AccessManager'
@@ -81,18 +75,13 @@ export function HomePageBuilder() {
 @Entry()
 @Component
 export struct HomePage {
-  private imageSource: image.ImageSource | undefined = undefined
   @State chooseImage: PixelMap | undefined = undefined
   @State dataValues: string = ''
   @State homeModel: HomeModel = HomeModel.getInstance()
   @State loadingStatus: LoadingStatus = LoadingStatus.OFF
   @State accounts: Array<HomeBankListRes> = []
   testString: number[] = []
-  private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
-  private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
-  private animateName = "loading"
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
-  private animateItem: AnimationItem | null = null
   @State hasLoadData: boolean = false
   @State loading: boolean = false
   @State TopHeight: number = 0
@@ -149,8 +138,6 @@ export struct HomePage {
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
       this.loadResource()
     })
-
-
   }
 
   aboutToDisappear(): void {
@@ -165,30 +152,7 @@ export struct HomePage {
 
   build() {
     RelativeContainer() {
-
-
       Column() {
-        // if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
-        //   Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
-        //     Canvas(this.controller)
-        //       .width('30%')
-        //       .height('20%')
-        //       .onReady(() => {
-        //         this.animateItem = lottie.loadAnimation({
-        //           container: this.controller,
-        //           renderer: 'canvas',
-        //           loop: true,
-        //           autoplay: true,
-        //           context: context,
-        //           name: this.animateName,
-        //           animationData: jsonData,
-        //         })
-        //       })
-        //   }
-        //
-        // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-
-
         List({ space: Const.SPACE_16 }) {
           ListItem() {
             Banner({

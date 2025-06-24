@@ -108,6 +108,11 @@
             return true;
           }
 
+          // 匹配 "选项1", "选项2", "选项3" 等数字格式
+          if (headerStr.includes("选项") && headerStr.match(/选项\s*[0-9]/)) {
+            return true;
+          }
+
           // 匹配单独的字母 "A", "B", "C", "D" 等格式（完全匹配字母，避免误匹配）
           if (headerStr.match(/^[A-Z][\*\s]*$/)) {
             return true;
@@ -127,6 +132,16 @@
             return longFormatMatch[1];
           }
 
+          // 从包含 "选项1" 或 "选项 1" 格式中提取数字并转换为字母
+          const numberFormatMatch = headerStr.match(/选项\s*([0-9]+)/);
+          if (numberFormatMatch) {
+            const number = parseInt(numberFormatMatch[1]);
+            // 将数字转换为字母 (1->A, 2->B, 3->C, ...)
+            if (number >= 1 && number <= 26) {
+              return String.fromCharCode(64 + number); // 64 + 1 = 65 = 'A'
+            }
+          }
+
           // 从 "A" 格式中提取字母（可能包含星号等特殊字符）
           const shortFormatMatch = headerStr.match(/^([A-Z])/);
           if (shortFormatMatch) {
@@ -134,6 +149,70 @@
           }
 
           return null;
+        }
+
+        /**
+         * 新增：分析数据行，推断选项数量
+         * @param {Array} rows - 数据行数组
+         * @param {number} questionIndex - 题干列索引
+         * @param {number} answerIndex - 答案列索引
+         * @returns {number} - 推断的选项数量
+         */
+        function inferOptionCount(rows, questionIndex, answerIndex) {
+          console.log(TAG, "开始分析数据行，推断选项数量...");
+
+          let maxOptionCount = 0;
+          const sampleSize = Math.min(20, rows.length); // 最多分析20行数据
+
+          for (let i = 0; i < sampleSize; i++) {
+            const row = rows[i];
+            if (!row) continue;
+
+            // 跳过题干和答案列，统计有内容的选项列数量
+            let optionCount = 0;
+            for (
+              let j = Math.max(questionIndex + 1, answerIndex + 1);
+              j < row.length;
+              j++
+            ) {
+              const cellValue = String(row[j] || "").trim();
+              if (cellValue.length > 0) {
+                optionCount = j - Math.max(questionIndex, answerIndex); // 计算相对位置
+              }
+            }
+            maxOptionCount = Math.max(maxOptionCount, optionCount);
+          }
+
+          console.log(
+            TAG,
+            `分析了 ${sampleSize} 行数据，推断最大选项数量: ${maxOptionCount}`
+          );
+          return maxOptionCount;
+        }
+
+        /**
+         * 新增：自动生成选项表头
+         * @param {number} optionCount - 选项数量
+         * @param {number} startIndex - 选项开始的列索引
+         * @returns {Array} - 生成的选项信息数组
+         */
+        function generateOptionHeaders(optionCount, startIndex) {
+          const detectedOptions = [];
+          for (let i = 0; i < optionCount; i++) {
+            const letter = String.fromCharCode(65 + i); // A, B, C, D...
+            detectedOptions.push({
+              letter: letter,
+              index: startIndex + i,
+              originalHeader: `选项${letter}`, // 自动生成的表头名称
+              isGenerated: true, // 标记为自动生成
+            });
+          }
+          console.log(
+            TAG,
+            "自动生成选项表头:",
+            detectedOptions.map((opt) => opt.originalHeader).join(", ")
+          );
+          return detectedOptions;
         }
 
         /**
@@ -230,21 +309,37 @@
           console.log(TAG, "实际表头:", actualHeaders);
 
           // 【修改】第一列默认为题干列，不校验"题干"字样
-          const questionIndex = 0;
+          let questionIndex = 0;
 
           // 查找答案列位置 - 使用包含匹配
-          const answerIndex = actualHeaders.findIndex((header) =>
+          let answerIndex = actualHeaders.findIndex((header) =>
             containsHeader(header, "答案")
           );
 
-          // 只检查是否包含答案列
+          // 如果找不到答案列，尝试查找其他可能的答案列名
+          if (answerIndex === -1) {
+            answerIndex = actualHeaders.findIndex(
+              (header) =>
+                containsHeader(header, "正确答案") ||
+                containsHeader(header, "答") ||
+                containsHeader(header, "正确")
+            );
+          }
+
+          // 如果还是找不到，假设第二列为答案列
+          if (answerIndex === -1 && actualHeaders.length >= 2) {
+            answerIndex = 1;
+            console.log(TAG, "未找到明确的答案列，假设第2列为答案列");
+          }
+
+          // 只检查是否找到答案列
           const hasRequiredHeaders = answerIndex !== -1;
 
           // 动态检测选项列数和位置
           let detectedOptions = [];
           let optionPositions = {};
 
-          if (answerIndex !== -1) {
+          if (hasRequiredHeaders) {
             // 从表头中检测所有选项列
             for (let i = 0; i < actualHeaders.length; i++) {
               const header = actualHeaders[i];
@@ -255,22 +350,65 @@
                     letter: letter,
                     index: i,
                     originalHeader: String(header).trim(),
+                    isGenerated: false,
                   });
                   optionPositions[letter] = i;
                 }
               }
             }
-          }
 
-          // 按字母顺序排序选项
-          detectedOptions.sort((a, b) => a.letter.localeCompare(b.letter));
+            // 【新增】如果没有检测到选项列，尝试自动推断
+            if (detectedOptions.length === 0) {
+              console.log(TAG, "表头中未检测到选项列，开始自动推断...");
+
+              // 分析数据行推断选项数量
+              const dataRows = rows.slice(1); // 排除表头行
+              const inferredOptionCount = inferOptionCount(
+                dataRows,
+                questionIndex,
+                answerIndex
+              );
+
+              if (inferredOptionCount > 0) {
+                // 选项从答案列之后开始
+                const optionStartIndex = Math.max(
+                  questionIndex + 1,
+                  answerIndex + 1
+                );
+                detectedOptions = generateOptionHeaders(
+                  inferredOptionCount,
+                  optionStartIndex
+                );
+
+                // 更新 optionPositions
+                detectedOptions.forEach((option) => {
+                  optionPositions[option.letter] = option.index;
+                });
+
+                console.log(
+                  TAG,
+                  `自动推断并生成了 ${inferredOptionCount} 个选项列`
+                );
+              } else {
+                console.log(TAG, "未能推断出选项数量，可能为判断题或填空题");
+              }
+            }
+
+            // 按字母顺序排序选项
+            detectedOptions.sort((a, b) => a.letter.localeCompare(b.letter));
+          }
 
           console.log(TAG, `检测到选项数量: ${detectedOptions.length}`);
           console.log(
             TAG,
             `检测到的选项:`,
             detectedOptions
-              .map((opt) => `${opt.letter}(${opt.originalHeader})`)
+              .map(
+                (opt) =>
+                  `${opt.letter}(${opt.originalHeader})${
+                    opt.isGenerated ? "[自动生成]" : ""
+                  }`
+              )
               .join(", ")
           );
 
@@ -283,7 +421,12 @@
             let headerRowIndex = -1;
             for (let i = 0; i < Math.min(5, rows.length); i++) {
               const row = rows[i] || [];
-              if (row.some((cell) => containsHeader(cell, "题干"))) {
+              if (
+                row.some(
+                  (cell) =>
+                    containsHeader(cell, "题干") || containsHeader(cell, "答案")
+                )
+              ) {
                 headerRowIndex = i;
                 break;
               }
@@ -313,6 +456,9 @@
               );
 
               if (newQuestionIndex !== -1 && newAnswerIndex !== -1) {
+                questionIndex = newQuestionIndex;
+                answerIndex = newAnswerIndex;
+
                 // 重新检测选项列
                 for (let i = 0; i < newHeaders.length; i++) {
                   const header = newHeaders[i];
@@ -323,9 +469,35 @@
                         letter: letter,
                         index: i,
                         originalHeader: String(header).trim(),
+                        isGenerated: false,
                       });
                       optionPositions[letter] = i;
                     }
+                  }
+                }
+
+                // 如果重新检测后仍然没有选项列，再次尝试自动推断
+                if (detectedOptions.length === 0) {
+                  const dataRows = rows.slice(1);
+                  const inferredOptionCount = inferOptionCount(
+                    dataRows,
+                    questionIndex,
+                    answerIndex
+                  );
+
+                  if (inferredOptionCount > 0) {
+                    const optionStartIndex = Math.max(
+                      questionIndex + 1,
+                      answerIndex + 1
+                    );
+                    detectedOptions = generateOptionHeaders(
+                      inferredOptionCount,
+                      optionStartIndex
+                    );
+
+                    detectedOptions.forEach((option) => {
+                      optionPositions[option.letter] = option.index;
+                    });
                   }
                 }
 

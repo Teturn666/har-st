@@ -1,5 +1,5 @@
-import { promptAction } from '@kit.ArkUI';
-import { preferencesUtils, PreferencesConstants } from 'utils/Index';
+import { ComponentContent, promptAction } from '@kit.ArkUI';
+import { preferencesUtils, PreferencesConstants, PromptActionClass } from 'utils/Index';
 import { BankListRes } from 'db';
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage';
 import { SearchEngine } from 'search';
@@ -9,6 +9,28 @@ import { UserBankSelection } from '../model/UserBankSelection';
 
 
 const TAG = 'SelectBankDialog';
+
+// 进度条加载
+let progressContentNode: ComponentContent<Object>;
+
+@Builder
+function buildProgress() {
+  Column({ space: 16 }) {
+    LoadingProgress()
+      .color($r('app.color.c_ffffc776'))
+      .width(80)
+      .height(80)
+    Text('正在加载中')
+      .fontSize(16)
+      .fontColor($r('app.color.c_ffffc776'))
+  }
+  .borderRadius(10)
+  .width(130)
+  .height(130)
+  .justifyContent(FlexAlign.Center)
+  .alignItems(HorizontalAlign.Center)
+}
+
 
 @CustomDialog
 export struct selectBankDialog {
@@ -207,6 +229,8 @@ export struct selectBankDialog {
     } else {
       this.selectedBankIds = allBankIds;
     }
+
+    progressContentNode = new ComponentContent(this.getUIContext(), wrapBuilder(buildProgress));
   }
 
   getUserBankSelection(uid: string, defaultIds: string[], isVip: boolean): UserBankSelection {
@@ -452,34 +476,43 @@ export struct selectBankDialog {
           .height(40)
           .borderRadius(8)
           .onClick(async () => {
-            if (this.isVip) {
-              // 用户必须勾选至少一个题库
-              if (this.selectedBankIds.length === 0) {
-                promptAction.showToast({
-                  message: '请至少选择一个题库进行扫描题库',
-                  duration: 2000
-                });
-                return;
-              }
-              const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
-              this.saveUserBankSelection(currentUid, this.selectedBankIds,
-                this.selectedBankIds.length === this.bankList.length);
+            if (this.selectedBankIds.length === 0) {
+              promptAction.showToast({
+                message: '请至少选择一个题库进行扫描题库',
+                duration: 2000
+              });
+              return;
             }
             // 去重并返回选中的题库ID
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
 
+            // 开启进度条
+            let uiContext = this.getUIContext();
+            PromptActionClass.setContext(uiContext);
+            PromptActionClass.setContentNode(progressContentNode);
+            PromptActionClass.setOptions({
+              autoCancel: true,
+            })
+            PromptActionClass.openDialog();
+
             // 判断选择部分题库进行初始化，全选则直接赋值all文件数据
             if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
-              await SearchMapManage.getInstance()
-                .clearTreeMapFileContent(getContext(this), SearchConstants.SEARCH_FILE_SOME)
               const selectedBankQIds = this.bankList
                 .filter(bank => this.selectedBankIds.includes(String(bank.id)))
                 .map(bank => bank.qid)
 
-              await SearchEngine.getInstance()
-                .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+              const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+              const data = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ + `${currentUid}`, '');
+              const oldSelectedBankQIds: UserBankSelection = data ? JSON.parse(data) : {};
+              // 判断选择的题库和以前的不一致，执行初始化
+              if (JSON.stringify(oldSelectedBankQIds.selectedBankIds) !== JSON.stringify(this.selectedBankIds)) {
+                await SearchMapManage.getInstance()
+                  .clearTreeMapFileContent(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+                await SearchEngine.getInstance()
+                  .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+              }
 
               let mdataText = await SearchMapManage.getInstance()
                 .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
@@ -491,6 +524,15 @@ export struct selectBankDialog {
               MDataTextManage.getInstance().saveDataText(mdataText)
             }
 
+            if (this.isVip) {
+              // 如果为vip，存储vip题库信息
+              const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+              this.saveUserBankSelection(currentUid, this.selectedBankIds,
+                this.selectedBankIds.length === this.bankList.length);
+            }
+
+            // 关闭进度条
+            PromptActionClass.closeDialog(progressContentNode);
             if (!this.isVip) {
               if (this.isVipDialog) {
                 this.isVipDialog()
