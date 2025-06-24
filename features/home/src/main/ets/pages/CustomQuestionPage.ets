@@ -1,13 +1,17 @@
 import { TitleBar } from 'widget';
 import { router } from '@kit.ArkUI';
+import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import HomeConstants from '../Constants/HomeConstants';
 import { WebParseExcel } from '../components/WebParseExcel';
 import { HomeModel } from '../model/HomeModel';
-import { BankListRes } from 'db';
+import { BankListRes, QuestionRes } from 'db';
 import promptAction from '@ohos.promptAction';
 import { EmitterConstants, ToastUtils } from 'utils';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { common, Want } from '@kit.AbilityKit';
+import fs from '@ohos.file.fs';
+import { systemShare } from '@kit.ShareKit';
+import { fileUri } from '@kit.CoreFileKit';
 
 import('./HelpPage');
 import('./CustomizedBankPage');
@@ -21,6 +25,9 @@ struct CustomQuestionPage {
   @State homeModel: HomeModel = HomeModel.getInstance();
   @State questionBanks: BankListRes[] = [];
   @State isLoading: boolean = false;
+  @State management: boolean = false;
+  @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
+  @State selectAll: boolean = false; // 全选状态
 
   async getimportList() {
     this.isLoading = true;
@@ -56,27 +63,97 @@ struct CustomQuestionPage {
       });
   }
 
-  async handleDelete(qid: number) {
+  // 删除
+  async handleBatchDelete() {
+    if (this.selectedItems.size === 0) {
+      promptAction.showToast({ message: '请选择后再进行删除', duration: 2000 });
+      return;
+    }
+
     if (this.isLoading) {
       return;
-    } // 防止重复操作
-    this.isLoading = true;
+    }
+
     try {
-      await this.homeModel.deleteTable(qid);
-      console.log(`Deleted qid: ${qid}`);
-      // 按索引删除特定项目，而不是清空整个数组
-      const index = this.questionBanks.findIndex(bank => bank.qid === qid);
-      if (index !== -1) {
-        this.questionBanks.splice(index, 1);
+      await new Promise<void>((resolve, reject) => {
+        promptAction.showDialog({
+          title: '提示',
+          message: `确定删除这${this.selectedItems.size}个题库吗？`,
+          buttons: [
+            { text: '取消', color: '#666666' },
+            { text: '确定', color: '#F75A23' }
+          ]
+        }).then((data) => {
+          if (data.index === 1) {
+            resolve();
+          } else {
+            reject();
+          }
+        });
+      });
+
+      this.isLoading = true;
+
+      // 批量删除 - 逐个删除而不是使用Promise.all
+      for (const qid of this.selectedItems) {
+        try {
+          await this.homeModel.deleteTable(qid);
+          console.log(`Deleted qid: ${qid}`);
+        } catch (deleteError) {
+          console.error(`Failed to delete qid ${qid}:`, deleteError);
+        }
       }
-      promptAction.showToast({ message: '删除成功', duration: 2000 });
-      emitter.emit(EmitterConstants.EM_REFRESH_HOME)
+
+      // 从列表中移除已删除的项目
+      this.questionBanks = this.questionBanks.filter(bank => !this.selectedItems.has(bank.qid));
+
+      // 清空选择状态
+      this.selectedItems.clear();
+      this.selectAll = false;
+      emitter.emit(EmitterConstants.EM_REFRESH_HOME);
     } catch (error) {
-      console.error(`Delete failed: ${error}`);
-      promptAction.showToast({ message: '删除失败', duration: 2000 });
+      if (error !== undefined) { // 不是用户取消
+        console.error(`Batch delete failed: ${error}`);
+        promptAction.showToast({ message: '批量删除失败', duration: 2000 });
+      }
     } finally {
       this.isLoading = false;
     }
+  }
+
+  // 切换单项选择
+  toggleItemSelection(qid: number) {
+    if (this.selectedItems.has(qid)) {
+      this.selectedItems.delete(qid);
+    } else {
+      this.selectedItems.add(qid);
+    }
+
+    // 更新全选状态
+    this.selectAll = this.selectedItems.size === this.questionBanks.length && this.questionBanks.length > 0;
+  }
+
+  // 切换全选
+  toggleSelectAll() {
+    if (this.selectAll) {
+      // 取消全选
+      this.selectedItems.clear();
+      this.selectAll = false;
+    } else {
+      // 全选
+      this.selectedItems.clear();
+      this.questionBanks.forEach(bank => {
+        this.selectedItems.add(bank.qid);
+      });
+      this.selectAll = true;
+    }
+  }
+
+  // 退出管理模式
+  exitManagement() {
+    this.management = false;
+    this.selectedItems.clear();
+    this.selectAll = false;
   }
 
   // 跳转QQ
@@ -116,6 +193,71 @@ struct CustomQuestionPage {
     } catch (err) {
       // 唤起失败
       ToastUtils.showToast('应用程序未安装')
+    }
+  }
+
+  // 分享题库功能
+  async handleShare(bank: BankListRes): Promise<void> {
+    if (this.isLoading) {
+      return;
+    }
+
+    this.isLoading = true;
+    try {
+      // 获取题库的具体题目数据
+      const questionData = await this.homeModel.getBankQuestionList(bank.qid);
+
+      if (!questionData || questionData.length === 0) {
+        promptAction.showToast({ message: '该题库暂无题目数据', duration: 2000 });
+        return;
+      }
+
+      // 将题目数据转换为JSON格式
+      const jsonContent: string = questionData.map((item: QuestionRes) => {
+        return JSON.stringify({
+          q: item.question, // 题目内容
+          a: item.option || [], // 选项数组
+          ans: item.answer || '' // 正确答案
+        });
+      }).join('\n');
+
+      // 创建临时文件
+      const context = getContext(this) as common.UIAbilityContext;
+      const cacheDir: string = context.cacheDir;
+      const fileName: string = `${bank.name}_题库_${new Date().getTime()}.txt`;
+      const filePath: string = `${cacheDir}/${fileName}`;
+
+      // 写入文件
+      const file = fs.openSync(filePath, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY);
+      fs.writeSync(file.fd, jsonContent);
+      fs.closeSync(file.fd);
+
+      let uri = fileUri.getUriFromPath(filePath)
+
+      // 使用官方系统分享API
+      let shareData: systemShare.SharedData = new systemShare.SharedData({
+        utd: utd.UniformDataType.FILE_URI,
+        uri: uri,
+        title: `${bank.name}`,
+      });
+
+      let controller: systemShare.ShareController = new systemShare.ShareController(shareData);
+      controller.show(context, {
+        selectionMode: systemShare.SelectionMode.SINGLE,
+        previewMode: systemShare.SharePreviewMode.DEFAULT,
+      }).then(() => {
+        promptAction.showToast({ message: '分享成功', duration: 2000 });
+        console.log('Share success');
+      }).catch((error: BusinessError) => {
+        console.error(`Share failed: ${error.message}`);
+        promptAction.showToast({ message: '分享失败', duration: 2000 });
+      });
+
+    } catch (error) {
+      console.error(`Share error: ${error}`);
+      promptAction.showToast({ message: '分享失败，请重试', duration: 2000 });
+    } finally {
+      this.isLoading = false;
     }
   }
 
@@ -165,14 +307,23 @@ struct CustomQuestionPage {
       .margin({ top: 10 });
 
       // 我的导入
-      Row() {
-        Image($r('app.media.ic_import'))
-          .width(85);
+      if(this.questionBanks.length > 0) {
+        Row() {
+          Image($r('app.media.ic_import'))
+            .width(85);
+          Blank()
+          Text(this.management ? "退出管理" : "管理")
+            .fontSize($r('app.float.font_size_12fp'))
+            .fontColor('#060606')
+            .onClick(() => {
+              this.management = !this.management;
+            });
+        }
+        .width('90%')
+        .margin({ top: 10, left: 10, right: 10 })
+        .alignItems(VerticalAlign.Top)
+        .justifyContent(FlexAlign.Start);
       }
-      .width('90%')
-      .margin({ top: 10, left: 10 })
-      .alignItems(VerticalAlign.Top)
-      .justifyContent(FlexAlign.Start);
 
       if (this.questionBanks.length > 0) {
         List() {
@@ -184,6 +335,16 @@ struct CustomQuestionPage {
                   justifyContent: FlexAlign.SpaceAround,
                   alignItems: ItemAlign.Center,
                 }) {
+                  if (this.management) {
+                    Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
+                    $r('app.media.ic_check_box'))
+                      .objectFit(ImageFit.Contain)
+                      .size({ width: 32, height: 32 })
+                      .margin({ left: 15 })
+                      .onClick(() => {
+                        this.toggleItemSelection(item.qid);
+                      });
+                  }
                   Column() {
                     Row() {
                       Image($r('app.media.ic_question_bank'))
@@ -221,10 +382,12 @@ struct CustomQuestionPage {
                   });
 
                   Column() {
-                    Image($r('app.media.ic_remove'))
+                    Image($r('app.media.ic_share'))
                       .objectFit(ImageFit.Contain)
-                      .size({ width: $r('app.float.float_50vp'), height: $r('app.float.float_50vp') })
-                      .onClick(() => this.handleDelete(item.qid));
+                      .size({ width: $r('app.float.float_24vp'), height: $r('app.float.float_24vp') })
+                      .onClick(() => {
+                        this.handleShare(item)
+                      })
                   }
                   .margin({ right: $r('app.float.float_20vp') });
                 }
@@ -233,6 +396,45 @@ struct CustomQuestionPage {
           });
         }
         .layoutWeight(1)
+
+        if (this.management) {
+          Row() {
+            Image(this.selectAll ? $r('app.media.ic_check_box_selected') : $r('app.media.ic_check_box'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: 32, height: 32 })
+              .onClick(() => {
+                this.toggleSelectAll();
+              });
+
+
+            Text("全选")
+              .fontColor($r('app.color.c_99000000'))
+              .fontSize($r('app.float.font_size_14fp'))
+              .margin({ left: 10, })
+              .onClick(() => {
+                this.toggleSelectAll();
+              });
+
+
+            Text(`（已选${this.selectedItems.size}项）`)
+              .fontColor($r('app.color.c_99000000'))
+              .fontSize($r('app.float.font_size_14fp'))
+
+            Blank()
+
+            Image($r('app.media.ic_d'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: 60, height: 22 })
+              .onClick(() => {
+                this.handleBatchDelete();
+              });
+          }
+          .padding({ left: 10, right: 10 })
+          .width('100%')
+          .height(72)
+          .backgroundColor('#fffaee')
+        }
+
       } else {
         Column() {
           Image($r('app.media.hotsearch'))
@@ -262,7 +464,7 @@ struct CustomQuestionPage {
               .justifyContent(FlexAlign.SpaceBetween)
             }
             .width('50%')
-            .onClick(() =>{
+            .onClick(() => {
               this.jumpToQQ()
             })
 
@@ -283,12 +485,12 @@ struct CustomQuestionPage {
               .justifyContent(FlexAlign.SpaceBetween)
             }
             .width('50%')
-            .onClick(() =>{
+            .onClick(() => {
               this.jumpToWX()
             })
           }
           .width('100%')
-          .margin({ top: 20 }) 
+          .margin({ top: 20 })
 
           Text("导入方式：将题库发送至QQ/微信--打开题库--点击右上角--选择其它应用打开--选择【快搜搜题】\n\n" +
             "注：导入文件支持txt、excel格式，word格式请转为txt再导入\n\n" +

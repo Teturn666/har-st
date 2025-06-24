@@ -12,11 +12,11 @@ struct MyDownloadPage {
 
   build() {
     Column() {
-      TitleBar({
-        title: '我的下载', backClick: () => {
-          router.back()
-        }
-      }).width('100%')
+      // TitleBar({
+      //   title: '我的下载', backClick: () => {
+      //     router.back()
+      //   }
+      // }).width('100%')
       BankList({
         fromType: 2
       })

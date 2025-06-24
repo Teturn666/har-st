@@ -56,7 +56,7 @@ struct ExerciseDetailsPage {
     }
   }
 
- private continueRouter(){
+  private continueRouter() {
     router.pushNamedRoute({
       name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
       params: {
@@ -66,8 +66,8 @@ struct ExerciseDetailsPage {
       }
     });
   }
-  
-  quitRouter(){
+
+  quitRouter() {
     let index = Number(router.getLength()) - this.backindex;
     router.back(index, {
       refresh: "1",
@@ -75,8 +75,7 @@ struct ExerciseDetailsPage {
     });
   }
 
-
-  private showDialog(tContent:string) {
+  private showDialog(tContent: string) {
     promptAction.showDialog({
       title: '温馨提示',
       message: `${tContent}`,
@@ -141,10 +140,19 @@ struct ExerciseDetailsPage {
       const correctAnswerLabel = this.convertAnswerToLabel(question, question.answer);
       const userAnswerLabel = this.convertUserAnswerToLabel(question, userAnswer);
       return correctAnswerLabel === userAnswerLabel;
-    } else if (question.answer.length > 1 && question.answer.includes(',')) {
+    } else if (question.answer.length > 1 && userAnswer.includes(',')) {
       // 多选题
-      const correctAnswers = question.answer.split(',').sort().join(',');
-      const userAnswers = userAnswer.split(',').sort().join(',');
+      const correctAnswers = question.answer
+        .split('')
+        .sort()
+        .join('');
+
+      const userAnswers = userAnswer
+        .split(',')
+        .map(answer => answer.trim())
+        .filter(answer => answer.length > 0)
+        .sort()
+        .join('');
       return correctAnswers === userAnswers;
     } else {
       // 单选题
@@ -243,7 +251,7 @@ struct ExerciseDetailsPage {
           Column() {
             ForEach(this.questions, (item: QuestionRes, index: number) => {
               Column() {
-                Text(item.question + item.question) // 重复以模拟长文本
+                Text(item.question + item.question)// 重复以模拟长文本
                   .fontColor('#333333')
                   .fontSize(12)
                   .margin({ top: 8 });
@@ -309,19 +317,19 @@ struct ExerciseDetailsPage {
             .width(122)
             .height(40)
             .onClick(() => {
-              if(this.typepage === 2){
-                if(this.isBankData){
+              if (this.typepage === 2) {
+                if (this.isBankData) {
                   this.continueRouter()
-                }else {
+                } else {
                   this.showDialog("当前没有错题，练习做错的题目将会收录到这里。")
                 }
-              }else if(this.typepage === 3){
-                if(this.isBankData){
+              } else if (this.typepage === 3) {
+                if (this.isBankData) {
                   this.continueRouter()
-                }else {
+                } else {
                   this.showDialog("暂无收藏，请先去练习或考试中添加。")
                 }
-              }else {
+              } else {
                 this.continueRouter()
               }
 

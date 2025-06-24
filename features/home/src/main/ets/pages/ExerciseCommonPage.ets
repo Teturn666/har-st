@@ -49,6 +49,26 @@ struct ExerciseCommonPage {
   @State backindex: number = -1; //路由页数
   @State isBankData: boolean = false;
 
+  // 添加判断题答案标准化方法
+  private normalizeTrueFalseAnswer(answer: string): string {
+    // 将各种格式的答案标准化为统一格式
+    const upperAnswer = answer.toUpperCase().trim();
+
+    // 处理 A/B 格式 - A通常表示正确，B表示错误
+    if (upperAnswer === 'A' || upperAnswer === '√' || upperAnswer === '正确' ||
+      upperAnswer === 'Y' || upperAnswer === '对') {
+      return '正确';
+    }
+
+    if (upperAnswer === 'B' || upperAnswer === '×' || upperAnswer === '错误' ||
+      upperAnswer === 'N' || upperAnswer === '错') {
+      return '错误';
+    }
+
+    // 如果是选项内容本身，直接返回
+    return answer;
+  }
+
   // 格式化时间为 MM:SS
   private formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
@@ -168,6 +188,35 @@ struct ExerciseCommonPage {
     }
   }
 
+  private isQuestionCorrect(question: QuestionRes, selection: questionSelections): boolean {
+    const isMultiple = question.answer.length > 1 && /^[A-D]+$/.test(question.answer);
+
+    if (isMultiple) {
+      // 多选题逻辑保持不变
+      const correctAnswers = question.answer.split('');
+      return correctAnswers.every(ans => selection.selectedOptions.includes(ans)) &&
+      selection.selectedOptions.every(opt => correctAnswers.includes(opt));
+    } else {
+      // 单选题和判断题
+      const options = question.option;
+      const isTrueFalse = options.length === 2 &&
+      options.includes('正确') &&
+      options.includes('错误');
+
+      if (isTrueFalse) {
+        // 判断题：标准化答案后比较
+        const optionIndex = selection.selectedOption.charCodeAt(0) - 65; // A=0, B=1
+        const selectedContent = question.option[optionIndex];
+        const normalizedAnswer = this.normalizeTrueFalseAnswer(question.answer);
+        const normalizedSelected = this.normalizeTrueFalseAnswer(selectedContent);
+        return normalizedSelected === normalizedAnswer;
+      } else {
+        // 单选题：比较选项标签与答案
+        return selection.selectedOption === question.answer;
+      }
+    }
+  }
+
   private async goToNextQuestion() {
     if (this.currentQuestionIndex < this.questions.length - 1) {
       this.currentQuestionIndex++;
@@ -180,29 +229,21 @@ struct ExerciseCommonPage {
         clearInterval(this.timerId);
         this.timerId = null;
       }
-      // 计算统计数据
+
+      // 修复后的统计逻辑
       let correctCount = 0;
       this.questions.forEach((question, index) => {
         const selection = this.questionSelections[index];
         if (!selection || !selection.hasSubmitted) {
           return;
         }
-        const isMultiple = question.answer.length > 1 && /^[A-D]+$/.test(question.answer);
-        if (isMultiple) {
-          const correctAnswers = question.answer.split('');
-          const allCorrectSelected = correctAnswers.every(ans => selection.selectedOptions.includes(ans)) &&
-          selection.selectedOptions.every(opt => correctAnswers.includes(opt));
-          if (allCorrectSelected) {
-            correctCount++;
-          }
-        } else {
-          if (selection.selectedOption === question.answer) {
-            correctCount++;
-          }
+
+        if (this.isQuestionCorrect(question, selection)) {
+          correctCount++;
         }
       });
-      const wrongCount = this.questions.length - correctCount;
 
+      const wrongCount = this.questions.length - correctCount;
 
       // 检查是否有剩余的错题或收藏题目
       if (this.practiceMode === 2) {
@@ -350,8 +391,8 @@ struct ExerciseCommonPage {
         .margin({ top: 10 })
         .padding(10);
 
-        List(){
-          ListItem(){
+        List() {
+          ListItem() {
             // 内容部分
             Row() {
               Image(this.getQuestionTypeImage())
@@ -360,7 +401,8 @@ struct ExerciseCommonPage {
               Blank();
 
               if (this.practiceMode === 1 || this.practiceMode === 3) {
-                Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? $r('app.media.stared') :
+                Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ?
+                $r('app.media.stared') :
                 $r('app.media.star'))
                   .width(18)
                   .height(18)
@@ -397,7 +439,8 @@ struct ExerciseCommonPage {
             .margin({ top: 20 })
             .width('100%');
           }
-          ListItem(){
+
+          ListItem() {
             // 问题描述
             Text(this.questions[this.currentQuestionIndex].question)
               .fontSize(16)
@@ -405,9 +448,10 @@ struct ExerciseCommonPage {
               .textAlign(TextAlign.Start)
               .width('100%');
           }
-          ListItem(){
+
+          ListItem() {
             // 选项列表
-            Column(){
+            Column() {
               ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
                 Row() {
                   Text(this.getOptionLabel(idx))
@@ -431,7 +475,8 @@ struct ExerciseCommonPage {
               });
             }
           }
-          ListItem(){
+
+          ListItem() {
             //按钮
             if (((this.practiceMode === 3 || this.practiceMode === 2) && this.hasSubmitted)) {
               Row() {
@@ -476,6 +521,7 @@ struct ExerciseCommonPage {
     .backgroundColor(Color.White);
 
   }
+
   private getOptionBackgroundColor(idx: number): string {
     const optionLabel = this.getOptionLabel(idx);
     const currentQuestion = this.questions[this.currentQuestionIndex];
@@ -487,9 +533,11 @@ struct ExerciseCommonPage {
     // 修复：根据题目类型判断是否正确
     let isCorrect = false;
     if (this.isTrueFalseQuestion()) {
-      // 判断题：比较选项内容
+      // 判断题：标准化答案后比较选项内容
       const optionContent = currentQuestion.option[idx];
-      isCorrect = optionContent === currentQuestion.answer;
+      const normalizedAnswer = this.normalizeTrueFalseAnswer(currentQuestion.answer);
+      const normalizedOption = this.normalizeTrueFalseAnswer(optionContent);
+      isCorrect = normalizedOption === normalizedAnswer;
     } else {
       // 单选/多选题：比较选项标签
       isCorrect = currentQuestion.answer.includes(optionLabel);
@@ -569,10 +617,12 @@ struct ExerciseCommonPage {
         let isCorrect = false;
 
         if (this.isTrueFalseQuestion()) {
-          // 判断题：比较选项内容与答案
+          // 判断题：标准化答案后比较
           const optionIndex = optionLabel.charCodeAt(0) - 65; // A=0, B=1
           const selectedContent = currentQuestion.option[optionIndex];
-          isCorrect = selectedContent === currentQuestion.answer;
+          const normalizedAnswer = this.normalizeTrueFalseAnswer(currentQuestion.answer);
+          const normalizedSelected = this.normalizeTrueFalseAnswer(selectedContent);
+          isCorrect = normalizedSelected === normalizedAnswer;
         } else {
           // 单选题：比较选项标签与答案
           isCorrect = optionLabel === currentQuestion.answer;
@@ -588,12 +638,14 @@ struct ExerciseCommonPage {
             : optionLabel;
           await this.saveToWrongTable(currentQuestion, wrongAnswer);
         }
+
         this.saveQuestionState(); // 记录单选提交状态
         if (isLastQuestion) {
           this.goToNextQuestion();
         } else if (this.practiceMode === 1) {
           setTimeout((): Promise<void> => this.goToNextQuestion(), 2000);
         }
+
       }
     }
   }
