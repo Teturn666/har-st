@@ -49,7 +49,6 @@ export struct SettingPage {
     await this.getIsShowDialog()
     this.dialogController = new CustomDialogController({
       builder: selectBankDialog({
-        bankList: this.bankList,
         agreementChecked: this.agreementChecked,
         onConfirm: (selected: string[]) => {
           this.agreementChecked = this.agreementChecked;
