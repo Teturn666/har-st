@@ -114,7 +114,7 @@ struct HelpPage {
           .fontWeight(600)
           .margin({ top: 10 })
 
-        Text("个人制作以及添加题库遇到问题，请联系客服\n QQ:2885403085")
+        Text("个人制作以及添加题库遇到问题，请联系客服\n QQ:1729868682")
           .fontSize(14)
           .fontWeight(400)
           .margin({ top: 10 })
