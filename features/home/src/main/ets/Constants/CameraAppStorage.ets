@@ -5,6 +5,7 @@ export  class cameraAppStorage{
   static  readonly  CAMERA_CAMERA_URI= 'CameraUri'
   //缩略图
   static  readonly  CAMERA_THUMBNAIL= 'thumbnail'
-
+ //识别文字
+  static  readonly  OCR_TEXT= 'ocr_text'
 
 }

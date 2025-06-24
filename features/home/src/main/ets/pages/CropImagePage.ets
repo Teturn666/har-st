@@ -1,12 +1,14 @@
 import { ImageCropper } from '@candies/image_cropper';
 import * as image_cropper from "@candies/image_cropper";
-
 import { image } from '@kit.ImageKit';
 import { router } from '@kit.ArkUI';
 import { ocrToText } from '../utils/OcrToText';
-import { createAtManager } from '../utils/CreateAtManager';
-import { CropperConfig } from '../model/CropperConfig';
+import { CropperConfig } from 'utils/src/main/ets/model/CropperConfig';
 import { cameraAppStorage } from '../Constants/CameraAppStorage';
+import { SearchBindSheet } from '../components/SearchBindSheet';
+import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading';
+import HomeConstants from '../Constants/HomeConstants';
+
 
 @Entry({ routeName: 'cropImagePage' })
 @Component
@@ -15,17 +17,25 @@ struct CropImagePage {
   @State image: image.ImageSource | undefined = undefined;
   controller: image_cropper.ImageCropperController = new image_cropper.ImageCropperController();
   @State _config: image_cropper.ImageCropperConfig = new CropperConfig({ controller: this.controller })
+  @State SearchText: boolean = false
+  @State isLoading: boolean = false
+  @State backHome: boolean = false
+  RichController: RichEditorController = new RichEditorController()
+
+  @Builder
+  SearchTextBuilder() {
+    SearchBindSheet()
+  }
+
   aboutToAppear(): void {
   }
 
   aboutToDisappear(): void {
     this.controller.reset();
     this.CameraUri = null;
+
   }
-onPageHide(): void {
-  this.controller.reset();
-  this.CameraUri = null;
-}
+
   build() {
     RelativeContainer() {
       if (this.CameraUri) {
@@ -47,37 +57,65 @@ onPageHide(): void {
       Row() {
         Row() {
           Text("返回")
-            .fontSize(14)
+            .fontSize(12)
             .textAlign(TextAlign.Center)
         }
         .onClick(() => {
-          router.back()
+          if (this.backHome) {
+            router.replaceUrl({
+              url: HomeConstants.ROUTER_MAIN_PAGE,
+            })
+          } else {
+            router.back()
+          }
+
         })
         .justifyContent(FlexAlign.Center)
         .backgroundColor('#ccc')
-        .width(50)
-        .height(50)
+        .width(40)
+        .height(40)
         .borderRadius(25)
 
         Row() {
           Image($r("app.media.confirm"))
+            .fillColor(Color.White)
             .width(30)
             .aspectRatio(1)
             .fillColor("#000")
+
         }
+        .backgroundColor("#CA6928")
         .onClick(() => {
-          createAtManager.releaseCamera()
+          this.backHome = true
+          this.isLoading = true
           this.controller.getCroppedImage().then((pixelMap) => {
-            if (pixelMap){
-              ocrToText.loadImage(pixelMap,true)
+            if (pixelMap) {
+              ocrToText.loadImage(pixelMap).then(() => {
+                this.SearchText = true
+                this.isLoading = false
+              })
+
             }
           })
 
         })
         .justifyContent(FlexAlign.Center)
-        .backgroundColor('#ccc')
         .width(50)
         .height(50)
+        .borderRadius(25)
+
+        Row() {
+          Image($r("app.media.rotate"))
+            .width(20)
+            .height(20)
+        }
+        .onClick(() => {
+          this.controller.rotate({ rotateCropRect: false })
+        })
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor('#ccc')
+        .width(40)
+        .height(40)
         .borderRadius(25)
       }
       .justifyContent(FlexAlign.SpaceAround)
@@ -89,7 +127,15 @@ onPageHide(): void {
       .alignRules({
         bottom: { anchor: "__container__", align: VerticalAlign.Bottom },
       })
+
+      if (this.isLoading) {
+        ProgressLoading()
+      }
     }
+    .bindSheet($$this.SearchText, this.SearchTextBuilder, {
+      showClose: false,
+      height: '80%',
+    })
     .backgroundColor('#000000')
     .height('100%')
     .width('100%')
