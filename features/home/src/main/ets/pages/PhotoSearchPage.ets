@@ -19,10 +19,11 @@ struct PhotoSearchPage {
   mXComponentController: XComponentController = new XComponentController;
 
   aboutToAppear(): void {
-   // albumPicker.getThumbnail()
+    AppStorage.setOrCreate(cameraAppStorage.CAMERA_RESTART_CAMERA, true)
   }
 
   aboutToDisappear(): void {
+    AppStorage.setOrCreate(cameraAppStorage.CAMERA_RESTART_CAMERA, false)
     createAtManager.releaseCamera()
   }
 

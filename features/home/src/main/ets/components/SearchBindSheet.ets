@@ -38,12 +38,11 @@ export struct SearchBindSheet {
       Text(item)
         .fontSize(14)
         .fontColor(this.SearchIndex === index ? $r('app.color.c_f75a23') : Color.Black)
-
     }
     .margin({ right: 10 })
     .borderRadius(3)
-    .border(this.SearchIndex === index ? { width: 2, color: $r('app.color.c_f75a23') } :
-      { width: 2, color: '#00000000' })
+    .border(this.SearchIndex === index ? { width: 1, color: $r('app.color.c_f75a23') } :
+      { width: 1, color: '#00000000' })
     .backgroundColor(this.SearchIndex === index ? '#F8F9ED' : '#ECECEC')
     .justifyContent(FlexAlign.Center)
     .padding({
@@ -67,7 +66,9 @@ export struct SearchBindSheet {
             .width('100%')
             .maxLines(40)
             .onEditChange((isEditing: boolean) => {
-              this.isEditing = isEditing
+              if (isEditing) {
+                this.isEditing = true
+              }
 
             })
             .layoutWeight(1)
@@ -105,7 +106,7 @@ export struct SearchBindSheet {
               .margin({ left: 10, bottom: 3 })
               .width(30)
               .height(16)
-              .backgroundColor('#ccc')
+              .backgroundColor('#ECECEC')
 
               Row() {
                 Text('清除')
@@ -118,7 +119,7 @@ export struct SearchBindSheet {
               .margin({ left: 10, bottom: 3 })
               .width(30)
               .height(16)
-              .backgroundColor('#ccc')
+              .backgroundColor('#ECECEC')
               .justifyContent(FlexAlign.Center)
             }
           }
@@ -134,8 +135,6 @@ export struct SearchBindSheet {
         }
         .onClick(() => {
           this.DialogController.open()
-
-
         })
       }
       .width('100%')
@@ -150,7 +149,8 @@ export struct SearchBindSheet {
         searchText: '搜索', searchClick: () => {
           inputMethod.getController().stopInputSession();
           AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT, this.searchText)
-        }
+        },
+        ButtonWidth: '100%'
       })
       Row() {
         ForEach(this.list, (item: string, index: number) => {
