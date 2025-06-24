@@ -17,7 +17,7 @@ import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo';
 
 const context = (getContext(this) as common.UIAbilityContext)
 
-@Entry
+@Entry()
 @Component
 struct MainPage {
   @LocalStorageLink('mainTabIndex') currentIndex: TabBarType = TabBarType.HOME;
@@ -37,6 +37,10 @@ struct MainPage {
     //初始化sp实例
     preferencesUtils.setContext(context)
     this.showDialog = preferencesUtils.getBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, true)
+  }
+
+  onBackPress(): boolean | void {
+    return true
   }
 
   // 修改布尔值的方法
@@ -203,4 +207,9 @@ struct MainPage {
         .expandSafeArea()
     }
   }
+}
+
+@Builder
+function MainPageBuilder() {
+  MainPage()
 }

@@ -7,7 +7,7 @@ import HomeConstants from '../Constants/HomeConstants';
 import { cameraAppStorage } from '../Constants/CameraAppStorage';
 
 import('./CropImagePage')
-import('./HomePage')
+
 
 @Entry({ routeName: 'photoSearchPage' })
 @Component
@@ -19,7 +19,7 @@ struct PhotoSearchPage {
   mXComponentController: XComponentController = new XComponentController;
 
   aboutToAppear(): void {
-    albumPicker.getThumbnail()
+   // albumPicker.getThumbnail()
   }
 
   aboutToDisappear(): void {
@@ -159,10 +159,9 @@ struct PhotoSearchPage {
       }
       .onClick(() => {
         createAtManager.releaseCamera()
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_HOME_PAGE,
+        router.replaceUrl({
+          url: HomeConstants.ROUTER_MAIN_PAGE,
         })
-
       })
       .margin({ top: 20, left: 20 })
       .backgroundColor('#ff4e4d4d')
