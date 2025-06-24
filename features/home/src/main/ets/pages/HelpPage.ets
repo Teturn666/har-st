@@ -1,9 +1,53 @@
 import { TitleBar } from 'widget'
 import { router } from '@kit.ArkUI'
+import { common, Want } from '@kit.AbilityKit';
+import { EmitterConstants, ToastUtils } from 'utils';
+import { BusinessError } from '@kit.BasicServicesKit';
 
 @Entry({routeName:"helpPage"})
 @Component
 struct HelpPage {
+
+  // 跳转QQ
+  private jumpToQQ() {
+    let want: Want = {
+      bundleName: 'com.tencent.mqq',
+      abilityName: 'EntryAbility'
+    }
+    try {
+      (getContext(this) as common.UIAbilityContext).startAbility(want, (err: BusinessError) => {
+        if (err.code) {
+          // 处理业务逻辑错误
+          ToastUtils.showToast('应用程序未安装')
+          return
+        }
+      });
+    } catch (err) {
+      // 唤起失败
+      ToastUtils.showToast('应用程序未安装')
+    }
+  }
+
+  // 跳转wx
+  private async jumpToWX() {
+    let want: Want = {
+      bundleName: 'com.tencent.wechat',
+      abilityName: 'EntryAbility'
+    }
+    try {
+      (getContext(this) as common.UIAbilityContext).startAbility(want, (err: BusinessError) => {
+        if (err.code) {
+          // 处理业务逻辑错误
+          ToastUtils.showToast('应用程序未安装')
+          return
+        }
+      });
+    } catch (err) {
+      // 唤起失败
+      ToastUtils.showToast('应用程序未安装')
+    }
+  }
+
   build() {
     Column() {
       TitleBar({
@@ -70,13 +114,58 @@ struct HelpPage {
           .fontWeight(600)
           .margin({ top: 10 })
 
-        Text("个人制作以及添加题库遇到问题，请联系客服\n QQ:1729868682")
+        Text("个人制作以及添加题库遇到问题，请联系客服\n QQ:2885403085")
           .fontSize(14)
           .fontWeight(400)
           .margin({ top: 10 })
+        Row() {
+          Stack() {
+            Image($r('app.media.ic_qqbg'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: 139, height: 40 });
 
+            Row() {
+              Image($r('app.media.ic_qq'))
+                .objectFit(ImageFit.Contain)
+                .size({ width: 22, height: 22 })
+              Text("从QQ导入")
+                .fontSize(14)
+            }
+            .width('60%')
+            .justifyContent(FlexAlign.SpaceBetween)
+          }
+          .width('50%')
+          .onClick(() =>{
+            this.jumpToQQ()
+          })
+
+          Stack() {
+            Image($r('app.media.ic_wechatbg'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: 139, height: 40 });
+
+            Row() {
+              Image($r('app.media.ic_wechat'))
+                .objectFit(ImageFit.Contain)
+                .size({ width: 22, height: 22 })
+              Text("从微信导入")
+                .fontSize(14)
+
+            }
+            .width('60%')
+            .justifyContent(FlexAlign.SpaceBetween)
+          }
+          .width('50%')
+          .onClick(() =>{
+            this.jumpToWX()
+          })
+        }
+        .width('100%')
+        .margin({ top: 20 })
       }
       .padding({ left: 18, right: 18 })
+
+
     }
     .width('100%')
 

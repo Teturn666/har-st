@@ -269,7 +269,6 @@ export struct HomePage {
   private async showSelectBankDialog(isVipDialogCallBack: Function, isChangeTextCallBack: Function) {
     this.dialogController = new CustomDialogController({
       builder: selectBankDialog({
-        bankList: this.bankList,
         agreementChecked: this.agreementChecked,
         onConfirm: (selected: string[]) => {
           this.agreementChecked = this.agreementChecked;

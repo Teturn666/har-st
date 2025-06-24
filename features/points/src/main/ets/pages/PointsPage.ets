@@ -39,6 +39,7 @@ export struct PointsPage {
 
   //判断可否应用评分
   async getIsAppScore(): Promise<void> {
+    this.myPoints = await this.PointsModel.getMyNumb()
     const scoreResult = await this.PointsModel.getScoreSelect();
     if (scoreResult) {
       this.AppScore = true
@@ -111,12 +112,16 @@ export struct PointsPage {
 
     });
   }
+  onPageShow(): void {
+    this.getIsAppScore()
+  }
 
   aboutToAppear(): void {
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
     this.loadResources()
     this.getIsAppScore()
   }
+
 
   async actionSigning(): Promise<void> {
     let action = false

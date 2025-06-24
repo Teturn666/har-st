@@ -407,7 +407,8 @@ export struct CustomizedBankPage {
             console.info('取消输入');
             reject(new Error('用户取消导入'));
           },
-        })
+        }),
+        autoCancel: false,
       });
       this.dialogController?.open();
     });

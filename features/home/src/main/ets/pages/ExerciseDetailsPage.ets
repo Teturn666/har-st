@@ -28,6 +28,11 @@ struct ExerciseDetailsPage {
   @State backindex: number = 2; //返回的页数
   @State isBankData: boolean = false;
 
+  onBackPress(): boolean | void {
+    this.quitRouter()
+    return true;
+  }
+
   aboutToAppear(): void {
     const params = router.getParams() as DetailParams | undefined;
     if (params) {
