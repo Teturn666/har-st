@@ -151,23 +151,23 @@ struct MyInvitationPage {
           .onClick(() => {
             this.copyToClipboard()
           })
-        // Column() {
-        //   Stack() {
-        //     Image($r('app.media.ic_rectangle'))
-        //       .width(80)
-        //       .height(28)
-        //     Text("绑定邀请码")
-        //       .fontColor('#3E3E3E')
-        //       .fontSize(12)
-        //   }
-        //   .onClick(()=>{
-        //     this.jumpToMyBoundCode()
-        //   })
-        // }
-        // .height('70')
-        // .width('100%')
-        // .justifyContent(FlexAlign.SpaceBetween)
-        // .alignItems(HorizontalAlign.End)
+        Column() {
+          Stack() {
+            Image($r('app.media.ic_rectangle'))
+              .width(80)
+              .height(28)
+            Text("绑定邀请码")
+              .fontColor('#3E3E3E')
+              .fontSize(12)
+          }
+          .onClick(()=>{
+            this.jumpToMyBoundCode()
+          })
+        }
+        .height('70')
+        .width('100%')
+        .justifyContent(FlexAlign.SpaceBetween)
+        .alignItems(HorizontalAlign.End)
 
       }
       .width('100%')

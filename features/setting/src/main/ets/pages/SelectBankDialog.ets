@@ -6,6 +6,7 @@ import { SearchEngine } from 'search';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage';
 import { UserBankSelection } from '../model/UserBankSelection';
+import { SettingModel } from '../model/SettingModel';
 
 
 const TAG = 'SelectBankDialog';
@@ -35,17 +36,19 @@ function buildProgress() {
 @CustomDialog
 export struct selectBankDialog {
   controller?: CustomDialogController;
-  @Prop bankList: BankListRes[];
+  @State bankList: BankListRes[] = [];
   @Prop isVip: boolean = false; // 从外部传入VIP状态
   onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {
   };
   @State agreementChecked: boolean = false;
   @State selectedBankIds: string[] = []; // 统一管理选中的题库ID
+  @State isLoading: boolean = true;
   isVipDialog?: () => void = () => {
   }
   isChangeText?: () => void = () => {
   }
   @State loginState: string = ''
+  @State settingModel: SettingModel = SettingModel.getInstance()
 
   //获取是否是VIP
   private getIsVip(): boolean {
@@ -201,33 +204,44 @@ export struct selectBankDialog {
     console.info(`[saveUserBankSelection] key=${key}, data=${JSON.stringify(selection)}`);
   }
 
-  aboutToAppear() {
-    this.getIsVip();
-    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0');
+  async aboutToAppear() {
+    try {
+      this.isLoading = true;
+      this.bankList = await this.settingModel.getBankList();
+      console.log("查看返回的列表" + this.bankList.length);
 
-    const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
-    const allBankIds = this.bankList.map(bank => String(bank.id || ''));
+      this.getIsVip();
+      this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0');
 
-    if (this.loginState === '1') {
-      let selection = this.getUserBankSelection(currentUid, allBankIds, this.isVip);
+      const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+      const allBankIds = this.bankList.map(bank => String(bank.id || ''));
 
-      // 🛠 如果用户保存的 selectedBankIds 不在当前题库中，强制全选
-      const currentValidIds = this.bankList.map(bank => String(bank.id || ''));
-      const matchedIds = selection.selectedBankIds.filter(id => currentValidIds.includes(id));
+      if (this.loginState === '1') {
+        let selection = this.getUserBankSelection(currentUid, allBankIds, this.isVip);
 
-      if (matchedIds.length === 0) {
-        // 强制全选
-        selection = {
-          uid: currentUid,
-          selectedBankIds: currentValidIds,
-          isAllSelected: true,
-          lastModified: new Date().getTime()
-        };
+        // 🛠 如果用户保存的 selectedBankIds 不在当前题库中，强制全选
+        const currentValidIds = this.bankList.map(bank => String(bank.id || ''));
+        const matchedIds = selection.selectedBankIds.filter(id => currentValidIds.includes(id));
+
+        if (matchedIds.length === 0) {
+          // 强制全选
+          selection = {
+            uid: currentUid,
+            selectedBankIds: currentValidIds,
+            isAllSelected: true,
+            lastModified: new Date().getTime()
+          };
+        }
+
+        this.selectedBankIds = selection.selectedBankIds;
+      } else {
+        this.selectedBankIds = allBankIds;
       }
-
-      this.selectedBankIds = selection.selectedBankIds;
-    } else {
-      this.selectedBankIds = allBankIds;
+    } catch (error) {
+      console.error('获取题库列表失败:', error);
+      promptAction.showToast({ message: '获取题库列表失败', duration: 2000 });
+    } finally {
+      this.isLoading = false;
     }
 
     progressContentNode = new ComponentContent(this.getUIContext(), wrapBuilder(buildProgress));
@@ -288,7 +302,17 @@ export struct selectBankDialog {
       }
       .width('100%')
 
-      if (this.bankList.length > 0) {
+      // 添加加载状态显示
+      if (this.isLoading) {
+        Column({ space: 16 }) {
+          Text('加载中...')
+            .fontSize(16)
+            .fontColor($r('app.color.c_9d9d9d'))
+            .textAlign(TextAlign.Center)
+        }
+        .height(200)
+        .justifyContent(FlexAlign.Center)
+      } else if (this.bankList.length > 0) {
         List({ space: 8 }) {
           // 全选选项
           ListItem() {
