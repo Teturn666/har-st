@@ -15,12 +15,8 @@ export class CameraManager {
   private session: camera.Session | null = null
   private imageReceiver: image.ImageReceiver | null = null
   private imgSurfaceId: string = ""
-  // map: image.PixelMap | null = null   //emit 传递存在问题
   private imgWidth: number = 1920
   private imgHeight: number = 1080
-
-  // callback:(imp:image.PixelMap)=>void=()=>{}
-
 
   async initImageReceiver() {
     try {
@@ -40,8 +36,6 @@ export class CameraManager {
           if (!com.byteBuffer) {
             return
           }
-          // changeMap.Map(com.byteBuffer)
-          // emitter.emit("upPix", { data: { "map": com?.byteBuffer } })
 
           image.createPixelMap(com?.byteBuffer, {
             size: {
@@ -51,17 +45,13 @@ export class CameraManager {
             srcPixelFormat: 8,
           }, async (err, pixelMap) => {
             pixelMap.rotateSync(180)
-            // emitter.emit("upPix", { data: { "map": pixelMap } })
             ocrToText.loadImage(pixelMap)
-            // this.map=pixelMap
-            // this.callback(pixelMap)
+
           })
         } catch (error) {
-          AlertDialog.show({ message: JSON.stringify(error) })
         }
       })
     } catch (error) {
-      AlertDialog.show({ message: JSON.stringify(error) })
     }
 
   }
@@ -106,14 +96,13 @@ export class CameraManager {
         throw new Error("未读取到摄像头")
       }
     } catch (error) {
-      AlertDialog.show({ message: error.message })
+
     }
 
   }
 
   // 释放
   releaseCamera() {
-
     this.session?.stop()
     this.cameraInput?.close()
     this.cameraOutput?.release()
