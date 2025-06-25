@@ -13,12 +13,10 @@ export struct SearchBindSheet {
   @StorageProp(cameraAppStorage.OCR_TEXT) searchText: string = ''
   @State defaultTab: number = 0
   @State SearchIndex: number = 0
+  textAreaController: TextAreaController = new TextAreaController()
   list: string[] = ['全部', '单选题', '多选题', '判断题']
   DialogController = new CustomDialogController({
     builder: KeyboardPromptDialog(),
-    cancel: () => {
-      focusControl.requestFocus('inputId');
-    },
     alignment: DialogAlignment.Center,
     cornerRadius: 5,
     width: 260,
@@ -30,6 +28,24 @@ export struct SearchBindSheet {
 
   onPageHide(): void {
     this.searchText = ''
+
+  }
+
+  @Builder
+  microphone() {
+
+    Row() {
+      Image($r('app.media.microphone'))
+        .width(20)
+        .height(20)
+    }
+    .justifyContent(FlexAlign.Center)
+    .width(30)
+    .height(30)
+    .margin({ right: 10, })
+    .onClick(() => {
+      this.DialogController.open()
+    })
   }
 
   @Builder
@@ -57,88 +73,111 @@ export struct SearchBindSheet {
     Column() {
       Row() {
         Column() {
-          TextArea({
-            text: $$this.searchText,
-          })
-            .key('inputId')
-            .fontSize(12)
-            .height(70)
-            .width('100%')
-            .maxLines(40)
-            .onEditChange((isEditing: boolean) => {
-              if (isEditing) {
-                this.isEditing = true
-              }
-
+          Column() {
+            TextArea({
+              text: $$this.searchText,
+              controller: this.textAreaController,
             })
-            .layoutWeight(1)
-            .backgroundColor('#FFFFFF')
-            .padding(10)
-          if (this.isEditing) {
-            Row() {
-              Row() {
-                PasteButton({ text: PasteDescription.PASTE })
-                  .width(30)
-                  .height(16)
-                  .fontSize(12)
-                  .fontWeight(FontWeight.Normal)
-                  .fontColor(Color.Black)
-                  .backgroundColor($r('app.color.c_ccc'))
-                  .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
-                    if (PasteButtonOnClickResult.SUCCESS === result) {
-                      pasteboard.getSystemPasteboard()
-                        .getData((err: BusinessError, pasteData: pasteboard.PasteData) => {
-                          if (err) {
-                            return;
-                          }
-                          this.searchText = pasteData.getPrimaryText();
-                        });
-                    } else {
-                      inputMethod.getController().stopInputSession();
-                      promptAction.showToast({
-                        message: '剪切板为空'
-                      })
-                    }
-                  })
-              }
-              .justifyContent(FlexAlign.Center)
-              .borderRadius(3)
-              .margin({ left: 10, bottom: 3 })
-              .width(30)
-              .height(16)
-              .backgroundColor('#ECECEC')
+              .onDidInsert(() => {
+                console.log('输入完成');
+              })
+              .backgroundColor(Color.Pink)
+              .enableKeyboardOnFocus(false)
+              .key('inputId')
+              .fontSize(12)
+              .width('100%')
+              .maxLines(40)
+              .onEditChange((isEditing: boolean) => {
+                if (isEditing) {
+                  this.isEditing = true
+                }
 
+              })
+              .layoutWeight(1)
+              .backgroundColor('#FFFFFF')
+              .padding(10)
+            if (!this.isEditing) {
               Row() {
-                Text('清除')
-                  .fontSize(12)
+              }
+              .width('100%')
+              .height(10)
+            }
+            if (this.isEditing) {
+              Row() {
+                Row() {
+                  PasteButton({ text: PasteDescription.PASTE })
+                    .width(30)
+                    .height(16)
+                    .fontSize(12)
+                    .fontWeight(FontWeight.Normal)
+                    .fontColor(Color.Black)
+                    .backgroundColor($r('app.color.c_ccc'))
+                    .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
+                      if (PasteButtonOnClickResult.SUCCESS === result) {
+                        pasteboard.getSystemPasteboard()
+                          .getData((err: BusinessError, pasteData: pasteboard.PasteData) => {
+                            if (err) {
+                              return;
+                            }
+                            this.searchText = pasteData.getPrimaryText();
+                          });
+                      } else {
+                        inputMethod.getController().stopInputSession();
+                        promptAction.showToast({
+                          message: '剪切板为空'
+                        })
+                      }
+                    })
+                }
+                .justifyContent(FlexAlign.Center)
+                .borderRadius(3)
+                .margin({ left: 10, bottom: 3 })
+                .width(30)
+                .height(16)
+                .backgroundColor('#ECECEC')
+
+                Row() {
+                  Text('清除')
+                    .fontSize(12)
+                }
+                .onClick(() => {
+                  this.searchText = ''
+                })
+                .borderRadius(3)
+                .margin({ left: 10, bottom: 3 })
+                .width(30)
+                .height(16)
+                .backgroundColor('#ECECEC')
+                .justifyContent(FlexAlign.Center)
+
+                Row() {
+                  this.microphone()
+                }
+                .justifyContent(FlexAlign.End)
+                .layoutWeight(1)
               }
               .onClick(() => {
-                this.searchText = ''
+                this.isEditing = !this.isEditing
               })
-              .borderRadius(3)
-              .margin({ left: 10, bottom: 3 })
-              .width(30)
-              .height(16)
-              .backgroundColor('#ECECEC')
-              .justifyContent(FlexAlign.Center)
             }
           }
+          .height('100%')
+          .onClick(() => {
+            this.isEditing = !this.isEditing
+          })
         }
-        .alignItems(HorizontalAlign.Start)
-        .height('100%')
-        .width('90%')
+        .layoutWeight(1)
 
-        Row() {
-          Image($r('app.media.microphone'))
-            .width(20)
-            .height(20)
+        if (!this.isEditing) {
+          this.microphone()
         }
-        .onClick(() => {
-          this.DialogController.open()
-        })
+
       }
+      .onClick(() => {
+        this.isEditing = false
+      })
       .width('100%')
-      .height(this.isEditing ? 120 : 40)
+      .height(this.isEditing ? 120 : 50)
       .border({
         width: 1,
         color: Color.Black
@@ -167,8 +206,15 @@ export struct SearchBindSheet {
       .margin({ top: 20 })
       .width('100%')
       .justifyContent(FlexAlign.Start)
+      .onClick(() => {
+        this.isEditing = false
+      })
 
-      SearchTypeView({ TypeFlex: true })
+      Column() {
+        SearchTypeView({ TypeFlex: true })
+
+      }
+      .layoutWeight(1)
 
     }
     .height('100%')

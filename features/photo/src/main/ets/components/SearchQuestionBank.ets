@@ -113,9 +113,9 @@ export struct SearchQuestionBank {
             },
             ButtonWidth: '100%'
           })
-            .margin({ bottom: 30 })
-        }
 
+        }
+        .height('100%')
       } else {
         Text($r('app.string.search_nodata'))
           .fontSize(16)
