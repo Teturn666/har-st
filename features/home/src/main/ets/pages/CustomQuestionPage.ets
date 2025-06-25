@@ -236,9 +236,9 @@ struct CustomQuestionPage {
 
       // 使用官方系统分享API
       let shareData: systemShare.SharedData = new systemShare.SharedData({
-        utd: utd.UniformDataType.FILE_URI,
+        utd: utd.UniformDataType.COMPOSITE_OBJECT,
         uri: uri,
-        title: `${bank.name}`,
+        title: `${bank.name}.txt`,
       });
 
       let controller: systemShare.ShareController = new systemShare.ShareController(shareData);
