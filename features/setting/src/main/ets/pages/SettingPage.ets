@@ -8,6 +8,7 @@ import { SettingModel } from '../model/SettingModel';
 import { selectBankDialog } from './SelectBankDialog';
 import { SettingColor } from '../components/SettingColor';
 import { TextSizeDialog } from '../components/TextSizeDialog';
+import { ScreenReadSetting } from './ScreenReadSetting';
 
 @Entry({ routeName: 'settingPage' })
 @Component
@@ -43,6 +44,14 @@ export struct SettingPage {
       offsetY: 10
     }),
   })
+  @Provide('pathStack') pathStack: NavPathStack = new NavPathStack();
+
+  @Builder
+  pageMap(name: string) {
+    if (name === 'ScreenReadPage') {
+      ScreenReadSetting()
+    }
+  }
 
   // 打开选择题库对话框的方法
   async showSelectBankDialog() {
@@ -116,308 +125,6 @@ export struct SettingPage {
     router.back()
   }
 
-  build() {
-    Column() {
-      // 标题栏
-      TitleBar({
-        title: this.title, backClick: () => {
-          router.back()
-        }
-      }).width('100%')
-      Column() {
-        Text('显示设置')
-          .fontWeight(FontWeight.Bold)
-          .fontSize(18)
-          .fontColor("#3e3e3e")
-          .textAlign(TextAlign.Start)
-          .padding({ left: 16, top: 16, bottom: 16 })
-          .lineHeight(20)
-          .margin({ left: 20 })
-      }
-      .margin({ top: 5 })
-      .width('100%')
-      .alignItems(HorizontalAlign.Start)
-      .justifyContent(FlexAlign.Start)
-
-      Column() {
-        Row() {
-          SettingColor({
-            TextColorSetting: '题目颜色设置',
-            Usage: '设置悬浮窗普通文本颜色',
-            TypeSetting: 0,
-            ShowColor: true,
-            defaultColor: Color.Red
-          })
-        }
-        .justifyContent(FlexAlign.Center)
-        .height(55)
-
-        Divider()
-        Row() {
-          SettingColor({
-            TextColorSetting: '选项颜色设置',
-            Usage: '设置悬浮窗答案文本颜色',
-            TypeSetting: 1,
-            ShowColor: true,
-            defaultColor: "#fffadf07"
-          })
-        }
-        .justifyContent(FlexAlign.Center)
-        .height(55)
-
-        Divider()
-
-        Row() {
-          SettingColor({
-            TextColorSetting: '悬浮窗颜色设置',
-            Usage: '设置悬浮窗颜色和透明度',
-            TypeSetting: 2,
-            ShowColor: true,
-            defaultColor: Color.Black
-          })
-        }
-        .justifyContent(FlexAlign.Center)
-        .height(55)
-
-        Divider()
-        Row() {
-          SettingColor({ TextColorSetting: '悬浮窗字体大小设置', ShowColor: false })
-        }
-        .onClick(() => {
-          this.TextDialogController?.open()
-        })
-        .justifyContent(FlexAlign.Center)
-        .height(55)
-
-        Divider()
-
-
-      }
-      .justifyContent(FlexAlign.Center)
-      .alignItems(HorizontalAlign.Start)
-      .padding({ left: 16, right: 16, })
-      .width('90%')
-      .backgroundColor('#f9f9f9')
-
-      // 考试设置标题
-      Column() {
-        Text('考试设置')
-          .fontWeight(FontWeight.Bold)
-          .fontSize(18)
-          .fontColor("#3e3e3e")
-          .textAlign(TextAlign.Start)
-          .padding({ left: 16, top: 16, bottom: 16 })
-          .lineHeight(20)
-          .margin({ left: 20 })
-      }
-      .margin({ top: 5 })
-      .width('100%')
-      .alignItems(HorizontalAlign.Start)
-      .justifyContent(FlexAlign.Start)
-
-      // 用户协议行（显示当前题目数量）
-      Column() {
-        Row() {
-          Text("考试一轮题目数量")
-            .fontSize(16)
-            .fontColor("#3e3e3e")
-            .textAlign(TextAlign.Start)
-            .padding({ left: 16, top: 16, bottom: 16 })
-            .lineHeight(20)
-          Blank()
-          Text(`${this.v} 题`)
-            .fontSize(16)
-            .fontColor("#007DFF")
-            .textAlign(TextAlign.Start)
-            .padding({ left: 16, top: 16, bottom: 16 })
-            .lineHeight(20)
-            .margin({ right: 10 })
-          Image($r('app.media.ic_enter')).width(6).height(10)
-            .margin({ right: 12 })
-        }
-        .width('100%')
-        .onClick(() => {
-          TextPickerDialog.show({
-            // 建议使用 this.getUIContext().showTextPickerDialog()接口
-            range: this.questionCounts,
-            selected: this.select,
-            disappearTextStyle: { color: Color.Red, font: { size: 15, weight: FontWeight.Lighter } },
-            textStyle: { color: Color.Black, font: { size: 20, weight: FontWeight.Normal } },
-            selectedTextStyle: { color: Color.Blue, font: { size: 30, weight: FontWeight.Bolder } },
-            onAccept: (value: TextPickerResult) => {
-              // 设置select为按下确定按钮时候的选中项index，这样当弹窗再次弹出时显示选中的是上一次确定的选项
-              this.select = value.index;
-              console.log(this.select + '');
-              // 点击确定后，被选到的文本数据展示到页面
-              this.v = value.value as string;
-
-              // 数据持久化
-              this.saveQuestionCount()
-
-              console.info("TextPickerDialog:onAccept()" + JSON.stringify(value));
-            },
-            onCancel: () => {
-              console.info("TextPickerDialog:onCancel()");
-            },
-            onChange: (value: TextPickerResult) => {
-              console.info("TextPickerDialog:onChange()" + JSON.stringify(value));
-            },
-            onScrollStop: (value: TextPickerResult) => {
-              console.info("TextPickerDialog:onScrollStop()" + JSON.stringify(value));
-            },
-            onDidAppear: () => {
-              console.info("TextPickerDialog:onDidAppear()");
-            },
-            onDidDisappear: () => {
-              console.info("TextPickerDialog:onDidDisappear()");
-            },
-            onWillAppear: () => {
-              console.info("TextPickerDialog:onWillAppear()");
-            },
-            onWillDisappear: () => {
-              console.info("TextPickerDialog:onWillDisappear()");
-            }
-          });
-          this.isDialogVisible = true
-        })
-      }
-      .width('90%')
-      .alignItems(HorizontalAlign.Start)
-      .backgroundColor('#f9f9f9')
-      .borderRadius(5)
-
-
-      //搜索设置
-      Column() {
-        Text('搜索设置')
-          .fontWeight(FontWeight.Bold)
-          .fontSize(18)
-          .fontColor("#3e3e3e")
-          .textAlign(TextAlign.Start)
-          .padding({ left: 16, top: 16, bottom: 16 })
-          .lineHeight(20)
-          .margin({ left: 20 })
-      }
-      .margin({ top: 5 })
-      .width('100%')
-      .alignItems(HorizontalAlign.Start)
-      .justifyContent(FlexAlign.Start)
-
-      Column() {
-        Row() {
-          Text("指定搜索题库")
-            .fontSize(16)
-            .fontColor("#3e3e3e")
-            .textAlign(TextAlign.Start)
-            .padding({ left: 16, top: 16, bottom: 16 })
-            .lineHeight(20)
-          Image($r('app.media.ic_vip'))
-            .width($r('app.float.float_16vp'))
-            .height($r('app.float.float_16vp'))
-            .margin({ left: 8 })
-          Blank()
-          Image($r('app.media.ic_enter')).width(6).height(10)
-            .margin({ right: 12 })
-        }
-        .width('100%')
-        .onClick(() => {
-          this.showSelectBankDialog();
-        })
-      }
-      .width('90%')
-      .alignItems(HorizontalAlign.Start)
-      .backgroundColor('#f9f9f9')
-      .borderRadius(5)
-
-      // 登录设置标题
-      Column() {
-        Text('登录设置')
-          .fontWeight(FontWeight.Bold)
-          .fontSize(18)
-          .fontColor("#3e3e3e")
-          .textAlign(TextAlign.Start)
-          .padding({ left: 16, top: 16, bottom: 16 })
-          .lineHeight(20)
-          .margin({ left: 20 })
-      }
-      .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
-      .margin({ top: 5 })
-      .width('100%')
-      .alignItems(HorizontalAlign.Start)
-      .justifyContent(FlexAlign.Start)
-
-      // Column() {
-      //   Text('登录设置')
-      //     .fontWeight(FontWeight.Bold)
-      //     .fontSize(18)
-      //     .fontColor("#3e3e3e")
-      //     .textAlign(TextAlign.Start)
-      //     .padding({ left: 16, top: 16, bottom: 16 })
-      //     .lineHeight(20)
-      //     .margin({ left: 20 })
-      // }
-      // .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
-      // .margin({ top: 5 })
-      // .width('90%')
-      // .alignItems(HorizontalAlign.Start)
-      // .justifyContent(FlexAlign.Start)
-
-      Column() {
-        Row() {
-          Text("退出登录")
-            .fontSize(16)
-            .fontColor("#3e3e3e")
-            .textAlign(TextAlign.Start)
-            .padding({ left: 16, top: 16, bottom: 16 })
-            .lineHeight(20)
-
-          Blank()
-          Image($r('app.media.ic_enter')).width(6).height(10)
-            .margin({ right: 12 })
-        }
-        .width('100%')
-        .onClick(() => {
-          this.loginDialog('退出登录', '你确定要退出登录吗？')
-        })
-      }
-      .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
-      .width('90%')
-      .alignItems(HorizontalAlign.Start)
-      .backgroundColor('#f9f9f9')
-      .borderRadius(5)
-
-
-      Column() {
-        Row() {
-          Text("注销登录")
-            .fontSize(16)
-            .fontColor("#3e3e3e")
-            .textAlign(TextAlign.Start)
-            .padding({ left: 16, top: 16, bottom: 16 })
-            .lineHeight(20)
-
-          Blank()
-          Image($r('app.media.ic_enter')).width(6).height(10)
-            .margin({ right: 12 })
-        }
-        .width('100%')
-        .onClick(() => {
-          this.loginDialog('注销登录', '你确定要注销登录吗？')
-        })
-
-      }
-      .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
-      .margin({ top: 8 })
-      .width('90%')
-      .alignItems(HorizontalAlign.Start)
-      .backgroundColor('#f9f9f9')
-      .borderRadius(5)
-    }
-    .alignItems(HorizontalAlign.Center)
-    .width('100%')
-    .height('100%')
-  }
-
   //退出弹窗
   private loginDialog(title: string, content: string) {
     promptAction.showDialog({
@@ -432,5 +139,354 @@ export struct SettingPage {
         this.loginOut()
       }
     })
+  }
+
+  build() {
+    Navigation(this.pathStack) {
+      Scroll() {
+        Column() {
+          // 标题栏
+          TitleBar({
+            title: this.title, backClick: () => {
+              router.back()
+            }
+          }).width('100%')
+
+          Column() {
+            Text('读屏设置')
+              .fontWeight(FontWeight.Bold)
+              .fontSize(18)
+              .fontColor("#3e3e3e")
+              .textAlign(TextAlign.Start)
+              .padding({ left: 16, top: 16, bottom: 16 })
+              .lineHeight(20)
+              .margin({ left: 20 })
+          }
+          .margin({ top: 5 })
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+          .justifyContent(FlexAlign.Start)
+
+          // 用户协议行（显示当前题目数量）
+          Column() {
+
+            Row() {
+              Text("屏幕识别区域")
+                .fontSize(16)
+                .fontColor("#3e3e3e")
+                .textAlign(TextAlign.Start)
+                .padding({ left: 16, top: 16, bottom: 16 })
+                .lineHeight(20)
+            }
+            .width('100%')
+            .onClick(() => {
+              // 跳转到屏幕识别页面
+              let pathInfo: NavPathInfo = new NavPathInfo('ScreenReadPage', new Object());
+              this.pathStack.pushDestination(pathInfo, true);
+
+            })
+
+          }
+          .width('90%')
+          .alignItems(HorizontalAlign.Start)
+          .backgroundColor('#f9f9f9')
+          .borderRadius(5)
+
+
+          Column() {
+            Text('显示设置')
+              .fontWeight(FontWeight.Bold)
+              .fontSize(18)
+              .fontColor("#3e3e3e")
+              .textAlign(TextAlign.Start)
+              .padding({ left: 16, top: 16, bottom: 16 })
+              .lineHeight(20)
+              .margin({ left: 20 })
+          }
+          .margin({ top: 5 })
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+          .justifyContent(FlexAlign.Start)
+
+          Column() {
+            Row() {
+              SettingColor({
+                TextColorSetting: '题目颜色设置',
+                Usage: '设置悬浮窗普通文本颜色',
+                TypeSetting: 0,
+                ShowColor: true,
+                defaultColor: Color.Red
+              })
+            }
+            .justifyContent(FlexAlign.Center)
+            .height(55)
+
+            Divider()
+            Row() {
+              SettingColor({
+                TextColorSetting: '选项颜色设置',
+                Usage: '设置悬浮窗答案文本颜色',
+                TypeSetting: 1,
+                ShowColor: true,
+                defaultColor: "#fffadf07"
+              })
+            }
+            .justifyContent(FlexAlign.Center)
+            .height(55)
+
+            Divider()
+
+            Row() {
+              SettingColor({
+                TextColorSetting: '悬浮窗颜色设置',
+                Usage: '设置悬浮窗颜色和透明度',
+                TypeSetting: 2,
+                ShowColor: true,
+                defaultColor: Color.Black
+              })
+            }
+            .justifyContent(FlexAlign.Center)
+            .height(55)
+
+            Divider()
+            Row() {
+              SettingColor({ TextColorSetting: '悬浮窗字体大小设置', ShowColor: false })
+            }
+            .onClick(() => {
+              this.TextDialogController?.open()
+            })
+            .justifyContent(FlexAlign.Center)
+            .height(55)
+
+            Divider()
+
+
+          }
+          .justifyContent(FlexAlign.Center)
+          .alignItems(HorizontalAlign.Start)
+          .padding({ left: 16, right: 16, })
+          .width('90%')
+          .backgroundColor('#f9f9f9')
+
+          // 考试设置标题
+          Column() {
+            Text('考试设置')
+              .fontWeight(FontWeight.Bold)
+              .fontSize(18)
+              .fontColor("#3e3e3e")
+              .textAlign(TextAlign.Start)
+              .padding({ left: 16, top: 16, bottom: 16 })
+              .lineHeight(20)
+              .margin({ left: 20 })
+          }
+          .margin({ top: 5 })
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+          .justifyContent(FlexAlign.Start)
+
+          // 用户协议行（显示当前题目数量）
+          Column() {
+            Row() {
+              Text("考试一轮题目数量")
+                .fontSize(16)
+                .fontColor("#3e3e3e")
+                .textAlign(TextAlign.Start)
+                .padding({ left: 16, top: 16, bottom: 16 })
+                .lineHeight(20)
+              Blank()
+              Text(`${this.v} 题`)
+                .fontSize(16)
+                .fontColor("#007DFF")
+                .textAlign(TextAlign.Start)
+                .padding({ left: 16, top: 16, bottom: 16 })
+                .lineHeight(20)
+                .margin({ right: 10 })
+              Image($r('app.media.ic_enter')).width(6).height(10)
+                .margin({ right: 12 })
+            }
+            .width('100%')
+            .onClick(() => {
+              TextPickerDialog.show({
+                // 建议使用 this.getUIContext().showTextPickerDialog()接口
+                range: this.questionCounts,
+                selected: this.select,
+                disappearTextStyle: { color: Color.Red, font: { size: 15, weight: FontWeight.Lighter } },
+                textStyle: { color: Color.Black, font: { size: 20, weight: FontWeight.Normal } },
+                selectedTextStyle: { color: Color.Blue, font: { size: 30, weight: FontWeight.Bolder } },
+                onAccept: (value: TextPickerResult) => {
+                  // 设置select为按下确定按钮时候的选中项index，这样当弹窗再次弹出时显示选中的是上一次确定的选项
+                  this.select = value.index;
+                  console.log(this.select + '');
+                  // 点击确定后，被选到的文本数据展示到页面
+                  this.v = value.value as string;
+
+                  // 数据持久化
+                  this.saveQuestionCount()
+
+                  console.info("TextPickerDialog:onAccept()" + JSON.stringify(value));
+                },
+                onCancel: () => {
+                  console.info("TextPickerDialog:onCancel()");
+                },
+                onChange: (value: TextPickerResult) => {
+                  console.info("TextPickerDialog:onChange()" + JSON.stringify(value));
+                },
+                onScrollStop: (value: TextPickerResult) => {
+                  console.info("TextPickerDialog:onScrollStop()" + JSON.stringify(value));
+                },
+                onDidAppear: () => {
+                  console.info("TextPickerDialog:onDidAppear()");
+                },
+                onDidDisappear: () => {
+                  console.info("TextPickerDialog:onDidDisappear()");
+                },
+                onWillAppear: () => {
+                  console.info("TextPickerDialog:onWillAppear()");
+                },
+                onWillDisappear: () => {
+                  console.info("TextPickerDialog:onWillDisappear()");
+                }
+              });
+              this.isDialogVisible = true
+            })
+          }
+          .width('90%')
+          .alignItems(HorizontalAlign.Start)
+          .backgroundColor('#f9f9f9')
+          .borderRadius(5)
+
+
+          //搜索设置
+          Column() {
+            Text('搜索设置')
+              .fontWeight(FontWeight.Bold)
+              .fontSize(18)
+              .fontColor("#3e3e3e")
+              .textAlign(TextAlign.Start)
+              .padding({ left: 16, top: 16, bottom: 16 })
+              .lineHeight(20)
+              .margin({ left: 20 })
+          }
+          .margin({ top: 5 })
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+          .justifyContent(FlexAlign.Start)
+
+          Column() {
+            Row() {
+              Text("指定搜索题库")
+                .fontSize(16)
+                .fontColor("#3e3e3e")
+                .textAlign(TextAlign.Start)
+                .padding({ left: 16, top: 16, bottom: 16 })
+                .lineHeight(20)
+              Image($r('app.media.ic_vip'))
+                .width($r('app.float.float_16vp'))
+                .height($r('app.float.float_16vp'))
+                .margin({ left: 8 })
+              Blank()
+              Image($r('app.media.ic_enter')).width(6).height(10)
+                .margin({ right: 12 })
+            }
+            .width('100%')
+            .onClick(() => {
+              this.showSelectBankDialog();
+            })
+          }
+          .width('90%')
+          .alignItems(HorizontalAlign.Start)
+          .backgroundColor('#f9f9f9')
+          .borderRadius(5)
+
+          // 登录设置标题
+          Column() {
+            Text('登录设置')
+              .fontWeight(FontWeight.Bold)
+              .fontSize(18)
+              .fontColor("#3e3e3e")
+              .textAlign(TextAlign.Start)
+              .padding({ left: 16, top: 16, bottom: 16 })
+              .lineHeight(20)
+              .margin({ left: 20 })
+          }
+          .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+          .margin({ top: 5 })
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+          .justifyContent(FlexAlign.Start)
+
+          // Column() {
+          //   Text('登录设置')
+          //     .fontWeight(FontWeight.Bold)
+          //     .fontSize(18)
+          //     .fontColor("#3e3e3e")
+          //     .textAlign(TextAlign.Start)
+          //     .padding({ left: 16, top: 16, bottom: 16 })
+          //     .lineHeight(20)
+          //     .margin({ left: 20 })
+          // }
+          // .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+          // .margin({ top: 5 })
+          // .width('90%')
+          // .alignItems(HorizontalAlign.Start)
+          // .justifyContent(FlexAlign.Start)
+
+          Column() {
+            Row() {
+              Text("退出登录")
+                .fontSize(16)
+                .fontColor("#3e3e3e")
+                .textAlign(TextAlign.Start)
+                .padding({ left: 16, top: 16, bottom: 16 })
+                .lineHeight(20)
+
+              Blank()
+              Image($r('app.media.ic_enter')).width(6).height(10)
+                .margin({ right: 12 })
+            }
+            .width('100%')
+            .onClick(() => {
+              this.loginDialog('退出登录', '你确定要退出登录吗？')
+            })
+          }
+          .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+          .width('90%')
+          .alignItems(HorizontalAlign.Start)
+          .backgroundColor('#f9f9f9')
+          .borderRadius(5)
+
+
+          Column() {
+            Row() {
+              Text("注销登录")
+                .fontSize(16)
+                .fontColor("#3e3e3e")
+                .textAlign(TextAlign.Start)
+                .padding({ left: 16, top: 16, bottom: 16 })
+                .lineHeight(20)
+
+              Blank()
+              Image($r('app.media.ic_enter')).width(6).height(10)
+                .margin({ right: 12 })
+            }
+            .width('100%')
+            .onClick(() => {
+              this.loginDialog('注销登录', '你确定要注销登录吗？')
+            })
+
+          }
+          .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+          .margin({ top: 8 })
+          .width('90%')
+          .alignItems(HorizontalAlign.Start)
+          .backgroundColor('#f9f9f9')
+          .borderRadius(5)
+        }
+        .alignItems(HorizontalAlign.Center)
+        .width('100%')
+      }
+    }
+    .navDestination(this.pageMap)
+    .hideTitleBar(true)
   }
 }

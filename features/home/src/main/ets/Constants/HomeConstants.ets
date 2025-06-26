@@ -47,4 +47,6 @@ export default class HomeConstants {
   static readonly ROUTER_CROP_IMAGE= 'cropImagePage'
  //首页
   static readonly ROUTER_MAIN_PAGE= '@bundle:com.chznai.ikst/entry/ets/pages/MainPage'
+  // 读屏设置页
+  static readonly SCREEN_READ_PAGE = 'ScreenReadPage'
 }
