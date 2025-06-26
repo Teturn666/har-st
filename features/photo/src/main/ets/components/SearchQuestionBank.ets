@@ -37,21 +37,18 @@ export struct SearchQuestionBank {
             //单选
             case 1:
               if (item.ans.length === 1) {
-             this.scroller.scrollEdge(Edge.Top)
                 this.resultList.push(item)
               }
               break
           //多选
             case 2:
               if (item.ans.length > 1) {
-                this.scroller.scrollEdge(Edge.Top)
                 this.resultList.push(item)
               }
               break
           //判断
             case 3:
               if ("正确" === aslice[0]) {
-                this.scroller.scrollEdge(Edge.Top)
                 this.resultList.push(item)
               }
               break
@@ -61,6 +58,7 @@ export struct SearchQuestionBank {
           }
         }
       }
+      this.scroller.scrollEdge(Edge.Top)
       this.isLoading = false
     })
   }
