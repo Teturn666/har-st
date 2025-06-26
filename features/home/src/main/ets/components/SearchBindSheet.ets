@@ -13,6 +13,7 @@ export struct SearchBindSheet {
   @StorageProp(cameraAppStorage.OCR_TEXT) searchText: string = ''
   @State defaultTab: number = 0
   @State SearchIndex: number = 0
+  @State ChangeValue: boolean = false
   textAreaController: TextAreaController = new TextAreaController()
   list: string[] = ['全部', '单选题', '多选题', '判断题']
   DialogController = new CustomDialogController({
@@ -77,8 +78,14 @@ export struct SearchBindSheet {
               text: $$this.searchText,
               controller: this.textAreaController,
             })
-              .onDidInsert(() => {
-                console.log('输入完成');
+              .onDidInsert((info: InsertValue) => {
+                this.isEditing = true
+                this.ChangeValue = true
+              })
+              .onChange((value: string) => {
+                if (!value) {
+                  this.isEditing = false
+                }
               })
               .backgroundColor(Color.Pink)
               .enableKeyboardOnFocus(false)
@@ -141,6 +148,7 @@ export struct SearchBindSheet {
                 }
                 .onClick(() => {
                   this.searchText = ''
+                  this.isEditing = false
                 })
                 .borderRadius(3)
                 .margin({ left: 10, bottom: 3 })
@@ -185,8 +193,13 @@ export struct SearchBindSheet {
 
       BottomBar({
         searchText: '搜索', searchClick: () => {
-          inputMethod.getController().stopInputSession();
-          AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT, this.searchText)
+          if (this.searchText && this.ChangeValue) {
+            inputMethod.getController().stopInputSession();
+            this.isEditing = false
+            AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT, this.searchText)
+            this.ChangeValue = false
+          }
+
         },
         ButtonWidth: '100%'
       })
