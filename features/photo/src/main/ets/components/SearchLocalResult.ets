@@ -13,6 +13,8 @@ export struct SearchLocalResult {
   @State resultData: QuestionRes[] = []
   @StorageProp("ocr_text")
   @Watch('SearchChange') text: string = ""
+  @StorageProp("select_question_type")
+  @Watch('SearchChange') questionType: number = 0
 
   SearchChange() {
     this.getLocal()
@@ -27,7 +29,36 @@ export struct SearchLocalResult {
 
   getLocal() {
     SearchEngine.getInstance().queryQuestionsWithText(this.text.replace(/\r?\n/g, '')).then((data) => {
-      this.resultData = data
+      this.resultData = []
+      for (let i = 0; i < data.length; i++) {
+        let item = data[i]
+        let aslice = item.option
+        if (aslice != null && aslice.length > 1) {
+          switch (this.questionType) {
+            //单选
+            case 1:
+              if (item.answer.length === 1) {
+                this.resultData.push(item)
+              }
+              break
+          //多选
+            case 2:
+              if (item.answer.length > 1) {
+                this.resultData.push(item)
+              }
+              break
+          //判断
+            case 3:
+              if ("正确" === aslice[0]) {
+                this.resultData.push(item)
+              }
+              break
+            default:
+              this.resultData = data
+              break
+          }
+        }
+      }
       this.isLoading = false
     })
   }

@@ -11,6 +11,8 @@ export struct SearchQuestionBank {
   @State resultList: SearchResultRes[] = []
   @StorageProp("ocr_text")
   @Watch('SearchChange') text: string = ""
+  @StorageProp("select_question_type")
+  @Watch('SearchChange') questionType: number = 0
 
   SearchChange() {
     this.getData()
@@ -20,14 +22,41 @@ export struct SearchQuestionBank {
     setTimeout(() => {
       this.getData()
     })
-
   }
 
   getData() {
     SearchModel.getInstance().searchResultList(this.text.replace(/\r?\n/g, '')).then((data) => {
-      this.resultList = data
+      this.resultList = []
+      for (let i = 0; i < data.length; i++) {
+        let item = data[i]
+        let aslice = item.ASlice
+        if (aslice != null && aslice.length > 1) {
+          switch (this.questionType) {
+            //单选
+            case 1:
+              if (item.ans.length === 1) {
+                this.resultList.push(item)
+              }
+              break
+          //多选
+            case 2:
+              if (item.ans.length > 1) {
+                this.resultList.push(item)
+              }
+              break
+          //判断
+            case 3:
+              if ("正确" === aslice[0]) {
+                this.resultList.push(item)
+              }
+              break
+            default:
+              this.resultList = data
+              break
+          }
+        }
+      }
       this.isLoading = false
-
     })
   }
 
