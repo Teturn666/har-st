@@ -42,7 +42,6 @@ export struct SearchBindSheet {
     .justifyContent(FlexAlign.Center)
     .width(30)
     .height(30)
-    .margin({ right: 10, })
     .onClick(() => {
       this.DialogController.open()
     })
