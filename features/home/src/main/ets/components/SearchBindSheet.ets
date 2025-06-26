@@ -210,6 +210,7 @@ export struct SearchBindSheet {
           }
           .onClick(() => {
             this.SearchIndex = index
+            AppStorage.setOrCreate(cameraAppStorage.SELECT_QUESTION_TYPE, index)
           })
 
         }, (item: string, index: number) => JSON.stringify(item) + index)
