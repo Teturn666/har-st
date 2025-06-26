@@ -4,7 +4,6 @@ import { router } from '@kit.ArkUI'
 import { routerHome } from '../constants/RouterHome'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { SearchModel } from '../model/SearchModel'
-import { emitter } from '@kit.BasicServicesKit'
 
 @Component
 export struct SearchQuestionBank {
@@ -18,9 +17,6 @@ export struct SearchQuestionBank {
   }
 
   aboutToAppear(): void {
-    emitter.on('search', () => {
-      this.getData()
-    })
     setTimeout(() => {
       this.getData()
     })
