@@ -729,7 +729,7 @@ export class ParseTxtManage {
         if (firstLine && firstLine.startsWith('{')) {
           JSON.parse(firstLine);
           console.info('检测到JSON格式内容，调用parseJsonFile');
-          return await this.parseJsonFile(files.path);
+          return await this.parseJsonFromBuffer(bufferView);
         }
       } catch (e) {
         console.info('非JSON格式内容，继续按普通文本解析');
@@ -773,32 +773,76 @@ export class ParseTxtManage {
 
 
   // 解析JSON格式的TXT文件
-  async parseJsonFile(filePath: string): Promise<ImportWithLog | null> {
-    if (!filePath || typeof filePath !== 'string') {
-      console.error('文件路径无效');
-      promptAction.showToast({ message: '文件路径无效', duration: 2000 });
-      return null;
-    }
-
-    let file: fs.File | null = null;
-    try {
-      file = fs.openSync(filePath, fs.OpenMode.READ_ONLY);
-      console.info(`成功打开JSON文件: ${filePath}`);
+  private parseJsonFromBuffer(bufferView: Uint8Array): Promise<ImportWithLog | null> {
+    return new Promise((resolve) => {
       try {
-        let stat = fs.statSync(file.path);
-        console.info(`JSON文件状态: size=${stat.size}, mtime=${stat.mtime}`);
+        let detectedEncoding = this.detectEncoding(bufferView);
+        console.info(`检测到编码: ${detectedEncoding}`);
 
-        let buffer = new ArrayBuffer(stat.size);
-        let bytesRead = fs.readSync(file.fd, buffer);
+        // 检查是否为支持的编码
+        if (!this.supportedEncodings.includes(detectedEncoding)) {
+          console.error(`不支持的编码格式: ${detectedEncoding}`);
+          promptAction.showToast({
+            message: '导入失败: 文件不存在或者内容格式异常',
+            duration: 2000
+          });
+          resolve(null);
+          return;
+        }
 
-        let decoder = util.TextDecoder.create('utf-8', { ignoreBOM: true });
-        let text = decoder.decodeWithStream(new Uint8Array(buffer).slice(0, bytesRead));
-        let lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+        let text: string = '';
+        let actualEncoding = detectedEncoding;
 
-        if (lines.length === 0) {
+        try {
+          let decoder = util.TextDecoder.create(detectedEncoding, { ignoreBOM: true });
+          text = decoder.decodeToString(bufferView);
+
+          // 验证解码结果
+          if (!this.isValidDecodedText(text)) {
+            console.warn(`使用 ${detectedEncoding} 编码解码结果不理想，尝试其他编码`);
+            throw new Error('解码结果无效');
+          }
+        } catch (error) {
+          console.warn(`使用 ${detectedEncoding} 编码失败，尝试其他编码: ${error}`);
+
+          // 尝试支持的编码解码
+          const decodeResult = this.tryDecodeTextWithSupportedEncodings(bufferView);
+          if (decodeResult) {
+            text = decodeResult.text;
+            actualEncoding = decodeResult.encoding;
+            console.info(`成功使用 ${actualEncoding} 编码解码文件`);
+          } else {
+            console.error('所有支持的编码尝试均失败');
+            promptAction.showToast({
+              message: '导入失败: 文件不存在或者内容格式异常',
+              duration: 2000
+            });
+            resolve(null);
+            return;
+          }
+        }
+
+        // 检查解码后的文本是否有效
+        if (!text || text.trim().length === 0) {
+          console.error('解码后文本为空');
+          promptAction.showToast({
+            message: '导入失败: 文件不存在或者内容格式异常',
+            duration: 2000
+          });
+          resolve(null);
+          return;
+        }
+
+        let lines = text
+          .split('\n')
+          .map((line: string) => line.trim())
+          .filter((line: string) => line.length > 0);
+
+        if (!lines || lines.length === 0) {
           console.error('JSON文件为空或无有效内容');
           promptAction.showToast({ message: 'JSON文件中没有有效内容', duration: 2000 });
-          return null;
+          resolve(null);
+          return;
         }
 
         let res: ImportWithLog = { items: [], logs: [] };
@@ -833,48 +877,25 @@ export class ParseTxtManage {
         if (res.items.length === 0) {
           console.error('没有解析到有效JSON题目');
           promptAction.showToast({ message: 'JSON文件中没有有效题目', duration: 2000 });
-          return null;
+          resolve(null);
+          return;
         }
 
         this.generateQuestionIDs(res);
-        console.info(`JSON解析完成: items=${res.items.length}, logs=${res.logs.length}`);
-        return res;
-      } catch (statError) {
-        let err = statError as BusinessError;
-        console.error(`获取JSON文件状态失败: filePath=${filePath}, code=${err.code}, message=${err.message}`);
-        let message = '获取JSON文件状态失败';
-        if (err.code === 13900002) {
-          message = `JSON文件不存在或路径错误: ${filePath}`;
-        } else if (err.code === 13900004) {
-          message = `无权限访问JSON文件: ${filePath}`;
-        }
-        promptAction.showToast({ message, duration: 2000 });
-        return null;
+        console.info(`JSON解析完成: items=${res.items.length}, logs=${res.logs.length}, encoding=${actualEncoding}`);
+        resolve(res);
+      } catch (error) {
+        let err = error as BusinessError;
+        console.error(`解析JSON内容失败: ${err.message}`);
+        promptAction.showToast({
+          message: '导入失败: 文件不存在或者内容格式异常',
+          duration: 2000
+        });
+        resolve(null);
       }
-    } catch (error) {
-      let err = error as BusinessError;
-      let message = '解析JSON文件失败';
-      if (err.code === 13900002) {
-        message = `JSON文件不存在或路径错误: ${filePath}`;
-      } else if (err.code === 13900004) {
-        message = `无权限访问JSON文件: ${filePath}`;
-      } else {
-        message = `解析JSON文件失败: ${filePath} (错误: ${err.message})`;
-      }
-      console.error(`解析JSON文件失败: code=${err.code}, message=${err.message}, filePath=${filePath}`);
-      promptAction.showToast({ message, duration: 2000 });
-      return null;
-    } finally {
-      if (file) {
-        try {
-          fs.closeSync(file);
-          console.info(`成功关闭JSON文件: ${filePath}`);
-        } catch (closeError) {
-          console.error(`关闭JSON文件失败: ${(closeError as BusinessError).message}`);
-        }
-      }
-    }
+    });
   }
+
 
   // 生成题目ID
   private generateQuestionIDs(result: ImportWithLog): void {
