@@ -240,19 +240,23 @@ export class ScreenCaptureManager {
       });
 
       const data = preferencesUtils.getString(PreferencesConstants.SCREEN_READ_SETTING, '')
+      let region: image.Region
       if (data) {
-        const region = JSON.parse(data) as image.Region
-
-        // 同步获取图像信息
-        let imageInfo = pixelMap.getImageInfoSync();
-
-        let width = imageInfo.size.width;
-        let regionHeight = imageInfo.size.height * region.y;
-        let regionSizeHeight = imageInfo.size.height * region.size.height;
-
-        // 对pixelMap进行裁剪处理
-        this.cropPixelMap(pixelMap, 0, regionHeight, width, regionSizeHeight)
+        region = JSON.parse(data) as image.Region
+      } else {
+        // 默认值
+        region =
+          { x: 0, y: 0.0721, size: { width: 0, height: 0.493 } }
       }
+      // 同步获取图像信息
+      let imageInfo = pixelMap.getImageInfoSync();
+
+      let width = imageInfo.size.width;
+      let regionHeight = imageInfo.size.height * region.y;
+      let regionSizeHeight = imageInfo.size.height * region.size.height;
+
+      // 对pixelMap进行裁剪处理
+      this.cropPixelMap(pixelMap, 0, regionHeight, width, regionSizeHeight)
 
       // 使用回调，将pixelMap传入回调函数
       this.callback?.onPixelMapReady?.(pixelMap);
