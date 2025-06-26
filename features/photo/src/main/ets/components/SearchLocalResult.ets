@@ -102,7 +102,6 @@ export struct SearchLocalResult {
             },
             ButtonWidth: '100%'
           })
-            .margin({ bottom: 30 })
         }
 
       } else {

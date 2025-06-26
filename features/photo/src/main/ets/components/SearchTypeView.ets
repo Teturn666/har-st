@@ -73,6 +73,6 @@ export struct SearchTypeView {
         this.activeTabIndex = index
       })
     }
-    .height('80%')
+    .height('100%')
   }
 }

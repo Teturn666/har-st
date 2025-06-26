@@ -52,12 +52,12 @@ export class RectangleImageCropperWithTextLayerPainter extends image_cropper.Ima
     const cropRect = config.cropRect;
     const text = "只框选题干，不带选项";
     canvas.save();
-    canvas.font = "bold 30px sans-serif";
+    canvas.font = "bold 50px sans-serif";
     canvas.textAlign = "center";
     canvas.textBaseline = "middle";
     const textWidth = canvas.measureText(text).width;
-    const padding = 3;
-    const bgHeight = 25;
+    const padding = 20;
+    const bgHeight = 30;
     const bgWidth = textWidth + padding * 2;
     const bgX = cropRect.center.dx - bgWidth / 2;
     const bgY = cropRect.top - bgHeight - 10;
