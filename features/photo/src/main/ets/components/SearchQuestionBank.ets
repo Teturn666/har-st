@@ -19,7 +19,6 @@ export struct SearchQuestionBank {
     this.isLoading = true
     this.getData()
   }
-
   aboutToAppear(): void {
     setTimeout(() => {
       this.getData()

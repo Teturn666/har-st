@@ -15,16 +15,15 @@ export struct SearchLocalResult {
   @Watch('SearchChange') text: string = ""
   @StorageProp("select_question_type")
   @Watch('SearchChange') questionType: number = 0
+  scroller: Scroller = new Scroller();
 
   SearchChange() {
+    this.isLoading = true
     this.getLocal()
   }
 
   aboutToAppear(): void {
     this.getLocal()
-    emitter.on('search', () => {
-      this.getLocal()
-    })
   }
 
   getLocal() {
@@ -59,6 +58,7 @@ export struct SearchLocalResult {
           }
         }
       }
+      this.scroller.scrollEdge(Edge.Top)
       this.isLoading = false
     })
   }
@@ -69,7 +69,7 @@ export struct SearchLocalResult {
     } else {
       if (this.resultData?.length > 0) {
         Column() {
-          List() {
+          List({ scroller: this.scroller }) {
             ForEach(this.resultData,
               (item: QuestionRes) => {
                 ListItem() {
