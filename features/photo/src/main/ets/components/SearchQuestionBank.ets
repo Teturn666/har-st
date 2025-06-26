@@ -4,7 +4,6 @@ import { router } from '@kit.ArkUI'
 import { routerHome } from '../constants/RouterHome'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { SearchModel } from '../model/SearchModel'
-import { emitter } from '@kit.BasicServicesKit'
 
 @Component
 export struct SearchQuestionBank {
@@ -14,15 +13,13 @@ export struct SearchQuestionBank {
   @Watch('SearchChange') text: string = ""
   @StorageProp("select_question_type")
   @Watch('SearchChange') questionType: number = 0
+  scroller: Scroller = new Scroller();
 
   SearchChange() {
+    this.isLoading = true
     this.getData()
   }
-
   aboutToAppear(): void {
-    emitter.on('search', () => {
-      this.getData()
-    })
     setTimeout(() => {
       this.getData()
     })
@@ -60,6 +57,7 @@ export struct SearchQuestionBank {
           }
         }
       }
+      this.scroller.scrollEdge(Edge.Top)
       this.isLoading = false
     })
   }
@@ -70,8 +68,7 @@ export struct SearchQuestionBank {
     } else {
       if (this.resultList?.length > 0) {
         Column() {
-          List() {
-
+          List({ scroller: this.scroller }) {
             ForEach(this.resultList,
               (item: SearchResultRes, index: number) => {
                 ListItem() {

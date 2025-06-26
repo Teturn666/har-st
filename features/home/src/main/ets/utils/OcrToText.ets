@@ -63,7 +63,8 @@ export class OcrToText {
           // 将结果更新到Text中显示
           // this.dataValues = data.value
           emitter.emit(EmitterConstants.EM_DATA_TEXT, { data: { "text": data.value } })
-          AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT, data.value)
+          let value=data.value.replace(/\\n|\n|/g, ' ')
+          AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT,value)
           if (search) {
             this.jumpToSearchResult()
           }
