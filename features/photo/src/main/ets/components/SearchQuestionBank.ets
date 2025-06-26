@@ -13,8 +13,10 @@ export struct SearchQuestionBank {
   @Watch('SearchChange') text: string = ""
   @StorageProp("select_question_type")
   @Watch('SearchChange') questionType: number = 0
+  scroller: Scroller = new Scroller();
 
   SearchChange() {
+    this.isLoading = true
     this.getData()
   }
 
@@ -35,18 +37,21 @@ export struct SearchQuestionBank {
             //单选
             case 1:
               if (item.ans.length === 1) {
+             this.scroller.scrollEdge(Edge.Top)
                 this.resultList.push(item)
               }
               break
           //多选
             case 2:
               if (item.ans.length > 1) {
+                this.scroller.scrollEdge(Edge.Top)
                 this.resultList.push(item)
               }
               break
           //判断
             case 3:
               if ("正确" === aslice[0]) {
+                this.scroller.scrollEdge(Edge.Top)
                 this.resultList.push(item)
               }
               break
@@ -66,8 +71,7 @@ export struct SearchQuestionBank {
     } else {
       if (this.resultList?.length > 0) {
         Column() {
-          List() {
-
+          List({ scroller: this.scroller }) {
             ForEach(this.resultList,
               (item: SearchResultRes, index: number) => {
                 ListItem() {
