@@ -48,4 +48,6 @@ export class PreferencesConstants {
   static readonly FLOATING_COLOR_SETTING = 'floating_color_setting'
   //悬浮窗字体大小设置
   static readonly FLOATING_TEXT_SIZE = 'floating_text_size'
+  //识别区域设置
+  static readonly SCREEN_READ_SETTING = 'Screen_Read_Setting'
 }

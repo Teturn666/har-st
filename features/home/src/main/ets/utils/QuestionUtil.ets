@@ -3,7 +3,7 @@ import { QuestionRes } from 'db';
 /**
  * 匹配结果接口
  */
-interface MatchResult {
+export interface MatchResult {
   accuracy: number;
   isAccurate: boolean;
   remainingText: string;
@@ -15,7 +15,7 @@ interface MatchResult {
 /**
  * 最佳匹配信息接口
  */
-interface BestMatch {
+export interface BestMatch {
   startIndex: number;
   endIndex: number;
   matchLength: number;

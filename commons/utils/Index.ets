@@ -22,6 +22,8 @@ export { PromptActionClass } from './src/main/ets/components/PromptActionClass'
 
 export { OnWXResp, APP_ID, WXApi, WXEventHandler } from './src/main/ets/utils/WXApiWrap'
 
+export { CropperConfig } from './src/main/ets/model/CropperConfig'
+
 export {
   LoadingStatus
 } from './src/main/ets/common/CommonEnums'

@@ -1,6 +1,7 @@
 import {
   CommonConstants as Const,
   EmitterConstants,
+  GetAllSelectedUtil,
   Logger,
   PreferencesConstants,
   preferencesUtils
@@ -36,6 +37,8 @@ import { ScreenCaptureManager } from '../manage/ScreenCaptureManager'
 import { readSearchCurrent, ReadSearchResult } from '../manage/ConcurrentManage'
 import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
 import { accessManager } from '../utils/AccessManager'
+import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
+import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -130,7 +133,7 @@ export struct HomePage {
     }),
   });
 
-  aboutToAppear(): void {
+  async aboutToAppear() {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
     this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
@@ -138,6 +141,18 @@ export struct HomePage {
     emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
       this.loadResource()
     })
+
+    // 判断是否为全选,如果是全选设置mdataText给唯一变量
+    let mdataText: SharedArrayBuffer | null = null
+    if (GetAllSelectedUtil.isUserBankAllSelected()) {
+      mdataText = await SearchMapManage.getInstance()
+        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+    } else {
+      // 赋值mdataText给全局变量
+      mdataText = await SearchMapManage.getInstance()
+        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+    }
+    MDataTextManage.getInstance().saveDataText(mdataText)
   }
 
   aboutToDisappear(): void {
@@ -177,7 +192,7 @@ export struct HomePage {
               isLoading: this.loading,
               handleClick: () => {
                 //'ohos.permission.READ_IMAGEVIDEO'
-                accessManager.CheckCamera(['ohos.permission.CAMERA', ], () => {
+                accessManager.CheckCamera(['ohos.permission.CAMERA',], () => {
                   router.pushNamedRoute({
                     name: HomeConstants.ROUTER_PHOTO_SEARCH,
                   })
