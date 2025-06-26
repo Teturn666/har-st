@@ -1,7 +1,8 @@
-import { util } from '@kit.ArkTS';
-import fs from '@ohos.file.fs';
-import promptAction from '@ohos.promptAction';
-import { BusinessError } from '@ohos.base';
+import { util } from '@kit.ArkTS'
+import fs from '@ohos.file.fs'
+import promptAction from '@ohos.promptAction'
+import { BusinessError } from '@ohos.base'
+import { StringUtils } from 'utils/Index'
 
 export interface QuestionModel {
   q: string;
@@ -273,12 +274,13 @@ export class ParseTxtManage {
 
   // 检查是否为有效答案
   private isAnswer(s: string): boolean {
-    if (!s || !s.trim()) {
+    let trStr = StringUtils.filterStringByWhitelist(s, this.labels)
+    if (!trStr || !trStr.trim()) {
       return false;
     }
-    for (let i = 0; i < s.length; i++) {
-      if (!this.labels.includes(s[i])) {
-        return false;
+    for (let i = 0; i < trStr.length; i++) {
+      if (!this.labels.includes(trStr[i])) {
+        return false
       }
     }
     return true;
