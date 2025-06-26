@@ -5,7 +5,7 @@ import { promptAction } from "@kit.ArkUI";
 import display from '@ohos.display';
 import { PreferencesConstants, preferencesUtils } from 'utils';
 
-const TAG = 'ScreenReadPage';
+const TAG = 'ScreenReadSetting';
 
 @Component
 export struct ScreenReadSetting {
@@ -28,23 +28,26 @@ export struct ScreenReadSetting {
   private async loadSettings() {
     try {
       const savedSettings = preferencesUtils.getString(PreferencesConstants.SCREEN_READ_SETTING, '');
-
+      let region: image.Region
       if (savedSettings) {
-        const region: image.Region = JSON.parse(savedSettings);
-        console.log(TAG, '加载保存的设置:', JSON.stringify(region));
-
-        // 获取屏幕高度
-        const displayInfo = display.getDefaultDisplaySync();
-        const screenHeight = displayInfo.height;
-
-        // 将归一化的坐标转换回像素值，再转换为vp
-        this.cropAreaY = px2vp(region.y * screenHeight);
-        this.cropAreaHeight = px2vp(region.size.height * screenHeight);
-
-        console.log(TAG, '恢复的识别区域 - Y:', this.cropAreaY, 'Height:', this.cropAreaHeight);
+        region = JSON.parse(savedSettings);
       } else {
+        region =
+          { x: 0, y: 0.0721, size: { width: 0, height: 0.493 } }
         console.log(TAG, '没有找到保存的设置，使用默认值');
       }
+
+      console.log(TAG, '加载保存的设置:', JSON.stringify(region));
+
+      // 获取屏幕高度
+      const displayInfo = display.getDefaultDisplaySync();
+      const screenHeight = displayInfo.height;
+
+      // 将归一化的坐标转换回像素值，再转换为vp
+      this.cropAreaY = px2vp(region.y * screenHeight);
+      this.cropAreaHeight = px2vp(region.size.height * screenHeight);
+
+      console.log(TAG, '恢复的识别区域 - Y:', this.cropAreaY, 'Height:', this.cropAreaHeight);
     } catch (error) {
       console.error(TAG, '加载设置失败:', error);
       // 如果加载失败，保持默认值
