@@ -400,6 +400,9 @@ export struct HomePage {
       const task: taskpool.Task = new taskpool.Task(readSearchCurrent, getContext(this), ocrText, pipAnswer, mDataText);
       const res = await taskpool.execute(task) as ReadSearchResult;
 
+      if (!res.answer || !res.question) {
+        return
+      }
       PipManager.getInstance()
         .updatePipUI(new Params({
           answer: res.answer,
