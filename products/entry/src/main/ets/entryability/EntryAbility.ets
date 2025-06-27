@@ -9,14 +9,17 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import fs from '@ohos.file.fs';
 import { router } from '@kit.ArkUI';
 import EntryConstants from '../components/EntryConstants';
-
-
+import {createAtManager} from 'home/src/main/ets/utils/CreateAtManager'
+import {albumPicker} from 'home/src/main/ets/utils/AlbumPicker'
+import {cameraAppStorage} from 'home/src/main/ets/Constants/CameraAppStorage'
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
     this.handleWeChatCallIfNeed(want)
     cSJAdSdkAd.ctx = this.context
     preferencesUtils.context = this.context
+    createAtManager.ctx = this.context
+    albumPicker.ctx=this.context
     // 处理文件打开请求
     this.handleFileOpen(want);
   }
@@ -203,6 +206,11 @@ export default class EntryAbility extends UIAbility {
   onForeground(): void {
     // Ability has brought to foreground
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onForeground');
+    let camera =AppStorage.get(cameraAppStorage.CAMERA_RESTART_CAMERA) as boolean
+    if (camera){
+      createAtManager.cameraShooting()
+    }
+
   }
 
   onBackground(): void {
@@ -215,6 +223,7 @@ export default class EntryAbility extends UIAbility {
 
     // 应用已启动时接收新的文件打开请求
     this.handleFileOpen(want);
+
   }
 
   private handleWeChatCallIfNeed(want: Want) {

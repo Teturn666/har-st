@@ -1,29 +1,54 @@
-import { promptAction } from '@kit.ArkUI';
-import { preferencesUtils, PreferencesConstants } from 'utils/Index';
+import { ComponentContent, promptAction } from '@kit.ArkUI';
+import { preferencesUtils, PreferencesConstants, PromptActionClass } from 'utils/Index';
 import { BankListRes } from 'db';
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage';
 import { SearchEngine } from 'search';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage';
 import { UserBankSelection } from '../model/UserBankSelection';
+import { SettingModel } from '../model/SettingModel';
 
 
 const TAG = 'SelectBankDialog';
 
+// 进度条加载
+let progressContentNode: ComponentContent<Object>;
+
+@Builder
+function buildProgress() {
+  Column({ space: 16 }) {
+    LoadingProgress()
+      .color($r('app.color.c_ffffc776'))
+      .width(80)
+      .height(80)
+    Text('正在加载中')
+      .fontSize(16)
+      .fontColor($r('app.color.c_ffffc776'))
+  }
+  .borderRadius(10)
+  .width(130)
+  .height(130)
+  .justifyContent(FlexAlign.Center)
+  .alignItems(HorizontalAlign.Center)
+}
+
+
 @CustomDialog
 export struct selectBankDialog {
   controller?: CustomDialogController;
-  @Prop bankList: BankListRes[];
+  @State bankList: BankListRes[] = [];
   @Prop isVip: boolean = false; // 从外部传入VIP状态
   onConfirm: (selectedIds: string[], agreementChecked: boolean) => void = () => {
   };
   @State agreementChecked: boolean = false;
   @State selectedBankIds: string[] = []; // 统一管理选中的题库ID
+  @State isLoading: boolean = true;
   isVipDialog?: () => void = () => {
   }
   isChangeText?: () => void = () => {
   }
   @State loginState: string = ''
+  @State settingModel: SettingModel = SettingModel.getInstance()
 
   //获取是否是VIP
   private getIsVip(): boolean {
@@ -179,34 +204,47 @@ export struct selectBankDialog {
     console.info(`[saveUserBankSelection] key=${key}, data=${JSON.stringify(selection)}`);
   }
 
-  aboutToAppear() {
-    this.getIsVip();
-    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0');
+  async aboutToAppear() {
+    try {
+      this.isLoading = true;
+      this.bankList = await this.settingModel.getBankList();
+      console.log("查看返回的列表" + this.bankList.length);
 
-    const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
-    const allBankIds = this.bankList.map(bank => String(bank.id || ''));
+      this.getIsVip();
+      this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0');
 
-    if (this.loginState === '1') {
-      let selection = this.getUserBankSelection(currentUid, allBankIds, this.isVip);
+      const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+      const allBankIds = this.bankList.map(bank => String(bank.id || ''));
 
-      // 🛠 如果用户保存的 selectedBankIds 不在当前题库中，强制全选
-      const currentValidIds = this.bankList.map(bank => String(bank.id || ''));
-      const matchedIds = selection.selectedBankIds.filter(id => currentValidIds.includes(id));
+      if (this.loginState === '1') {
+        let selection = this.getUserBankSelection(currentUid, allBankIds, this.isVip);
 
-      if (matchedIds.length === 0) {
-        // 强制全选
-        selection = {
-          uid: currentUid,
-          selectedBankIds: currentValidIds,
-          isAllSelected: true,
-          lastModified: new Date().getTime()
-        };
+        // 🛠 如果用户保存的 selectedBankIds 不在当前题库中，强制全选
+        const currentValidIds = this.bankList.map(bank => String(bank.id || ''));
+        const matchedIds = selection.selectedBankIds.filter(id => currentValidIds.includes(id));
+
+        if (matchedIds.length === 0) {
+          // 强制全选
+          selection = {
+            uid: currentUid,
+            selectedBankIds: currentValidIds,
+            isAllSelected: true,
+            lastModified: new Date().getTime()
+          };
+        }
+
+        this.selectedBankIds = selection.selectedBankIds;
+      } else {
+        this.selectedBankIds = allBankIds;
       }
-
-      this.selectedBankIds = selection.selectedBankIds;
-    } else {
-      this.selectedBankIds = allBankIds;
+    } catch (error) {
+      console.error('获取题库列表失败:', error);
+      promptAction.showToast({ message: '获取题库列表失败', duration: 2000 });
+    } finally {
+      this.isLoading = false;
     }
+
+    progressContentNode = new ComponentContent(this.getUIContext(), wrapBuilder(buildProgress));
   }
 
   getUserBankSelection(uid: string, defaultIds: string[], isVip: boolean): UserBankSelection {
@@ -264,7 +302,17 @@ export struct selectBankDialog {
       }
       .width('100%')
 
-      if (this.bankList.length > 0) {
+      // 添加加载状态显示
+      if (this.isLoading) {
+        Column({ space: 16 }) {
+          Text('加载中...')
+            .fontSize(16)
+            .fontColor($r('app.color.c_9d9d9d'))
+            .textAlign(TextAlign.Center)
+        }
+        .height(200)
+        .justifyContent(FlexAlign.Center)
+      } else if (this.bankList.length > 0) {
         List({ space: 8 }) {
           // 全选选项
           ListItem() {
@@ -452,34 +500,43 @@ export struct selectBankDialog {
           .height(40)
           .borderRadius(8)
           .onClick(async () => {
-            if (this.isVip) {
-              // 用户必须勾选至少一个题库
-              if (this.selectedBankIds.length === 0) {
-                promptAction.showToast({
-                  message: '请至少选择一个题库进行扫描题库',
-                  duration: 2000
-                });
-                return;
-              }
-              const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
-              this.saveUserBankSelection(currentUid, this.selectedBankIds,
-                this.selectedBankIds.length === this.bankList.length);
+            if (this.selectedBankIds.length === 0) {
+              promptAction.showToast({
+                message: '请至少选择一个题库进行扫描题库',
+                duration: 2000
+              });
+              return;
             }
             // 去重并返回选中的题库ID
             const uniqueSelectedIds = Array.from(new Set(this.selectedBankIds));
             this.onConfirm(uniqueSelectedIds, this.agreementChecked);
             this.controller?.close();
 
+            // 开启进度条
+            let uiContext = this.getUIContext();
+            PromptActionClass.setContext(uiContext);
+            PromptActionClass.setContentNode(progressContentNode);
+            PromptActionClass.setOptions({
+              autoCancel: true,
+            })
+            PromptActionClass.openDialog();
+
             // 判断选择部分题库进行初始化，全选则直接赋值all文件数据
             if (this.selectedBankIds.length > 0 && this.selectedBankIds.length !== this.bankList.length) {
-              await SearchMapManage.getInstance()
-                .clearTreeMapFileContent(getContext(this), SearchConstants.SEARCH_FILE_SOME)
               const selectedBankQIds = this.bankList
                 .filter(bank => this.selectedBankIds.includes(String(bank.id)))
                 .map(bank => bank.qid)
 
-              await SearchEngine.getInstance()
-                .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+              const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+              const data = preferencesUtils.getString(PreferencesConstants.SP_QUESTION_BANK_ + `${currentUid}`, '');
+              const oldSelectedBankQIds: UserBankSelection = data ? JSON.parse(data) : {};
+              // 判断选择的题库和以前的不一致，执行初始化
+              if (JSON.stringify(oldSelectedBankQIds.selectedBankIds) !== JSON.stringify(this.selectedBankIds)) {
+                await SearchMapManage.getInstance()
+                  .clearTreeMapFileContent(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+                await SearchEngine.getInstance()
+                  .findQuestionInitEngine(getContext(this), selectedBankQIds.map(Number))
+              }
 
               let mdataText = await SearchMapManage.getInstance()
                 .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
@@ -491,6 +548,15 @@ export struct selectBankDialog {
               MDataTextManage.getInstance().saveDataText(mdataText)
             }
 
+            if (this.isVip) {
+              // 如果为vip，存储vip题库信息
+              const currentUid = preferencesUtils.getString(PreferencesConstants.SP_U_ID, 'guest');
+              this.saveUserBankSelection(currentUid, this.selectedBankIds,
+                this.selectedBankIds.length === this.bankList.length);
+            }
+
+            // 关闭进度条
+            PromptActionClass.closeDialog(progressContentNode);
             if (!this.isVip) {
               if (this.isVipDialog) {
                 this.isVipDialog()

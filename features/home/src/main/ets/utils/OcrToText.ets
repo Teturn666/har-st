@@ -8,6 +8,7 @@ import { onEventObject } from "@umeng/analytics"
 import HomeMobClickConstants from "../Constants/HomeMobClickConstants"
 import HomeConstants from "../Constants/HomeConstants"
 import { EmitterConstants } from "utils"
+import { cameraAppStorage } from "../Constants/CameraAppStorage"
 
 export class OcrToText {
   private imageSource?: image.ImageSource
@@ -29,12 +30,12 @@ export class OcrToText {
   //   })
   // }
 
-  loadImage(map: image.PixelMap, search?: boolean) {
+  async loadImage(map: image.PixelMap, search?: boolean) {
 
     // let fileSource = await fileIo.open(name, fileIo.OpenMode.READ_ONLY)
     // this.imageSource = image.createImageSource(fileSource.fd)
     // this.chooseImage = await this.imageSource.createPixelMap()
-    this.ocrToText(map, search)
+   await this.ocrToText(map, search)
 
   }
 
@@ -62,8 +63,9 @@ export class OcrToText {
           // 将结果更新到Text中显示
           // this.dataValues = data.value
           emitter.emit(EmitterConstants.EM_DATA_TEXT, { data: { "text": data.value } })
+          let value=data.value.replace(/\\n|\n|/g, ' ')
+          AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT,value)
           if (search) {
-            AppStorage.setOrCreate("ocr", data.value)
             this.jumpToSearchResult()
           }
         }

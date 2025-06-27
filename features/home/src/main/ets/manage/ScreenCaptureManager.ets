@@ -7,6 +7,7 @@ import fs from '@ohos.file.fs';
 import { fileUri } from '@kit.CoreFileKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { PipManager } from './PipManage';
+import { PreferencesConstants, preferencesUtils } from 'utils';
 
 // 常量定义
 const TAG = 'ScreenCapture';
@@ -238,6 +239,25 @@ export class ScreenCaptureManager {
         });
       });
 
+      const data = preferencesUtils.getString(PreferencesConstants.SCREEN_READ_SETTING, '')
+      let region: image.Region
+      if (data) {
+        region = JSON.parse(data) as image.Region
+      } else {
+        // 默认值
+        region =
+          { x: 0, y: 0.0721, size: { width: 0, height: 0.493 } }
+      }
+      // 同步获取图像信息
+      let imageInfo = pixelMap.getImageInfoSync();
+
+      let width = imageInfo.size.width;
+      let regionHeight = imageInfo.size.height * region.y;
+      let regionSizeHeight = imageInfo.size.height * region.size.height;
+
+      // 对pixelMap进行裁剪处理
+      this.cropPixelMap(pixelMap, 0, regionHeight, width, regionSizeHeight)
+
       // 使用回调，将pixelMap传入回调函数
       this.callback?.onPixelMapReady?.(pixelMap);
 
@@ -250,6 +270,23 @@ export class ScreenCaptureManager {
       this.callback?.onStateChanged?.(this.recordingState);
       this.callback?.onLoadingChanged?.(this.isLoading);
     }
+  }
+
+  private async cropPixelMap(pixelMap: image.PixelMap, x: number, y: number, width: number,
+    height: number): Promise<image.PixelMap> {
+    // 定义裁剪区域
+    let region: image.Region = {
+      x: x,
+      y: y,
+      size: {
+        width: width,
+        height: height
+      }
+    };
+
+    // 裁剪PixelMap（注意：这会修改原PixelMap）
+    pixelMap.cropSync(region);
+    return pixelMap;
   }
 
   /**

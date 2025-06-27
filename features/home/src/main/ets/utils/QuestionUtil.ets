@@ -3,7 +3,7 @@ import { QuestionRes } from 'db';
 /**
  * 匹配结果接口
  */
-interface MatchResult {
+export interface MatchResult {
   accuracy: number;
   isAccurate: boolean;
   remainingText: string;
@@ -15,7 +15,7 @@ interface MatchResult {
 /**
  * 最佳匹配信息接口
  */
-interface BestMatch {
+export interface BestMatch {
   startIndex: number;
   endIndex: number;
   matchLength: number;
@@ -70,15 +70,15 @@ export class QuestionUtil {
    * 文字匹配精准率分析函数
    * @param sourceText 源文字（第一段文字）
    * @param targetText 目标文字（第二段文字）
-   * @param threshold 精准率阈值（默认0.5，即50%）
+   * @param threshold 精准率阈值（默认0.8，即80%）
    * @returns 返回分析结果对象
    */
-  static analyzeTextMatch(sourceText: string, targetText: string, threshold: number = 0.5): MatchResult {
+  static analyzeTextMatch(sourceText: string, targetText: string, threshold: number = 0.8): MatchResult {
     // 预处理文字，去除多余空格和换行
     const cleanSource = sourceText.replace(/\s+/g, ' ').trim();
     const cleanTarget = targetText.replace(/\s+/g, ' ').trim();
 
-    // 寻找最佳匹配
+    // 寻找最佳匹配位置
     let bestMatch: BestMatch = {
       startIndex: -1,
       endIndex: -1,
@@ -87,45 +87,46 @@ export class QuestionUtil {
       matchedText: ''
     };
 
-    // 策略1: 寻找目标文字的最长连续子串在源文字中的匹配
-    const minMatchLength = Math.max(10, Math.floor(cleanTarget.length * 0.2)); // 最小匹配长度
+    // 使用滑动窗口方式寻找最佳匹配
+    const targetLength = cleanTarget.length;
 
-    // 从最长子串开始尝试匹配
-    for (let len = cleanTarget.length; len >= minMatchLength; len--) {
-      for (let start = 0; start <= cleanTarget.length - len; start++) {
-        const targetSubstring = cleanTarget.substring(start, start + len);
+    for (let i = 0; i <= cleanSource.length - targetLength; i++) {
+      const substring = cleanSource.substring(i, i + targetLength);
+      const accuracy = QuestionUtil.calculateSimilarity(substring, cleanTarget);
 
-        // 在源文字中查找这个子串
-        const sourceIndex = cleanSource.indexOf(targetSubstring);
+      if (accuracy > bestMatch.accuracy) {
+        bestMatch = {
+          startIndex: i,
+          endIndex: i + targetLength,
+          matchLength: targetLength,
+          accuracy: accuracy,
+          matchedText: substring
+        } as BestMatch;
+      }
+    }
 
-        if (sourceIndex !== -1) {
-          const accuracy = len / cleanTarget.length;
-          if (accuracy > bestMatch.accuracy) {
-            bestMatch = {
-              startIndex: sourceIndex,
-              endIndex: sourceIndex + len,
-              matchLength: len,
-              accuracy: accuracy,
-              matchedText: targetSubstring
-            };
+    // 如果没有找到足够长的匹配，尝试寻找部分匹配
+    if (bestMatch.accuracy < threshold) {
+      // 寻找目标文字的连续子串在源文字中的最佳匹配
+      for (let len = Math.floor(targetLength * 0.6); len >= Math.floor(targetLength * 0.3); len--) {
+        for (let start = 0; start <= targetLength - len; start++) {
+          const targetSubstring = cleanTarget.substring(start, start + len);
+          const sourceIndex = cleanSource.indexOf(targetSubstring);
+
+          if (sourceIndex !== -1) {
+            const accuracy = len / targetLength;
+            if (accuracy > bestMatch.accuracy) {
+              bestMatch = {
+                startIndex: sourceIndex,
+                endIndex: sourceIndex + len,
+                matchLength: len,
+                accuracy: accuracy,
+                matchedText: targetSubstring
+              } as BestMatch;
+            }
           }
         }
       }
-
-      // 如果找到了足够好的匹配，就不需要继续尝试更短的子串
-      if (bestMatch.accuracy >= threshold) {
-        break;
-      }
-    }
-
-    // 策略2: 如果策略1没有找到好的匹配，尝试模糊匹配
-    if (bestMatch.accuracy < threshold) {
-      bestMatch = QuestionUtil.findFuzzyMatch(cleanSource, cleanTarget, threshold);
-    }
-
-    // 策略3: 如果还是没有找到，尝试关键词匹配
-    if (bestMatch.accuracy < threshold) {
-      bestMatch = QuestionUtil.findKeywordMatch(cleanSource, cleanTarget);
     }
 
     // 判断是否达标
@@ -134,127 +135,31 @@ export class QuestionUtil {
     // 计算剩余文字
     let remainingText = cleanSource;
     if (isAccurate && bestMatch.startIndex !== -1) {
-      // 移除匹配的部分
       remainingText = cleanSource.substring(0, bestMatch.startIndex) +
       cleanSource.substring(bestMatch.endIndex);
       remainingText = remainingText.replace(/\s+/g, ' ').trim();
     }
 
     return {
-      accuracy: Math.round(bestMatch.accuracy * 10000) / 100,
+      accuracy: Math.round(bestMatch.accuracy * 10000) / 100, // 保留两位小数的百分比
       isAccurate: isAccurate,
       remainingText: remainingText,
       matchedText: bestMatch.matchedText,
       matchStartIndex: bestMatch.startIndex,
       matchEndIndex: bestMatch.endIndex
-    };
+    } as MatchResult;
   }
 
   /**
-   * 模糊匹配策略 - 使用编辑距离在源文字中寻找最相似的片段
-   */
-  private static findFuzzyMatch(sourceText: string, targetText: string, threshold: number): BestMatch {
-    let bestMatch: BestMatch = {
-      startIndex: -1,
-      endIndex: -1,
-      matchLength: 0,
-      accuracy: 0,
-      matchedText: ''
-    };
-
-    const targetLength = targetText.length;
-    const windowSize = Math.max(targetLength, Math.floor(targetLength * 1.2));
-
-    // 滑动窗口在源文字中寻找最相似的片段
-    for (let i = 0; i <= sourceText.length - Math.floor(targetLength * 0.5); i++) {
-      const endPos = Math.min(i + windowSize, sourceText.length);
-      const sourceSubstring = sourceText.substring(i, endPos);
-
-      const similarity = QuestionUtil.calculateSimilarity(sourceSubstring, targetText);
-
-      if (similarity > bestMatch.accuracy) {
-        bestMatch = {
-          startIndex: i,
-          endIndex: endPos,
-          matchLength: endPos - i,
-          accuracy: similarity,
-          matchedText: sourceSubstring
-        };
-      }
-    }
-
-    return bestMatch;
-  }
-
-  /**
-   * 关键词匹配策略 - 提取目标文字中的关键词，在源文字中寻找包含这些关键词的片段
-   */
-  private static findKeywordMatch(sourceText: string, targetText: string): BestMatch {
-    // 提取关键词（长度大于2的连续字符）
-    const keywords = QuestionUtil.extractKeywords(targetText);
-
-    let bestMatch: BestMatch = {
-      startIndex: -1,
-      endIndex: -1,
-      matchLength: 0,
-      accuracy: 0,
-      matchedText: ''
-    };
-
-    // 寻找包含最多关键词的源文字片段
-    for (let i = 0; i < sourceText.length; i++) {
-      for (let j = i + 10; j <= sourceText.length; j++) {
-        const sourceSubstring = sourceText.substring(i, j);
-        const matchCount = keywords.filter(keyword => sourceSubstring.includes(keyword)).length;
-        const accuracy = matchCount / keywords.length;
-
-        if (accuracy > bestMatch.accuracy) {
-          bestMatch = {
-            startIndex: i,
-            endIndex: j,
-            matchLength: j - i,
-            accuracy: accuracy,
-            matchedText: sourceSubstring
-          };
-        }
-      }
-    }
-
-    return bestMatch;
-  }
-
-  /**
-   * 提取关键词
-   */
-  private static extractKeywords(text: string): string[] {
-    const keywords: string[] = [];
-
-    // 提取长度>=3的连续中文字符或单词
-    const matches = text.match(/[\u4e00-\u9fa5]{3,}|[a-zA-Z]{3,}/g);
-    if (matches) {
-      keywords.push(...matches);
-    }
-
-    // 提取特殊符号组合（如法律条文编号等）
-    const specialMatches = text.match(/第[一二三四五六七八九十百千万\d]+条|[a-zA-Z]+\d+|\d+[a-zA-Z]+/g);
-    if (specialMatches) {
-      keywords.push(...specialMatches);
-    }
-
-    // 修复ArkTS兼容性：使用Array.from()代替展开运算符
-    return Array.from(new Set(keywords)); // 去重
-  }
-
-  /**
-   * 计算两个字符串的相似度（优化版）
+   * 计算两个字符串的相似度
+   * @param str1 字符串1
+   * @param str2 字符串2
+   * @returns 相似度（0-1之间的数值）
    */
   static calculateSimilarity(str1: string, str2: string): number {
     const len1 = str1.length;
     const len2 = str2.length;
 
-    if (len1 === 0 && len2 === 0) {
-      return 1;
-    }
     if (len1 === 0 || len2 === 0) {
       return 0;
     }
@@ -262,18 +167,15 @@ export class QuestionUtil {
       return 1;
     }
 
-    // 对于长文本，使用采样计算来提高性能
-    if (len1 > 1000 || len2 > 1000) {
-      return QuestionUtil.calculateSimilarityFast(str1, str2);
-    }
-
     // 使用编辑距离算法计算相似度
-    const matrix: number[][] = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(0));
+    const matrix: number[][] = [];
 
     // 初始化矩阵
     for (let i = 0; i <= len1; i++) {
+      matrix[i] = [];
       matrix[i][0] = i;
     }
+
     for (let j = 0; j <= len2; j++) {
       matrix[0][j] = j;
     }
@@ -295,42 +197,13 @@ export class QuestionUtil {
 
     return (maxLength - editDistance) / maxLength;
   }
-
-  /**
-   * 快速相似度计算（用于长文本）
-   */
-  private static calculateSimilarityFast(str1: string, str2: string): number {
-    // 使用n-gram方法计算相似度
-    const n = 3;
-    const ngrams1 = QuestionUtil.generateNGrams(str1, n);
-    const ngrams2 = QuestionUtil.generateNGrams(str2, n);
-
-    const set1 = new Set(ngrams1);
-    const set2 = new Set(ngrams2);
-
-    const intersection = new Set(Array.from(set1).filter(x => set2.has(x)));
-    // 修复ArkTS兼容性：使用Array.from()和concat()代替展开运算符
-    const union = new Set(Array.from(set1).concat(Array.from(set2)));
-
-    return union.size === 0 ? 0 : intersection.size / union.size;
-  }
-
-  /**
-   * 生成n-gram
-   */
-  private static generateNGrams(text: string, n: number): string[] {
-    const ngrams: string[] = [];
-    for (let i = 0; i <= text.length - n; i++) {
-      ngrams.push(text.substring(i, i + n));
-    }
-    return ngrams;
-  }
 }
 
-// // 使用示例
-// const sourceText = "01:1711:29答题背题模拟考试1/1428重置进度判断题收藏依据配电安规,低[电]压:用于配电的交流系统中1000v以下的电压等级。A正确B错误下一题[ABCD] A含有严重超出标准限量的致病性微生物、农药残留、兽药残留、重金厲、污染物质..《关于办理危害食品安全刑事案件适用法律若干问题的解释》规定,生产、销售不符合食品认定为刑法第一百四十三条规定的"足以造成严重食物中毒事故或者其他严重食源性疾病"。";
+
+// // 示例使用
+// const text1 = "00:4802:04答题背题模拟考试1/1428重置进度判断题收藏依据配电安规,低[电]压:用于配电的交流系统中1000v以下的电压等级。正确B错误下一题答案:C工作终结依据配电安规报告应简明扼要,主要包括下列内容:工作负责人姓名,某线路(设备)说明起止杆塔号、分支线名称、位置称设备双重名称等)工作已经完工,所修项目、试验结果、设备改动情况和存在问题等作班自行装设的接地线已全部拆除,线路(设上已无本班组工作人员和遗留物";
 //
-// const targetText = "[ABCD] A 含有严重超出标准限量的致病性微生物、农药残留、兽药残留、重金属、污染物质以及其他危害人体健康的物质的 B 属于病死、死因不明或者检验检疫不合格的畜、禽、兽、水产动物及其肉类、肉类制品的 C 属于国家为防控疾病等特殊需要明令禁止生产、销售的 D 婴幼儿食品中生长发育所需营养成分严重不符合食品安全标准的《关于办理危害食品安全刑事案件适用法律若干问题的解释》规定，生产、销售不符合食品安全标准的食品，具有下列（）情形的，应当认定为刑法第一百四十三条规定的"足以造成严重食物中毒事故或者其他严重食源性疾病"。";
+// const text2 = "答案:C工作终结 依据配电安规，（ ）报告应简明扼要,主要包括下列内容:工作负责人姓名,某线路(设备)说明起止杆塔号、分支线名称、位置称设备双重名称等)工作已经完工,所修项目、试验结果、设备改动情况和存在问题等作班自行装设的接地线已全部拆除,线路(设备)上无本班组工作人员和遗留物。";
 //
-// const result = QuestionUtil.analyzeTextMatch(sourceText, targetText, 0.3);
-// console.log('匹配结果:', result);
+// // 调用函数
+// const result = analyzeTextMatch(text1, text2, 0.7);

@@ -22,25 +22,23 @@ import lottie, { AnimationItem } from '@ohos/lottie'
 import { taskpool, util } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
-import { promptAction, window } from '@kit.ArkUI'
+import { window } from '@kit.ArkUI'
 import { selectImage } from '../utils/SelectImage'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
 import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
-import { BankListRes, QuestionRes } from 'db'
+import { BankListRes } from 'db'
 import { AdCustomDialog } from '../components/AdCustomDialog'
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes'
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo'
-import { SearchEngine } from 'search'
-import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
-import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 import { Params, PipManager } from '../manage/PipManage'
 import { ocrToText } from '../utils/OcrToText'
 import { ScreenCaptureManager } from '../manage/ScreenCaptureManager'
-import { QuestionUtil } from '../utils/QuestionUtil'
-import { Log } from '@tencent/wechat_open_sdk'
 import { readSearchCurrent, ReadSearchResult } from '../manage/ConcurrentManage'
 import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
+import { accessManager } from '../utils/AccessManager'
+import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
+import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -49,6 +47,7 @@ import('./MyDownloadPage')
 import('./CustomQuestionPage')
 import('./SearchQuestions')
 import('./SearchIntroductionPage')
+import('./PhotoSearchPage')
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
 let arr: number[] = [1]
@@ -79,18 +78,13 @@ export function HomePageBuilder() {
 @Entry()
 @Component
 export struct HomePage {
-  private imageSource: image.ImageSource | undefined = undefined
   @State chooseImage: PixelMap | undefined = undefined
   @State dataValues: string = ''
   @State homeModel: HomeModel = HomeModel.getInstance()
   @State loadingStatus: LoadingStatus = LoadingStatus.OFF
   @State accounts: Array<HomeBankListRes> = []
   testString: number[] = []
-  private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
-  private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
-  private animateName = "loading"
   private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
-  private animateItem: AnimationItem | null = null
   @State hasLoadData: boolean = false
   @State loading: boolean = false
   @State TopHeight: number = 0
@@ -139,7 +133,7 @@ export struct HomePage {
     }),
   });
 
-  aboutToAppear(): void {
+  async aboutToAppear() {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
     this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
@@ -148,7 +142,17 @@ export struct HomePage {
       this.loadResource()
     })
 
-
+    // 判断是否为全选,如果是全选设置mdataText给唯一变量
+    let mdataText: SharedArrayBuffer | null = null
+    if (GetAllSelectedUtil.isUserBankAllSelected()) {
+      mdataText = await SearchMapManage.getInstance()
+        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+    } else {
+      // 赋值mdataText给全局变量
+      mdataText = await SearchMapManage.getInstance()
+        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+    }
+    MDataTextManage.getInstance().saveDataText(mdataText)
   }
 
   aboutToDisappear(): void {
@@ -157,32 +161,13 @@ export struct HomePage {
     this.TopHeight = 0
   }
 
+  onBackPress(): boolean | void {
+    return true
+  }
+
   build() {
     RelativeContainer() {
-
-
       Column() {
-        // if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
-        //   Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
-        //     Canvas(this.controller)
-        //       .width('30%')
-        //       .height('20%')
-        //       .onReady(() => {
-        //         this.animateItem = lottie.loadAnimation({
-        //           container: this.controller,
-        //           renderer: 'canvas',
-        //           loop: true,
-        //           autoplay: true,
-        //           context: context,
-        //           name: this.animateName,
-        //           animationData: jsonData,
-        //         })
-        //       })
-        //   }
-        //
-        // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-
-
         List({ space: Const.SPACE_16 }) {
           ListItem() {
             Banner({
@@ -205,12 +190,12 @@ export struct HomePage {
           ListItem() {
             SearchHelper({
               isLoading: this.loading,
-              handleClick: async () => {
-                // this.selectImage()
-                this.loading = true
-
-                selectImage.selectImg().then(() => {
-                  this.loading = false
+              handleClick: () => {
+                //'ohos.permission.READ_IMAGEVIDEO'
+                accessManager.CheckCamera(['ohos.permission.CAMERA',], () => {
+                  router.pushNamedRoute({
+                    name: HomeConstants.ROUTER_PHOTO_SEARCH,
+                  })
                 })
               }
             })
@@ -299,7 +284,6 @@ export struct HomePage {
   private async showSelectBankDialog(isVipDialogCallBack: Function, isChangeTextCallBack: Function) {
     this.dialogController = new CustomDialogController({
       builder: selectBankDialog({
-        bankList: this.bankList,
         agreementChecked: this.agreementChecked,
         onConfirm: (selected: string[]) => {
           this.agreementChecked = this.agreementChecked;
@@ -416,6 +400,9 @@ export struct HomePage {
       const task: taskpool.Task = new taskpool.Task(readSearchCurrent, getContext(this), ocrText, pipAnswer, mDataText);
       const res = await taskpool.execute(task) as ReadSearchResult;
 
+      if (!res.answer || !res.question) {
+        return
+      }
       PipManager.getInstance()
         .updatePipUI(new Params({
           answer: res.answer,

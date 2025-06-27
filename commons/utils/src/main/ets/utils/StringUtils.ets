@@ -39,4 +39,27 @@ export class StringUtils {
   static subLastIndex(str: string, s: string): string {
     return str.substring(str.lastIndexOf(s))
   }
+
+  /**
+   * 过滤字符串，只保留白名单中的字符
+   * @param str 原始字符串
+   * @param allowedChars 允许的字符集合
+   * @returns 过滤后的字符串
+   */
+  static filterStringByWhitelist(str: string, allowedChars: string): string {
+    if (!str || !allowedChars) {
+      return '';
+    }
+
+    const charSet = new Set(allowedChars.split(''));
+    let result = '';
+
+    for (let char of str) {
+      if (charSet.has(char)) {
+        result += char;
+      }
+    }
+
+    return result;
+  }
 }

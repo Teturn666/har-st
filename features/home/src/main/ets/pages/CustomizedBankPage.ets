@@ -11,7 +11,7 @@ import { ImportWithLog, ParseTxtManage } from '../manage/ParseTxtManage';
 import { QuestionModel } from '../manage/ParseTxtManage';
 import { BankListRes, QuestionRes } from 'db';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
-import { EmitterConstants, PreferencesConstants, preferencesUtils, TimeUtils } from 'utils';
+import { EmitterConstants, PreferencesConstants, preferencesUtils, StringUtils, TimeUtils } from 'utils';
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { SearchEngine } from 'search';
 import { fileIo } from '@kit.CoreFileKit';
@@ -32,6 +32,7 @@ export struct CustomizedBankPage {
   // 新增：支持外部文件URI
   @State externalFileUri: string = '';
   @State externalFileName: string = '';
+  private labels: string = 'ABCDEFGHI对错√×✔X正确错误YN'
 
   // 将QuestionModel列表转换为QuestionRes列表
   private toQuestionResList(importResult: ImportWithLog): QuestionRes[] {
@@ -50,7 +51,6 @@ export struct CustomizedBankPage {
     console.log("查看questionResList：" + JSON.stringify(questionResList));
     return questionResList;
   }
-
 
   // 自定义题库导入逻辑
   async questionImport() {
@@ -230,6 +230,7 @@ export struct CustomizedBankPage {
       try {
         const insertPromises = questionResList.map(async (item): Promise<number> => {
           item.qName = bank.name;
+          item.answer = StringUtils.filterStringByWhitelist(item.answer, this.labels)
           return QuestionTable.getInstance().insertDataAwait(item);
         });
         const insertResults = await Promise.all(insertPromises);
@@ -304,7 +305,6 @@ export struct CustomizedBankPage {
       // 转成base64编码的字符串
       const helper = new util.Base64Helper();
       const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
-
       this.loadingMessage = '正在解析Excel数据...';
       // Promise化Excel解析过程
       const excelDataObj = await new Promise<ExcelDataObj>((resolve, reject) => {
@@ -356,6 +356,7 @@ export struct CustomizedBankPage {
       // 批量插入题目
       const insertPromises = excelDataObj.questions.map(async (item): Promise<number> => {
         item.qName = bankName;
+        item.answer = StringUtils.filterStringByWhitelist(item.answer, this.labels)
         return QuestionTable.getInstance().insertDataAwait(item);
       });
       await Promise.all(insertPromises);
@@ -409,7 +410,8 @@ export struct CustomizedBankPage {
             console.info('取消输入');
             reject(new Error('用户取消导入'));
           },
-        })
+        }),
+        autoCancel: false,
       });
       this.dialogController?.open();
     });
@@ -439,7 +441,7 @@ export struct CustomizedBankPage {
     });
   }
 
-   aboutToAppear() {
+  aboutToAppear() {
     setTimeout(() => {
       this.questionImport()
     }, 500)

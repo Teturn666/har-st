@@ -5,7 +5,7 @@ export default class CheckDataRes {
 }
 
 @Observed
-export  class PointEventRes {
+export class PointEventRes {
   id: number = 0;
   userId: number = 0;
   behavior: string = ''
@@ -19,16 +19,14 @@ export  class PointEventRes {
 export class PointsDetail {
   behavior: string = ''
   points: string = ''
-  time: string =''
+  time: string = ''
 
-  constructor(behavior:string, points:string, time:string) {
+  constructor(behavior: string, points: string, time: string) {
     this.behavior = behavior
     this.points = points
     this.time = time
   }
 }
-
-
 
 
 @Observed

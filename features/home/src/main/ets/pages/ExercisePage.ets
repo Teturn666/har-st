@@ -63,9 +63,72 @@ struct ExercisePage {
   private isTrueFalseQuestion(): boolean {
     const currentQuestion = this.questions[this.currentQuestionIndex];
     const options = currentQuestion.option;
-    return options.length === 2 &&
-    options.includes('正确') &&
-    options.includes('错误');
+
+    // 检查是否为2个选项
+    if (options.length !== 2) {
+      return false;
+    }
+
+    // 定义所有可能的判断题选项组合
+    const trueFalsePatterns = [
+      ['正确', '错误'],
+      ['√', '×'],
+      ['对', '错'],
+      ['Y', 'N'],
+      ['A', 'B']// 当选项就是A/B时
+    ];
+
+    // 检查选项是否匹配任何一种判断题模式
+    return trueFalsePatterns.some(pattern => {
+      return (options.includes(pattern[0]) && options.includes(pattern[1])) ||
+        (options.includes(pattern[1]) && options.includes(pattern[0]));
+    });
+  }
+
+  private getTrueFalseCorrectOptionLabel(answer: string): string {
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+    const options = currentQuestion.option;
+
+    // 如果答案直接是选项标签(A/B)，直接返回
+    if (answer === 'A' || answer === 'B') {
+      return answer;
+    }
+
+    // 定义答案映射关系
+    interface AnswerMapping {
+      trueValues?: string[];
+      falseValues?: string[];
+    }
+
+    const answerMappings: AnswerMapping[] = [
+      { trueValues: ['正确', '√', '对', 'Y'] },
+      { falseValues: ['错误', '×', '错', 'N'] }
+    ];
+
+    // 查找答案对应的选项索引
+    for (let i = 0; i < options.length; i++) {
+      const option = options[i];
+
+      // 检查当前选项是否与答案匹配
+      if (option === answer) {
+        return String.fromCharCode(65 + i); // 返回A或B
+      }
+
+      // 检查答案是否为true类型的值
+      if (answerMappings[0].trueValues?.includes(answer) &&
+      answerMappings[0].trueValues.includes(option)) {
+        return String.fromCharCode(65 + i);
+      }
+
+      // 检查答案是否为false类型的值
+      if (answerMappings[1].falseValues &&
+      answerMappings[1].falseValues.includes(answer) &&
+      answerMappings[1].falseValues.includes(option)) {
+        return String.fromCharCode(65 + i);
+      }
+    }
+
+    return answer;
   }
 
   private async handleOptionClick(optionLabel: string) {
@@ -73,56 +136,66 @@ struct ExercisePage {
       const currentQuestion = this.questions[this.currentQuestionIndex];
 
       if (this.isMultipleChoice()) {
-        // 多选：切换选项状态
+        // 多选逻辑保持不变
         if (this.selectedOptions.includes(optionLabel)) {
           this.selectedOptions = this.selectedOptions.filter(opt => opt !== optionLabel);
         } else {
           this.selectedOptions = [...this.selectedOptions, optionLabel];
           const correctAnswers = currentQuestion.answer.split('');
 
-          // 检查是否选择了错误选项
           if (!correctAnswers.includes(optionLabel)) {
             this.hasSubmitted = true;
-            // 插入错题表
             await this.saveToWrongTable(currentQuestion, optionLabel);
             this.saveQuestionState();
           } else {
-            // 检查是否选中了全部正确答案
             const allCorrectSelected = correctAnswers.every(ans => this.selectedOptions.includes(ans)) &&
             this.selectedOptions.every(opt => correctAnswers.includes(opt));
             if (allCorrectSelected) {
               this.hasSubmitted = true;
-              this.saveQuestionState(); // 记录正确提交状态
+              this.saveQuestionState();
             }
           }
         }
-        this.saveQuestionState(); // 记录多选过程中的选择
+        this.saveQuestionState();
       } else {
         // 单选：设置选项并提交
         this.selectedOption = optionLabel;
         this.hasSubmitted = true;
 
-        // 修复：根据题目类型判断答案
+        // 修复后的答案判断逻辑
         let isCorrect = false;
+        let wrongAnswer = optionLabel;
 
         if (this.isTrueFalseQuestion()) {
-          // 判断题：比较选项内容与答案
-          const optionIndex = optionLabel.charCodeAt(0) - 65; // A=0, B=1
-          const selectedContent = currentQuestion.option[optionIndex];
-          isCorrect = selectedContent === currentQuestion.answer;
+          // 判断题：获取正确答案的选项标签
+          const correctOptionLabel = this.getTrueFalseCorrectOptionLabel(currentQuestion.answer);
+          isCorrect = optionLabel === correctOptionLabel;
+
+          // 对于判断题，错误答案记录选项内容而不是标签
+          if (!isCorrect) {
+            const optionIndex = optionLabel.charCodeAt(0) - 65;
+            wrongAnswer = currentQuestion.option[optionIndex];
+          }
+
+          // 添加调试日志
+          console.log('判断题调试信息:', {
+            selectedOption: optionLabel,
+            answerInDB: currentQuestion.answer,
+            correctOptionLabel: correctOptionLabel,
+            selectedContent: currentQuestion.option[optionLabel.charCodeAt(0) - 65],
+            isCorrect: isCorrect,
+            options: currentQuestion.option
+          });
         } else {
-          // 单选题：比较选项标签与答案
+          // 普通单选题：比较选项标签与答案
           isCorrect = optionLabel === currentQuestion.answer;
+          wrongAnswer = optionLabel;
         }
 
         if (!isCorrect) {
-          // 插入错题表时，对于判断题传递选项内容
-          const wrongAnswer = this.isTrueFalseQuestion()
-            ? currentQuestion.option[optionLabel.charCodeAt(0) - 65]
-            : optionLabel;
           await this.saveToWrongTable(currentQuestion, wrongAnswer);
         }
-        this.saveQuestionState(); // 记录单选提交状态
+        this.saveQuestionState();
       }
     }
   }
@@ -301,8 +374,8 @@ struct ExercisePage {
       })
 
       if (this.questions.length > 0) {
-        List(){
-          ListItem(){
+        List() {
+          ListItem() {
             QuestionContent({
               question: this.questions[this.currentQuestionIndex],
               isStarred: this.isQuestionStarred(this.currentQuestionIndex),
@@ -311,7 +384,8 @@ struct ExercisePage {
               }
             })
           }
-          ListItem(){
+
+          ListItem() {
             OptionList({
               options: this.questions[this.currentQuestionIndex].option,
               selectedOptions: this.selectedOptions,
@@ -325,7 +399,8 @@ struct ExercisePage {
               }
             })
           }
-          ListItem(){
+
+          ListItem() {
             NavigationButtons({
               canGoPrevious: this.currentQuestionIndex > 0,
               canGoNext: this.currentQuestionIndex < this.questions.length - 1,
@@ -385,12 +460,12 @@ struct HeaderComponent {
         Button() {
           Row() {
             Button('答题')
-              .fontColor(this.selectedIndex === 0 ? '#FFFFFF' : '#d2a129')
+              .fontColor(this.selectedIndex === 0 ? '#d2a129' : '#FFFFFF')
               .fontSize($r('app.float.font_size_12fp'))
               .border({ width: 1, color: '#d2a129' })
               .width(60)
               .height(28)
-              .backgroundColor(this.selectedIndex === 0 ? '#d2a129' : '#FFFFFF')
+              .backgroundColor(this.selectedIndex === 0 ? '#FFFFFF' : '#d2a129')
               .borderRadius(6)
               .padding({ left: 12, right: 12 })
               .onClick(() => {
@@ -398,12 +473,12 @@ struct HeaderComponent {
                 promptAction.showToast({ message: '切换到答题' });
               })
             Button('背题')
-              .fontColor(this.selectedIndex === 1 ? '#FFFFFF' : '#d2a129')
+              .fontColor(this.selectedIndex === 1 ? '#d2a129' : '#FFFFFF')
               .fontSize($r('app.float.font_size_12fp'))
               .border({ width: 1, color: '#d2a129' })
               .width(60)
               .height(28)
-              .backgroundColor(this.selectedIndex === 1 ? '#d2a129' : '#FFFFFF')
+              .backgroundColor(this.selectedIndex === 1 ? '#FFFFFF' : '#d2a129')
               .borderRadius(6)
               .padding({ left: 12, right: 12 })
               .onClick(() => {
@@ -578,6 +653,28 @@ export struct OptionList {
     .width('100%')
   }
 
+  private isTrueFalseQuestion(): boolean {
+    // 检查是否为2个选项
+    if (this.options.length !== 2) {
+      return false;
+    }
+
+    // 定义所有可能的判断题选项组合
+    const trueFalsePatterns: string[][] = [
+      ['正确', '错误'],
+      ['√', '×'],
+      ['对', '错'],
+      ['Y', 'N'],
+      ['A', 'B']// 当选项就是A/B时需要结合其他条件判断
+    ];
+
+    // 检查选项是否匹配任何一种判断题模式
+    return trueFalsePatterns.some(pattern => {
+      return (this.options.includes(pattern[0]) && this.options.includes(pattern[1])) ||
+        (this.options.includes(pattern[1]) && this.options.includes(pattern[0]));
+    });
+  }
+
   private getOptionBackgroundColor(idx: number): ResourceStr {
     const optionLabel = String.fromCharCode(65 + idx);
     const isSelected = this.isMultipleChoice
@@ -585,10 +682,21 @@ export struct OptionList {
       : this.selectedOption === optionLabel;
 
     let isCorrect = false;
-    if (this.correctAnswers.includes('正确') || this.correctAnswers.includes('错误')) {
+
+    // 修复判断题的正确答案判断逻辑
+    if (this.isTrueFalseQuestion()) {
+      // 对于判断题，需要通过选项内容或答案格式来判断
       const optionContent = this.options[idx];
-      isCorrect = optionContent === this.correctAnswers;
+
+      // 如果答案是选项标签格式(A/B)
+      if (this.correctAnswers === 'A' || this.correctAnswers === 'B') {
+        isCorrect = optionLabel === this.correctAnswers;
+      } else {
+        // 如果答案是选项内容格式
+        isCorrect = optionContent === this.correctAnswers;
+      }
     } else {
+      // 普通单选题和多选题
       isCorrect = this.correctAnswers.includes(optionLabel);
     }
 
@@ -633,7 +741,7 @@ export struct NavigationButtons {
         .backgroundColor(Color.White)
         .borderRadius(20)
         .border({ width: 1, color: $r('app.color.c_F2B771') })
-        .margin({left : this.canGoPrevious? 20 : 0})
+        .margin({ left: this.canGoPrevious ? 20 : 0 })
         .onClick(() => this.onPrevious())
       } else {
         Blank()
@@ -651,7 +759,7 @@ export struct NavigationButtons {
         .height($r('app.float.float_30vp'))
         .borderRadius(20)
         .border({ width: 1, color: $r('app.color.c_F2B771') })
-        .margin({right : this.canGoNext? 20 : 0})
+        .margin({ right: this.canGoNext ? 20 : 0 })
         .onClick(() => this.onNext())
       } else {
         Blank()

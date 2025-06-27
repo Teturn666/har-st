@@ -11,6 +11,8 @@ export default class HomeConstants {
   /**
    * 路由跳转的页面名称
    */
+  //首页
+  static readonly ROUTER_HOME_PAGE = 'homePage'
   //扫描搜题
   static readonly ROUTER_SEARCH_INTRODUCTION = 'searchIntroductionPage'
   //开始扫描
@@ -39,4 +41,12 @@ export default class HomeConstants {
   static readonly ROUTER_HELP_PAGE = 'helpPage'
   //自定义题库
   static readonly ROUTER_CUSTOMIZED_BANK_PAGE = 'customizedBankPage'
+  //拍照搜题
+  static readonly ROUTER_PHOTO_SEARCH = 'photoSearchPage'
+  //自定义搜题区域
+  static readonly ROUTER_CROP_IMAGE= 'cropImagePage'
+ //首页
+  static readonly ROUTER_MAIN_PAGE= '@bundle:com.chznai.ikst/entry/ets/pages/MainPage'
+  // 读屏设置页
+  static readonly SCREEN_READ_PAGE = 'ScreenReadPage'
 }

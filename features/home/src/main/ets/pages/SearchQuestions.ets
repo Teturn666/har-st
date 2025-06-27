@@ -8,6 +8,7 @@ import { QuestionRes } from "db";
 import { EmitterConstants } from "utils";
 import { MDataTextManage } from "search/src/main/ets/manage/MDataTextManage";
 
+
 const TAG = "SearchQuestions";
 
 @Entry({ routeName: "searchQuestionsPage" })
@@ -17,6 +18,7 @@ export struct SearchQuestions {
   @State resultSearchRes: QuestionRes | null = null
   @State CameraChange: boolean = true
   @State isPortrait: boolean = true;
+  @State Search: boolean = true
   @State orientation: number = display.Orientation.LANDSCAPE;
   controller: XComponentController = new XComponentController()
   win: window.Window | null = null
@@ -27,11 +29,13 @@ export struct SearchQuestions {
     let mDataText = MDataTextManage.getInstance().getDataText()
     console.debug(TAG, '分词处理数据已拿到')
     emitter.on(EmitterConstants.EM_DATA_TEXT, async (event) => {
-      this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
-      console.debug(TAG, 'dataValue' + this.dataValue)
-      // this.dataValue = "1415A 模拟考试 重置进度 0/119 ☆ 保守国家秘密法》自 G 2010年1月1日 2010年4月29日 2010年5月1日 2010年10月1日"
-      if (mDataText && mDataText?.byteLength !== 0) {
-        await this.searchResult(mDataText)
+      if (this.Search) {
+        this.dataValue = event.data!["text"].replace(/\r?\n/g, '')
+        console.debug(TAG, 'dataValue' + this.dataValue)
+        // this.dataValue = "1415A 模拟考试 重置进度 0/119 ☆ 保守国家秘密法》自 G 2010年1月1日 2010年4月29日 2010年5月1日 2010年10月1日"
+        if (mDataText && mDataText?.byteLength !== 0 && this.dataValue) {
+          await this.searchResult(mDataText)
+        }
       }
     })
   }
@@ -198,10 +202,14 @@ export struct SearchQuestions {
                   //TODO  解锁题目
                   if (this.CameraChange) {
                     this.CameraChange = false
+                    this.Search = false
+                    this.dataValue = ''
                     cameraManager.releaseCamera()
                   } else {
                     this.CameraChange = true
                     cameraManager.initCamera(this.controller.getXComponentSurfaceId())
+                    this.Search = true
+                    this.resultSearchRes = null
                   }
                 })
             }
