@@ -14,6 +14,11 @@ import BankMobClickConstants from '../Constants/BankMobClickConstants';
 import { DotLoading } from '../components/DotLoading';
 import { emitter } from '@kit.BasicServicesKit';
 import BankConstants from '../Constants/BankConstants';
+import { DateItem } from '../model/BankCategory';
+import { CSJFeedAd } from '@csj/openadsdk';
+import { buildAdLayout } from '../components/buildAdLayout';
+import { cSJLoadFeedAD } from '../utils/loadFeedAd';
+import json from '@ohos.util.json';
 
 import('./BankDetailsPage')
 
@@ -208,12 +213,255 @@ export struct BankList {
   @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
   @State selectAll: boolean = false; // 全选状态
   @State isLoading: boolean = false;
+  @State HybridList: DateItem[] = []
+  @State private dislikeStatus: boolean = false;
+  @State hotList: BankListRes[] = [] //触底请求到的新数据
+  @State adIndex: number = 0 //广告数组key
+  @State adsList: CSJFeedAd[] = []
+  @State firstLength: number = 0
 
   aboutToAppear(): void {
+    cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
+      this.adsList = adArray
+      this.getAdList()
+    })
     this.bankRes.newsData = []
-    this.loadFeedData()
+    this.loadFeedData().then(() => {
+      this.firstLength = this.bankRes.newsData.length
+
+    })
     // this.initLottie()
     this.initDialog()
+  }
+
+  getAdList() {
+    const newList: DateItem[] = [];
+    this.bankRes.newsData.forEach((item, index) => {
+      // 添加普通内容
+      newList.push({
+        type: 'normal',
+        data: item
+      });
+      if (this.adsList.length > 0 && this.adIndex < 2) {
+        if (index === 1) {
+          newList.push({
+            type: 'ad',
+            data: this.adsList[this.adIndex]
+          });
+          this.adIndex++;
+        }
+
+        if (index === (Math.floor(this.firstLength / 2) - 1)) {
+          newList.push({
+            type: 'ad',
+            data: this.adsList[this.adIndex]
+          });
+          this.adIndex = 0
+        }
+      }
+
+    });
+    this.HybridList = newList;
+
+  }
+
+  @Builder
+  BankListView(item: BankListRes, index: number) {
+
+    Column() {
+      Flex({
+        direction: FlexDirection.Row,
+        justifyContent: FlexAlign.SpaceAround,
+        alignItems: ItemAlign.Center
+      }) {
+        if (this.management) {
+          Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
+          $r('app.media.ic_check_box'))
+            .objectFit(ImageFit.Contain)
+            .size({ width: 32, height: 32 })
+            .margin({ left: 15 })
+            .onClick(() => {
+              this.toggleItemSelection(item.qid);
+            });
+        }
+        Column() {
+          Row() {
+            Image($r('app.media.ic_feed'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
+            Text(item.name)
+              .fontColor($r('app.color.c_3e3e3e'))
+              .fontSize($r('app.float.font_size_16fp'))
+              .fontWeight(FontWeight.Bold)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .width('85%')
+              .margin({
+                left: $r('app.float.float_5vp'),
+              })
+
+            if (item.NewFlag) {
+              Image($r('app.media.ic_NEW'))
+                .objectFit(ImageFit.Contain)
+                .size({ width: $r('app.float.float_20vp'), height: $r('app.float.float_12vp') })
+                .align(Alignment.TopStart)
+            }
+          }
+
+          Text(item.desc)
+            .fontColor($r('app.color.c_3e3e3e'))
+            .fontSize($r('app.float.font_size_12fp'))
+            .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
+
+          Row() {
+            Text("题库状态：")
+              .fontColor($r('app.color.c_9d9d9d'))
+              .fontSize($r('app.float.font_size_10fp'))
+            if (item.downloadedState === 1) {
+              Text("已下载")
+                .fontColor(Color.Blue)
+                .fontSize($r('app.float.font_size_10fp'))
+                .margin({ right: $r('app.float.float_30vp') })
+            } else {
+              Text("未下载")
+                .fontColor(Color.Blue)
+                .fontSize($r('app.float.font_size_10fp'))
+                .margin({ right: $r('app.float.float_30vp') })
+            }
+            Text("题库更新时间：" + item.time)
+              .fontColor($r('app.color.c_9d9d9d'))
+              .fontSize($r('app.float.font_size_10fp'))
+          }
+        }
+        .width('85%')
+        .alignItems(HorizontalAlign.Start)
+        .justifyContent(FlexAlign.SpaceBetween)
+        .margin({
+          left: $r('app.float.float_20vp'),
+          top: $r('app.float.float_20vp'),
+          right: $r('app.float.float_20vp'),
+        })
+
+
+        if (this.fromType !== 2)
+        Column() {
+          if (item.downloadedState === 1) {
+            Image(this.updateStatusMap.get(item.qid) ?? false ?
+            $r('app.media.ic_update') :
+            $r('app.media.ic_download_pre'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
+            // Text("删除")
+            //   .visibility(this.fromType === 2 ? Visibility.Visible : Visibility.Hidden)
+            //   .fontColor(Color.Black)
+            //   .fontSize($r('app.float.font_size_10fp'))
+          } else {
+            Image($r('app.media.ic_download'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: $r("app.float.float_60vp"), height: $r("app.float.float_60vp") })
+            // Text("下载")
+            //   .fontColor(Color.Black)
+            //   .fontSize($r('app.float.font_size_10fp'))
+          }
+        }
+        .margin({
+          right: $r('app.float.float_20vp'),
+        })
+        .onClick(
+          async () => {
+            this.mCurBank = item
+            const needUpdate = this.updateStatusMap.get(item.qid) ?? false;
+            this.isUpDate = needUpdate;
+
+            if (item.downloadedState === 1) {
+              if (this.fromType === 2) {
+                this.showDeleteDialog()
+              }
+
+              //更新
+              if (needUpdate) {
+                LoadingDialog.setContentNode(this.contentNodeUpdate);
+                LoadingDialog.openDialog()
+                try {
+                  const success = await this.bankModel.refreshBank(item)
+                  if (success) {
+                    item.downloadedState = 1
+                    this.updateStatusMap.set(item.qid, false); // 更新成功后重置更新状态
+                    this.bankRes.newsData = [...this.bankRes.newsData]
+                    LoadingDialog.closeDialog()
+                    this.showDownloadOverDialog(true, true)
+                    onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                      "question_bank_id": item.qid
+                    })
+                  } else {
+                    LoadingDialog.closeDialog()
+                    this.showDownloadOverDialog(false, true)
+                    onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                      "question_bank_id": item.qid
+                    })
+                  }
+                } catch (error) {
+                  LoadingDialog.closeDialog()
+                  this.showDownloadOverDialog(false, true)
+                  onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                    "question_bank_id": item.qid
+                  })
+                }
+              }
+            } else {
+              Logger.info(TAG, '题库内容--------' + item)
+              LoadingDialog.openDialog()
+              try {
+                const success = await this.bankModel.downLoadBank(item);
+                if (success) {
+                  Logger.info(TAG, '下载成功' + item)
+                  //更新状态为已下载
+                  item.downloadedState = 1
+                  this.updateStatusMap.set(item.qid, false);
+                  //触发UI重新渲染
+                  this.bankRes.newsData = [...this.bankRes.newsData]
+                  LoadingDialog.closeDialog()
+                  this.showDownloadOverDialog(true, false)
+
+                  onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                    "question_bank_id": item.qid
+                  })
+                } else {
+                  Logger.info(TAG, '下载失败' + item)
+                  LoadingDialog.closeDialog()
+                  this.showDownloadOverDialog(false, false)
+                  onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                    "question_bank_id": item.qid
+                  })
+                }
+              } catch (error) {
+                Logger.info(TAG, '下载过程中发生错误' + item)
+                LoadingDialog.closeDialog()
+                this.showDownloadOverDialog(false, false)
+                onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                  "question_bank_id": item.qid
+                })
+              }
+            }
+          }
+        )
+      }
+
+      Divider()
+        .strokeWidth(0.5)
+        .color($r('app.color.c_ebebeb'))
+        .margin({
+          left: $r('app.float.float_20vp'),
+          top: $r('app.float.float_10vp'),
+          right: $r('app.float.float_20vp'),
+        })
+      if (index === this.bankRes.newsData.length - 1) {
+        Text("没有更多数据了")
+          .fontSize(14)
+          .fontColor($r('app.color.c_9d9d9d'))
+          .margin({ top: 15, bottom: 15 })
+      }
+    }
   }
 
   //删除弹窗
@@ -443,7 +691,7 @@ export struct BankList {
             .fontSize($r('app.float.font_size_18fp'))
             .fontColor($r('app.color.c_black'))
 
-          if(this.bankRes.newsData.length > 0 ) {
+          if (this.bankRes.newsData.length > 0) {
             Text(this.management ? "退出管理" : "管理")
               .fontSize($r('app.float.font_size_12fp'))
               .fontColor('#060606')
@@ -451,7 +699,7 @@ export struct BankList {
               .onClick(() => {
                 this.management = !this.management;
               })
-          }else {
+          } else {
             Blank()
               .width('20%')
           }
@@ -464,207 +712,33 @@ export struct BankList {
 
       if (this.bankRes.newsData.length > 0) {
         List() {
-          ForEach(this.bankRes.newsData, (item: BankListRes, index) => {
+          ForEach(this.HybridList, (item: DateItem, index: number) => {
             ListItem() {
-              Column() {
-                Flex({
-                  direction: FlexDirection.Row,
-                  justifyContent: FlexAlign.SpaceAround,
-                  alignItems: ItemAlign.Center
-                }) {
-                  if (this.management) {
-                    Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
-                    $r('app.media.ic_check_box'))
-                      .objectFit(ImageFit.Contain)
-                      .size({ width: 32, height: 32 })
-                      .margin({ left: 15 })
-                      .onClick(() => {
-                        this.toggleItemSelection(item.qid);
-                      });
-                  }
-                  Column() {
-                    Row() {
-                      Image($r('app.media.ic_feed'))
-                        .objectFit(ImageFit.Contain)
-                        .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
-                      Text(item.name)
-                        .fontColor($r('app.color.c_3e3e3e'))
-                        .fontSize($r('app.float.font_size_16fp'))
-                        .fontWeight(FontWeight.Bold)
-                        .maxLines(1)
-                        .textOverflow({ overflow: TextOverflow.Ellipsis })
-                        .width('85%')
-                        .margin({
-                          left: $r('app.float.float_5vp'),
-                        })
+              if (item.type === 'normal') {
+                this.BankListView(item.data as BankListRes, index)
+              } else {
+                if (!this.dislikeStatus) {
+                  if (item.data as CSJFeedAd) {
 
-                      if (item.NewFlag) {
-                        Image($r('app.media.ic_NEW'))
-                          .objectFit(ImageFit.Contain)
-                          .size({ width: $r('app.float.float_20vp'), height: $r('app.float.float_12vp') })
-                          .align(Alignment.TopStart)
-                      }
-                    }
+                    if ((item.data as CSJFeedAd).isExpressAd()) {
 
-                    Text(item.desc)
-                      .fontColor($r('app.color.c_3e3e3e'))
-                      .fontSize($r('app.float.font_size_12fp'))
-                      .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
-
-                    Row() {
-                      Text("题库状态：")
-                        .fontColor($r('app.color.c_9d9d9d'))
-                        .fontSize($r('app.float.font_size_10fp'))
-                      if (item.downloadedState === 1) {
-                        Text("已下载")
-                          .fontColor(Color.Blue)
-                          .fontSize($r('app.float.font_size_10fp'))
-                          .margin({ right: $r('app.float.float_30vp') })
-                      } else {
-                        Text("未下载")
-                          .fontColor(Color.Blue)
-                          .fontSize($r('app.float.font_size_10fp'))
-                          .margin({ right: $r('app.float.float_30vp') })
-                      }
-                      Text("题库更新时间：" + item.time)
-                        .fontColor($r('app.color.c_9d9d9d'))
-                        .fontSize($r('app.float.font_size_10fp'))
-                    }
-                  }
-                  .width('85%')
-                  .alignItems(HorizontalAlign.Start)
-                  .justifyContent(FlexAlign.SpaceBetween)
-                  .margin({
-                    left: $r('app.float.float_20vp'),
-                    top: $r('app.float.float_20vp'),
-                    right: $r('app.float.float_20vp'),
-                  })
-
-
-                  if (this.fromType !== 2)
-                  Column() {
-                    if (item.downloadedState === 1) {
-                      Image(this.updateStatusMap.get(item.qid) ?? false ?
-                      $r('app.media.ic_update') :
-                      $r('app.media.ic_download_pre'))
-                        .objectFit(ImageFit.Contain)
-                        .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
-                      // Text("删除")
-                      //   .visibility(this.fromType === 2 ? Visibility.Visible : Visibility.Hidden)
-                      //   .fontColor(Color.Black)
-                      //   .fontSize($r('app.float.font_size_10fp'))
+                      NodeContainer((item.data as CSJFeedAd).getAdComponent())
                     } else {
-                      Image($r('app.media.ic_download'))
-                        .objectFit(ImageFit.Contain)
-                        .size({ width: $r("app.float.float_60vp"), height: $r("app.float.float_60vp") })
-                      // Text("下载")
-                      //   .fontColor(Color.Black)
-                      //   .fontSize($r('app.float.font_size_10fp'))
+                      // this.buildAdLayout(item.data as CSJFeedAd,index);
+                      buildAdLayout({ ad: item.data as CSJFeedAd, index, })
+
                     }
                   }
-                  .margin({
-                    right: $r('app.float.float_20vp'),
-                  })
-                  .onClick(
-                    async () => {
-                      this.mCurBank = item
-                      const needUpdate = this.updateStatusMap.get(item.qid) ?? false;
-                      this.isUpDate = needUpdate;
-
-                      if (item.downloadedState === 1) {
-                        if (this.fromType === 2) {
-                          this.showDeleteDialog()
-                        }
-
-                        //更新
-                        if (needUpdate) {
-                          LoadingDialog.setContentNode(this.contentNodeUpdate);
-                          LoadingDialog.openDialog()
-                          try {
-                            const success = await this.bankModel.refreshBank(item)
-                            if (success) {
-                              item.downloadedState = 1
-                              this.updateStatusMap.set(item.qid, false); // 更新成功后重置更新状态
-                              this.bankRes.newsData = [...this.bankRes.newsData]
-                              LoadingDialog.closeDialog()
-                              this.showDownloadOverDialog(true, true)
-                              onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                                "question_bank_id": item.qid
-                              })
-                            } else {
-                              LoadingDialog.closeDialog()
-                              this.showDownloadOverDialog(false, true)
-                              onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                                "question_bank_id": item.qid
-                              })
-                            }
-                          } catch (error) {
-                            LoadingDialog.closeDialog()
-                            this.showDownloadOverDialog(false, true)
-                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                              "question_bank_id": item.qid
-                            })
-                          }
-                        }
-                      } else {
-                        Logger.info(TAG, '题库内容--------' + item)
-                        LoadingDialog.openDialog()
-                        try {
-                          const success = await this.bankModel.downLoadBank(item);
-                          if (success) {
-                            Logger.info(TAG, '下载成功' + item)
-                            //更新状态为已下载
-                            item.downloadedState = 1
-                            this.updateStatusMap.set(item.qid, false);
-                            //触发UI重新渲染
-                            this.bankRes.newsData = [...this.bankRes.newsData]
-                            LoadingDialog.closeDialog()
-                            this.showDownloadOverDialog(true, false)
-
-                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                              "question_bank_id": item.qid
-                            })
-                          } else {
-                            Logger.info(TAG, '下载失败' + item)
-                            LoadingDialog.closeDialog()
-                            this.showDownloadOverDialog(false, false)
-                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                              "question_bank_id": item.qid
-                            })
-                          }
-                        } catch (error) {
-                          Logger.info(TAG, '下载过程中发生错误' + item)
-                          LoadingDialog.closeDialog()
-                          this.showDownloadOverDialog(false, false)
-                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                            "question_bank_id": item.qid
-                          })
-                        }
-                      }
-                    }
-                  )
-                }
-
-                Divider()
-                  .strokeWidth(0.5)
-                  .color($r('app.color.c_ebebeb'))
-                  .margin({
-                    left: $r('app.float.float_20vp'),
-                    top: $r('app.float.float_10vp'),
-                    right: $r('app.float.float_20vp'),
-                  })
-                if (index === this.bankRes.newsData.length - 1) {
-                  Text("没有更多数据了")
-                    .fontSize(14)
-                    .fontColor($r('app.color.c_9d9d9d'))
-                    .margin({ top: 15, bottom: 15 })
                 }
               }
+
             }
             .onClick(() => {
-              this.jumpToBankDetail(item, this.isUpDate)
+              if (item.type === 'normal') {
+                this.jumpToBankDetail(item.data as BankListRes, this.isUpDate)
+              }
             })
-          })
+          }, (item: DateItem, index: number) => util.generateRandomUUID())
         }.onReachEnd(() => {
           if (this.loadMore) {
             this.loadFeedData()
@@ -765,6 +839,9 @@ export struct BankList {
         }
         this.bankRes.newsData = this.bankRes.newsData.concat(list);
         break;
+    }
+    if (this.bankRes.newsData) {
+      this.getAdList()
     }
   }
 }
