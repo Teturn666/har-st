@@ -10,18 +10,14 @@ import { hilog } from '@kit.PerformanceAnalysisKit'
 import { emitter } from '@kit.BasicServicesKit'
 import { image } from '@kit.ImageKit'
 import { HomeModel } from '../model/HomeModel'
-import { HomeBankListRes } from '../model/HomeBankListRes'
-import { LoadingStatus } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import common from '@ohos.app.ability.common'
 import router from '@ohos.router'
 import { PayView } from 'view/Index'
-import lottie, { AnimationItem } from '@ohos/lottie'
-import { taskpool, util } from '@kit.ArkTS'
+import lottie from '@ohos/lottie'
+import { taskpool } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
-import { window } from '@kit.ArkUI'
-import { selectImage } from '../utils/SelectImage'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
 import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
@@ -649,18 +645,7 @@ struct SearchList {
     console.log(TAG, "aboutToDisappear")
     PipManager.getInstance().unregisterPipStateChangeListener();
     PipManager.getInstance().setAutoStart(false);
-    ScreenCaptureManager?.getInstance().stopScreenCapture();
-  }
-
-  /**
-   * 初始化PIP管理器的样式配置
-   * 从用户偏好设置中加载悬浮窗的颜色和字体配置
-   */
-  private initializePipManagerStyles = async () => {
-    PipManager.titleColor = preferencesUtils.getString(PreferencesConstants.TITLE_COLOR_SETTING)
-    PipManager.optionColor = preferencesUtils.getString(PreferencesConstants.OPTION_COLOR_SETTING)
-    PipManager.floatingColor = preferencesUtils.getString(PreferencesConstants.FLOATING_COLOR_SETTING)
-    PipManager.fontSize = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE)
+    ScreenCaptureManager.stopScreenCapture();
   }
 
   build() {
@@ -686,7 +671,7 @@ struct SearchList {
           .margin({ top: 4 })
       }
       .onClick(async () => {
-        this.initializePipManagerStyles()
+        PipManager.getInstance().setPipManagerStyles()
         this.onScreenReadSearchClick()
       })
     }

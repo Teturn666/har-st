@@ -316,7 +316,7 @@ export class ScreenCaptureManager {
           PipManager.getInstance().stopCallBack = () => {
             // 设置回调，关闭画中画时停止读屏幕
             console.log(TAG, '画中画关闭')
-            this?.stopScreenCapture();
+            ScreenCaptureManager.stopScreenCapture();
           };
           firstTime = false
         }
@@ -349,21 +349,30 @@ export class ScreenCaptureManager {
   }
 
   /**
-   * 停止录屏
+   * 停止录屏 - 静态方法
    */
-  stopScreenCapture(): void {
+  static stopScreenCapture(): void {
     try {
-      // if (!this.isRecording()) {
-      //   this.showError('当前没有进行录屏');
-      //   return;
-      // }
+      // 检查实例是否存在
+      if (ScreenCaptureManager.instance === null) {
+        console.warn('[ScreenCapture] 实例不存在，无法停止录屏');
+        return;
+      }
 
-      this.logInfo('停止屏幕录制');
+      const instance = ScreenCaptureManager.instance;
+      instance.logInfo('停止屏幕录制');
+
+      // 调用原生模块停止录屏
       testNapi.stopScreenCapture();
-      this.recordingState = RecordingState.IDLE;
-      this.callback?.onStateChanged?.(this.recordingState);
+
+      // 更新状态
+      instance.recordingState = RecordingState.IDLE;
+      instance.callback?.onStateChanged?.(instance.recordingState);
+
     } catch (error) {
-      this.showError(`停止录屏失败: ${error.message || error}`);
+      // 静态方法中的错误处理
+      const errorMsg = `停止录屏失败: ${error.message || error}`;
+      console.error(TAG, errorMsg);
     }
   }
 
