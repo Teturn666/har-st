@@ -39,6 +39,7 @@ import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
 import { accessManager } from '../utils/AccessManager'
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
+import { NavDoubleString } from '../model/NavGenericType'
 
 import('photo/src/main/ets/pages/SearchResultPage')
 import('web/src/main/ets/pages/ChWebPage')
@@ -98,6 +99,7 @@ export struct HomePage {
   @State CsjIsShow: boolean = false
   @State currentSearchMode: SearchMode | null = null; // 当前搜题模式
   @State TypeSearch: boolean = false
+  @Consume appPathStack: NavPathStack
   TypeRead: () => void = () => {
   }
   CsjHmAD: ConfigRes = {
@@ -193,9 +195,7 @@ export struct HomePage {
               handleClick: () => {
                 //'ohos.permission.READ_IMAGEVIDEO'
                 accessManager.CheckCamera(['ohos.permission.CAMERA',], () => {
-                  router.pushNamedRoute({
-                    name: HomeConstants.ROUTER_PHOTO_SEARCH,
-                  })
+                  this.appPathStack.pushPathByName(HomeConstants.ROUTER_PHOTO_SEARCH,null)
                 })
               }
             })
@@ -317,13 +317,10 @@ export struct HomePage {
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
       this.TypeSearch = false
       this.showSelectBankDialog(() => {
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-        })
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
       }, () => {
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-        })
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
+
       })
     } else {
 
@@ -335,9 +332,8 @@ export struct HomePage {
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {
-          router.pushNamedRoute({
-            name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-          })
+          this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
+
         }
       }
     }
@@ -448,14 +444,18 @@ export struct HomePage {
     } else {
       title = '题库练习'
     }
+this.appPathStack.pushPathByName(HomeConstants.ROUTER_BANK_LIST,{
+      title,
+      type: String(type)
+    } as  NavDoubleString)
+    // router.pushNamedRoute({
+    //   name: HomeConstants.ROUTER_BANK_LIST,
+    //   params: {
+    //     title,
+    //     type: String(type)
+    //   }
 
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_BANK_LIST,
-      params: {
-        title,
-        type: String(type)
-      }
-    }, router.RouterMode.Single)
+    // }, router.RouterMode.Single)
   }
 
   //跳转到我的下载

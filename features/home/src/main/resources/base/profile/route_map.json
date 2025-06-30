@@ -1,12 +1,44 @@
 {
   "routerMap": [
     {
-      "name": "home/HomePage",
+      "name": "HomePage",
       "pageSourceFile": "src/main/ets/pages/HomePage.ets",
-      "buildFunction": "HomePageBuilder",
-      "data": {
-        "description" : "this is PageOne"
-      }
+      "buildFunction": "HomePageBuilder"
+    },
+    {
+      "name": "searchIntroductionPage",
+      "pageSourceFile": "src/main/ets/pages/SearchIntroductionPage.ets",
+      "buildFunction": "SearchIntroductionPageBuilder"
+    },
+    {
+      "name": "photoSearchPage",
+      "pageSourceFile": "src/main/ets/pages/PhotoSearchPage.ets",
+      "buildFunction": "PhotoSearchPageBuilder"
+    },
+    {
+      "name": "cropImagePage",
+      "pageSourceFile": "src/main/ets/pages/CropImagePage.ets",
+      "buildFunction": "CropImagePageBuilder"
+    },
+    {
+      "name": "searchQuestionsPage",
+      "pageSourceFile": "src/main/ets/pages/SearchQuestions.ets",
+      "buildFunction": "SearchQuestionsBuilder"
+    },
+    {
+      "name": "bankListPage",
+      "pageSourceFile": "src/main/ets/pages/BankListPage.ets",
+      "buildFunction": "BankListPageBuilder"
+    },
+    {
+      "name": "exercisePage",
+      "pageSourceFile": "src/main/ets/pages/SearchQuestions.ets",
+      "buildFunction": "SearchQuestionsBuilder"
+    },
+    {
+      "name": "exerciseCommonPage",
+      "pageSourceFile": "src/main/ets/pages/ExerciseCommonPage.ets",
+      "buildFunction": "ExerciseCommonPageBuilder"
     }
   ]
 }

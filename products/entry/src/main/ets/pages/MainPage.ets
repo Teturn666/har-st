@@ -21,7 +21,7 @@ const context = (getContext(this) as common.UIAbilityContext)
 @Component
 struct MainPage {
   @LocalStorageLink('mainTabIndex') currentIndex: TabBarType = TabBarType.HOME;
-  @Provide('appPathStack') appPathStack: NavPathStack = new NavPathStack();
+  @Provide appPathStack: NavPathStack = new NavPathStack();
   @State showDialog: boolean = false
   @State mainModel: MainModel = MainModel.getInstance()
   @State isShow: boolean = false
@@ -37,10 +37,6 @@ struct MainPage {
     //初始化sp实例
     preferencesUtils.setContext(context)
     this.showDialog = preferencesUtils.getBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, true)
-  }
-
-  onBackPress(): boolean | void {
-    return true
   }
 
   // 修改布尔值的方法

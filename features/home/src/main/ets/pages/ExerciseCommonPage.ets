@@ -5,6 +5,7 @@ import { TitleBar } from 'widget/Index';
 import { HomeModel } from '../model/HomeModel';
 import HomeConstants from '../Constants/HomeConstants'
 import { preferencesUtils, PreferencesConstants } from 'utils/Index'
+import { DetailParams, NavQid } from '../model/NavGenericType';
 
 
 import('./ExerciseDetailsPage')
@@ -15,14 +16,6 @@ interface questionSelections {
   hasSubmitted: boolean;
 }
 
-// 定义路由参数的接口
-interface RouteParams {
-  practiceMode?: number;
-  qid?: number;
-  backindex?: number;
-}
-
-@Entry({ routeName: "exerciseCommonPage" })
 @Component
 struct ExerciseCommonPage {
   @State selectedIndex: number = 0;
@@ -48,7 +41,7 @@ struct ExerciseCommonPage {
   private timerId: number | null = null; // 计时器 ID
   @State backindex: number = -1; //路由页数
   @State isBankData: boolean = false;
-
+  @Consume appPathStack: NavPathStack
   // 添加判断题答案标准化方法
   private normalizeTrueFalseAnswer(answer: string): string {
     // 将各种格式的答案标准化为统一格式
@@ -255,12 +248,11 @@ struct ExerciseCommonPage {
       }
 
       // 跳转到详情页面
-      router.pushNamedRoute({
-        name: HomeConstants.ROUTER_EXERCISE_DETAILS_LIST,
-        params: {
+      this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_DETAILS_LIST,
+        {
           isBankData: this.isBankData,
-          backindex: this.backindex,
-          typepage: this.practiceMode,
+          backIndex: this.backindex,
+          typePage: this.practiceMode,
           title: this.questionBankName,
           correctCount: correctCount,
           wrongCount: wrongCount,
@@ -278,8 +270,7 @@ struct ExerciseCommonPage {
               (this.questionSelections[index]?.selectedOptions.join(',') || '');
             return questionRes;
           })
-        }
-      });
+        } as  DetailParams)
     }
   }
 
@@ -994,74 +985,82 @@ struct ExerciseCommonPage {
   }
 
   async aboutToAppear(): Promise<void> {
-    const params = router.getParams() as RouteParams | undefined;
-    if (params && typeof params.practiceMode === 'number' && typeof params.qid === 'number') {
-      this.practiceMode = params.practiceMode;
-      this.qid = params.qid;
-      if (this.practiceMode === 1) {
-        this.backindex = params.backindex || 3;
-      } else {
-        this.backindex = params.backindex || 2;
-      }
-
-      // console.log('aboutToAppear: qid=', this.qid, 'practiceMode=', this.practiceMode);
-      if ([1, 2, 3].includes(this.practiceMode)) {
+const res= this.appPathStack.getParamByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST) as NavQid[]
+    if(res&&res.length){
+      const  params = res[0]
+      if (params && typeof params.practiceMode === 'number' && typeof params.qid === 'number') {
+        this.practiceMode = params.practiceMode;
+        this.qid = params.qid;
         if (this.practiceMode === 1) {
-          // 模拟考试
-          this.isLoading = true;
-          Promise.all([
-            this.getQuestionBankList(),
-            this.getBankQuestionList(this.qid).then(() => {
-              this.checkFavoriteStatus(); // 初始化第一题的收藏状态
-            })
-          ]).then(() => {
-            this.isLoading = false;
-            this.startTimer(); // 数据加载完成后启动计时器
-          }).catch((err: Error) => {
-            this.isLoading = false;
-            console.error('异步加载失败:', err.message || err);
-            promptAction.showToast({ message: '数据加载失败', duration: 2000 });
-          });
-        } else if (this.practiceMode === 2) {
-          // 错题练习
-          this.isLoading = true;
-          Promise.all([
-            this.getQuestionBankList(),
-            this.getWrongQuestionList(this.qid)
-          ]).then(() => {
-            this.isLoading = false;
-            this.startTimer(); // 数据加载完成后启动计时器
-          }).catch((err: Error) => {
-            this.isLoading = false;
-            console.error('异步加载失败:', err.message || err);
-            promptAction.showToast({ message: '数据加载失败', duration: 2000 });
-          });
-        } else if (this.practiceMode === 3) {
-          // 收藏练习
-          this.isLoading = true;
-          Promise.all([
-            this.getQuestionBankList(),
-            this.getCollectionQuestionList(this.qid).then(() => {
-              this.checkFavoriteStatus(); // 初始化第一题的收藏状态
-            })
-          ]).then(() => {
-            this.isLoading = false;
-            this.startTimer(); // 数据加载完成后启动计时器
-          }).catch((err: Error) => {
-            this.isLoading = false;
-            console.error('异步加载失败:', err.message || err);
-            promptAction.showToast({ message: '数据加载失败', duration: 2000 });
-          });
+          this.backindex = params.backIndex || 3;
+        } else {
+          this.backindex = params.backIndex || 2;
+        }
+
+        // console.log('aboutToAppear: qid=', this.qid, 'practiceMode=', this.practiceMode);
+        if ([1, 2, 3].includes(this.practiceMode)) {
+          if (this.practiceMode === 1) {
+            // 模拟考试
+            this.isLoading = true;
+            Promise.all([
+              this.getQuestionBankList(),
+              this.getBankQuestionList(this.qid).then(() => {
+                this.checkFavoriteStatus(); // 初始化第一题的收藏状态
+              })
+            ]).then(() => {
+              this.isLoading = false;
+              this.startTimer(); // 数据加载完成后启动计时器
+            }).catch((err: Error) => {
+              this.isLoading = false;
+              console.error('异步加载失败:', err.message || err);
+              promptAction.showToast({ message: '数据加载失败', duration: 2000 });
+            });
+          } else if (this.practiceMode === 2) {
+            // 错题练习
+            this.isLoading = true;
+            Promise.all([
+              this.getQuestionBankList(),
+              this.getWrongQuestionList(this.qid)
+            ]).then(() => {
+              this.isLoading = false;
+              this.startTimer(); // 数据加载完成后启动计时器
+            }).catch((err: Error) => {
+              this.isLoading = false;
+              console.error('异步加载失败:', err.message || err);
+              promptAction.showToast({ message: '数据加载失败', duration: 2000 });
+            });
+          } else if (this.practiceMode === 3) {
+            // 收藏练习
+            this.isLoading = true;
+            Promise.all([
+              this.getQuestionBankList(),
+              this.getCollectionQuestionList(this.qid).then(() => {
+                this.checkFavoriteStatus(); // 初始化第一题的收藏状态
+              })
+            ]).then(() => {
+              this.isLoading = false;
+              this.startTimer(); // 数据加载完成后启动计时器
+            }).catch((err: Error) => {
+              this.isLoading = false;
+              console.error('异步加载失败:', err.message || err);
+              promptAction.showToast({ message: '数据加载失败', duration: 2000 });
+            });
+          }
+        } else {
+          console.error('Invalid practiceMode received:', this.practiceMode);
+          promptAction.showToast({ message: '无效的练习模式', duration: 1500 });
+          this.practiceMode = 1;
         }
       } else {
-        console.error('Invalid practiceMode received:', this.practiceMode);
-        promptAction.showToast({ message: '无效的练习模式', duration: 1500 });
+        console.error('No practiceMode parameter received or invalid type');
+        promptAction.showToast({ message: '未指定练习模式', duration: 1500 });
         this.practiceMode = 1;
       }
-    } else {
-      console.error('No practiceMode parameter received or invalid type');
-      promptAction.showToast({ message: '未指定练习模式', duration: 1500 });
-      this.practiceMode = 1;
     }
+
   }
+}
+@Builder
+function ExerciseCommonPageBuilder() {
+  ExerciseCommonPage()
 }

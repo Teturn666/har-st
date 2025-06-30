@@ -1,5 +1,5 @@
 import { emitter } from "@kit.BasicServicesKit";
-import { display, router, window as kitWindow } from "@kit.ArkUI";
+import { display, window as kitWindow } from "@kit.ArkUI";
 import { accessManager } from "../utils/AccessManager";
 import { cameraManager } from "../utils/CameraManager";
 import window from '@ohos.window';
@@ -11,7 +11,7 @@ import { MDataTextManage } from "search/src/main/ets/manage/MDataTextManage";
 
 const TAG = "SearchQuestions";
 
-@Entry({ routeName: "searchQuestionsPage" })
+
 @Component
 export struct SearchQuestions {
   @State dataValue: string = ""
@@ -20,6 +20,7 @@ export struct SearchQuestions {
   @State isPortrait: boolean = true;
   @State Search: boolean = true
   @State orientation: number = display.Orientation.LANDSCAPE;
+  @Consume appPathStack: NavPathStack
   controller: XComponentController = new XComponentController()
   win: window.Window | null = null
   map: PixelMap | null = null
@@ -63,206 +64,213 @@ export struct SearchQuestions {
   }
 
   build() {
-    Column() {
+    NavDestination() {
+      Column() {
 
-      RelativeContainer() {
-        Column() {
-          XComponent({
-            type: XComponentType.SURFACE,
-            controller: this.controller
-          })
-            .width("100%")
-            .height("100%")
-            .onLoad(() => {
-              accessManager.CheckCamera(["ohos.permission.CAMERA"], () => {
-                cameraManager.initCamera(this.controller.getXComponentSurfaceId())
-              })
-            })
-        }
-
-        // .rotate({ angle: 90 }) // 旋转45度
-
-        Row() {
+        RelativeContainer() {
           Column() {
-            Image($r("sys.media.ohos_ic_public_arrow_left"))
-              .fillColor(Color.White)
-              .width(25)
-              .aspectRatio(1)
-              .borderRadius(15)
-              .backgroundColor("#504F4E")
-              .onClick(() => {
-                router.back()
+            XComponent({
+              type: XComponentType.SURFACE,
+              controller: this.controller
+            })
+              .width("100%")
+              .height("100%")
+              .onLoad(() => {
+                accessManager.CheckCamera(["ohos.permission.CAMERA"], () => {
+                  cameraManager.initCamera(this.controller.getXComponentSurfaceId())
+                })
               })
           }
-          .width(50)
-          .aspectRatio(1)
 
-          Column() {
-            Image($r("app.media.screen_rotation"))
-              .fillColor(Color.White)
-              .width(25)
-              .aspectRatio(1)
-              .borderRadius(15)
-              .backgroundColor("#504F4E")
-              .onClick(() => {
-                this.isPortrait = !this.isPortrait;
-                // this.setScreenOrientation(this.isPortrait);
-              })
-          }
-          .width(50)
-          .aspectRatio(1)
-        }
-        .width('100%')
-        .height(30)
-        .padding({
-          left: 15, right: 15
-        })
-        .alignRules({
-          top: { anchor: '__container__', align: VerticalAlign.Top },
+          // .rotate({ angle: 90 }) // 旋转45度
 
-        })
-        .margin({ top: 20 })
-        .justifyContent(FlexAlign.SpaceBetween)
-
-        Column() {
-          if (this.resultSearchRes != null) {
-            Column({ space: 10 }) {
-              Scroll() {
-                Column() {
-                  Text("答案：" + this.resultSearchRes.answer)
-                    .fontColor('#D87147')
-                    .fontSize(this.isPortrait ? 20 : 14)
-                    .padding(this.isPortrait ? 10 : 5)
-
-                  Column({ space: 7 }) {
-                    Text(this.resultSearchRes.question)
-                      .fontSize(this.isPortrait ? 18 : 12)
-                      .padding({
-                        top: this.isPortrait ? 5 : 2,
-                        bottom: this.isPortrait ? 5 : 2
-                      })
-                    if (this.resultSearchRes.option.length > 0) {
-                      ForEach(this.resultSearchRes.option, (item: string, index) => {
-                        Text(this.answerTr(index, item))
-                          .fontSize(this.isPortrait ? 18 : 12)
-                          .fontColor(
-                            this.isRightAnswer(this.answerTr(index, item), this.resultSearchRes?.answer) ? '#D87147' :
-                              '#3e3e3e'
-                          )
-                      })
-                    }
-                  }
-                  .alignItems(HorizontalAlign.Start)
-                }
-                .width('100%')
-                .justifyContent(FlexAlign.Start)
-                .alignItems(HorizontalAlign.Start)
-              }
-              .scrollBar(BarState.Off)
-
-            }
-            .alignItems(HorizontalAlign.Start)
-
-            .padding(this.isPortrait ? 20 : 10)
-            .margin({
-              left: this.isPortrait ? 20 : 0,
-              right: this.isPortrait ? 20 : 0,
-              bottom: this.isPortrait ? 0 : 20,
-
-            })
-            .opacity(0.9)
-            .borderRadius(6)
-            .width(this.isPortrait ? '90%' : 320)
-            .height(this.isPortrait ? 300 : 180)
-            .backgroundColor(Color.White)
-            .alignRules(
-              this.isPortrait
-                ? {
-                bottom: {
-                  anchor: "ct",
-                  align: VerticalAlign.Top
-                }
-              }
-                : {
-                right: { anchor: "__container__", align: HorizontalAlign.End },
-                bottom: { anchor: "__container__", align: VerticalAlign.Bottom }
-              }
-            )
-
+          Row() {
             Column() {
-              Text(this.CameraChange ? "锁定题目" : "解锁题目")
-                .backgroundColor("#ffe74c13")
-                .width(this.isPortrait ? 280 : 320)
-                .height(this.isPortrait ? 55 : 35)
-                .borderRadius(6)
-                .fontColor(Color.White)
-                .textAlign(TextAlign.Center)
-                .fontSize(this.isPortrait ? 20 : 14)
+              Image($r("sys.media.ohos_ic_public_arrow_left"))
+                .fillColor(Color.White)
+                .width(25)
+                .aspectRatio(1)
+                .borderRadius(15)
+                .backgroundColor("#504F4E")
                 .onClick(() => {
-                  //TODO  解锁题目
-                  if (this.CameraChange) {
-                    this.CameraChange = false
-                    this.Search = false
-                    this.dataValue = ''
-                    cameraManager.releaseCamera()
-                  } else {
-                    this.CameraChange = true
-                    cameraManager.initCamera(this.controller.getXComponentSurfaceId())
-                    this.Search = true
-                    this.resultSearchRes = null
-                  }
+               this.appPathStack.pop()
                 })
             }
-            .margin({
-              bottom: this.isPortrait ? 20 : 20
-            })
-            .id('ct')
-            .opacity(0.7)
-            .padding(this.isPortrait ? 20 : 10)
-            .alignRules({
+            .width(50)
+            .aspectRatio(1)
+
+            Column() {
+              Image($r("app.media.screen_rotation"))
+                .fillColor(Color.White)
+                .width(25)
+                .aspectRatio(1)
+                .borderRadius(15)
+                .backgroundColor("#504F4E")
+                .onClick(() => {
+                  this.isPortrait = !this.isPortrait;
+                  // this.setScreenOrientation(this.isPortrait);
+                })
+            }
+            .width(50)
+            .aspectRatio(1)
+          }
+          .width('100%')
+          .height(30)
+          .padding({
+            left: 15, right: 15
+          })
+          .alignRules({
+            top: { anchor: '__container__', align: VerticalAlign.Top },
+
+          })
+          .margin({ top: 20 })
+          .justifyContent(FlexAlign.SpaceBetween)
+
+          Column() {
+            if (this.resultSearchRes != null) {
+              Column({ space: 10 }) {
+                Scroll() {
+                  Column() {
+                    Text("答案：" + this.resultSearchRes.answer)
+                      .fontColor('#D87147')
+                      .fontSize(this.isPortrait ? 20 : 14)
+                      .padding(this.isPortrait ? 10 : 5)
+
+                    Column({ space: 7 }) {
+                      Text(this.resultSearchRes.question)
+                        .fontSize(this.isPortrait ? 18 : 12)
+                        .padding({
+                          top: this.isPortrait ? 5 : 2,
+                          bottom: this.isPortrait ? 5 : 2
+                        })
+                      if (this.resultSearchRes.option.length > 0) {
+                        ForEach(this.resultSearchRes.option, (item: string, index) => {
+                          Text(this.answerTr(index, item))
+                            .fontSize(this.isPortrait ? 18 : 12)
+                            .fontColor(
+                              this.isRightAnswer(this.answerTr(index, item), this.resultSearchRes?.answer) ? '#D87147' :
+                                '#3e3e3e'
+                            )
+                        })
+                      }
+                    }
+                    .alignItems(HorizontalAlign.Start)
+                  }
+                  .width('100%')
+                  .justifyContent(FlexAlign.Start)
+                  .alignItems(HorizontalAlign.Start)
+                }
+                .scrollBar(BarState.Off)
+
+              }
+              .alignItems(HorizontalAlign.Start)
+
+              .padding(this.isPortrait ? 20 : 10)
+              .margin({
+                left: this.isPortrait ? 20 : 0,
+                right: this.isPortrait ? 20 : 0,
+                bottom: this.isPortrait ? 0 : 20,
+
+              })
+              .opacity(0.9)
+              .borderRadius(6)
+              .width(this.isPortrait ? '90%' : 320)
+              .height(this.isPortrait ? 300 : 180)
+              .backgroundColor(Color.White)
+              .alignRules(
+                this.isPortrait
+                  ? {
+                  bottom: {
+                    anchor: "ct",
+                    align: VerticalAlign.Top
+                  }
+                }
+                  : {
+                  right: { anchor: "__container__", align: HorizontalAlign.End },
+                  bottom: { anchor: "__container__", align: VerticalAlign.Bottom }
+                }
+              )
+
+              Column() {
+                Text(this.CameraChange ? "锁定题目" : "解锁题目")
+                  .backgroundColor("#ffe74c13")
+                  .width(this.isPortrait ? 280 : 320)
+                  .height(this.isPortrait ? 55 : 35)
+                  .borderRadius(6)
+                  .fontColor(Color.White)
+                  .textAlign(TextAlign.Center)
+                  .fontSize(this.isPortrait ? 20 : 14)
+                  .onClick(() => {
+                    //TODO  解锁题目
+                    if (this.CameraChange) {
+                      this.CameraChange = false
+                      this.Search = false
+                      this.dataValue = ''
+                      cameraManager.releaseCamera()
+                    } else {
+                      this.CameraChange = true
+                      cameraManager.initCamera(this.controller.getXComponentSurfaceId())
+                      this.Search = true
+                      this.resultSearchRes = null
+                    }
+                  })
+              }
+              .margin({
+                bottom: this.isPortrait ? 20 : 20
+              })
+              .id('ct')
+              .opacity(0.7)
+              .padding(this.isPortrait ? 20 : 10)
+              .alignRules({
+
+                bottom: {
+                  anchor: "__container__",
+                  align: VerticalAlign.Bottom
+                }
+              })
+            }
+          }
+          .justifyContent(FlexAlign.Start)
+          .margin({
+            right: this.isPortrait ? 0 : 130,
+            bottom: this.isPortrait ? 0 : 70
+          })
+          .rotate({ angle: this.isPortrait ? 0 : 90 }) // 旋转45度
+          .alignRules(
+            this.isPortrait ?
+              {
+
+                bottom: {
+                  anchor: "__container__",
+                  align: VerticalAlign.Bottom
+                }
+              }
+              : {
 
               bottom: {
                 anchor: "__container__",
                 align: VerticalAlign.Bottom
+              },
+              right: {
+                anchor: "__container__",
+                align: HorizontalAlign.End
               }
-            })
-          }
+            }
+          )
+
         }
-        .justifyContent(FlexAlign.Start)
-        .margin({
-          right: this.isPortrait ? 0 : 130,
-          bottom: this.isPortrait ? 0 : 70
-        })
-        .rotate({ angle: this.isPortrait ? 0 : 90 }) // 旋转45度
-        .alignRules(
-          this.isPortrait ?
-            {
 
-              bottom: {
-                anchor: "__container__",
-                align: VerticalAlign.Bottom
-              }
-            }
-            : {
-
-            bottom: {
-              anchor: "__container__",
-              align: VerticalAlign.Bottom
-            },
-            right: {
-              anchor: "__container__",
-              align: HorizontalAlign.End
-            }
-          }
-        )
-
+        .width("100%")
+        .height("100%")
       }
 
       .width("100%")
       .height("100%")
     }
-
-    .width("100%")
-    .height("100%")
+    .hideTitleBar( true)
   }
+}
+@Builder
+function SearchQuestionsBuilder() {
+  SearchQuestions()
 }

@@ -3,19 +3,9 @@ import { promptAction, router } from '@kit.ArkUI';
 import { QuestionRes } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
 import { HomeModel } from '../model/HomeModel';
+import { DetailParams, NavQid } from '../model/NavGenericType';
 
-interface DetailParams {
-  title: string;
-  correctCount: number;
-  wrongCount: number;
-  timeSpent: string;
-  questions: QuestionRes[];
-  typepage: number;
-  backindex: number;
-  isBankData: boolean;
-}
 
-@Entry({ routeName: "exerciseDetailsPage" })
 @Component
 struct ExerciseDetailsPage {
   @State title: string = ''; // 题目标题
@@ -27,6 +17,7 @@ struct ExerciseDetailsPage {
   @State typepage: number = -1; //模拟考试 1 错题练习 2 收藏练习 3
   @State backindex: number = 2; //返回的页数
   @State isBankData: boolean = false;
+  @Consume appPathStack: NavPathStack
 
   onBackPress(): boolean | void {
     this.quitRouter()
@@ -34,19 +25,18 @@ struct ExerciseDetailsPage {
   }
 
   aboutToAppear(): void {
-    const params = router.getParams() as DetailParams | undefined;
-    if (params) {
-      this.backindex = params.backindex || 2;
-      this.typepage = params.typepage;
+    const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_EXERCISE_DETAILS_LIST) as DetailParams[]
+    if (res && res.length) {
+      const params = res[0]
+      this.backindex = params.backIndex || 2;
+      this.typepage = params.typePage;
       this.title = params.title || '未知题库';
       this.correctCount = params.correctCount || 0;
       this.wrongCount = params.wrongCount || 0;
       this.timeSpent = params.timeSpent || '00:00';
       this.questions = params.questions || [];
       this.isBankData = params.isBankData;
-
       console.log("返回的backindex：" + JSON.stringify(this.isBankData))
-
       setTimeout(() => {
         console.log('两秒后执行');
         this.isLoading = false;
@@ -57,19 +47,24 @@ struct ExerciseDetailsPage {
         this.isLoading = false;
       }, 2000);
       promptAction.showToast({ message: '未接收到练习数据', duration: 2000 });
-      router.back();
+      this.appPathStack.pop()
     }
   }
 
   private continueRouter() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-      params: {
-        practiceMode: this.typepage,
-        qid: this.questions[0]?.qId || -1,
-        backindex: this.backindex += 2
-      }
-    });
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST,{
+      practiceMode: this.typepage,
+      qid: this.questions[0]?.qId || -1,
+      backIndex: this.backindex += 2
+    } as NavQid )
+    // router.pushNamedRoute({
+    //   name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
+    //   params: {
+    //     practiceMode: this.typepage,
+    //     qid: this.questions[0]?.qId || -1,
+    //     backindex: this.backindex += 2
+    //   }
+    // });
   }
 
   quitRouter() {
