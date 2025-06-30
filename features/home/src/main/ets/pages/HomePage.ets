@@ -161,10 +161,6 @@ export struct HomePage {
     this.TopHeight = 0
   }
 
-  onBackPress(): boolean | void {
-    return true
-  }
-
   build() {
     RelativeContainer() {
       Column() {
