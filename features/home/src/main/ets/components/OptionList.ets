@@ -40,6 +40,7 @@ export struct OptionList {
       })
     }
     .width('100%')
+   // .height('100%')
   }
 
   private isTrueFalseQuestion(): boolean {

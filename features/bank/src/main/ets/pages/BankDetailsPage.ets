@@ -1,6 +1,6 @@
 import { onEventObject } from '@umeng/analytics';
 import { TitleBar } from 'widget/Index';
-import { ComponentContent, router } from '@kit.ArkUI';
+import { ComponentContent } from '@kit.ArkUI';
 import { BankListRes, QuestionRes } from 'db';
 import { EmitterConstants, Logger } from 'utils';
 import { LoadingDialog } from './LoadingDialog';
@@ -12,44 +12,19 @@ import { common } from '@kit.AbilityKit';
 import { FinishDialog } from './FinishDialog';
 import BankConstants from '../Constants/BankConstants';
 import { emitter } from '@kit.BasicServicesKit';
+import { generatedType, NavQid, Params, QuestionItem } from '../model/BankCategory';
 
-// 第二种数据格式
-interface QuestionItem {
-  qId: string
-  q: string
-  a: string[]
-  ans: string
-}
-
-interface generatedType {
-  isUpDate: boolean
-  bankDetails: BankListRes;
-  downloadedState: number;
-  questionList: Array<QuestionRes>
-  questionListtwo: Array<QuestionItem>
-}
 
 const TAG = '[BankList]'
 let jsonData = null
 const context = (getContext(this) as common.UIAbilityContext)
 
-class Params {
-  controller: CanvasRenderingContext2D
-  animateName: string
-  imgRes: string
-
-  constructor(controller: CanvasRenderingContext2D, animateName: string, imgRes: string) {
-    this.controller = controller;
-    this.animateName = animateName;
-    this.imgRes = imgRes;
-  }
-}
 
 @Builder
 function buildFinishText() {
 }
 
-@Entry({ routeName: "bankDetailsPage" })
+
 @Component
 struct BankDetailsPage {
   //题库详情
@@ -64,6 +39,7 @@ struct BankDetailsPage {
   dialogDownloadController?: CustomDialogController
   @State mCurBank: BankListRes = {} as BankListRes
   @State bankUpdate: boolean = false
+  @Consume appPathStack: NavPathStack
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
   private ctx: UIContext = this.getUIContext();
@@ -88,10 +64,7 @@ struct BankDetailsPage {
         practiceType: practiceType,
         onStartPractice: () => {
           // 跳转到练习页面的逻辑
-          router.pushNamedRoute({
-            name: BankConstants.ROUTER_EXERCISE_LIST,
-            params: { qid: this.mCurBank.qid }
-          }, router.RouterMode.Single)
+          this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_LIST,{qid: this.mCurBank.qid } as NavQid)
         }
       })
     });
@@ -104,18 +77,19 @@ struct BankDetailsPage {
   }
 
   loadsourse() {
-    const params = router.getParams() as generatedType;
-    if (!params || !params.bankDetails) {
+    const res = this.appPathStack.getParamByName(BankConstants.ROUTER_BANK_DETAILS) as generatedType[]
+    if (res && res.length) {
+      let params = res[0]
+      this.bankUpdate = params.isUpDate ?? false;
+      this.downloadedState = params.downloadedState ?? 0;
+      this.bankDetails = params.bankDetails;
+      this.questionList = params.questionList ?? [];
+      this.questionListtwo = params.questionListtwo ?? [];
+      console.log("c哈看：" + JSON.stringify(this.bankUpdate))
+    } else {
       Logger.error(TAG, "加载参数异常，params为空");
-      return;
     }
-    this.bankUpdate = params.isUpDate ?? false;
-    this.downloadedState = params.downloadedState ?? 0;
-    this.bankDetails = params.bankDetails;
-    this.questionList = params.questionList ?? [];
-    this.questionListtwo = params.questionListtwo ?? [];
 
-    console.log("c哈看：" + JSON.stringify(this.bankUpdate))
   }
 
   formatFirstTypeOption(option: string, optionIndex: number): string {
@@ -175,449 +149,450 @@ struct BankDetailsPage {
   }
 
   build() {
-    Column() {
-      TitleBar({
-        title: "题库详情",
-        backClick: () => {
-          router.back()
-        }
-      })
-        .backgroundColor(Color.White)
-        .width('100%');
-
-      if (this.bankDetails || this.questionListtwo) {
-        List() {
-          ListItem() {
-            Column() {
-              Row() {
-                Image($r('app.media.ic_feed'))
-                  .objectFit(ImageFit.Contain)
-                  .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
-                Text(this.bankDetails?.name)
-                  .fontColor($r('app.color.c_3e3e3e'))
-                  .fontSize($r('app.float.font_size_16fp'))
-                  .margin({
-                    left: $r('app.float.float_5vp'),
-                  })
-              }
-
-              Text(this.bankDetails.desc)
-                .fontColor($r('app.color.c_9d9d9d'))
-                .fontSize($r('app.float.font_size_12fp'))
-                .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
-
-              Row() {
-                Text("题库状态：")
-                  .fontColor($r('app.color.c_9d9d9d'))
-                  .fontSize($r('app.float.font_size_10fp'))
-                if (this.downloadedState === 0) {
-                  Text("已下载")
-                    .fontColor(Color.Blue)
-                    .fontSize($r('app.float.font_size_10fp'))
-                    .margin({ right: $r('app.float.float_30vp') })
-                } else {
-                  Text("未下载")
-                    .fontColor(Color.Blue)
-                    .fontSize($r('app.float.font_size_10fp'))
-                    .margin({ right: $r('app.float.float_30vp') })
-                }
-                Text("题目数：" + this.bankDetails.num)
-                  .fontColor($r('app.color.c_9d9d9d'))
-                  .fontSize($r('app.float.font_size_10fp'))
-                Blank()
-                Text("题库更新时间：" + this.bankDetails.time)
-                  .fontColor($r('app.color.c_9d9d9d'))
-                  .fontSize($r('app.float.font_size_10fp'))
-              }
-              .width('95%')
-              .justifyContent(FlexAlign.SpaceBetween)
-            }
-            .alignItems(HorizontalAlign.Start)
-            .backgroundColor(Color.White)
-            .borderRadius(5)
-            .padding({
-              left: $r('app.float.float_10vp'),
-              top: $r('app.float.float_10vp'),
-              right: $r('app.float.float_10vp'),
-              bottom: $r('app.float.float_10vp'),
-            })
-            .width('100%')
+    NavDestination() {
+      Column() {
+        TitleBar({
+          title: "题库详情",
+          backClick: () => {
+            this.appPathStack.popToIndex(-1)
           }
+        })
+          .backgroundColor(Color.White)
+          .width('100%');
 
-          ListItem() {
-            Column() {
-              Text("题库练习")
-                .fontColor($r('app.color.c_black'))
-                .fontSize($r('app.float.font_size_14fp'))
-                .fontWeight(600)
-              Text("点击顺序练习、模拟考试可下载题库")
-                .fontColor($r('app.color.c_9d9d9d'))
-                .fontSize($r('app.float.font_size_10fp'))
-                .margin({ top: 5 })
-              Row() {
-                Image($r('app.media.ic_question_bank_exercise'))
-                  .width(60)
-                  .height(60)
-                  .onClick(async () => {
-                    this.mCurBank = this.bankDetails;
-                    if (this.downloadedState === 1) {
-                      //下载
-                      LoadingDialog.openDialog()
-                      try {
-                        const success = await this.bankModel.downLoadBank(this.bankDetails!);
-                        if (success) {
-                          //更新状态为已下载
-                          this.downloadedState = 0
-                          this.bankUpdate = false
-                          this.updateStatusMap.set(this.bankDetails!.qid, false);
-                          this.refreshTrigger++; // 触发UI更新
-                          LoadingDialog.closeDialog()
-                          this.showDownloadOverDialog(true, false, true, 'exercise')
-                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                            "question_bank_id": this.bankDetails!.qid
-                          })
-                          emitter.emit(EmitterConstants.EM_REFRESH_BANK)
-                        } else {
-                          LoadingDialog.closeDialog()
-                          this.showDownloadOverDialog(false, false)
-                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                            "question_bank_id": this.bankDetails!.qid
-                          })
-                        }
-                      } catch (error) {
-                        Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
-                        LoadingDialog.closeDialog()
-                        this.showDownloadOverDialog(false, false)
-                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                          "question_bank_id": this.bankDetails!.qid
-                        })
-                      }
-                    } else {
-                      // 已下载，直接跳转到练习
-                      router.pushNamedRoute({
-                        name: BankConstants.ROUTER_EXERCISE_LIST,
-                        params: { qid: this.mCurBank.qid }
-                      }, router.RouterMode.Single)
-                    }
-                  })
-                Image($r('app.media.ic_practice'))
-                  .width(60)
-                  .height(60)
-                  .margin({ left: 18 })
-
-                  .onClick(async () => {
-                    this.mCurBank = this.bankDetails;
-                    if (this.downloadedState === 1) {
-                      //下载
-                      LoadingDialog.openDialog()
-                      try {
-                        const success = await this.bankModel.downLoadBank(this.bankDetails!);
-                        if (success) {
-                          //更新状态为已下载
-                          this.downloadedState = 0
-                          this.bankUpdate = false
-                          this.updateStatusMap.set(this.bankDetails!.qid, false);
-                          this.refreshTrigger++; // 触发UI更新
-                          LoadingDialog.closeDialog()
-                          // 修改：传递模拟考试类型参数
-                          this.showDownloadOverDialog(true, false, true, 'exam')
-                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                            "question_bank_id": this.bankDetails!.qid
-                          })
-                          emitter.emit(EmitterConstants.EM_REFRESH_BANK)
-                        } else {
-                          LoadingDialog.closeDialog()
-                          this.showDownloadOverDialog(false, false)
-                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                            "question_bank_id": this.bankDetails!.qid
-                          })
-                        }
-                      } catch (error) {
-                        Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
-                        LoadingDialog.closeDialog()
-                        this.showDownloadOverDialog(false, false)
-                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                          "question_bank_id": this.bankDetails!.qid
-                        })
-                      }
-                    } else {
-                      // 已下载，直接跳转到模拟考试
-                      router.pushNamedRoute({
-                        name: BankConstants.ROUTER_EXERCISE_COMMON_LIST,
-                        params: {
-                          practiceMode: 1,
-                          qid: this.mCurBank.qid
-                        }
-                      }, router.RouterMode.Single)
-                    }
-
-                  })
-              }
-              .width('100%')
-              .margin({ top: 18 })
-            }
-            .alignItems(HorizontalAlign.Start)
-            .padding({ top: 10, left: 10 })
-            .borderRadius(5)
-            .margin({ top: 10 })
-            .backgroundColor(Color.White)
-            .height(135)
-            .width('100%')
-
-          }
-
-          //内容
-          ListItem() {
-            Column() {
-              Text("题库预览 （10题）")
-                .fontColor($r('app.color.c_black'))
-                .fontSize($r('app.float.font_size_14fp'))
-                .fontWeight(600)
-                .margin({ bottom: 10 })
-
-              if (this.questionList.length > 0) {
-                Column() {
-                  // 遍历显示所有题目
-                  ForEach(this.questionList, (item: QuestionRes, index: number) => {
-                    Column() {
-                      // 题目序号和内容
-                      Text() {
-                        Span(`${index + 1}.`)
-                          .fontSize($r('app.float.font_size_12fp'))
-                          .fontColor($r('app.color.c_black'))
-                        Span(item.question)
-                          .fontSize($r('app.float.font_size_12fp'))
-                          .fontColor($r('app.color.c_black'))
-                      }
-                      .width('100%')
-                      .lineHeight(24)
-                      .margin({ bottom: 10 })
-                      .textAlign(TextAlign.Start)
-
-                      // 选项列表
-                      Column() {
-                        ForEach(item.option, (option: string, optionIndex: number) => {
-                          if (option && option.trim() !== '') {
-                            Row() {
-                              Text(this.formatFirstTypeOption(option, optionIndex))
-                                .fontSize($r('app.float.font_size_12fp'))
-                                .fontColor($r('app.color.c_black'))
-                                .lineHeight(24)
-                            }
-                            .width('100%')
-                            .alignItems(VerticalAlign.Top)
-                          }
-                        })
-                      }
-                      .alignItems(HorizontalAlign.Start)
-                      .margin({ bottom: 15 })
-
-                      // 答案
-                      Row() {
-                        Text() {
-                          Span("答案：")
-                            .fontSize($r('app.float.font_size_12fp'))
-                            .fontColor($r('app.color.c_black'))
-                          Span(item.answer)
-                            .fontSize($r('app.float.font_size_12fp'))
-                            .fontColor($r('app.color.c_black'))
-                        }
-                      }
-                      .width('100%')
-                      .margin({ bottom: index === this.questionList.length - 1 ? 5 : 10 })
-
-                      Divider()
-                        .strokeWidth(0.5)
-                        .color($r('app.color.c_ebebeb'))
-                        .margin({
-                          left: $r('app.float.float_20vp'),
-                          top: $r('app.float.float_10vp'),
-                          right: $r('app.float.float_20vp'),
-                        })
-                    }
-                    .width('100%')
-                    .alignItems(HorizontalAlign.Start)
-                  })
-                }
-                .width('100%')
-                .alignItems(HorizontalAlign.Start)
-              } else {
-                Column() {
-                  // 遍历显示所有题目
-                  ForEach(this.questionListtwo, (item: QuestionItem, index: number) => {
-                    Column() {
-                      // 题目序号和内容
-                      Text() {
-                        Span(`${index + 1}.`)
-                          .fontSize($r('app.float.font_size_12fp'))
-                          .fontColor($r('app.color.c_black'))
-                        Span(item.q)
-                          .fontSize($r('app.float.font_size_12fp'))
-                          .fontColor($r('app.color.c_black'))
-                      }
-                      .width('100%')
-                      .lineHeight(24)
-                      .margin({ bottom: 10 })
-                      .textAlign(TextAlign.Start)
-
-                      // 选项列表
-                      Column() {
-                        ForEach(item.a, (option: string, optionIndex: number) => {
-                          // 检查选项是否存在且不为空
-                          if (option && option.trim() !== '') {
-                            Row() {
-                              Text(this.formatOptionText(option, optionIndex))
-                                .fontSize($r('app.float.font_size_12fp'))
-                                .fontColor($r('app.color.c_black'))
-                                .lineHeight(24)
-                            }
-                            .width('100%')
-                            .alignItems(VerticalAlign.Top)
-                          }
-                        })
-                      }
-                      .alignItems(HorizontalAlign.Start)
-                      .margin({ bottom: 15 })
-
-
-                      // 答案
-                      Row() {
-                        Text() {
-                          Span("答案：")
-                            .fontSize($r('app.float.font_size_12fp'))
-                            .fontColor($r('app.color.c_black'))
-                          Span(item.ans)
-                            .fontSize($r('app.float.font_size_12fp'))
-                            .fontColor($r('app.color.c_black'))
-                        }
-                      }
-                      .width('100%')
-                      .margin({ bottom: index === this.questionList.length - 1 ? 5 : 10 })
-
-                      Divider()
-                        .strokeWidth(0.5)
-                        .color($r('app.color.c_ebebeb'))
-                        .margin({
-                          left: $r('app.float.float_20vp'),
-                          top: $r('app.float.float_10vp'),
-                          right: $r('app.float.float_20vp'),
-                        })
-                    }
-                    .width('100%')
-                    .alignItems(HorizontalAlign.Start)
-                  })
-                }
-                .width('100%')
-                .alignItems(HorizontalAlign.Start)
-              }
-
-            }
-            .alignItems(HorizontalAlign.Start)
-            .padding({ top: 10, left: 10 })
-            .backgroundColor($r('app.color.white'))
-            .margin({ top: 10 })
-            .width('100%')
-          }
-        }
-        .width('95%')
-        .layoutWeight(1)
-
-        Blank()
-        Stack() {
-          Image(this.downloadedState === 0 ?
-            this.bankUpdate ? $r('app.media.ic_bank_detail_bg') :
-            $r('app.media.ic_bank_detail_bgs') : $r('app.media.ic_bank_detail_bg'))
-            .objectFit(ImageFit.Cover)
-            .width(282)
-            .onClick(async () => {
-              this.mCurBank = this.bankDetails;
-
-              if (this.downloadedState === 1) {
-                Logger.info(TAG, '题库内容--------' + JSON.stringify(this.bankDetails))
-                LoadingDialog.openDialog()
-                try {
-                  const success = await this.bankModel.downLoadBank(this.bankDetails!);
-                  if (success) {
-                    //更新状态为已下载
-                    this.downloadedState = 0
-                    this.bankUpdate = false
-                    this.updateStatusMap.set(this.bankDetails!.qid, false);
-                    this.refreshTrigger++; // 触发UI更新
-                    LoadingDialog.closeDialog()
-                    this.showDownloadOverDialog(true, false)
-                    onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                      "question_bank_id": this.bankDetails!.qid
+        if (this.bankDetails || this.questionListtwo) {
+          List() {
+            ListItem() {
+              Column() {
+                Row() {
+                  Image($r('app.media.ic_feed'))
+                    .objectFit(ImageFit.Contain)
+                    .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
+                  Text(this.bankDetails?.name)
+                    .fontColor($r('app.color.c_3e3e3e'))
+                    .fontSize($r('app.float.font_size_16fp'))
+                    .margin({
+                      left: $r('app.float.float_5vp'),
                     })
-                    emitter.emit(EmitterConstants.EM_REFRESH_BANK)
+                }
+
+                Text(this.bankDetails.desc)
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .fontSize($r('app.float.font_size_12fp'))
+                  .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
+
+                Row() {
+                  Text("题库状态：")
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .fontSize($r('app.float.font_size_10fp'))
+                  if (this.downloadedState === 0) {
+                    Text("已下载")
+                      .fontColor(Color.Blue)
+                      .fontSize($r('app.float.font_size_10fp'))
+                      .margin({ right: $r('app.float.float_30vp') })
                   } else {
-                    // Logger.info(TAG, '下载失败' + item)
+                    Text("未下载")
+                      .fontColor(Color.Blue)
+                      .fontSize($r('app.float.font_size_10fp'))
+                      .margin({ right: $r('app.float.float_30vp') })
+                  }
+                  Text("题目数：" + this.bankDetails.num)
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .fontSize($r('app.float.font_size_10fp'))
+                  Blank()
+                  Text("题库更新时间：" + this.bankDetails.time)
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .fontSize($r('app.float.font_size_10fp'))
+                }
+                .width('95%')
+                .justifyContent(FlexAlign.SpaceBetween)
+              }
+              .alignItems(HorizontalAlign.Start)
+              .backgroundColor(Color.White)
+              .borderRadius(5)
+              .padding({
+                left: $r('app.float.float_10vp'),
+                top: $r('app.float.float_10vp'),
+                right: $r('app.float.float_10vp'),
+                bottom: $r('app.float.float_10vp'),
+              })
+              .width('100%')
+            }
+
+            ListItem() {
+              Column() {
+                Text("题库练习")
+                  .fontColor($r('app.color.c_black'))
+                  .fontSize($r('app.float.font_size_14fp'))
+                  .fontWeight(600)
+                Text("点击顺序练习、模拟考试可下载题库")
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .fontSize($r('app.float.font_size_10fp'))
+                  .margin({ top: 5 })
+                Row() {
+                  Image($r('app.media.ic_question_bank_exercise'))
+                    .width(60)
+                    .height(60)
+                    .onClick(async () => {
+                      this.mCurBank = this.bankDetails;
+                      if (this.downloadedState === 1) {
+                        //下载
+                        LoadingDialog.openDialog()
+                        try {
+                          const success = await this.bankModel.downLoadBank(this.bankDetails!);
+                          if (success) {
+                            //更新状态为已下载
+                            this.downloadedState = 0
+                            this.bankUpdate = false
+                            this.updateStatusMap.set(this.bankDetails!.qid, false);
+                            this.refreshTrigger++; // 触发UI更新
+                            LoadingDialog.closeDialog()
+                            this.showDownloadOverDialog(true, false, true, 'exercise')
+                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                              "question_bank_id": this.bankDetails!.qid
+                            })
+                            emitter.emit(EmitterConstants.EM_REFRESH_BANK)
+                          } else {
+                            LoadingDialog.closeDialog()
+                            this.showDownloadOverDialog(false, false)
+                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                              "question_bank_id": this.bankDetails!.qid
+                            })
+                          }
+                        } catch (error) {
+                          Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(false, false)
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                            "question_bank_id": this.bankDetails!.qid
+                          })
+                        }
+                      } else {
+                        // 已下载，直接跳转到练习
+                        this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_LIST,
+                          { qid: this.mCurBank.qid,bankPage:BankConstants.ROUTER_BANK_DETAILS } as NavQid)
+                      }
+                    })
+                  Image($r('app.media.ic_practice'))
+                    .width(60)
+                    .height(60)
+                    .margin({ left: 18 })
+
+                    .onClick(async () => {
+                      this.mCurBank = this.bankDetails;
+                      if (this.downloadedState === 1) {
+                        //下载
+                        LoadingDialog.openDialog()
+                        try {
+                          const success = await this.bankModel.downLoadBank(this.bankDetails!);
+                          if (success) {
+                            //更新状态为已下载
+                            this.downloadedState = 0
+                            this.bankUpdate = false
+                            this.updateStatusMap.set(this.bankDetails!.qid, false);
+                            this.refreshTrigger++; // 触发UI更新
+                            LoadingDialog.closeDialog()
+                            // 修改：传递模拟考试类型参数
+                            this.showDownloadOverDialog(true, false, true, 'exam')
+                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                              "question_bank_id": this.bankDetails!.qid
+                            })
+                            emitter.emit(EmitterConstants.EM_REFRESH_BANK)
+                          } else {
+                            LoadingDialog.closeDialog()
+                            this.showDownloadOverDialog(false, false)
+                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                              "question_bank_id": this.bankDetails!.qid
+                            })
+                          }
+                        } catch (error) {
+                          Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
+                          LoadingDialog.closeDialog()
+                          this.showDownloadOverDialog(false, false)
+                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                            "question_bank_id": this.bankDetails!.qid
+                          })
+                        }
+                      } else {
+                        // 已下载，直接跳转到模拟考试
+                        this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_COMMON_LIST,{  practiceMode: 1,
+                          qid: this.mCurBank.qid,bankPage:BankConstants.ROUTER_BANK_DETAILS} as NavQid)
+
+                      }
+
+                    })
+                }
+                .width('100%')
+                .margin({ top: 18 })
+              }
+              .alignItems(HorizontalAlign.Start)
+              .padding({ top: 10, left: 10 })
+              .borderRadius(5)
+              .margin({ top: 10 })
+              .backgroundColor(Color.White)
+              .height(135)
+              .width('100%')
+
+            }
+
+            //内容
+            ListItem() {
+              Column() {
+                Text("题库预览 （10题）")
+                  .fontColor($r('app.color.c_black'))
+                  .fontSize($r('app.float.font_size_14fp'))
+                  .fontWeight(600)
+                  .margin({ bottom: 10 })
+
+                if (this.questionList.length > 0) {
+                  Column() {
+                    // 遍历显示所有题目
+                    ForEach(this.questionList, (item: QuestionRes, index: number) => {
+                      Column() {
+                        // 题目序号和内容
+                        Text() {
+                          Span(`${index + 1}.`)
+                            .fontSize($r('app.float.font_size_12fp'))
+                            .fontColor($r('app.color.c_black'))
+                          Span(item.question)
+                            .fontSize($r('app.float.font_size_12fp'))
+                            .fontColor($r('app.color.c_black'))
+                        }
+                        .width('100%')
+                        .lineHeight(24)
+                        .margin({ bottom: 10 })
+                        .textAlign(TextAlign.Start)
+
+                        // 选项列表
+                        Column() {
+                          ForEach(item.option, (option: string, optionIndex: number) => {
+                            if (option && option.trim() !== '') {
+                              Row() {
+                                Text(this.formatFirstTypeOption(option, optionIndex))
+                                  .fontSize($r('app.float.font_size_12fp'))
+                                  .fontColor($r('app.color.c_black'))
+                                  .lineHeight(24)
+                              }
+                              .width('100%')
+                              .alignItems(VerticalAlign.Top)
+                            }
+                          })
+                        }
+                        .alignItems(HorizontalAlign.Start)
+                        .margin({ bottom: 15 })
+
+                        // 答案
+                        Row() {
+                          Text() {
+                            Span("答案：")
+                              .fontSize($r('app.float.font_size_12fp'))
+                              .fontColor($r('app.color.c_black'))
+                            Span(item.answer)
+                              .fontSize($r('app.float.font_size_12fp'))
+                              .fontColor($r('app.color.c_black'))
+                          }
+                        }
+                        .width('100%')
+                        .margin({ bottom: index === this.questionList.length - 1 ? 5 : 10 })
+
+                        Divider()
+                          .strokeWidth(0.5)
+                          .color($r('app.color.c_ebebeb'))
+                          .margin({
+                            left: $r('app.float.float_20vp'),
+                            top: $r('app.float.float_10vp'),
+                            right: $r('app.float.float_20vp'),
+                          })
+                      }
+                      .width('100%')
+                      .alignItems(HorizontalAlign.Start)
+                    })
+                  }
+                  .width('100%')
+                  .alignItems(HorizontalAlign.Start)
+                } else {
+                  Column() {
+                    // 遍历显示所有题目
+                    ForEach(this.questionListtwo, (item: QuestionItem, index: number) => {
+                      Column() {
+                        // 题目序号和内容
+                        Text() {
+                          Span(`${index + 1}.`)
+                            .fontSize($r('app.float.font_size_12fp'))
+                            .fontColor($r('app.color.c_black'))
+                          Span(item.q)
+                            .fontSize($r('app.float.font_size_12fp'))
+                            .fontColor($r('app.color.c_black'))
+                        }
+                        .width('100%')
+                        .lineHeight(24)
+                        .margin({ bottom: 10 })
+                        .textAlign(TextAlign.Start)
+
+                        // 选项列表
+                        Column() {
+                          ForEach(item.a, (option: string, optionIndex: number) => {
+                            // 检查选项是否存在且不为空
+                            if (option && option.trim() !== '') {
+                              Row() {
+                                Text(this.formatOptionText(option, optionIndex))
+                                  .fontSize($r('app.float.font_size_12fp'))
+                                  .fontColor($r('app.color.c_black'))
+                                  .lineHeight(24)
+                              }
+                              .width('100%')
+                              .alignItems(VerticalAlign.Top)
+                            }
+                          })
+                        }
+                        .alignItems(HorizontalAlign.Start)
+                        .margin({ bottom: 15 })
+
+
+                        // 答案
+                        Row() {
+                          Text() {
+                            Span("答案：")
+                              .fontSize($r('app.float.font_size_12fp'))
+                              .fontColor($r('app.color.c_black'))
+                            Span(item.ans)
+                              .fontSize($r('app.float.font_size_12fp'))
+                              .fontColor($r('app.color.c_black'))
+                          }
+                        }
+                        .width('100%')
+                        .margin({ bottom: index === this.questionList.length - 1 ? 5 : 10 })
+
+                        Divider()
+                          .strokeWidth(0.5)
+                          .color($r('app.color.c_ebebeb'))
+                          .margin({
+                            left: $r('app.float.float_20vp'),
+                            top: $r('app.float.float_10vp'),
+                            right: $r('app.float.float_20vp'),
+                          })
+                      }
+                      .width('100%')
+                      .alignItems(HorizontalAlign.Start)
+                    })
+                  }
+                  .width('100%')
+                  .alignItems(HorizontalAlign.Start)
+                }
+
+              }
+              .alignItems(HorizontalAlign.Start)
+              .padding({ top: 10, left: 10 })
+              .backgroundColor($r('app.color.white'))
+              .margin({ top: 10 })
+              .width('100%')
+            }
+          }
+          .width('95%')
+          .layoutWeight(1)
+
+          Blank()
+          Stack() {
+            Image(this.downloadedState === 0 ?
+              this.bankUpdate ? $r('app.media.ic_bank_detail_bg') :
+              $r('app.media.ic_bank_detail_bgs') : $r('app.media.ic_bank_detail_bg'))
+              .objectFit(ImageFit.Cover)
+              .width(282)
+              .onClick(async () => {
+                this.mCurBank = this.bankDetails;
+
+                if (this.downloadedState === 1) {
+                  Logger.info(TAG, '题库内容--------' + JSON.stringify(this.bankDetails))
+                  LoadingDialog.openDialog()
+                  try {
+                    const success = await this.bankModel.downLoadBank(this.bankDetails!);
+                    if (success) {
+                      //更新状态为已下载
+                      this.downloadedState = 0
+                      this.bankUpdate = false
+                      this.updateStatusMap.set(this.bankDetails!.qid, false);
+                      this.refreshTrigger++; // 触发UI更新
+                      LoadingDialog.closeDialog()
+                      this.showDownloadOverDialog(true, false)
+                      onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                        "question_bank_id": this.bankDetails!.qid
+                      })
+                      emitter.emit(EmitterConstants.EM_REFRESH_BANK)
+                    } else {
+                      // Logger.info(TAG, '下载失败' + item)
+                      LoadingDialog.closeDialog()
+                      this.showDownloadOverDialog(false, false)
+                      onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                        "question_bank_id": this.bankDetails!.qid
+                      })
+                    }
+                  } catch (error) {
+                    Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
                     LoadingDialog.closeDialog()
                     this.showDownloadOverDialog(false, false)
                     onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
                       "question_bank_id": this.bankDetails!.qid
                     })
                   }
-                } catch (error) {
-                  Logger.info(TAG, '下载过程中发生错误' + JSON.stringify(this.bankDetails))
-                  LoadingDialog.closeDialog()
-                  this.showDownloadOverDialog(false, false)
-                  onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                    "question_bank_id": this.bankDetails!.qid
-                  })
-                }
-              } else {
-                if (this.bankUpdate) {
-                  LoadingDialog.setContentNode(this.contentNodeUpdate);
-                  LoadingDialog.openDialog()
-                  try {
-                    const success = await this.bankModel.refreshBank(this.bankDetails!)
-                    if (success) {
-                      this.downloadedState = 0
-                      this.bankUpdate = false
-                      this.updateStatusMap.set(this.bankDetails!.qid, false); // 更新成功后重置更新状态
-                      this.refreshTrigger++; // 触发UI更新
-                      LoadingDialog.closeDialog()
-                      this.showDownloadOverDialog(true, true)
-                      onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                        "question_bank_id": this.bankDetails!.qid
-                      })
-                      emitter.emit(EmitterConstants.EM_REFRESH_BANK)
-                    } else {
+                } else {
+                  if (this.bankUpdate) {
+                    LoadingDialog.setContentNode(this.contentNodeUpdate);
+                    LoadingDialog.openDialog()
+                    try {
+                      const success = await this.bankModel.refreshBank(this.bankDetails!)
+                      if (success) {
+                        this.downloadedState = 0
+                        this.bankUpdate = false
+                        this.updateStatusMap.set(this.bankDetails!.qid, false); // 更新成功后重置更新状态
+                        this.refreshTrigger++; // 触发UI更新
+                        LoadingDialog.closeDialog()
+                        this.showDownloadOverDialog(true, true)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                          "question_bank_id": this.bankDetails!.qid
+                        })
+                        emitter.emit(EmitterConstants.EM_REFRESH_BANK)
+                      } else {
+                        LoadingDialog.closeDialog()
+                        this.showDownloadOverDialog(false, true)
+                        onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                          "question_bank_id": this.bankDetails!.qid
+                        })
+                      }
+                    } catch (error) {
                       LoadingDialog.closeDialog()
                       this.showDownloadOverDialog(false, true)
                       onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
                         "question_bank_id": this.bankDetails!.qid
                       })
                     }
-                  } catch (error) {
-                    LoadingDialog.closeDialog()
-                    this.showDownloadOverDialog(false, true)
-                    onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                      "question_bank_id": this.bankDetails!.qid
-                    })
                   }
                 }
-              }
-            })
-          Text(this.bankDetails.downloadedState === 1 ? this.bankUpdate ? "更新" : "已最新" : "下载")
-            .fontColor($r('app.color.white'))
+              })
+            Text(this.bankDetails.downloadedState === 1 ? this.bankUpdate ? "更新" : "已最新" : "下载")
+              .fontColor($r('app.color.white'))
+              .fontSize($r('app.float.font_size_14fp'))
+          }
+          .backgroundColor($r('app.color.white'))
+          .width('100%')
+          .height(62)
+
+        } else {
+
+          Text("加载中...")
+            .fontColor($r('app.color.c_9d9d9d'))
             .fontSize($r('app.float.font_size_14fp'))
+            .margin({ top: $r('app.float.float_50vp') })
         }
-        .backgroundColor($r('app.color.white'))
-        .width('100%')
-        .height(62)
-
-      } else {
-
-        Text("加载中...")
-          .fontColor($r('app.color.c_9d9d9d'))
-          .fontSize($r('app.float.font_size_14fp'))
-          .margin({ top: $r('app.float.float_50vp') })
       }
+      .backgroundColor('#f5fdff')
+      .width('100%')
+      .height('100%')
     }
-    .backgroundColor('#f5fdff')
-    .width('100%')
-    .height('100%')
+    .hideTitleBar(true)
+    .onBackPressed(()=>{
+      this.appPathStack.popToIndex(-1)
+      return true
+    })
   }
 }
 
@@ -703,4 +678,9 @@ function buildText(params: Params) {
 
     Blank()
   }.width('100%').height('100%').alignItems(HorizontalAlign.Center)
+}
+
+@Builder
+function BankDetailsPageBuilder() {
+  BankDetailsPage()
 }

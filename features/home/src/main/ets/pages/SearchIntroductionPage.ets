@@ -9,11 +9,6 @@ import { emitter } from "@kit.BasicServicesKit";
 export struct SearchIntroductionPage {
   @Consume appPathStack: NavPathStack
 
-  onBackPress(): boolean | void {
-    this.appPathStack.pop()
-
-  }
-
   aboutToDisappear(): void {
   }
 
@@ -151,6 +146,10 @@ export struct SearchIntroductionPage {
       .height('100%')
 
     }.hideTitleBar(true)
+    .onBackPressed(() => {
+      this.appPathStack.pop()
+      return true
+    })
   }
 }
 

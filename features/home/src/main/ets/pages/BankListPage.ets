@@ -1,9 +1,9 @@
-import { router } from '@kit.ArkUI'
 import { BankListRes } from 'db'
 import { Logger } from 'utils'
+import { cameraAppStorage } from '../Constants/CameraAppStorage'
 import HomeConstants from '../Constants/HomeConstants'
 import { HomeModel } from '../model/HomeModel'
-import { NavDoubleString, NavQid } from '../model/NavGenericType'
+import { NavChangeString, NavDoubleString, NavQid } from '../model/NavGenericType'
 import { HomeNet } from '../service/HomeNet'
 
 
@@ -15,43 +15,39 @@ export struct BankListPage {
   @State questionBanks: BankListRes[] = [];
   @State type: number = 1 // 1=题库练习, 2=错题练习, 3=收藏练习
   @State homeModel: HomeModel = HomeModel.getInstance()
+  @StorageProp(cameraAppStorage.SELECT_CHANGE_TEXT) @Watch('ChangeTxt') text:number=0
   @Consume appPathStack: NavPathStack
-
-  //刷新数据
-  onPageShow(): void {
-    const params = router.getParams() as Record<string, string>;
-    // 检查 params 是否存在且 refresh 为 "1"
-    if (params && params.refresh === "1") {
-      if (params.type) {
-        this.type = parseInt(params.type, 10) || 1;
-        if (this.type === 1) {
-          this.homeModel.getBankList()
-            .then(banks => {
-              this.questionBanks = banks;
-            })
-            .catch((error: Error) => {
-              console.error("Error fetching bank list:", error);
-            });
-        } else if (this.type === 2) {
-          this.homeModel.getWrongBankList()
-            .then(banks => {
-              this.questionBanks = banks;
-            })
-            .catch((error: Error) => {
-              console.error("Error fetching wrong bank list:", error);
-            });
-        } else {
-          this.homeModel.getCollectionBankList()
-            .then(banks => {
-              this.questionBanks = banks;
-            })
-            .catch((error: Error) => {
-              console.error("Error fetching collection bank list:", error);
-            });
-        }
-      }
+  ChangeTxt(){
+    console.log('接受的参数111', this.text)
+    if (this.text === 1) {
+      this.homeModel.getBankList()
+        .then(banks => {
+          this.questionBanks = banks;
+        })
+        .catch((error: Error) => {
+          console.error("Error fetching bank list:", error);
+        });
+    } else if (this.text === 2) {
+      this.homeModel.getWrongBankList()
+        .then(banks => {
+          this.questionBanks = banks;
+        })
+        .catch((error: Error) => {
+          console.error("Error fetching wrong bank list:", error);
+        });
+    } else if (this.text === 3){
+      this.homeModel.getCollectionBankList()
+        .then(banks => {
+          this.questionBanks = banks;
+        })
+        .catch((error: Error) => {
+          console.error("Error fetching collection bank list:", error);
+        });
     }
+    AppStorage.setOrCreate('ChangeText', 0)
   }
+
+
 
   aboutToAppear(): void {
     const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_BANK_LIST) as NavDoubleString[]
@@ -125,6 +121,8 @@ export struct BankListPage {
       .height('100%')
     }
     .hideTitleBar(true)
+
+
   }
 }
 

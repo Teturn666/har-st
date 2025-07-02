@@ -4,10 +4,15 @@ export  interface  NavDoubleString{
   title:string
   type:string
 }
+export  interface  NavChangeString{
+  refresh:string
+  type:string
+}
 export  interface NavQid{
   practiceMode?: number;
   qid?: number;
   backIndex?: number;
+  bankPage?:string
 }
 export  interface DetailParams {
   title: string;
@@ -18,4 +23,5 @@ export  interface DetailParams {
   typePage: number;
   backIndex: number;
   isBankData: boolean;
+  bankPage:string
 }

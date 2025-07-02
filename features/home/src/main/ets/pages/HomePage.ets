@@ -41,14 +41,7 @@ import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
 import { NavDoubleString } from '../model/NavGenericType'
 
-import('photo/src/main/ets/pages/SearchResultPage')
-import('web/src/main/ets/pages/ChWebPage')
-import('./BankListPage')
-import('./MyDownloadPage')
-import('./CustomQuestionPage')
-import('./SearchQuestions')
-import('./SearchIntroductionPage')
-import('./PhotoSearchPage')
+
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
 let arr: number[] = [1]
@@ -70,13 +63,6 @@ enum SearchMode {
   SCAN = 'scan', // 扫描搜题
   SCREEN_READ = 'screen_read' // 读屏搜题
 }
-
-@Builder
-export function HomePageBuilder() {
-  HomePage()
-}
-
-@Entry()
 @Component
 export struct HomePage {
   @State chooseImage: PixelMap | undefined = undefined
@@ -163,9 +149,6 @@ export struct HomePage {
     this.TopHeight = 0
   }
 
-  onBackPress(): boolean | void {
-    return true
-  }
 
   build() {
     RelativeContainer() {
@@ -195,7 +178,7 @@ export struct HomePage {
               handleClick: () => {
                 //'ohos.permission.READ_IMAGEVIDEO'
                 accessManager.CheckCamera(['ohos.permission.CAMERA',], () => {
-                  this.appPathStack.pushPathByName(HomeConstants.ROUTER_PHOTO_SEARCH,null)
+                  this.appPathStack.pushPathByName(HomeConstants.ROUTER_PHOTO_SEARCH, null)
                 })
               }
             })
@@ -317,9 +300,9 @@ export struct HomePage {
       this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
       this.TypeSearch = false
       this.showSelectBankDialog(() => {
-        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
       }, () => {
-        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
 
       })
     } else {
@@ -332,7 +315,7 @@ export struct HomePage {
         this.AdDialogController?.open()
       } else {
         if (this.bankList.length > 0) {
-          this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
+          this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
 
         }
       }
@@ -444,32 +427,20 @@ export struct HomePage {
     } else {
       title = '题库练习'
     }
-this.appPathStack.pushPathByName(HomeConstants.ROUTER_BANK_LIST,{
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_BANK_LIST, {
       title,
       type: String(type)
-    } as  NavDoubleString)
-    // router.pushNamedRoute({
-    //   name: HomeConstants.ROUTER_BANK_LIST,
-    //   params: {
-    //     title,
-    //     type: String(type)
-    //   }
-
-    // }, router.RouterMode.Single)
+    } as NavDoubleString)
   }
 
   //跳转到我的下载
   private jumpToDownloadResult() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_MY_DOWNLOAD
-    })
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_MY_DOWNLOAD, null)
   }
 
   //跳转到自定义题库
   private jumpToCustomResult() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_CUSTOM_QUESTION
-    })
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_CUSTOM_QUESTION, null)
   }
 
   //跳转到H5页面
@@ -710,4 +681,9 @@ struct ExerciseHelper {
     }
     .width(Const.FULL_PERCENT)
   }
+}
+
+@Builder
+export function HomePageBuilder() {
+  HomePage()
 }

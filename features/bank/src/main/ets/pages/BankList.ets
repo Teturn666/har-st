@@ -14,6 +14,7 @@ import BankMobClickConstants from '../Constants/BankMobClickConstants';
 import { DotLoading } from '../components/DotLoading';
 import { emitter } from '@kit.BasicServicesKit';
 import BankConstants from '../Constants/BankConstants';
+import { generatedType, Params } from '../model/BankCategory';
 
 import('./BankDetailsPage')
 
@@ -23,17 +24,7 @@ let jsonData = null
 
 const context = (getContext(this) as common.UIAbilityContext)
 
-class Params {
-  controller: CanvasRenderingContext2D
-  animateName: string
-  imgRes: string
 
-  constructor(controller: CanvasRenderingContext2D, animateName: string, imgRes: string) {
-    this.controller = controller;
-    this.animateName = animateName;
-    this.imgRes = imgRes;
-  }
-}
 
 @Builder
 function buildText(params: Params) {
@@ -185,6 +176,7 @@ export struct BankList {
   @State fromType: number = 0 //0=题库广场，1=热门搜索，2=我的下载
   @State pageNum: number = 1
   @State loadMore: boolean = false
+  @Consume appPathStack: NavPathStack
   private ctx: UIContext = this.getUIContext();
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
@@ -258,27 +250,28 @@ export struct BankList {
       const bankQuestionList = await this.bankModel.getBankQuestionList(item.qid)
       //只截取前10道题目
       let questionList = bankQuestionList.slice(0, 10)
-      router.pushNamedRoute({
-        name: BankConstants.ROUTER_BANK_DETAILS,
-        params: {
-          isUpDate: this.isUpDate,
-          downloadedState: 0,
-          bankDetails: item,
-          questionList: questionList
-        }
-      })
+      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS,{  isUpDate: this.isUpDate,
+        downloadedState: 0,
+        bankDetails: item,
+        questionList: questionList} as generatedType)
+      // router.pushNamedRoute({
+      //   name: BankConstants.ROUTER_BANK_DETAILS,
+      //   params: {
+      //     isUpDate: this.isUpDate,
+      //     downloadedState: 0,
+      //     bankDetails: item,
+      //     questionList: questionList
+      //   }
+      // })
     } else {
       //未下载
       let bankDesc = await this.bankModel.getBankDesc(item.qid, item.url)
       console.log("返回的：" + JSON.stringify(bankDesc))
-      router.pushNamedRoute({
-        name: BankConstants.ROUTER_BANK_DETAILS,
-        params: {
-          downloadedState: 1,
-          bankDetails: item,
-          questionListtwo: bankDesc
-        }
-      })
+      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS,{
+        downloadedState: 1,
+        bankDetails: item,
+        questionListtwo: bankDesc
+      } as generatedType)
     }
 
   }
@@ -437,7 +430,7 @@ export struct BankList {
             .size({ width: $r('app.float.float_32vp'), height: $r('app.float.float_32vp') })
             .margin({ left: 15, right: 15 })
             .onClick(() => {
-              router.back()
+             this.appPathStack.pop()
             })
           Text("我的下载")
             .fontSize($r('app.float.font_size_18fp'))

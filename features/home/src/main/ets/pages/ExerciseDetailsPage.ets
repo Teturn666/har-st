@@ -1,9 +1,10 @@
 import { TitleBar } from 'widget/Index';
-import { promptAction, router } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 import { QuestionRes } from 'db';
 import HomeConstants from '../Constants/HomeConstants';
 import { HomeModel } from '../model/HomeModel';
 import { DetailParams, NavQid } from '../model/NavGenericType';
+import { cameraAppStorage } from '../Constants/CameraAppStorage';
 
 
 @Component
@@ -17,17 +18,19 @@ struct ExerciseDetailsPage {
   @State typepage: number = -1; //模拟考试 1 错题练习 2 收藏练习 3
   @State backindex: number = 2; //返回的页数
   @State isBankData: boolean = false;
+  @State bankPage: string = ''
   @Consume appPathStack: NavPathStack
 
-  onBackPress(): boolean | void {
-    this.quitRouter()
-    return true;
+  aboutToAppear(): void {
+    this.WrongQuestionsList()
   }
 
-  aboutToAppear(): void {
+  WrongQuestionsList() {
+    console.log("进入错题列表----")
     const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_EXERCISE_DETAILS_LIST) as DetailParams[]
     if (res && res.length) {
       const params = res[0]
+      this.bankPage = params.bankPage
       this.backindex = params.backIndex || 2;
       this.typepage = params.typePage;
       this.title = params.title || '未知题库';
@@ -52,27 +55,28 @@ struct ExerciseDetailsPage {
   }
 
   private continueRouter() {
-    this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST,{
+    this.appPathStack.replacePathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST, {
       practiceMode: this.typepage,
       qid: this.questions[0]?.qId || -1,
-      backIndex: this.backindex += 2
-    } as NavQid )
-    // router.pushNamedRoute({
-    //   name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-    //   params: {
-    //     practiceMode: this.typepage,
-    //     qid: this.questions[0]?.qId || -1,
-    //     backindex: this.backindex += 2
-    //   }
-    // });
+      backIndex: this.backindex += 2,
+      bankPage: this.bankPage,
+    } as NavQid)
+    // this.appPathStack.replacePathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST, {
+    //   practiceMode: this.typepage,
+    //   qid: this.questions[0]?.qId || -1,
+    //   backIndex: this.backindex += 2
+    // } as NavQid)
   }
 
   quitRouter() {
-    let index = Number(router.getLength()) - this.backindex;
-    router.back(index, {
+    if (this.bankPage){
+      this.appPathStack.replacePathByName('bankDetailsPage',null)
+    }
+    this.appPathStack.popToName(HomeConstants.ROUTER_BANK_LIST, {
       refresh: "1",
       type: this.typepage.toString()
-    });
+    },)
+    AppStorage.setOrCreate(cameraAppStorage.SELECT_CHANGE_TEXT, this.typepage)
   }
 
   private showDialog(tContent: string) {
@@ -161,195 +165,213 @@ struct ExerciseDetailsPage {
   }
 
   build() {
-    if (this.isLoading) {
-      Column() {
-        Image($r('app.media.ic_lian'))
-          .height(24)
-          .margin({ top: 58 });
-        Image($r('app.media.ic_ok'))
-          .width(155)
-          .height(155)
-          .margin({ top: 68 });
-        Text("即将进入练习详情...")
-          .fontColor(Color.Grey)
-          .fontSize(16)
-          .margin({ top: 28 });
-      }
-      .width('100%')
-      .height('100%')
-      .justifyContent(FlexAlign.Start)
-      .alignItems(HorizontalAlign.Center)
-      .backgroundColor(Color.White);
-    } else {
-      Column() {
-        // 头部
-        TitleBar({
-          title: "练习详情",
-          backClick: () => {
-            let index = Number(router.getLength()) - this.backindex;
-            router.back(index, {
-              refresh: "1",
-              type: this.typepage.toString()
-            });
-          }
-        })
-          .width('100%');
-
-        // 题目信息
-        Row() {
-          Image($r('app.media.ic_question_bank'))
-            .width(18)
-            .height(18);
-          Text('  题目: ' + this.title)
-            .fontColor('#060606')
-            .fontSize(14);
-        }
-        .width('90%')
-        .margin({ top: 18, left: 28 });
-
-        // 统计信息
+    NavDestination() {
+      if (this.isLoading) {
         Column() {
-          Row() {
-            Text('您答对了')
-              .fontColor('#404040')
-              .fontSize(14);
-            Text(this.correctCount.toString())
-              .fontColor('#F75A23')
-              .fontSize(14);
-            Text('道题目，答错')
-              .fontColor('#404040')
-              .fontSize(14);
-            Text(this.wrongCount.toString())
-              .fontColor('#F75A23')
-              .fontSize(14);
-            Text('道题。')
-              .fontColor('#404040')
-              .fontSize(14);
-          }
-          .margin({ top: 8 });
-
-          Row() {
-            Text('共花费时间：')
-              .fontColor('#404040')
-              .fontSize(14);
-            Text(this.timeSpent)
-              .fontColor('#F75A23')
-              .fontSize(14);
-          }
-          .margin({ top: 8 });
+          Image($r('app.media.ic_lian'))
+            .height(24)
+            .margin({ top: 58 });
+          Image($r('app.media.ic_ok'))
+            .width(155)
+            .height(155)
+            .margin({ top: 68 });
+          Text("即将进入练习详情...")
+            .fontColor(Color.Grey)
+            .fontSize(16)
+            .margin({ top: 28 });
         }
-        .padding({ left: 8, top: 8 })
-        .margin({ top: 10 })
-        .alignItems(HorizontalAlign.Start)
-        .width('90%')
-        .height(70)
-        .backgroundColor('#f3f1f1')
-        .borderRadius(8);
-
-        // 内容区域（支持滚动）
-        Scroll() {
-          Column() {
-            ForEach(this.questions, (item: QuestionRes, index: number) => {
-              Column() {
-                Text(item.question + item.question)// 重复以模拟长文本
-                  .fontColor('#333333')
-                  .fontSize(12)
-                  .margin({ top: 8 });
-
-                Column() {
-                  ForEach(item.option, (option: string, idx: number) => {
-                    Text(option)
-                      .fontColor('#333333')
-                      .fontSize(12)
-                      .margin({ top: idx === 0 ? 15 : 0 });
-                  });
-                }
-                .width('100%')
-                .alignItems(HorizontalAlign.Start);
-
-                Row() {
-                  Row() {
-                    Text('正确答案：')
-                      .fontColor('#333333')
-                      .fontSize(14);
-                    // Text(item.answer)
-                    //   .fontColor(Color.Blue)
-                    //   .fontSize(14);
-                    Text(this.convertAnswerToLabel(item, item.answer))
-                      .fontColor(Color.Blue)
-                      .fontSize(14);
-                  }
-                  .margin({ right: 20 });
-
-                  Row() {
-                    Text('您的答案：')
-                      .fontColor('#333333')
-                      .fontSize(14);
-                    Text(item.wrongAnswer || '未答')
-                      .fontColor(Color.Red)
-                      .fontSize(14);
-                  }
-                }
-                .backgroundColor(this.isAnswerCorrect(item, item.wrongAnswer || '') ? '#ebf4e6' : '#f7e9e9')
-                .justifyContent(FlexAlign.SpaceAround)
-                .margin({ top: 8 })
-                .borderRadius(8)
-                .width('100%')
-                .height(29);
-              }
-              .margin({ bottom: 16 });
-            });
-          }
-          .alignItems(HorizontalAlign.Start)
-          .justifyContent(FlexAlign.Start)
-          .padding({ left: 18, top: 18, right: 18 })
-          .width('100%');
-        }
-        .height('65%')
-        .backgroundColor(Color.White)
-        .align(Alignment.TopStart);
-
-        // 底部按钮
-        Blank()
-          .height(20);
-        Row() {
-          Image($r('app.media.ic_keep_practicing'))
-            .width(122)
-            .height(40)
-            .onClick(() => {
-              if (this.typepage === 2) {
-                if (this.isBankData) {
-                  this.continueRouter()
-                } else {
-                  this.showDialog("当前没有错题，练习做错的题目将会收录到这里。")
-                }
-              } else if (this.typepage === 3) {
-                if (this.isBankData) {
-                  this.continueRouter()
-                } else {
-                  this.showDialog("暂无收藏，请先去练习或考试中添加。")
-                }
-              } else {
-                this.continueRouter()
-              }
-
-
-            });
-          Image($r('app.media.ic_quit_practice'))
-            .width(122)
-            .height(40)
-            .onClick(() => {
-              this.quitRouter()
-            });
-        }
-        .justifyContent(FlexAlign.SpaceEvenly)
         .width('100%')
-        .height(80)
-        .backgroundColor('#ffffff');
+        .height('100%')
+        .justifyContent(FlexAlign.Start)
+        .alignItems(HorizontalAlign.Center)
+        .backgroundColor(Color.White);
+      } else {
+        Column() {
+          // 头部
+          TitleBar({
+            title: "练习详情",
+            backClick: () => {
+              this.appPathStack.popToName(HomeConstants.ROUTER_BANK_LIST, {
+                refresh: "1",
+                type: this.typepage.toString()
+              },)
+              AppStorage.setOrCreate(cameraAppStorage.SELECT_CHANGE_TEXT, this.typepage)
+            }
+          })
+            .width('100%');
+
+          // 题目信息
+          Row() {
+            Image($r('app.media.ic_question_bank'))
+              .width(18)
+              .height(18);
+            Text('  题目: ' + this.title)
+              .fontColor('#060606')
+              .fontSize(14);
+          }
+          .width('90%')
+          .margin({ top: 18, left: 28 });
+
+          // 统计信息
+          Column() {
+            Row() {
+              Text('您答对了')
+                .fontColor('#404040')
+                .fontSize(14);
+              Text(this.correctCount.toString())
+                .fontColor('#F75A23')
+                .fontSize(14);
+              Text('道题目，答错')
+                .fontColor('#404040')
+                .fontSize(14);
+              Text(this.wrongCount.toString())
+                .fontColor('#F75A23')
+                .fontSize(14);
+              Text('道题。')
+                .fontColor('#404040')
+                .fontSize(14);
+            }
+            .margin({ top: 8 });
+
+            Row() {
+              Text('共花费时间：')
+                .fontColor('#404040')
+                .fontSize(14);
+              Text(this.timeSpent)
+                .fontColor('#F75A23')
+                .fontSize(14);
+            }
+            .margin({ top: 8 });
+          }
+          .padding({ left: 8, top: 8 })
+          .margin({ top: 10 })
+          .alignItems(HorizontalAlign.Start)
+          .width('90%')
+          .height(70)
+          .backgroundColor('#f3f1f1')
+          .borderRadius(8);
+
+          // 内容区域（支持滚动）
+          Scroll() {
+            Column() {
+              ForEach(this.questions, (item: QuestionRes, index: number) => {
+                Column() {
+                  Text(item.question + item.question)// 重复以模拟长文本
+                    .fontColor('#333333')
+                    .fontSize(12)
+                    .margin({ top: 8 });
+
+                  Column() {
+                    ForEach(item.option, (option: string, idx: number) => {
+                      Text(option)
+                        .fontColor('#333333')
+                        .fontSize(12)
+                        .margin({ top: idx === 0 ? 15 : 0 });
+                    });
+                  }
+                  .width('100%')
+                  .alignItems(HorizontalAlign.Start);
+
+                  Row() {
+                    Row() {
+                      Text('正确答案：')
+                        .fontColor('#333333')
+                        .fontSize(14);
+                      // Text(item.answer)
+                      //   .fontColor(Color.Blue)
+                      //   .fontSize(14);
+                      Text(this.convertAnswerToLabel(item, item.answer))
+                        .fontColor(Color.Blue)
+                        .fontSize(14);
+                    }
+                    .margin({ right: 20 });
+
+                    Row() {
+                      Text('您的答案：')
+                        .fontColor('#333333')
+                        .fontSize(14);
+                      Text(item.wrongAnswer || '未答')
+                        .fontColor(Color.Red)
+                        .fontSize(14);
+                    }
+                  }
+                  .backgroundColor(this.isAnswerCorrect(item, item.wrongAnswer || '') ? '#ebf4e6' : '#f7e9e9')
+                  .justifyContent(FlexAlign.SpaceAround)
+                  .margin({ top: 8 })
+                  .borderRadius(8)
+                  .width('100%')
+                  .height(29);
+                }
+                .margin({ bottom: 16 });
+              });
+            }
+            .alignItems(HorizontalAlign.Start)
+            .justifyContent(FlexAlign.Start)
+            .padding({ left: 18, top: 18, right: 18 })
+            .width('100%');
+          }
+          .height('65%')
+          .backgroundColor(Color.White)
+          .align(Alignment.TopStart);
+
+          // 底部按钮
+          Blank()
+            .height(20);
+          Row() {
+            Image($r('app.media.ic_keep_practicing'))
+              .width(122)
+              .height(40)
+              .onClick(() => {
+                if (this.typepage === 2) {
+                  if (this.isBankData) {
+                    this.continueRouter()
+                  } else {
+                    this.showDialog("当前没有错题，练习做错的题目将会收录到这里。")
+                  }
+                } else if (this.typepage === 3) {
+                  if (this.isBankData) {
+                    this.continueRouter()
+                  } else {
+                    this.showDialog("暂无收藏，请先去练习或考试中添加。")
+                  }
+                } else {
+                  this.continueRouter()
+                }
+
+              });
+            Image($r('app.media.ic_quit_practice'))
+              .width(122)
+              .height(40)
+              .onClick(() => {
+                this.quitRouter()
+              });
+          }
+          .justifyContent(FlexAlign.SpaceEvenly)
+          .width('100%')
+          .height(80)
+          .backgroundColor('#ffffff');
+        }
+        .height('100%')
+        .width('100%')
+        .backgroundColor(Color.White);
       }
-      .height('100%')
-      .width('100%')
-      .backgroundColor(Color.White);
     }
+    .hideTitleBar(true)
+    .onBackPressed(() => {
+      this.quitRouter()
+      return true;
+    })
+    .onShown(() => {
+      this.WrongQuestionsList()
+    })
+    .onWillAppear(() => {
+      this.WrongQuestionsList()
+    })
+
   }
+}
+
+@Builder
+function ExerciseDetailsPageBuilder() {
+  ExerciseDetailsPage()
 }

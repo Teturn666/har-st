@@ -1,6 +1,6 @@
 import fs from '@ohos.file.fs';
 import { TitleBar } from 'widget'
-import { promptAction, router } from '@kit.ArkUI'
+import { promptAction, } from '@kit.ArkUI'
 import { getFileExtension, getPrefix } from '../manage/SelectFileManage';
 import { WebClass, WebParseExcel } from '../components/WebParseExcel';
 import { questionBankTable, QuestionTable } from 'db';
@@ -18,7 +18,7 @@ import { fileIo } from '@kit.CoreFileKit';
 
 const TAG = 'CustomizedBankPage'
 
-@Entry({ routeName: "customizedBankPage" })
+
 @Component
 export struct CustomizedBankPage {
   @State questionErrorList: QuestionError[] = []
@@ -33,6 +33,7 @@ export struct CustomizedBankPage {
   @State externalFileUri: string = '';
   @State externalFileName: string = '';
   private labels: string = 'ABCDEFGHI对错√×✔X正确错误YN'
+  @Consume appPathStack: NavPathStack
 
   // 将QuestionModel列表转换为QuestionRes列表
   private toQuestionResList(importResult: ImportWithLog): QuestionRes[] {
@@ -87,7 +88,7 @@ export struct CustomizedBankPage {
 
     if (result.length === 0) {
       promptAction.showToast({ message: '未选择文件', duration: 2000 });
-      router.back();
+      this.appPathStack.pop()
       return;
     }
 
@@ -453,93 +454,102 @@ export struct CustomizedBankPage {
   }
 
   build() {
-    Column() {
-      WebParseExcel()
-      TitleBar({
-        title: '自定义题库',
-        backClick: () => {
-          router.back()
-        },
-      }).width('100%')
-
+    NavDestination() {
       Column() {
-        Text("个人制作和导入题库遇到问题\n请联系QQ：1729868682")
-          .fontSize($r('app.float.float_12vp'))
-          .fontColor($r('app.color.c_f2f7ff'))
-      }
-      .justifyContent(FlexAlign.Center)
-      .width('100%')
-      .height($r('app.float.float_50vp'))
-      .backgroundColor($r('app.color.c_F75A23'))
+        WebParseExcel()
+        TitleBar({
+          title: '自定义题库',
+          backClick: () => {
+            this.appPathStack.pop()
+          },
+        }).width('100%')
 
-      // Loading状态显示
-      if (this.isLoading) {
         Column() {
-          LoadingProgress()
-            .width(40)
-            .height(40)
-            .margin({ bottom: 10 })
-            .color($r('app.color.c_F75A23'))
-
-          Text(this.loadingMessage)
-            .fontSize(14)
-            .fontColor($r('app.color.c_9d9d9d'))
+          Text("个人制作和导入题库遇到问题\n请联系QQ：1729868682")
+            .fontSize($r('app.float.float_12vp'))
+            .fontColor($r('app.color.c_f2f7ff'))
         }
         .justifyContent(FlexAlign.Center)
         .width('100%')
-        .height(200)
-      } else {
-        // 文件路径信息
-        Text(this.message)
-          .fontSize(12)
-          .fontColor($r('app.color.c_9d9d9d'))
-          .margin({
-            top: 10,
-            bottom: 10,
-            left: 20,
-            right: 20
-          })
-          .textAlign(TextAlign.Start)
+        .height($r('app.float.float_50vp'))
+        .backgroundColor($r('app.color.c_F75A23'))
 
-        List({ space: 5 }) {
-          ForEach(
-            this.questionErrorList,
-            (item: QuestionError) => {
-              ListItem() {
-                Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
+        // Loading状态显示
+        if (this.isLoading) {
+          Column() {
+            LoadingProgress()
+              .width(40)
+              .height(40)
+              .margin({ bottom: 10 })
+              .color($r('app.color.c_F75A23'))
+
+            Text(this.loadingMessage)
+              .fontSize(14)
+              .fontColor($r('app.color.c_9d9d9d'))
+          }
+          .justifyContent(FlexAlign.Center)
+          .width('100%')
+          .height(200)
+        } else {
+          // 文件路径信息
+          Text(this.message)
+            .fontSize(12)
+            .fontColor($r('app.color.c_9d9d9d'))
+            .margin({
+              top: 10,
+              bottom: 10,
+              left: 20,
+              right: 20
+            })
+            .textAlign(TextAlign.Start)
+
+          List({ space: 5 }) {
+            ForEach(
+              this.questionErrorList,
+              (item: QuestionError) => {
+                ListItem() {
+                  Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
+                    .fontSize(12)
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .margin({ bottom: 10, left: 20, right: 20 })
+                    .textAlign(TextAlign.Start)
+                }
+              },
+            )
+            ListItem() {
+              // 动态显示导入结果
+              if (this.importStatus === '成功') {
+                Text('导入完成')
+                  .fontSize(12)
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .margin({ bottom: 10, left: 20, right: 20 })
+                  .textAlign(TextAlign.Start)
+              } else if (this.importStatus === '失败') {
+                Text('导入失败')
                   .fontSize(12)
                   .fontColor($r('app.color.c_9d9d9d'))
                   .margin({ bottom: 10, left: 20, right: 20 })
                   .textAlign(TextAlign.Start)
               }
-            },
-          )
-          ListItem() {
-            // 动态显示导入结果
-            if (this.importStatus === '成功') {
-              Text('导入完成')
-                .fontSize(12)
-                .fontColor($r('app.color.c_9d9d9d'))
-                .margin({ bottom: 10, left: 20, right: 20 })
-                .textAlign(TextAlign.Start)
-            } else if (this.importStatus === '失败') {
-              Text('导入失败')
-                .fontSize(12)
-                .fontColor($r('app.color.c_9d9d9d'))
-                .margin({ bottom: 10, left: 20, right: 20 })
-                .textAlign(TextAlign.Start)
             }
           }
+          // .height("auto")
+          .layoutWeight(1)
+          .width("100%")
+
         }
-        // .height("auto")
-        .layoutWeight(1)
-        .width("100%")
 
       }
-
+      .alignItems(HorizontalAlign.Start)
     }
-    .alignItems(HorizontalAlign.Start)
+    .hideTitleBar( true)
   }
+
+}
+
+@Builder
+function CustomizedBankPageBuilder() {
+  CustomizedBankPage()
 }
 
 @CustomDialog

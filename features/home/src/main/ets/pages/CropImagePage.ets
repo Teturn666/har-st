@@ -6,7 +6,7 @@ import { CropperConfig } from 'utils/src/main/ets/model/CropperConfig';
 import { cameraAppStorage } from '../Constants/CameraAppStorage';
 import { SearchBindSheet } from '../components/SearchBindSheet';
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading';
-import HomeConstants from '../Constants/HomeConstants';
+
 
 
 
@@ -29,13 +29,7 @@ struct CropImagePage {
 
   aboutToAppear(): void {
   }
-onBackPress(): boolean | void {
-  if (this.backHome) {
-    this.appPathStack.popToIndex(-1)
 
-  }
-  return true
-}
   aboutToDisappear(): void {
     this.controller.reset();
     this.CameraUri = null;
@@ -153,6 +147,12 @@ onBackPress(): boolean | void {
       .width('100%')
     }
     .hideTitleBar( true)
+    .onBackPressed(()=>{
+      if (this.backHome) {
+        this.appPathStack.popToIndex(-1)
+      }
+      return this.backHome
+    })
   }
 }
 @Builder

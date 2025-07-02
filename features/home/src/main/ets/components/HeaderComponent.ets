@@ -6,13 +6,14 @@ import { NavQid } from '../model/NavGenericType';
 export  struct HeaderComponent {
   @Prop selectedIndex: number = 0;
   @Prop qid: number = 0;
+  @Prop bankPage:string=''
   @Consume appPathStack: NavPathStack
   onModeChange: (index: number) => void = () => {
 
   };
 
   build() {
-    NavDestination() {
+
       Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
         Image($r('app.media.ic_back'))
           .objectFit(ImageFit.Contain)
@@ -68,6 +69,7 @@ export  struct HeaderComponent {
             .margin({ right: 12 })
             .onClick(() => {
               this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST,{
+                bankPage:this.bankPage,
                 practiceMode: 1,
                 qid: this.qid
               } as  NavQid)
@@ -75,7 +77,6 @@ export  struct HeaderComponent {
             })
         }
       }
-    }
-    .hideTitleBar( true)
+
   }
 }

@@ -32,13 +32,38 @@
     },
     {
       "name": "exercisePage",
-      "pageSourceFile": "src/main/ets/pages/SearchQuestions.ets",
-      "buildFunction": "SearchQuestionsBuilder"
+      "pageSourceFile": "src/main/ets/pages/ExercisePage.ets",
+      "buildFunction": "ExercisePageBuilder"
     },
     {
       "name": "exerciseCommonPage",
       "pageSourceFile": "src/main/ets/pages/ExerciseCommonPage.ets",
       "buildFunction": "ExerciseCommonPageBuilder"
+    },
+    {
+      "name": "exerciseDetailsPage",
+      "pageSourceFile": "src/main/ets/pages/ExerciseDetailsPage.ets",
+      "buildFunction": "ExerciseDetailsPageBuilder"
+    },
+    {
+      "name": "myDownloadPage",
+      "pageSourceFile": "src/main/ets/pages/MyDownloadPage.ets",
+      "buildFunction": "MyDownloadPageBuilder"
+    },
+    {
+      "name": "customQuestionPage",
+      "pageSourceFile": "src/main/ets/pages/CustomQuestionPage.ets",
+      "buildFunction": "CustomQuestionPageBuilder"
+    },
+    {
+      "name": "helpPage",
+      "pageSourceFile": "src/main/ets/pages/HelpPage.ets",
+      "buildFunction": "HelpPageBuilder"
+    },
+    {
+      "name": "customizedBankPage",
+      "pageSourceFile": "src/main/ets/pages/CustomizedBankPage.ets",
+      "buildFunction": "CustomizedBankPageBuilder"
     }
   ]
 }

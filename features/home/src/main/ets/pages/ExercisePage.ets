@@ -34,6 +34,7 @@ struct ExercisePage {
   @State questionSelections: Record<number, questionSelections> = {}; // 记录每题选择
   @State totalProgress: number = this.questions.length;
   @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
+  @State bankPage:string=''
   @Consume appPathStack: NavPathStack
 
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
@@ -360,6 +361,7 @@ struct ExercisePage {
     const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_EXERCISE_LIST) as NavQid[]
     if (res && res.length&& res[0].qid) {
       const params = res[0]
+      if (params.bankPage) this.bankPage = params.bankPage
       this.qid = parseInt(params.qid!.toString(), 10);
       console.log(TAG, 'Received qid =' + this.qid);
       if (this.qid > 0) {
@@ -371,10 +373,11 @@ struct ExercisePage {
   }
 
   build() {
-    if (this.questions.length > 0)
     NavDestination() {
+    if (this.questions.length > 0){
       Column() {
         HeaderComponent({
+          bankPage:this.bankPage,
           qid: this.qid,
           selectedIndex: this.selectedIndex,
           onModeChange: (index: number) => {
@@ -438,6 +441,9 @@ struct ExercisePage {
       .width('100%')
       .height('100%')
       .backgroundColor(Color.White)
+    }
+
+
     }.hideTitleBar(true)
   }
 }
