@@ -9,7 +9,7 @@ const TAG = 'ScreenReadSetting';
 
 @Component
 export struct ScreenReadSetting {
-  @Consume('pathStack') pathStack: NavPathStack;
+  @Consume pathStack: NavPathStack;
   @State title: string = '读屏设置';
   @State selectedImageUri: string = '';
   // 识别相关状态
@@ -274,7 +274,10 @@ export struct ScreenReadSetting {
     .backgroundImageSize(ImageSize.Cover)
   }
 }
-
+@Builder
+function ScreenReadSettingBuilder() {
+  ScreenReadSetting()
+}
 // 位置接口定义
 interface Position {
   x: number;

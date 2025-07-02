@@ -17,7 +17,7 @@ import { ErrCode } from '@tencent/wechat_open_sdk'
 
 const TAG = '[PayPage]'
 
-@Entry({ routeName: 'vipPage' })
+
 @Component
 export struct PayPage {
   private wxApi = WXApi
@@ -37,7 +37,7 @@ export struct PayPage {
   @State loginState: string = ''
   @State isVip: number = 0
   @State vipTime: string = ''
-
+  @Consume appPathStack: NavPathStack
   aboutToAppear(): void {
     this.loadData()
     this.initData()
@@ -107,7 +107,8 @@ export struct PayPage {
   }
 
   private jumpToLogin() {
-    router.pushNamedRoute({ name: 'login' }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName('login',null)
+  //  router.pushNamedRoute({ name: 'login' }, router.RouterMode.Single)
   }
 
   private async jumpToWxPay() {
@@ -179,206 +180,208 @@ export struct PayPage {
   }
 
   build() {
-    Column() {
-      // 顶部导航栏
-      Row() {
-        Image($r('app.media.ic_back'))
-          .width(32)
-          .height(32)
-          .margin({ left: 16, top: 12 })
-          .onClick(() => {
-            router.back();
-          })
+    NavDestination() {
+      Column() {
+        // 顶部导航栏
+        Row() {
+          Image($r('app.media.ic_back'))
+            .width(32)
+            .height(32)
+            .margin({ left: 16, top: 12 })
+            .onClick(() => {
+       this.appPathStack.pop()
+            })
 
-        Text('会员中心')
-          .fontSize(18)
-          .textAlign(TextAlign.Center)
-          .fontWeight(400)
-          .flexGrow(1)
-          .margin({ top: 12 })
+          Text('会员中心')
+            .fontSize(18)
+            .textAlign(TextAlign.Center)
+            .fontWeight(400)
+            .flexGrow(1)
+            .margin({ top: 12 })
 
-        Blank()
-          .width(32)
-          .margin({ right: 16, top: 12 })
-      }
-      .width('100%')
-      .height(48)
-      .backgroundColor(Color.White)
-      .justifyContent(FlexAlign.SpaceBetween)
+          Blank()
+            .width(32)
+            .margin({ right: 16, top: 12 })
+        }
+        .width('100%')
+        .height(48)
+        .backgroundColor(Color.White)
+        .justifyContent(FlexAlign.SpaceBetween)
 
-      // 用户信息
-      Row() {
-        Image(this.isLogin() ? this.avatarUrl : $r('app.media.ic_head'))
-          .alt($r('app.media.ic_head'))
-          .width(48)
-          .height(48)
-          .borderRadius(28)
-          .margin({ left: 28 })
+        // 用户信息
+        Row() {
+          Image(this.isLogin() ? this.avatarUrl : $r('app.media.ic_head'))
+            .alt($r('app.media.ic_head'))
+            .width(48)
+            .height(48)
+            .borderRadius(28)
+            .margin({ left: 28 })
 
-        Column() {
-          Row() {
-            Text(this.isLogin() ? this.nickName : "用户名")
-              .fontSize(14)
-              .fontColor('#3E3E3E')
+          Column() {
+            Row() {
+              Text(this.isLogin() ? this.nickName : "用户名")
+                .fontSize(14)
+                .fontColor('#3E3E3E')
+              if (this.isVip === 1) {
+                Image($r('app.media.ic_vips'))
+                  .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+                  .width(16)
+                  .height(16)
+                  .margin({ left: 4 })
+              }
+            }
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+
             if (this.isVip === 1) {
-              Image($r('app.media.ic_vips'))
+              Text('VIP' + this.vipTime + '到期，购买后有效期顺延')
                 .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
-                .width(16)
-                .height(16)
-                .margin({ left: 4 })
+                .fontSize(10)
+                .fontColor('#9D9D9D')
+                .margin({ top: 5 })
             }
           }
+          .margin({ left: 18 })
           .justifyContent(FlexAlign.Center)
-          .alignItems(VerticalAlign.Center)
-
-          if (this.isVip === 1) {
-            Text('VIP' + this.vipTime + '到期，购买后有效期顺延')
-              .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
-              .fontSize(10)
-              .fontColor('#9D9D9D')
-              .margin({ top: 5 })
-          }
+          .alignItems(HorizontalAlign.Start)
         }
-        .margin({ left: 18 })
-        .justifyContent(FlexAlign.Center)
-        .alignItems(HorizontalAlign.Start)
-      }
-      .width('100%')
-      .height(72)
-      .backgroundColor(Color.White)
+        .width('100%')
+        .height(72)
+        .backgroundColor(Color.White)
 
-      // 会员卡
-      List({ space: 10, scroller: this.scroller }) {
-        if (this.isLoading) {
-          ListItem() {
-            Text('加载中...')
-              .fontSize(14)
-              .fontColor('#9D9D9D')
-              .width('100%')
-              .textAlign(TextAlign.Center)
-          }
-        } else if (this.priceList.length === 0) {
-          ListItem() {
-            Column() {
-              Text(this.errorMessage || '无会员卡数据')
+        // 会员卡
+        List({ space: 10, scroller: this.scroller }) {
+          if (this.isLoading) {
+            ListItem() {
+              Text('加载中...')
                 .fontSize(14)
                 .fontColor('#9D9D9D')
                 .width('100%')
                 .textAlign(TextAlign.Center)
-              if (this.errorMessage) {
-                Button('重试')
-                  .fontSize(14)
-                  .margin({ top: 10 })
-                  .onClick(() => {
-                    this.loadData();
-                  })
-              }
             }
-          }
-        } else {
-          ForEach(this.priceList, (card: PriceInfoRes) => {
+          } else if (this.priceList.length === 0) {
             ListItem() {
-              Stack() { //ic_bg ${this.getCardBackground(card, this.selectedCard === card.id)}
-                Image($r(`app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`))
-                  .objectFit(ImageFit.Contain)
-                  .width(105)
-                  .height(80)
-                Column() {
-                  Text(card.showtext)
-                    .fontWeight(600)
-                    .fontSize(20)
-                    .fontColor('#967d25')
-                    .fontStyle(FontStyle.Italic)
-                  Text(`¥${card.priceTr.toFixed(1)}`)
-                    .fontSize(16)
-                    .fontColor('#F75A23')
-                    .margin({ top: 5 })
-                  if (card.id === '4') {
-                    Text('限时尝鲜')
-                      .fontSize(8)
-                      .fontColor('#9D9D9D')
-                  } else if (card.priceOrigin > card.priceTr) {
-                    Text(`原价：¥${card.priceOrigin.toFixed(1)}`)
-                      .fontSize(8)
-                      .fontColor('#9D9D9D')
-                      .decoration({ type: TextDecorationType.LineThrough })
-                  }
+              Column() {
+                Text(this.errorMessage || '无会员卡数据')
+                  .fontSize(14)
+                  .fontColor('#9D9D9D')
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                if (this.errorMessage) {
+                  Button('重试')
+                    .fontSize(14)
+                    .margin({ top: 10 })
+                    .onClick(() => {
+                      this.loadData();
+                    })
                 }
-                .margin({ left: 10 })
               }
-              .alignContent(Alignment.Start)
-              .onClick(() => {
-                this.selectCard(card);
-              })
+            }
+          } else {
+            ForEach(this.priceList, (card: PriceInfoRes) => {
+              ListItem() {
+                Stack() { //ic_bg ${this.getCardBackground(card, this.selectedCard === card.id)}
+                  Image($r(`app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`))
+                    .objectFit(ImageFit.Contain)
+                    .width(105)
+                    .height(80)
+                  Column() {
+                    Text(card.showtext)
+                      .fontWeight(600)
+                      .fontSize(20)
+                      .fontColor('#967d25')
+                      .fontStyle(FontStyle.Italic)
+                    Text(`¥${card.priceTr.toFixed(1)}`)
+                      .fontSize(16)
+                      .fontColor('#F75A23')
+                      .margin({ top: 5 })
+                    if (card.id === '4') {
+                      Text('限时尝鲜')
+                        .fontSize(8)
+                        .fontColor('#9D9D9D')
+                    } else if (card.priceOrigin > card.priceTr) {
+                      Text(`原价：¥${card.priceOrigin.toFixed(1)}`)
+                        .fontSize(8)
+                        .fontColor('#9D9D9D')
+                        .decoration({ type: TextDecorationType.LineThrough })
+                    }
+                  }
+                  .margin({ left: 10 })
+                }
+                .alignContent(Alignment.Start)
+                .onClick(() => {
+                  this.selectCard(card);
+                })
+              }
+            })
+          }
+        }
+        .width('100%')
+        .height(100)
+        .listDirection(Axis.Horizontal)
+        .scrollBar(BarState.Off)
+        .friction(0.6)
+        .padding({ left: 16, right: 16 })
+
+        Row() {
+          Image(this.agreementChecked ? $r('app.media.ic_protocoled') : $r('app.media.ic_protocol'))
+            .width(12)
+            .height(12)
+            .margin({ left: 18, top: 8 })
+            .onClick(() => {
+              this.agreementChecked = !this.agreementChecked;
+            })
+          Text('我已阅读并同意')
+            .fontSize(12)
+            .fontColor('#3E3E3E')
+            .margin({ left: 8, top: 8 })
+          Text('《快搜搜题会员购买协议》')
+            .fontSize(12)
+            .fontColor('#F75A23')
+            .margin({ left: 2, top: 8 })
+            .onClick(() => {
+              this.jumpToHelpCenter();
+            })
+        }
+        .width('100%')
+        .height('auto')
+        .backgroundColor(Color.White)
+
+        Row() {
+          Image($r('app.media.ic_vips'))
+            .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
+          Image($r('app.media.ic_vipsize'))
+            .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
+            .margin({ left: 8 })
+        }
+        .margin({ left: 25, top: 18 })
+        .width('100%')
+
+        BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
+        BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
+        BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
+
+        Blank()
+        // 底部支付
+        PaymentFooter({ totalPrice: this.totalPrice, savePrice: this.savePrice, isLogin: this.isLogin() })
+          .onClick(async () => {
+            if (!this.agreementChecked) {
+              ToastUtils.showToast('请先勾选并同意购买后再次尝试')
+              return
+            }
+            if (this.isLogin()) {
+              this.jumpToWxPay()
+            } else {
+              this.jumpToLogin()
             }
           })
-        }
       }
+      .height('100%')
       .width('100%')
-      .height(100)
-      .listDirection(Axis.Horizontal)
-      .scrollBar(BarState.Off)
-      .friction(0.6)
-      .padding({ left: 16, right: 16 })
-
-      Row() {
-        Image(this.agreementChecked ? $r('app.media.ic_protocoled') : $r('app.media.ic_protocol'))
-          .width(12)
-          .height(12)
-          .margin({ left: 18, top: 8 })
-          .onClick(() => {
-            this.agreementChecked = !this.agreementChecked;
-          })
-        Text('我已阅读并同意')
-          .fontSize(12)
-          .fontColor('#3E3E3E')
-          .margin({ left: 8, top: 8 })
-        Text('《快搜搜题会员购买协议》')
-          .fontSize(12)
-          .fontColor('#F75A23')
-          .margin({ left: 2, top: 8 })
-          .onClick(() => {
-            this.jumpToHelpCenter();
-          })
-      }
-      .width('100%')
-      .height('auto')
-      .backgroundColor(Color.White)
-
-      Row() {
-        Image($r('app.media.ic_vips'))
-          .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
-        Image($r('app.media.ic_vipsize'))
-          .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
-          .margin({ left: 8 })
-      }
-      .margin({ left: 25, top: 18 })
-      .width('100%')
-
-      BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
-      BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
-      BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
-
-      Blank()
-      // 底部支付
-      PaymentFooter({ totalPrice: this.totalPrice, savePrice: this.savePrice, isLogin: this.isLogin() })
-        .onClick(async () => {
-          if (!this.agreementChecked) {
-            ToastUtils.showToast('请先勾选并同意购买后再次尝试')
-            return
-          }
-          if (this.isLogin()) {
-            this.jumpToWxPay()
-          } else {
-            this.jumpToLogin()
-          }
-        })
     }
-    .height('100%')
-    .width('100%')
+    .hideTitleBar( true)
   }
 }
-
 
 @Component
 struct BenefitItem {
@@ -455,4 +458,8 @@ struct PaymentFooter {
     .backgroundColor(Color.White)
     .position({ bottom: 0 })
   }
+}
+@Builder
+function PayPageBuilder() {
+  PayPage()
 }

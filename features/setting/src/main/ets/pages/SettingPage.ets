@@ -1,6 +1,6 @@
 import { TitleBar } from 'widget/Index'
 import { SettingConstants } from "../Constants/SettingConstants";
-import { promptAction, router } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
 import { emitter } from '@kit.BasicServicesKit';
 import { BankListRes } from 'db';
@@ -10,7 +10,7 @@ import { SettingColor } from '../components/SettingColor';
 import { TextSizeDialog } from '../components/TextSizeDialog';
 import { ScreenReadSetting } from './ScreenReadSetting';
 
-@Entry({ routeName: 'settingPage' })
+
 @Component
 export struct SettingPage {
   @State maskOpacity: number = 0;
@@ -24,6 +24,7 @@ export struct SettingPage {
   @State bankList: BankListRes[] = [];
   private dialogController: CustomDialogController | null = null;
   @State agreementChecked: boolean = false;
+  @Consume appPathStack: NavPathStack
   TextDialogController: CustomDialogController | null = new CustomDialogController({
     builder: TextSizeDialog({}),
     autoCancel: false,
@@ -44,7 +45,6 @@ export struct SettingPage {
       offsetY: 10
     }),
   })
-  @Provide('pathStack') pathStack: NavPathStack = new NavPathStack();
 
   @Builder
   pageMap(name: string) {
@@ -121,8 +121,7 @@ export struct SettingPage {
         'vipTime': ''
       }
     })
-
-    router.back()
+    this.appPathStack.pop()
   }
 
   //退出弹窗
@@ -142,13 +141,13 @@ export struct SettingPage {
   }
 
   build() {
-    Navigation(this.pathStack) {
+  NavDestination() {
       Scroll() {
         Column() {
           // 标题栏
           TitleBar({
             title: this.title, backClick: () => {
-              router.back()
+              this.appPathStack.pop()
             }
           }).width('100%')
 
@@ -181,8 +180,7 @@ export struct SettingPage {
             .width('100%')
             .onClick(() => {
               // 跳转到屏幕识别页面
-              let pathInfo: NavPathInfo = new NavPathInfo('ScreenReadPage', new Object());
-              this.pathStack.pushDestination(pathInfo, true);
+              this.appPathStack.pushPathByName(SettingConstants.ROUTER_SCREEN_READ,null)
 
             })
 
@@ -486,7 +484,10 @@ export struct SettingPage {
         .width('100%')
       }
     }
-    .navDestination(this.pageMap)
     .hideTitleBar(true)
   }
+}
+@Builder
+function SettingPageBuilder() {
+  SettingPage()
 }

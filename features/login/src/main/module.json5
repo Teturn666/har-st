@@ -3,6 +3,7 @@
     "name": "login",
     "type": "har",
     "description": "$string:module_desc",
+    "routerMap": "$profile:router_map",
     "mainElement": "LoginAbility",
     "deviceTypes": [
       "phone",

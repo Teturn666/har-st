@@ -12,13 +12,9 @@ import { systemShare } from '@kit.ShareKit';
 import { RewardAd, rewardAd } from 'utils/src/main/ets/utils/RewardAd';
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo';
+import { PointsType } from '../model/pointsType';
 
 
-import('./MyHistoryPage')
-import('./MyInvitationPage')
-import('./PointExchangePage')
-
-@Entry({ routeName: 'pointsPage' })
 @Component
 export struct PointsPage {
   @State title: string = "我的积分";
@@ -34,6 +30,7 @@ export struct PointsPage {
   @State CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
+  @Consume appPathStack: NavPathStack
   static readonly APP_STORE_URL = 'https://appgallery.huawei.com/app/detail?id=com.chznai.ikst&channelId=SHARE'
   rewardAd: RewardAd | null = new RewardAd()
 
@@ -112,6 +109,7 @@ export struct PointsPage {
 
     });
   }
+
   onPageShow(): void {
     this.getIsAppScore()
   }
@@ -121,7 +119,6 @@ export struct PointsPage {
     this.loadResources()
     this.getIsAppScore()
   }
-
 
   async actionSigning(): Promise<void> {
     let action = false
@@ -176,15 +173,17 @@ export struct PointsPage {
   }
 
   private jumpToHistoryPoints() {
-    router.pushNamedRoute({
-      name: PointsConstants.ROUTE_DETAILS_POINTS_HISTORY, params: {
-        myPoints: this.myPoints
-      }
-    })
+    this.appPathStack.pushPathByName(PointsConstants.ROUTE_DETAILS_POINTS_HISTORY,{ myPoints: this.myPoints} as PointsType)
+    // router.pushNamedRoute({
+    //   name: PointsConstants.ROUTE_DETAILS_POINTS_HISTORY, params: {
+    //     myPoints: this.myPoints
+    //   }
+    // })
   }
 
   private jumpToMyInvitation() {
-    router.pushNamedRoute({ name: PointsConstants.ROUTE_DETAILS_INVITATION })
+this.appPathStack.pushPathByName(PointsConstants.ROUTE_DETAILS_INVITATION,null)
+   // router.pushNamedRoute({ name: PointsConstants.ROUTE_DETAILS_INVITATION })
   }
 
   private jumpToPointExchange() {
@@ -192,203 +191,209 @@ export struct PointsPage {
   }
 
   build() {
-    Column() {
-      TitleBar({
-        title: this.title, backClick: () => {
-          router.back()
-        }
-      }).width('100%')
-      Stack() {
-        Image($r('app.media.ic_bu'))
-          .width(160)
-          .height(60)
-        Text(this.myPoints)
-          .fontSize(32)
-          .fontColor('#F75A23')
-        Text("积分明细")
-          .fontSize(12)
-          .fontColor('#F75A23')
-          .margin({ top: 100 })
-          .decoration({ type: TextDecorationType.Underline, color: '#F75A23' })
-          .onClick(() => {
-            this.jumpToHistoryPoints();
-          })
-        Column() {
-          Stack() {
-            Image($r('app.media.ic_rectangle'))
-              .width(80)
-              .height(28)
-            Text("我的邀请码")
-              .fontColor('#3E3E3E')
-              .fontSize(12)
-
-          }.onClick(() => {
-            this.jumpToMyInvitation()
-
-          })
-
-          Stack() {
-            Image($r('app.media.ic_rectangls'))
-              .width(80)
-              .height(28)
-            Text("积分兑换")
-              .fontColor('#3E3E3E')
-              .fontSize(12)
-          }
-          .onClick(() => {
-            this.jumpToPointExchange()
-          })
-        }
-        .height('70')
-        .width('100%')
-        .justifyContent(FlexAlign.SpaceBetween)
-        .alignItems(HorizontalAlign.End)
-
-      }
-      .width('100%')
-      .alignContent(Alignment.Center)
-
+    NavDestination() {
       Column() {
-        Row() {
-          Image($r('app.media.ic_gold'))
-            .width(18)
-            .height(18)
-
-          Text("签到赚积分")
-            .fontSize(16)
-            .fontWeight(FontWeight.Bold)
-            .fontColor('#333333')
-            .margin({ left: 8 })
-        }
-        .margin({ left: 18, top: 10 })
-        .width('100%')
-
-
-        if (this.loadingStatus == false) {
-
-        } else {
-          Stack() {
-            Image($r('app.media.ic_bg'))
-              .width(330)
-              .height(108)
-
-            // Points Cards Row
-            Row({ space: 5 }) {
-              ForEach(this.toShowList, (item: showSingle) => {
-                PointsCard({
-                  points: item.point + '积分',
-                  status: item.type == PointsConstants.POINTS_DAYS_STATUS_GOT ? "已领取" :
-                    (item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? "点击领取" : "未领取"),
-                  isClaimed: item.type == PointsConstants.POINTS_DAYS_STATUS_GOT ? true : false,
-                  canClaim: item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? true : false,
-                  onClaim: item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? this.actionSigning : () => {
-                  }
-                }).onClick(async () => {
-                  if (item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION) {
-                    await this.actionSigning()
-                  }
-                })
-              })
-            }
-            .height(78)
-            .alignItems(VerticalAlign.Top)
-
-            Row() {
-              Text("说明：连续中断后重新开始计算")
-                .fontSize(10)
-                .fontColor('#BABABA')
-
-              Text("已连续签到" + this.signDays + "天")
-                .fontColor(Color.White)
+        TitleBar({
+          title: this.title, backClick: () => {
+           this.appPathStack.pop()
+          }
+        }).width('100%')
+        Stack() {
+          Image($r('app.media.ic_bu'))
+            .width(160)
+            .height(60)
+          Text(this.myPoints)
+            .fontSize(32)
+            .fontColor('#F75A23')
+          Text("积分明细")
+            .fontSize(12)
+            .fontColor('#F75A23')
+            .margin({ top: 100 })
+            .decoration({ type: TextDecorationType.Underline, color: '#F75A23' })
+            .onClick(() => {
+              this.jumpToHistoryPoints();
+            })
+          Column() {
+            Stack() {
+              Image($r('app.media.ic_rectangle'))
+                .width(80)
+                .height(28)
+              Text("我的邀请码")
+                .fontColor('#3E3E3E')
                 .fontSize(12)
-                .fontWeight(FontWeight.Medium)
+
+            }.onClick(() => {
+              this.jumpToMyInvitation()
+
+            })
+
+            Stack() {
+              Image($r('app.media.ic_rectangls'))
+                .width(80)
+                .height(28)
+              Text("积分兑换")
+                .fontColor('#3E3E3E')
+                .fontSize(12)
             }
-            .height(12)
-            .width(313)
-            .margin({ top: 60 })
-            .alignItems(VerticalAlign.Bottom)
-            .justifyContent(FlexAlign.SpaceBetween)
-            .padding({ bottom: 10 })
+            .onClick(() => {
+              this.jumpToPointExchange()
+            })
           }
-          .margin({ top: 8 })
+          .height('70')
           .width('100%')
-          .height('auto')
+          .justifyContent(FlexAlign.SpaceBetween)
+          .alignItems(HorizontalAlign.End)
 
         }
-
-        Row() {
-          Image($r('app.media.ic_task'))
-            .width(18)
-            .height(18)
-          Image($r('app.media.ic_tasking'))
-            .width(122)
-            .height(18)
-        }
-        .margin({ left: 18, top: 10 })
         .width('100%')
+        .alignContent(Alignment.Center)
 
-        TaskCard({
-          points: "+20积分",
-          unit: "/人",
-          title: "邀请好友",
-          description: "  (好友完成注册，填写我的邀请码)",
-          buttonImage: $r('app.media.ic_share'),
-          nClick: () => {
-            this.share()
+        Column() {
+          Row() {
+            Image($r('app.media.ic_gold'))
+              .width(18)
+              .height(18)
+
+            Text("签到赚积分")
+              .fontSize(16)
+              .fontWeight(FontWeight.Bold)
+              .fontColor('#333333')
+              .margin({ left: 8 })
           }
-        })
+          .margin({ left: 18, top: 10 })
+          .width('100%')
 
-        TaskCard({
-          isVisibility: this.CsjHmAD?.hmAd?.rewardPoint?.switchOff,
-          points: "+5积分",
-          unit: "/个",
-          title: "看广告赚积分",
-          description: ` (今日还剩${this.adTimes}次)`,
-          buttonImage: this.adTimes > 0 ? $r('app.media.ic_complete') :
-          $r('app.media.ic_comple'),
-          nClick: () => {
-            if (this.adTimes > 0) {
-              if (this.CsjHmAD?.hmAd?.rewardPoint?.switchOff) {
-                let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
-                rewardAd.CsjSdkId = res?.hmAd?.rewardPoint?.csj
-                rewardAd.AdSlotBuilder((isVerify: boolean) => {
-                  if (isVerify) {
-                    this.getPointsByAd()
-                  }
+
+          if (this.loadingStatus == false) {
+
+          } else {
+            Stack() {
+              Image($r('app.media.ic_bg'))
+                .width(330)
+                .height(108)
+
+              // Points Cards Row
+              Row({ space: 5 }) {
+                ForEach(this.toShowList, (item: showSingle) => {
+                  PointsCard({
+                    points: item.point + '积分',
+                    status: item.type == PointsConstants.POINTS_DAYS_STATUS_GOT ? "已领取" :
+                      (item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? "点击领取" : "未领取"),
+                    isClaimed: item.type == PointsConstants.POINTS_DAYS_STATUS_GOT ? true : false,
+                    canClaim: item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? true : false,
+                    onClaim: item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION ? this.actionSigning : () => {
+                    }
+                  }).onClick(async () => {
+                    if (item.type == PointsConstants.POINTS_DAYS_STATUS_ACTION) {
+                      await this.actionSigning()
+                    }
+                  })
                 })
               }
-            }
-          }
-        })
+              .height(78)
+              .alignItems(VerticalAlign.Top)
 
-        TaskCard({
-          points: "+10积分",
-          unit: "/周",
-          title: "应用评分",
-          description: "  (应用商店评分，我们需要您的支持)",
-          buttonImage: this.AppScore ? $r('app.media.ic_share') : $r('app.media.ic_comple'),
-          nClick: () => {
-            if (this.AppScore) {
-              this.jumpToApplication()
-            }
-          }
-        })
+              Row() {
+                Text("说明：连续中断后重新开始计算")
+                  .fontSize(10)
+                  .fontColor('#BABABA')
 
+                Text("已连续签到" + this.signDays + "天")
+                  .fontColor(Color.White)
+                  .fontSize(12)
+                  .fontWeight(FontWeight.Medium)
+              }
+              .height(12)
+              .width(313)
+              .margin({ top: 60 })
+              .alignItems(VerticalAlign.Bottom)
+              .justifyContent(FlexAlign.SpaceBetween)
+              .padding({ bottom: 10 })
+            }
+            .margin({ top: 8 })
+            .width('100%')
+            .height('auto')
+
+          }
+
+          Row() {
+            Image($r('app.media.ic_task'))
+              .width(18)
+              .height(18)
+            Image($r('app.media.ic_tasking'))
+              .width(122)
+              .height(18)
+          }
+          .margin({ left: 18, top: 10 })
+          .width('100%')
+
+          TaskCard({
+            points: "+20积分",
+            unit: "/人",
+            title: "邀请好友",
+            description: "  (好友完成注册，填写我的邀请码)",
+            buttonImage: $r('app.media.ic_share'),
+            nClick: () => {
+              this.share()
+            }
+          })
+
+          TaskCard({
+            isVisibility: this.CsjHmAD?.hmAd?.rewardPoint?.switchOff,
+            points: "+5积分",
+            unit: "/个",
+            title: "看广告赚积分",
+            description: ` (今日还剩${this.adTimes}次)`,
+            buttonImage: this.adTimes > 0 ? $r('app.media.ic_complete') :
+            $r('app.media.ic_comple'),
+            nClick: () => {
+              if (this.adTimes > 0) {
+                if (this.CsjHmAD?.hmAd?.rewardPoint?.switchOff) {
+                  let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+                  rewardAd.CsjSdkId = res?.hmAd?.rewardPoint?.csj
+                  rewardAd.AdSlotBuilder((isVerify: boolean) => {
+                    if (isVerify) {
+                      this.getPointsByAd()
+                    }
+                  })
+                }
+              }
+            }
+          })
+
+          TaskCard({
+            points: "+10积分",
+            unit: "/周",
+            title: "应用评分",
+            description: "  (应用商店评分，我们需要您的支持)",
+            buttonImage: this.AppScore ? $r('app.media.ic_share') : $r('app.media.ic_comple'),
+            nClick: () => {
+              if (this.AppScore) {
+                this.jumpToApplication()
+              }
+            }
+          })
+
+        }
+        .borderRadius(12)
+        .padding({ top: 8 })
+        .justifyContent(FlexAlign.Start)
+        .margin({ top: 15 })
+        .width('95%')
+        .height('100%')
+        .backgroundColor(Color.White)
       }
-      .borderRadius(12)
-      .padding({ top: 8 })
-      .justifyContent(FlexAlign.Start)
-      .margin({ top: 15 })
-      .width('95%')
+      .backgroundColor('#fdcf8d')
       .height('100%')
-      .backgroundColor(Color.White)
+      .width('100%')
     }
-    .backgroundColor('#fdcf8d')
-    .height('100%')
-    .width('100%')
+    .hideTitleBar( true)
   }
 }
-
+@Builder
+function PointsPageBuilder() {
+  PointsPage()
+}
 @ComponentV2
 struct PointsCard {
   @Param points: string = ''; // e.g., "1积分", "2积分"
