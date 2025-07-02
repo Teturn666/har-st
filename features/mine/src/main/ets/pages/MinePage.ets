@@ -10,12 +10,7 @@ import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
 import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
-
-import('login/src/main/ets/pages/LoginPage')
-import('points/src/main/ets/pages/PointsPage')
-import('setting/src/main/ets/pages/SettingPage')
-import('pay/src/main/ets/pages/PayPage')
-
+import { WebType} from "utils/src/main/ets/model/commom"
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -97,10 +92,11 @@ function buildText() {
   .borderRadius(10)
 }
 
-@Entry
+
 @Component
 export struct MinePage {
   @State message: string = "hello"
+  @Consume appPathStack: NavPathStack
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildText))
@@ -147,37 +143,34 @@ export struct MinePage {
 
   private jumpToLogin() {
     if (!this.isLogin()) {
-      router.pushNamedRoute({ name: MineConstants.ROUTER_LOGIN }, router.RouterMode.Single)
+      this.appPathStack.pushPathByName(MineConstants.ROUTER_LOGIN ,null)
     }
   }
 
   private jumpToSearchResult() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_ABOUT_US }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_ABOUT_US,null)
   }
 
   private jumpToSetting() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_SETTING }, router.RouterMode.Single)
+   // this.appPathStack.pushPathByName(MineConstants.ROUTER_SETTING,null)
   }
 
   private jumpToVIP() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_VIP }, router.RouterMode.Single)
+   // this.appPathStack.pushPathByName(MineConstants.ROUTER_VIP,null)
   }
 
   private jumpToPoints() {
     if (this.isLogin()) {
-      router.pushNamedRoute({ name: MineConstants.ROUTER_POINTS }, router.RouterMode.Single)
+     // this.appPathStack.pushPathByName(MineConstants.ROUTER_POINTS,null)
     } else {
       this.jumpToLogin()
     }
   }
 
   private jumpToHelpCenter() {
-    router.pushNamedRoute({
-      name: MineConstants.ROUTER_WEB, params: {
-        url: MineConstants.USER_HELP_URL,
-        title: "帮助中心"
-      }
-    }, router.RouterMode.Single)
+    // this.appPathStack.pushPathByName(MineConstants.ROUTER_WEB,{ url: MineConstants.USER_HELP_URL,
+    //   title: "帮助中心"} as WebType)
+
   }
 
   private jumpToAppStore() {
@@ -450,7 +443,9 @@ export struct MinePage {
             name: $r('app.string.about_us'),
             isShow: false,
             click: () => {
-              this.jumpToSearchResult()
+              this.appPathStack.pushPathByName('demoPages',null)
+              //this.jumpToSearchResult()
+
               onEventObject(MineMobClickConstants.MENU_ABOUT)
             }
           })

@@ -27,9 +27,6 @@ struct PhotoSearchPage {
     createAtManager.releaseCamera()
   }
 
-  onBackPress(): boolean | void {
-    return true
-  }
 
   SelectImg() {
     albumPicker.SelectImg((img: image.ImageSource) => {

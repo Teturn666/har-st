@@ -11,7 +11,6 @@
     "search": "file:../../commons/search",
     "encryption": "file:../../commons/encryption",
     "db": "file:../../commons/db",
-    "web": "file:../../commons/web",
     "photo": "file:../photo",
     "view": "file:../view",
     "widget": "file:../../commons/widget",

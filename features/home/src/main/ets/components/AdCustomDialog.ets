@@ -1,4 +1,3 @@
-import { promptAction, router } from "@kit.ArkUI";
 import { PreferencesConstants, preferencesUtils } from "utils";
 import { ConfigRes } from "utils/src/main/ets/model/ConfigRes";
 import { HmAdInfo, } from "utils/src/main/ets/model/HmAdInfo";
@@ -14,6 +13,7 @@ export struct AdCustomDialog {
   @Prop TypeSearch: boolean = false
   @Prop CsjId: string = ""
   @Prop CsjIsShow: boolean = false
+  @Consume appPathStack: NavPathStack
   controller?: CustomDialogController;
   isShowDialog: () => void = () => {
   }
@@ -31,9 +31,7 @@ export struct AdCustomDialog {
         this.readSearch()
 
       } else {
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-        })
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
       }
 
     }
@@ -131,9 +129,8 @@ export struct AdCustomDialog {
         .onClick(() => {
           if (!this.isVip) {
             this.controller?.close()
-            router.pushNamedRoute({
-              name: "vipPage"
-            })
+            this.appPathStack.pushPathByName(HomeConstants.SCREEN_PAY_PAGE,null)
+
           }
         })
     }

@@ -49,4 +49,6 @@ export default class HomeConstants {
   static readonly ROUTER_MAIN_PAGE= '@bundle:com.chznai.ikst/entry/ets/pages/MainPage'
   // 读屏设置页
   static readonly SCREEN_READ_PAGE = 'ScreenReadPage'
+  // 支付页
+  static readonly SCREEN_PAY_PAGE = 'payPage'
 }

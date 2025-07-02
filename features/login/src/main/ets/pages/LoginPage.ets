@@ -1,7 +1,7 @@
 import bundleManager from '@ohos.bundle.bundleManager';
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { promptAction, router } from '@kit.ArkUI';
+import { promptAction, } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
@@ -9,6 +9,7 @@ import http from '@ohos.net.http';
 import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
+import { WebType } from "utils/src/main/ets/model/commom"
 import {
   preferencesUtils,
   PreferencesConstants,
@@ -46,7 +47,6 @@ interface UserInfoResponse {
 }
 
 
-@Entry({ routeName: 'login' })
 @Component
 export struct LoginPage {
   @State agreementChecked: boolean = false;
@@ -58,6 +58,7 @@ export struct LoginPage {
   @State openId: string = '';
   @State quickLoginAnonymousPhone: string = '';
   @Prop bankList: BankListRes[];
+  @Consume appPathStack: NavPathStack
   private wxEventHandler = WXEventHandler
   logTag: string = 'QuickLoginButtonComponent';
   domainId: number = 0x0000;
@@ -87,6 +88,7 @@ export struct LoginPage {
       this.spWrite('hw')
     }
   }
+
   aboutToAppear(): void {
     this.wxEventHandler.registerOnWXRespCallback(this.onWXResp)
     this.getQuickLoginAnonymousPhone()
@@ -231,7 +233,7 @@ export struct LoginPage {
       }
     })
 
-    router.back()
+    this.appPathStack.pop()
   }
 
   async huaweiLogin(error: BusinessError | undefined,
@@ -280,151 +282,153 @@ export struct LoginPage {
   }
 
   build() {
-    Column() {
-      Row() {
-        Image($r('app.media.ic_back'))
-          .width(32)
-          .height(32)
-          .margin({ left: 16, top: 12 })
-          .onClick(() => {
-            router.back();
-          })
-        Text('登录')
-          .fontSize(18)
-          .textAlign(TextAlign.Center)
-          .fontWeight(600)
-          .flexGrow(1)
-          .margin({ top: 12 })
+    NavDestination() {
+      Column() {
+        Row() {
+          Image($r('app.media.ic_back'))
+            .width(32)
+            .height(32)
+            .margin({ left: 16, top: 12 })
+            .onClick(() => {
+              this.appPathStack.pop()
+            })
+          Text('登录')
+            .fontSize(18)
+            .textAlign(TextAlign.Center)
+            .fontWeight(600)
+            .flexGrow(1)
+            .margin({ top: 12 })
+
+          Blank()
+            .width(32)
+            .margin({ right: 16, top: 12 })
+        }
+        .width('100%')
+        .height(48)
+        .backgroundColor(Color.White)
+        .justifyContent(FlexAlign.SpaceBetween)
 
         Blank()
-          .width(32)
-          .margin({ right: 16, top: 12 })
-      }
-      .width('100%')
-      .height(48)
-      .backgroundColor(Color.White)
-      .justifyContent(FlexAlign.SpaceBetween)
+        Image($r('app.media.ic_logo'))
+          .width(218)
+          .height(60)
 
-      Blank()
-      Image($r('app.media.ic_logo'))
-        .width(218)
-        .height(60)
+        Blank()
+        Text(this.quickLoginAnonymousPhone)
+          .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
+          .width('80%')
+          .height(48)
+          .margin({ top: 50 })
+          .fontWeight(FontWeight.Bold)
+          .textAlign(TextAlign.Center)
+          .fontSize(24)
+        Text("华为账号绑定号码")
+          .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
+          .width('80%')
+          .textAlign(TextAlign.Center)
+          .fontSize(12)
 
-      Blank()
-      Text(this.quickLoginAnonymousPhone)
-        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
-        .width('80%')
-        .height(48)
-        .margin({ top: 50 })
-        .fontWeight(FontWeight.Bold)
-        .textAlign(TextAlign.Center)
-        .fontSize(24)
-      Text("华为账号绑定号码")
-        .visibility(this.quickLoginAnonymousPhone != '' ? Visibility.Visible : Visibility.Hidden)
-        .width('80%')
-        .textAlign(TextAlign.Center)
-        .fontSize(12)
-
-      LoginWithHuaweiIDButton({
-        params: {
-          // LoginWithHuaweiIDButton支持的样式
-          style: loginComponentManager.Style.BUTTON_RED,
-          // 账号登录按钮在登录过程中展示加载态
-          extraStyle: {
-            buttonStyle: new loginComponentManager.ButtonStyle().loadingStyle({
-              show: true
-            })
+        LoginWithHuaweiIDButton({
+          params: {
+            // LoginWithHuaweiIDButton支持的样式
+            style: loginComponentManager.Style.BUTTON_RED,
+            // 账号登录按钮在登录过程中展示加载态
+            extraStyle: {
+              buttonStyle: new loginComponentManager.ButtonStyle().loadingStyle({
+                show: true
+              })
+            },
+            // LoginWithHuaweiIDButton的边框圆角半径
+            borderRadius: 24,
+            // LoginWithHuaweiIDButton支持的登录类型
+            loginType: loginComponentManager.LoginType.QUICK_LOGIN,
+            // LoginWithHuaweiIDButton支持按钮的样式跟随系统深浅色模式切换
+            supportDarkMode: true,
+            // verifyPhoneNumber：如果华为账号用户在过去90天内未进行短信验证，是否拉起Account Kit提供的短信验证码页面
+            verifyPhoneNumber: true
           },
-          // LoginWithHuaweiIDButton的边框圆角半径
-          borderRadius: 24,
-          // LoginWithHuaweiIDButton支持的登录类型
-          loginType: loginComponentManager.LoginType.QUICK_LOGIN,
-          // LoginWithHuaweiIDButton支持按钮的样式跟随系统深浅色模式切换
-          supportDarkMode: true,
-          // verifyPhoneNumber：如果华为账号用户在过去90天内未进行短信验证，是否拉起Account Kit提供的短信验证码页面
-          verifyPhoneNumber: true
-        },
-        controller: this.controller
-      })
-        .width('60%')
-        .height(48)
-        .backgroundColor('#eb5555')
-        .borderRadius(24)
-        .margin({ top: 20 })
-
-
-      Button('微信快捷登录', { type: ButtonType.Normal, stateEffect: true })
-        .borderRadius(8)
-        .backgroundColor('#0ac160')
-        .width('60%')
-        .height(48)
-        .margin({ top: 12 })
-        .onClick(() => {
-          this.wechatLogin()
+          controller: this.controller
         })
+          .width('60%')
+          .height(48)
+          .backgroundColor('#eb5555')
+          .borderRadius(24)
+          .margin({ top: 20 })
 
-      // 底部协议部分
-      Flex({ direction: FlexDirection.Row, wrap: FlexWrap.Wrap }) {
-        Image(this.agreementChecked ? $r('app.media.ic_protocoled') : $r('app.media.ic_protocol'))
-          .width(12)
-          .height(12)
-          .margin({ right: 4 })
+
+        Button('微信快捷登录', { type: ButtonType.Normal, stateEffect: true })
+          .borderRadius(8)
+          .backgroundColor('#0ac160')
+          .width('60%')
+          .height(48)
+          .margin({ top: 12 })
           .onClick(() => {
-            this.agreementChecked = !this.agreementChecked;
-            if (this.agreementChecked) {
-              this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED);
-            } else {
-              this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.NOT_ACCEPTED);
-            }
+            this.wechatLogin()
           })
-        Text('我已阅读并同意')
-          .fontSize(12)
-          .fontColor(Color.Black)
-          .margin({ right: 4 })
-        Text('《用户协议》')
-          .fontSize(12)
-          .fontColor('#007AFF')
-          .onClick(() => {
-            router.pushNamedRoute({
-              name: LoginConstants.ROUTER_WEB, params: {
+
+        // 底部协议部分
+        Flex({ direction: FlexDirection.Row, wrap: FlexWrap.Wrap }) {
+          Image(this.agreementChecked ? $r('app.media.ic_protocoled') : $r('app.media.ic_protocol'))
+            .width(12)
+            .height(12)
+            .margin({ right: 4 })
+            .onClick(() => {
+              this.agreementChecked = !this.agreementChecked;
+              if (this.agreementChecked) {
+                this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.ACCEPTED);
+              } else {
+                this.controller.setAgreementStatus(loginComponentManager.AgreementStatus.NOT_ACCEPTED);
+              }
+            })
+          Text('我已阅读并同意')
+            .fontSize(12)
+            .fontColor(Color.Black)
+            .margin({ right: 4 })
+          Text('《用户协议》')
+            .fontSize(12)
+            .fontColor('#007AFF')
+            .onClick(() => {
+              this.appPathStack.pushPathByName('webPages', {
                 url: LoginConstants.USER_AGREEMENT_URL,
                 title: "用户协议"
-              }
-            }, router.RouterMode.Single)
-          })
-          .margin({ right: 4 })
-        Text('《隐私政策》')
-          .fontSize(12)
-          .fontColor('#007AFF')
-          .onClick(() => {
-            router.pushNamedRoute({
-              name: LoginConstants.ROUTER_WEB, params: {
+              } as WebType)
+            })
+            .margin({ right: 4 })
+          Text('《隐私政策》')
+            .fontSize(12)
+            .fontColor('#007AFF')
+            .onClick(() => {
+              this.appPathStack.pushPathByName('webPages', {
                 url: LoginConstants.USER_PRIVACY_URL,
                 title: "隐私政策"
-              }
-            }, router.RouterMode.Single)
-          })
-          .margin({ right: 4 })
-        Text('和')
-          .fontSize(12)
-          .fontColor(Color.Black)
-          .margin({ right: 4 })
-        Text('《华为账号用户认证协议》')
-          .fontSize(12)
-          .fontColor('#007AFF')
-          .onClick(() => {
-            router.pushNamedRoute({
-              name: LoginConstants.ROUTER_WEB, params: {
+              } as WebType)
+            })
+            .margin({ right: 4 })
+          Text('和')
+            .fontSize(12)
+            .fontColor(Color.Black)
+            .margin({ right: 4 })
+          Text('《华为账号用户认证协议》')
+            .fontSize(12)
+            .fontColor('#007AFF')
+            .onClick(() => {
+              this.appPathStack.pushPathByName(LoginConstants.ROUTER_WEB, {
                 url: LoginConstants.USER_HUAWEI_URL,
                 title: ""
-              }
-            }, router.RouterMode.Single)
-          })
+              } as WebType)
+            })
+        }
+        .width('80%')
+        .margin({ top: 40, bottom: 40 })
       }
-      .width('80%')
-      .margin({ top: 40, bottom: 40 })
+      .height('100%')
+      .width('100%')
     }
-    .height('100%')
-    .width('100%')
+    .hideTitleBar(true)
   }
+}
+
+@Builder
+function LoginPageBuilder() {
+  LoginPage()
 }

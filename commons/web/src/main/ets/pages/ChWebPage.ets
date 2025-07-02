@@ -3,7 +3,6 @@ import { TitleBar } from 'widget/Index'
 import { router } from '@kit.ArkUI'
 
 
-@Entry({ routeName: 'webPage' })
 @Component
 export struct ChWebPage {
   controller: web_webview.WebviewController = new web_webview.WebviewController()
@@ -11,6 +10,7 @@ export struct ChWebPage {
   title = ''
 
   aboutToAppear(): void {
+    console.log("web页面");
     const params = router.getParams() as Record<string, string>
     if (params) {
       this.webUrl = params.url as string
@@ -19,15 +19,18 @@ export struct ChWebPage {
   }
 
   build() {
-    Column() {
-      TitleBar({
-        title: this.title, backClick: () => {
-          router.back()
-        }
-      })
-        .width('100%')
-      Web({ src: this.webUrl, controller: this.controller })
-        .layoutWeight(1)
-    }
+    NavDestination() {
+      Column() {
+        TitleBar({
+          title: this.title, backClick: () => {
+            router.back()
+          }
+        })
+          .width('100%')
+        Web({ src: this.webUrl, controller: this.controller })
+          .layoutWeight(1)
+      }
+
+    }.hideTitleBar( true)
   }
 }

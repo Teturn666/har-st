@@ -10,7 +10,7 @@ import { SettingColor } from '../components/SettingColor';
 import { TextSizeDialog } from '../components/TextSizeDialog';
 import { ScreenReadSetting } from './ScreenReadSetting';
 
-@Entry({ routeName: 'settingPage' })
+
 @Component
 export struct SettingPage {
   @State maskOpacity: number = 0;
@@ -44,7 +44,7 @@ export struct SettingPage {
       offsetY: 10
     }),
   })
-  @Provide('pathStack') pathStack: NavPathStack = new NavPathStack();
+
 
   @Builder
   pageMap(name: string) {
@@ -69,6 +69,7 @@ export struct SettingPage {
 
   // 初始化时加载保存的题目数量
   aboutToAppear() {
+    console.log("设置页面");
     this.loadResource()
     this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
     this.getIsShowDialog()
@@ -142,7 +143,7 @@ export struct SettingPage {
   }
 
   build() {
-    Navigation(this.pathStack) {
+    NavDestination() {
       Scroll() {
         Column() {
           // 标题栏
@@ -182,7 +183,7 @@ export struct SettingPage {
             .onClick(() => {
               // 跳转到屏幕识别页面
               let pathInfo: NavPathInfo = new NavPathInfo('ScreenReadPage', new Object());
-              this.pathStack.pushDestination(pathInfo, true);
+             // this.pathStack.pushDestination(pathInfo, true);
 
             })
 
@@ -486,7 +487,11 @@ export struct SettingPage {
         .width('100%')
       }
     }
-    .navDestination(this.pageMap)
     .hideTitleBar(true)
   }
+}
+
+@Builder
+function SettingPageBuilder() {
+  SettingPage()
 }
