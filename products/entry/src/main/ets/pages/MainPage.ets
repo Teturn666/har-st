@@ -45,6 +45,7 @@ struct MainPage {
   }
 
   aboutToAppear(): void {
+    AppStorage.setOrCreate("PathStack", this.appPathStack)
     splashAd.ctx = this.getUIContext()
     this.initPreferences()
     this.mainModel.initDb()

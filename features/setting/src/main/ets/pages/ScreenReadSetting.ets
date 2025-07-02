@@ -274,12 +274,13 @@ export struct ScreenReadSetting {
     .backgroundImageSize(ImageSize.Cover)
   }
 }
-@Builder
-function ScreenReadSettingBuilder() {
-  ScreenReadSetting()
-}
+
 // 位置接口定义
 interface Position {
   x: number;
   y: number;
+}
+@Builder
+function ScreenReadSettingBuilder() {
+  ScreenReadSetting()
 }

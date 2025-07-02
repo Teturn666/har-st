@@ -1,5 +1,4 @@
 import { TitleBar } from 'widget/Index'
-import router from '@ohos.router';
 import { PointEventRes, PointsDetail as PointsDetail } from '../model/CheckDataRes';
 import { PointsModel } from '../model/PointsModel';
 import PointsConstants from '../../../Constants/PointsConstants';
@@ -17,7 +16,7 @@ export struct MyHistoryPage {
   @State historyConsume: PointsDetail[] = []
   @State focusIndex: number = 0;
   @State dataContent: PointsDetail[][] = []
-  @Consume appPathStack: NavPathStack
+  @Consume PathStack: NavPathStack
   categoryPoints: string[] = []
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
@@ -25,12 +24,11 @@ export struct MyHistoryPage {
   private subController: TabsController = new TabsController();
 
   aboutToAppear(): void {
-  //   console.log("积分界面");
-  // const res = this.appPathStack.getParamByName(PointsConstants.ROUTE_DETAILS_POINTS_HISTORY) as PointsType[]
-  //   if (res&& res.length > 0){
-  //     this.nPoints = res[0].myPoints
-  //   }
-  //   this.loadResource()
+    const res = this.PathStack.getParamByName(PointsConstants.ROUTE_DETAILS_POINTS_HISTORY) as PointsType[]
+    if (res && res.length > 0) {
+      this.nPoints = res[0].myPoints
+    }
+    this.loadResource()
   }
 
   async loadResource(): Promise<void> {
@@ -49,8 +47,9 @@ export struct MyHistoryPage {
 
   public DataToObjectP(data: PointEventRes[], type: string) {
     // 清洗数据
-    if (data == null || data.length == 0)
+    if (data == null || data.length == 0) {
       return []
+    }
 
     let res: PointsDetail[] = []
     for (const node of data) {
@@ -96,7 +95,7 @@ export struct MyHistoryPage {
       Column() {
         TitleBar({
           title: this.title, backClick: () => {
-            router.back()
+            this.PathStack.pop()
           }
         })
           .width('100%')
@@ -212,13 +211,15 @@ export struct MyHistoryPage {
       .height('100%')
       .width('100%')
     }
-    .hideTitleBar( true)
+    .hideTitleBar(true)
   }
 }
+
 @Builder
 function MyHistoryPageBuilder() {
   MyHistoryPage()
 }
+
 @ComponentV2
 struct HistoryCard {
   @Param points: string = ''; // e.g., "1积分", "2积分"
@@ -232,7 +233,7 @@ struct HistoryCard {
           .fontColor('#565656')
           .fontSize(18)
 
-        Text("操作时间: "+this.time)
+        Text("操作时间: " + this.time)
           .fontColor('#565656')
           .fontSize(13)
           .margin({ top: 5 })
@@ -240,9 +241,9 @@ struct HistoryCard {
       .alignItems(HorizontalAlign.Start)
       .justifyContent(FlexAlign.Center)
       .width('70%')
-      .padding({left:20})
+      .padding({ left: 20 })
 
-      Column(){
+      Column() {
         Text(this.points + "积分")
           .fontColor('#fff11818')
           .fontSize(18)
@@ -250,8 +251,8 @@ struct HistoryCard {
       .width('30%')
     }
     .borderRadius(12)
-    .margin({top:0})
-    .padding({ top: 5,bottom:5,})
+    .margin({ top: 0 })
+    .padding({ top: 5, bottom: 5, })
     .backgroundColor('#fff8f8f2')
     .width('100%')
     .height(70)

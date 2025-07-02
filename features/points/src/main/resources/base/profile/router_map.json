@@ -1,11 +1,6 @@
 {
   "routerMap": [
     {
-      "name": "pointsPage",
-      "pageSourceFile": "src/main/ets/pages/PointsPage.ets",
-      "buildFunction": "PointsPageBuilder"
-    },
-    {
       "name": "myHistoryPage",
       "pageSourceFile": "src/main/ets/pages/MyHistoryPage.ets",
       "buildFunction": "MyHistoryPageBuilder"

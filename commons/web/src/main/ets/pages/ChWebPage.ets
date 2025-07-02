@@ -2,8 +2,11 @@ import web_webview from '@ohos.web.webview'
 import { TitleBar } from 'widget/Index'
 import { router } from '@kit.ArkUI'
 
+@Builder
+function ChWebPageBuilder() {
+  ChWebPage()
+}
 
-@Entry({ routeName: 'webPage' })
 @Component
 export struct ChWebPage {
   controller: web_webview.WebviewController = new web_webview.WebviewController()
@@ -19,15 +22,18 @@ export struct ChWebPage {
   }
 
   build() {
-    Column() {
-      TitleBar({
-        title: this.title, backClick: () => {
-          router.back()
-        }
-      })
-        .width('100%')
-      Web({ src: this.webUrl, controller: this.controller })
-        .layoutWeight(1)
+    NavDestination() {
+      Column() {
+        TitleBar({
+          title: this.title, backClick: () => {
+            router.back()
+          }
+        })
+          .width('100%')
+        Web({ src: this.webUrl, controller: this.controller })
+          .layoutWeight(1)
+      }
     }
+    .hideTitleBar( true)
   }
 }

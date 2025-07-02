@@ -11,6 +11,14 @@
     {
       "name": "SettingAbility_label",
       "value": "label"
+    },
+    {
+      "name": "SettingAbility1_desc",
+      "value": "description"
+    },
+    {
+      "name": "SettingAbility1_label",
+      "value": "label"
     }
   ]
 }

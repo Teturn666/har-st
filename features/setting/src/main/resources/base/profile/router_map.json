@@ -4,11 +4,6 @@
       "name": "settingPage",
       "pageSourceFile": "src/main/ets/pages/SettingPage.ets",
       "buildFunction": "SettingPageBuilder"
-    },
-    {
-      "name": "ScreenReadPage",
-      "pageSourceFile": "src/main/ets/pages/ScreenReadSetting.ets",
-      "buildFunction": "ScreenReadSettingBuilder"
     }
   ]
 }

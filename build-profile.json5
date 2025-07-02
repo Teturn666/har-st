@@ -241,6 +241,18 @@
           ]
         }
       ]
+    },
+    {
+      "name": "webs",
+      "srcPath": "./commons/webs",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
     }
   ],
 }

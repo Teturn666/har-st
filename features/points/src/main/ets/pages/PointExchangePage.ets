@@ -1,14 +1,13 @@
 import { TitleBar } from 'widget'
-import { promptAction, router } from '@kit.ArkUI'
+import { promptAction } from '@kit.ArkUI'
 import { PointsModel } from '../model/PointsModel';
 import { ExchangeRes } from '../model/ExchangeRes';
 import { EmitterConstants, Logger, PreferencesConstants, preferencesUtils } from 'utils';
 import { emitter } from '@kit.BasicServicesKit';
 
 
-@Entry({ routeName: 'pointExchangePage' })
 @Component
-struct PointExchangePage {
+export struct PointExchangePage {
   @State pointsModel: PointsModel = PointsModel.getInstance()
   @State exchangeList: ExchangeRes[] = []
   @State userName: string = "用户名字"
@@ -16,6 +15,7 @@ struct PointExchangePage {
   @State userPoints: string = ''
   @State isLoading: boolean = false
   @State errorMessage: string = ''
+  @Consume PathStack: NavPathStack
 
   aboutToAppear(): void {
     this.getExchangeList()
@@ -89,7 +89,7 @@ struct PointExchangePage {
       TitleBar({
         title: '积分兑换',
         backClick: () => {
-          router.back()
+        this.PathStack.pop()
         }
       }).width('100%')
 

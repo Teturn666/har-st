@@ -173,12 +173,13 @@ export struct MinePage {
   }
 
   private jumpToHelpCenter() {
-    router.pushNamedRoute({
-      name: MineConstants.ROUTER_WEB, params: {
-        url: MineConstants.USER_HELP_URL,
-        title: "帮助中心"
-      }
-    }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_WEB, null)
+    // router.pushNamedRoute({
+    //   name: MineConstants.ROUTER_WEB, params: {
+    //     url: MineConstants.USER_HELP_URL,
+    //     title: "帮助中心"
+    //   }
+    // }, router.RouterMode.Single)
   }
 
   private jumpToAppStore() {
