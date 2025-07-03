@@ -9,21 +9,15 @@ import {
 } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { emitter } from '@kit.BasicServicesKit'
-
 import { image } from '@kit.ImageKit'
-
 import { HomeModel } from '../model/HomeModel'
-import { HomeBankListRes } from '../model/HomeBankListRes'
-import { LoadingStatus } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import common from '@ohos.app.ability.common'
 import { PayView } from 'view/Index'
-import lottie, { AnimationItem } from '@ohos/lottie'
-import { taskpool, util } from '@kit.ArkTS'
+import lottie from '@ohos/lottie'
+import { taskpool } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
-import { window } from '@kit.ArkUI'
-import { selectImage } from '../utils/SelectImage'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { screenManager } from '../utils/ScreenManager'
 import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
@@ -45,63 +39,73 @@ import { NavDoubleString, NavQid } from '../model/NavGenericType'
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
 let arr: number[] = [1]
-const context = (getContext(this) as common.UIAbilityContext)
-
-// 录屏状态枚举
-enum RecordingState {
-  IDLE = 0,
-  RECORDING = 1,
-  PROCESSING = 2
-}
 
 const TAG = '[HomePage]'
 
-let jsonData = null
-
-// 定义搜题模式枚举
-enum SearchMode {
-  SCAN = 'scan', // 扫描搜题
-  SCREEN_READ = 'screen_read' // 读屏搜题
+// 定义UI状态接口
+interface UIState {
+  loading: boolean;
+  topHeight: number;
 }
 
+// 定义业务状态接口
+interface BusinessState {
+  bankList: BankListRes[];
+  agreementChecked: boolean;
+  isVip: number;
+  pipAnswer: string;
+}
+
+// 定义广告状态接口
+interface AdState {
+  csjCode: number;
+  csjId: string;
+  csjIsShow: boolean;
+  typeSearch: boolean;
+}
+
+@Entry()
 @Component
 export struct HomePage {
-  @State chooseImage: PixelMap | undefined = undefined
-  @State dataValues: string = ''
-  @State homeModel: HomeModel = HomeModel.getInstance()
-  @State loadingStatus: LoadingStatus = LoadingStatus.OFF
-  @State accounts: Array<HomeBankListRes> = []
-  testString: number[] = []
-  private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
-  @State hasLoadData: boolean = false
-  @State loading: boolean = false
-  @State TopHeight: number = 0
-  win: window.Window | null = null
-  @State bankList: BankListRes[] = [];
-  private dialogController: CustomDialogController | null = null;
-  @State agreementChecked: boolean = false;
-  @State isVip: number = 0
-  @State CsjCode: number = 0
-  @State CsjId: string = ""
-  @State CsjIsShow: boolean = false
-  @State currentSearchMode: SearchMode | null = null; // 当前搜题模式
-  @State TypeSearch: boolean = false
   @Consume appPathStack: NavPathStack
-  TypeRead: () => void = () => {
+  // 合并UI相关状态
+  @State uiState: UIState = {
+    loading: false,
+    topHeight: 0
   }
-  CsjHmAD: ConfigRes = {
-    hmAd: new HmAdInfo()
+  // 合并业务逻辑相关状态
+  @State businessState: BusinessState = {
+    bankList: [],
+    agreementChecked: false,
+    isVip: 0,
+    pipAnswer: '暂未搜索到该题'
   }
-  @State pipAnswer: string = '暂未搜索到该题'
+  // 合并广告相关状态
+  @State adState: AdState = {
+    csjCode: 0,
+    csjId: "",
+    csjIsShow: false,
+    typeSearch: false
+  }
+  private TypeRead: () => void = () => {
+  }
+  // 保留必要的单独状态
+  private homeModel: HomeModel = HomeModel.getInstance()
+  private dialogController: CustomDialogController | null = null;
+  private executeScreenReading: () => void = () => {
+  }
+  private csjHmAD: ConfigRes = { hmAd: new HmAdInfo() }
+  // 事件监听器管理
+  private eventListeners: Map<string, (event: ESObject) => void> = new Map()
   AdDialogController = new CustomDialogController({
     builder: AdCustomDialog({
       isShowDialog: (() => {
         this.AdDialogController?.close()
       }),
-      readSearch: this.TypeRead,
-      CsjId: this.CsjId,
-      CsjIsShow: this.CsjIsShow,
-      TypeSearch: this.TypeSearch
+      readSearch: () => this.executeScreenReading(),
+      CsjId: this.adState.csjId,
+      CsjIsShow: this.adState.csjIsShow,
+      TypeSearch: this.adState.typeSearch
     }),
     autoCancel: false,
     alignment: DialogAlignment.Center,
@@ -122,32 +126,93 @@ export struct HomePage {
     }),
   });
 
+  /**
+   * 页面初始化生命周期方法
+   * 异步加载页面所需的基础数据和配置
+   */
   async aboutToAppear() {
-    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
-    this.CsjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
-    this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
-    this.loadResource()
-    emitter.on(EmitterConstants.EM_REFRESH_HOME, () => {
-      this.loadResource()
-    })
+    try {
+      // 更新状态
+      this.businessState.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP);
+      this.csjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
+      this.adState.csjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE);
 
-    // 判断是否为全选,如果是全选设置mdataText给唯一变量
-    let mdataText: SharedArrayBuffer | null = null
-    if (GetAllSelectedUtil.isUserBankAllSelected()) {
-      mdataText = await SearchMapManage.getInstance()
-        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
-    } else {
-      // 赋值mdataText给全局变量
-      mdataText = await SearchMapManage.getInstance()
-        .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME)
+      // 注册事件监听器
+      this.registerAllEventListeners();
+
+      // 加载资源
+      await this.loadPageResources();
+
+      // 异步加载共享数据
+      this.preloadSharedSearchData();
+    } catch (error) {
+      Logger.error(`HomePage initialization failed: ${error}`);
     }
-    MDataTextManage.getInstance().saveDataText(mdataText)
   }
 
+  /**
+   * 注册页面所需的所有事件监听器
+   * 统一管理事件监听器的注册，便于维护和清理
+   */
+  private registerAllEventListeners() {
+    // 首页刷新事件
+    const handleHomeRefresh = () => {
+      this.loadPageResources();
+    };
+    this.eventListeners.set(EmitterConstants.EM_REFRESH_HOME, handleHomeRefresh);
+    emitter.on(EmitterConstants.EM_REFRESH_HOME, handleHomeRefresh);
+  }
+
+  /**
+   * 清理所有注册的事件监听器
+   * 防止内存泄漏，在页面销毁时调用
+   */
+  private unregisterAllEventListeners() {
+    this.eventListeners.forEach((handler, eventType) => {
+      emitter.off(eventType, handler);
+    });
+    this.eventListeners.clear();
+  }
+
+  /**
+   * 预加载搜索相关的共享数据
+   * 根据用户选择的题库范围，异步加载对应的搜索数据到内存
+   */
+  private async preloadSharedSearchData() {
+    try {
+      let mdataText: SharedArrayBuffer | null = null;
+      if (GetAllSelectedUtil.isUserBankAllSelected()) {
+        mdataText = await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL);
+      } else {
+        mdataText = await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME);
+      }
+      MDataTextManage.getInstance().saveDataText(mdataText);
+    } catch (error) {
+      Logger.error(`Failed to load shared data: ${error}`);
+    }
+  }
+
+  /**
+   * 页面销毁生命周期方法
+   * 清理资源和状态，防止内存泄漏
+   */
   aboutToDisappear(): void {
-    lottie.destroy()
-    screenManager.exitFull(getContext())
-    this.TopHeight = 0
+    // 完善资源清理
+    try {
+      // 清理事件监听器
+      this.unregisterAllEventListeners();
+
+      // 清理其他资源
+      lottie.destroy();
+      screenManager.exitFull(getContext());
+
+      // 重置状态
+      this.uiState.topHeight = 0;
+    } catch (error) {
+      Logger.error(`HomePage cleanup failed: ${error}`);
+    }
   }
 
   build() {
@@ -159,24 +224,22 @@ export struct HomePage {
               swiperData: arr,
               handleClick: (item: number) => {
                 hilog.info(0x0001, "testTag", "---->" + item);
-                this.jumpToWeb()
+                this.navigateToWebTutorial()
               }
             })
           }
 
           ListItem() {
             SearchList({
-              nClick: this.handleScanSearch,
-              ScreenReader: this.handleScreenReadSearch
+              onScanSearchClick: this.handleScanSearchClick,
+              onScreenReadSearchClick: this.handleScreenReadSearchClick
             })
           }
 
-
           ListItem() {
             SearchHelper({
-              isLoading: this.loading,
+              isLoading: this.uiState.loading,
               handleClick: () => {
-                //'ohos.permission.READ_IMAGEVIDEO'
                 accessManager.CheckCamera(['ohos.permission.CAMERA',], () => {
                   this.appPathStack.pushPathByName(HomeConstants.ROUTER_PHOTO_SEARCH, null)
                 })
@@ -186,66 +249,46 @@ export struct HomePage {
 
           ListItem() {
             BankHelper({
-              downloadClick: async () => {
-                //跳转到我的下载页面
-                this.jumpToDownloadResult()
+              onDownloadClick: async () => {
+                this.navigateToMyDownload()
               },
-              customQuestionClick: async () => {
-                //跳转到自定义题库
-                this.jumpToCustomResult()
+              onCustomQuestionClick: async () => {
+                this.navigateToCustomQuestion()
               }
             })
           }
 
           ListItem() {
             ExerciseHelper({
-              bankClick: async () => {
-                //跳转练习列表页面
-                this.jumpToBankList(1)
+              onBankClick: async () => {
+                this.navigateToBankList(1)
               },
-              wrongClick: async () => {
-                //跳转错题列表练习页面
-                this.jumpToBankList(2)
+              onWrongClick: async () => {
+                this.navigateToBankList(2)
               },
-              collectionClick: async () => {
-                //跳转收藏列表练习页面
-                this.jumpToBankList(3)
+              onCollectionClick: async () => {
+                this.navigateToBankList(3)
               },
             })
           }
-
-          //测试显示ocr的文本
-          // ListItem() {
-          //   Text(this.dataValues)
-          //     .fontSize($r('app.float.font_size_10fp'))
-          //     .fontColor($r('app.color.c_black'))
-          // }
         }
         .scrollBar(BarState.Off)
-
-        // } else if (this.loadingStatus === LoadingStatus.FAILED) {
-        //   Text('数据插入失败').fontSize(18)
-        // }
-
         .height(Const.FULL_PERCENT)
         .width(Const.FULL_PERCENT)
         .padding({
-          left: $r('app.float.float_15vp'), right: $r('app.float.float_15vp')
+          left: $r('app.float.float_15vp'),
+          right: $r('app.float.float_15vp')
         })
-
       }
 
       Column() {
-        if (this.loading) {
+        if (this.uiState.loading) {
           Row() {
             ProgressLoading()
           }
-
           .width("100%")
           .height("100%")
-
         }
-
       }
       .alignRules({
         center: { anchor: '__container__', align: VerticalAlign.Center },
@@ -253,172 +296,191 @@ export struct HomePage {
       })
     }
     .margin({
-      top: this.TopHeight
+      top: this.uiState.topHeight
     })
   }
 
-  private async loadResource() {
-    this.getIsShowDialog()
-    const banks = await this.homeModel.getBankList();
-    this.bankList = banks
+  /**
+   * 加载页面所需的资源数据
+   * 包括题库列表等基础数据的获取
+   */
+  private async loadPageResources() {
+    try {
+      this.checkShouldShowSelectDialog();
+      const banks = await this.homeModel.getBankList();
+      this.businessState.bankList = banks;
+    } catch (error) {
+      Logger.error(`Failed to load resources: ${error}`);
+    }
   }
 
-  // 打开选择题库对话框的方法
-  private async showSelectBankDialog(isVipDialogCallBack: Function, isChangeTextCallBack: Function) {
+  /**
+   * 显示题库选择对话框
+   * @param onVipDialogCallback VIP相关操作的回调函数
+   * @param onTextChangeCallback 文本变化的回调函数
+   */
+  private async showBankSelectionDialog(onVipDialogCallback: Function, onTextChangeCallback: Function) {
     this.dialogController = new CustomDialogController({
       builder: selectBankDialog({
-        agreementChecked: this.agreementChecked,
+        agreementChecked: this.businessState.agreementChecked,
         onConfirm: (selected: string[]) => {
-          this.agreementChecked = this.agreementChecked;
+          this.businessState.agreementChecked = this.businessState.agreementChecked;
         },
         isVipDialog: () => {
           this.dialogController?.close()
-          //弹窗
-          if (!this.isVip && this.bankList.length > 0 && this.CsjIsShow &&
-            !this.CsjCode) {
+          if (!this.businessState.isVip && this.businessState.bankList.length > 0 &&
+          this.adState.csjIsShow && !this.adState.csjCode) {
             this.AdDialogController?.open()
           } else {
-            if (this.bankList.length > 0) {
-              isVipDialogCallBack()
+            if (this.businessState.bankList.length > 0) {
+              onVipDialogCallback()
             }
           }
         },
         isChangeText: () => {
-          isChangeTextCallBack()
+          onTextChangeCallback()
         }
       })
     });
     this.dialogController.open();
   }
 
-  // 扫描搜题处理逻辑
-  private handleScanSearch = () => {
-    this.currentSearchMode = SearchMode.SCAN;
-
-    if (!this.getIsShowDialog()) {
-      this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
-      this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
-      this.TypeSearch = false
-      this.showSelectBankDialog(() => {
+  /**
+   * 处理扫描搜题点击事件
+   * 根据用户VIP状态和广告配置决定是否显示广告或直接跳转
+   */
+  private handleScanSearchClick = () => {
+    if (!this.checkShouldShowSelectDialog()) {
+      this.adState.csjId = this.csjHmAD?.hmAd?.rewardScan?.csj
+      this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardScan?.switchOff
+      this.adState.typeSearch = false
+      this.showBankSelectionDialog(() => {
         this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
+
       }, () => {
         this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
 
       })
     } else {
-
-      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardScan?.switchOff && !this.CsjCode) {
-        this.CsjId = this.CsjHmAD?.hmAd?.rewardScan?.csj
-        this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardScan?.switchOff
-        this.TypeSearch = false
-
+      if (!this.businessState.isVip && this.csjHmAD?.hmAd?.rewardScan?.switchOff && !this.adState.csjCode) {
+        this.adState.csjId = this.csjHmAD?.hmAd?.rewardScan?.csj
+        this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardScan?.switchOff
+        this.adState.typeSearch = false
         this.AdDialogController?.open()
       } else {
-        if (this.bankList.length > 0) {
+        if (this.businessState.bankList.length > 0) {
           this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
 
         }
       }
     }
   }
-  // 读屏搜题处理逻辑
-  private handleScreenReadSearch = async () => {
-    // 方案1: 移除已存在的监听器
-    emitter.off(EmitterConstants.EM_DATA_TEXT);
+  /**
+   * 处理读屏搜题点击事件
+   * 设置OCR文本监听器，并根据用户状态决定后续操作流程
+   */
+  private handleScreenReadSearchClick = async () => {
+    // 清理已存在的数据文本监听器
+    const existingHandler = this.eventListeners.get(EmitterConstants.EM_DATA_TEXT);
+    if (existingHandler) {
+      emitter.off(EmitterConstants.EM_DATA_TEXT, existingHandler);
+    }
 
-    // 注册回调，从ocr拿到文字信息
-    emitter.on(EmitterConstants.EM_DATA_TEXT, async (event) => {
-      const ocrText: string = event.data!["text"].replace(/\r?\n/g, '')
-      const mDataText = MDataTextManage.getInstance().getDataText()
+    // 注册新的数据文本监听器
+    const handleOcrTextData = async (event: ESObject) => {
+      const ocrText: string = event.data!["text"].replace(/\r?\n/g, '');
+      const mDataText = MDataTextManage.getInstance().getDataText();
 
-      // 多线程入参 ocrText mDataText pipAnswer 返回参数 resultSearchRes pipAnswer
       if (mDataText && mDataText?.byteLength !== 0) {
-        // 调用多线程函数
-        this.readSearchTask(ocrText, this.pipAnswer, mDataText)
+        this.executeSearchTask(ocrText, this.businessState.pipAnswer, mDataText);
       }
-    })
+    };
 
-    this.currentSearchMode = SearchMode.SCREEN_READ;
+    this.eventListeners.set(EmitterConstants.EM_DATA_TEXT, handleOcrTextData);
+    emitter.on(EmitterConstants.EM_DATA_TEXT, handleOcrTextData);
 
-    if (!this.getIsShowDialog()) {
-      this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
-      this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
-      this.TypeRead = () => {
-        this.startScreenCapture()
+    if (!this.checkShouldShowSelectDialog()) {
+      this.adState.csjId = this.csjHmAD?.hmAd?.rewardRead?.csj
+      this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardRead?.switchOff
+      this.executeScreenReading = () => {
+        this.initializeScreenCapture()
       }
-      this.TypeSearch = true
-      await this.showSelectBankDialog(this.startScreenCapture, this.startScreenCapture)
+      this.adState.typeSearch = true
+      await this.showBankSelectionDialog(this.initializeScreenCapture, this.initializeScreenCapture)
     } else {
-      // 判断是否为vip,不是vip则看广告，是vip则直接跳转
-      if (!this.isVip && this.CsjHmAD?.hmAd?.rewardRead?.switchOff && !this.CsjCode) {
-        this.CsjId = this.CsjHmAD?.hmAd?.rewardRead?.csj
-        this.CsjIsShow = this.CsjHmAD?.hmAd?.rewardRead?.switchOff
-        this.TypeSearch = true
-        this.TypeRead = () => {
-          this.startScreenCapture()
+      if (!this.businessState.isVip && this.csjHmAD?.hmAd?.rewardRead?.switchOff && !this.adState.csjCode) {
+        this.adState.csjId = this.csjHmAD?.hmAd?.rewardRead?.csj
+        this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardRead?.switchOff
+        this.adState.typeSearch = true
+        this.executeScreenReading = () => {
+          this.initializeScreenCapture()
         }
         this.AdDialogController?.open()
       } else {
-        if (this.bankList.length > 0) {
-          this.startScreenCapture()
+        if (this.businessState.bankList.length > 0) {
+          this.initializeScreenCapture()
         }
       }
     }
   }
 
   /**
-   * 读屏搜题
-   * @param qStr 搜索内容
-   * @returns 返回结果
+   * 执行读屏搜题任务
+   * 使用TaskPool在后台线程执行搜索任务，避免阻塞UI线程
+   * @param ocrText OCR识别的文本内容
+   * @param pipAnswer 悬浮窗答案内容
+   * @param mDataText 搜索数据的共享内存缓冲区
    */
-  private async readSearchTask(ocrText: string, pipAnswer: string,
-    mDataText: SharedArrayBuffer) {
+  private async executeSearchTask(ocrText: string, pipAnswer: string, mDataText: SharedArrayBuffer) {
     try {
-      // 在这里读取内容
-      // 创建任务并在 TaskPool 中执行
       const task: taskpool.Task = new taskpool.Task(readSearchCurrent, getContext(this), ocrText, pipAnswer, mDataText);
       const res = await taskpool.execute(task) as ReadSearchResult;
 
       if (!res.answer || !res.question) {
         return
       }
-      PipManager.getInstance()
-        .updatePipUI(new Params({
-          answer: res.answer,
-          question: res.question
-        }));
 
-      this.pipAnswer = res.answer + res.question
+      PipManager.getInstance().updatePipUI(new Params({
+        answer: res.answer,
+        question: res.question
+      }));
+
+      this.businessState.pipAnswer = res.answer + res.question
     } catch (error) {
       Logger.error(`TaskPool 执行失败: ${error}`);
     }
   }
 
   /**
-   * 点击读屏搜题处理逻辑
+   * 初始化屏幕截图功能
+   * 设置截图回调并启动屏幕捕获
    */
-  private startScreenCapture = async () => {
-    // 读屏搜题
+  private initializeScreenCapture = async () => {
     const screenCaptureManager = ScreenCaptureManager.getInstance(getContext(this) as common.ApplicationContext);
 
-    // 设置回调
     screenCaptureManager.setCallback({
       onPixelMapReady: async (pixelMap: image.PixelMap) => {
         ocrToText.loadImage(pixelMap)
       }
     });
 
-    // 开启读屏幕
     screenCaptureManager.startScreenCapture();
   }
 
-  //获取是否显示弹窗
-  private getIsShowDialog(): boolean {
-    return this.agreementChecked = preferencesUtils.getBoolean(PreferencesConstants.SP_SELECT_DIALOG_SHOW, false)
+  /**
+   * 检查是否需要显示选择对话框
+   * @returns 返回是否应该显示对话框的布尔值
+   */
+  private checkShouldShowSelectDialog(): boolean {
+    return this.businessState.agreementChecked =
+      preferencesUtils.getBoolean(PreferencesConstants.SP_SELECT_DIALOG_SHOW, false)
   }
 
-  //跳转到练习列表共用的页面，1=题库练习，2=错题练习，3=收藏练习
-  private jumpToBankList(type: number) {
+  /**
+   * 跳转到题库列表页面
+   * @param type 练习类型 1=题库练习，2=错题练习，3=收藏练习
+   */
+  private navigateToBankList(type: number) {
     let title = ''
     if (type === 2) {
       title = '错题练习'
@@ -433,40 +495,38 @@ export struct HomePage {
     } as NavDoubleString)
   }
 
-  //跳转到我的下载
-  private jumpToDownloadResult() {
+  /**
+   * 跳转到我的下载页面
+   */
+  private navigateToMyDownload() {
     this.appPathStack.pushPathByName(HomeConstants.ROUTER_MY_DOWNLOAD, { bankPage: 'myDown' } as NavQid)
+
   }
 
-  //跳转到自定义题库
-  private jumpToCustomResult() {
+  /**
+   * 跳转到自定义题库页面
+   */
+  private navigateToCustomQuestion() {
     this.appPathStack.pushPathByName(HomeConstants.ROUTER_CUSTOM_QUESTION, null)
+
   }
 
-  //跳转到H5页面
-  private jumpToWeb() {
+  /**
+   * 跳转到使用教程网页
+   */
+  private navigateToWebTutorial() {
     this.appPathStack.pushPathByName(HomeConstants.ROUTER_WEB, {
       url: HomeConstants.USE_TEACH_URL,
       title: '使用教程'
     } as webType)
     onEventObject(HomeMobClickConstants.PLAY_GUIDE_VIDEO)
   }
-
-  //加载 lottie 动画
-  private initLottie() {
-    // loading.json需要放到lottie包下的rawfile中
-    context.resourceManager.getRawFileContent('loading.json', async (err: Error, data: Uint8Array) => {
-      if (data === null || data === undefined || data.buffer === undefined) {
-        return;
-      }
-      let lottieStr = await this.resStr.decodeWithStream(new Uint8Array(data.buffer))
-      jsonData = JSON.parse(lottieStr);
-      this.hasLoadData = true
-    })
-  }
 }
 
-//搜题助手
+/**
+ * 搜题助手组件
+ * 提供万能搜题功能的入口
+ */
 @Component
 struct SearchHelper {
   @State isShow: boolean = false
@@ -475,7 +535,7 @@ struct SearchHelper {
   }
 
   @Builder
-  payViewBuilder() {
+  buildPayView() {
     Column() {
       PayView()
     }
@@ -489,15 +549,16 @@ struct SearchHelper {
         Text($r('app.string.almighty_search'))
           .fontSize($r('app.float.font_size_24fp'))
           .fontColor('#7B6008')
-
       }.onClick(() => this.handleClick())
-
     }
     .enabled(!this.isLoading)
   }
 }
 
-//banner
+/**
+ * 轮播图组件
+ * 展示首页横幅广告或推广内容
+ */
 @Component
 struct Banner {
   @Prop swiperData: number[];
@@ -532,24 +593,29 @@ struct Banner {
   }
 }
 
+/**
+ * 搜索功能列表组件
+ * 提供扫描搜题和读屏搜题两个主要功能入口
+ */
 @Component
 struct SearchList {
-  nClick: () => void = () => {
+  onScanSearchClick: () => void = () => {
   }
-  ScreenReader: () => void = () => {
+  onScreenReadSearchClick: () => void = () => {
   }
 
   async aboutToAppear() {
-
   }
 
-  // app销毁才会触发
+  /**
+   * 组件销毁时的清理工作
+   * 清理PIP管理器和屏幕捕获相关资源
+   */
   aboutToDisappear(): void {
     console.log(TAG, "aboutToDisappear")
-    PipManager.getInstance().unregisterPipStateChangeListener(); // 解注册画中画生命周期及状态回调
+    PipManager.getInstance().unregisterPipStateChangeListener();
     PipManager.getInstance().setAutoStart(false);
-    // 停止屏幕录制
-    ScreenCaptureManager?.getInstance().stopScreenCapture();
+    ScreenCaptureManager.stopScreenCapture();
   }
 
   build() {
@@ -561,12 +627,9 @@ struct SearchList {
         Text($r('app.string.scan_search'))
           .fontColor($r('app.color.c_8a8a8a'))
           .fontSize(14)
-          .margin({
-            top: 4
-          })
-
+          .margin({ top: 4 })
       }
-      .onClick(() => this.nClick())
+      .onClick(() => this.onScanSearchClick())
 
       Column() {
         Image($r('app.media.ic_read_search'))
@@ -575,35 +638,27 @@ struct SearchList {
         Text($r('app.string.read_search'))
           .fontColor($r('app.color.c_8a8a8a'))
           .fontSize(14)
-          .margin({
-            top: 4
-          })
+          .margin({ top: 4 })
       }
       .onClick(async () => {
-        // 获取首选戏的题目颜色 选项颜色 悬浮窗颜色
-        PipManager.titleColor = preferencesUtils.getString(PreferencesConstants.TITLE_COLOR_SETTING)
-        PipManager.optionColor = preferencesUtils.getString(PreferencesConstants.OPTION_COLOR_SETTING)
-        PipManager.floatingColor = preferencesUtils.getString(PreferencesConstants.FLOATING_COLOR_SETTING)
-        PipManager.fontSize = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE)
-        // 执行传入的逻辑
-        this.ScreenReader()
+        PipManager.getInstance().setPipManagerStyles()
+        this.onScreenReadSearchClick()
       })
     }
-
-
-    .margin({
-      left: 15
-    })
+    .margin({ left: 15 })
     .width(Const.FULL_PERCENT)
   }
 }
 
-//题库
+/**
+ * 题库助手组件
+ * 提供下载和自定义题库功能入口
+ */
 @Component
 struct BankHelper {
-  downloadClick: () => void = () => {
+  onDownloadClick: () => void = () => {
   }
-  customQuestionClick: () => void = () => {
+  onCustomQuestionClick: () => void = () => {
   }
 
   build() {
@@ -623,11 +678,11 @@ struct BankHelper {
         Image($r('app.media.ic_my_download'))
           .width(90)
           .height(90)
-          .onClick(() => this.downloadClick())
+          .onClick(() => this.onDownloadClick())
         Image($r('app.media.ic_custom_question'))
           .width(90)
           .height(90)
-          .onClick(() => this.customQuestionClick())
+          .onClick(() => this.onCustomQuestionClick())
       }
       .width(Const.FULL_PERCENT)
       .margin(15)
@@ -637,14 +692,17 @@ struct BankHelper {
   }
 }
 
-//练习
+/**
+ * 练习助手组件
+ * 提供题库练习、错题练习、收藏练习三种练习模式入口
+ */
 @Component
 struct ExerciseHelper {
-  bankClick: () => void = () => {
+  onBankClick: () => void = () => {
   }
-  wrongClick: () => void = () => {
+  onWrongClick: () => void = () => {
   }
-  collectionClick: () => void = () => {
+  onCollectionClick: () => void = () => {
   }
 
   build() {
@@ -664,15 +722,15 @@ struct ExerciseHelper {
         Image($r('app.media.ic_question_bank_exercise'))
           .width(90)
           .height(90)
-          .onClick(() => this.bankClick())
+          .onClick(() => this.onBankClick())
         Image($r('app.media.ic_fault_exercise'))
           .width(90)
           .height(90)
-          .onClick(() => this.wrongClick())
+          .onClick(() => this.onWrongClick())
         Image($r('app.media.ic_collect_exercise'))
           .width(90)
           .height(90)
-          .onClick(() => this.collectionClick())
+          .onClick(() => this.onCollectionClick())
       }
       .width(Const.FULL_PERCENT)
       .margin(15)
