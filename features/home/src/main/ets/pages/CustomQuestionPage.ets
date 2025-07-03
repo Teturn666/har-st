@@ -2,7 +2,6 @@ import { TitleBar } from 'widget';
 import { router } from '@kit.ArkUI';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import HomeConstants from '../Constants/HomeConstants';
-import { WebParseExcel } from '../components/WebParseExcel';
 import { HomeModel } from '../model/HomeModel';
 import { BankListRes, QuestionRes } from 'db';
 import promptAction from '@ohos.promptAction';
@@ -506,8 +505,6 @@ struct CustomQuestionPage {
         .width('100%')
         .height('auto');
       }
-
-      WebParseExcel();
     }
   }
 }

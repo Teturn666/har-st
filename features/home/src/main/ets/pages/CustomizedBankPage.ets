@@ -2,7 +2,7 @@ import fs from '@ohos.file.fs';
 import { TitleBar } from 'widget'
 import { promptAction, router } from '@kit.ArkUI'
 import { getFileExtension, getPrefix } from '../manage/SelectFileManage';
-import { WebClass, WebParseExcel } from '../components/WebParseExcel';
+import { WebClass, WebParseExcel } from 'parseexcel';
 import { questionBankTable, QuestionTable } from 'db';
 import picker from '@ohos.file.picker';
 import { util } from '@kit.ArkTS';
@@ -306,30 +306,9 @@ export struct CustomizedBankPage {
       const helper = new util.Base64Helper();
       const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
       this.loadingMessage = '正在解析Excel数据...';
-      // Promise化Excel解析过程
-      const excelDataObj = await new Promise<ExcelDataObj>((resolve, reject) => {
-        WebClass.webviewController.runJavaScript(
-          `parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
-          async (error, excelData) => {
-            if (error) {
-              console.error(TAG, `run Excel error, ErrorCode: ${error.code}`);
-              reject(new Error(`Excel解析失败: ${error.code}`));
-              return;
-            }
 
-            if (!excelData || excelData === 'null') {
-              reject(new Error('Excel符合格式的数据为空'));
-              return;
-            }
-
-            try {
-              resolve(JSON.parse(excelData) as ExcelDataObj);
-            } catch (parseError) {
-              reject(new Error(`Excel数据解析失败: ${parseError}`));
-            }
-          }
-        );
-      });
+      // 解析Excel数据
+      const excelDataObj = await WebClass.webParseExcel(file.name, excelBase64Str) as ExcelDataObj;
 
       this.message = `开始处理Excel文件: ${file.path}`;
 
