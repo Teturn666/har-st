@@ -8,8 +8,6 @@ import { SearchBindSheet } from '../components/SearchBindSheet';
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading';
 
 
-
-
 @Component
 struct CropImagePage {
   @StorageLink(cameraAppStorage.CAMERA_CAMERA_URI) CameraUri: image.ImageSource | null = null;
@@ -18,7 +16,6 @@ struct CropImagePage {
   @State _config: image_cropper.ImageCropperConfig = new CropperConfig({ controller: this.controller })
   @State SearchText: boolean = false
   @State isLoading: boolean = false
-  @State backHome: boolean = false
   @Consume appPathStack: NavPathStack
   RichController: RichEditorController = new RichEditorController()
 
@@ -62,12 +59,7 @@ struct CropImagePage {
               .textAlign(TextAlign.Center)
           }
           .onClick(() => {
-            if (this.backHome) {
-             this.appPathStack.popToIndex(-1)
-
-            } else {
-             this.appPathStack.pop()
-            }
+            this.appPathStack.pop()
 
           })
           .justifyContent(FlexAlign.Center)
@@ -86,7 +78,6 @@ struct CropImagePage {
           }
           .backgroundColor("#CA6928")
           .onClick(() => {
-            this.backHome = true
             this.isLoading = true
             this.controller.getCroppedImage().then((pixelMap) => {
               if (pixelMap) {
@@ -146,15 +137,10 @@ struct CropImagePage {
       .height('100%')
       .width('100%')
     }
-    .hideTitleBar( true)
-    .onBackPressed(()=>{
-      if (this.backHome) {
-        this.appPathStack.popToIndex(-1)
-      }
-      return this.backHome
-    })
+    .hideTitleBar(true)
   }
 }
+
 @Builder
 function CropImagePageBuilder() {
   CropImagePage()

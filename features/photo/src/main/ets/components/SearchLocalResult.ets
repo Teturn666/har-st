@@ -126,6 +126,7 @@ export struct SearchLocalResult {
 
           BottomBar({
             searchClick: () => {
+              this.appPathStack.removeByName('photoSearchPage')
               this.appPathStack.replacePathByName(routerHome.ROUTER_PhotoSearch_Page, null)
             },
             ButtonWidth: '100%'
@@ -133,10 +134,25 @@ export struct SearchLocalResult {
         }
 
       } else {
-        Text($r('app.string.search_nodata'))
-          .fontSize(16)
-          .align(Alignment.Start)
-          .fontColor($r('app.color.c_f75a23'))
+        Column() {
+          Row() {
+            Text($r('app.string.search_nodata'))
+              .fontSize(16)
+              .align(Alignment.Start)
+              .fontColor($r('app.color.c_f75a23'))
+
+          }
+          .alignItems(VerticalAlign.Top)
+          .layoutWeight(1)
+
+          BottomBar({
+            searchClick: () => {
+              this.appPathStack.removeByName('photoSearchPage')
+              this.appPathStack.replacePathByName(routerHome.ROUTER_PhotoSearch_Page, null)
+            },
+            ButtonWidth: '100%'
+          })
+        }
       }
     }
   }
