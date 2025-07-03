@@ -29,7 +29,7 @@ export interface DetailParams {
   isBankData: boolean;
   bankPage: string
 }
-
+//是否拉起导入文件的弹窗
 export interface Customized {
   isShow: boolean
 }

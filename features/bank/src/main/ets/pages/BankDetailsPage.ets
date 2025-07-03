@@ -39,6 +39,7 @@ struct BankDetailsPage {
   dialogDownloadController?: CustomDialogController
   @State mCurBank: BankListRes = {} as BankListRes
   @State bankUpdate: boolean = false
+  @State pages: string = ''
   @Consume appPathStack: NavPathStack
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
@@ -64,7 +65,7 @@ struct BankDetailsPage {
         practiceType: practiceType,
         onStartPractice: () => {
           // 跳转到练习页面的逻辑
-          this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_LIST,{qid: this.mCurBank.qid } as NavQid)
+          this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_LIST, { qid: this.mCurBank.qid } as NavQid)
         }
       })
     });
@@ -85,7 +86,10 @@ struct BankDetailsPage {
       this.bankDetails = params.bankDetails;
       this.questionList = params.questionList ?? [];
       this.questionListtwo = params.questionListtwo ?? [];
-      console.log("c哈看：" + JSON.stringify(this.bankUpdate))
+      if (params.page) {
+        this.pages = params.page
+      }
+      console.log("接搜的参数" + this.pages);
     } else {
       Logger.error(TAG, "加载参数异常，params为空");
     }
@@ -154,7 +158,11 @@ struct BankDetailsPage {
         TitleBar({
           title: "题库详情",
           backClick: () => {
-            this.appPathStack.popToIndex(-1)
+            if (this.pages) {
+              this.appPathStack.pop()
+            } else {
+              this.appPathStack.popToIndex(-1)
+            }
           }
         })
           .backgroundColor(Color.White)
@@ -270,7 +278,7 @@ struct BankDetailsPage {
                       } else {
                         // 已下载，直接跳转到练习
                         this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_LIST,
-                          { qid: this.mCurBank.qid,bankPage:BankConstants.ROUTER_BANK_DETAILS } as NavQid)
+                          { qid: this.mCurBank.qid, bankPage: BankConstants.ROUTER_BANK_DETAILS } as NavQid)
                       }
                     })
                   Image($r('app.media.ic_practice'))
@@ -315,8 +323,10 @@ struct BankDetailsPage {
                         }
                       } else {
                         // 已下载，直接跳转到模拟考试
-                        this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_COMMON_LIST,{  practiceMode: 1,
-                          qid: this.mCurBank.qid,bankPage:BankConstants.ROUTER_BANK_DETAILS} as NavQid)
+                        this.appPathStack.pushPathByName(BankConstants.ROUTER_EXERCISE_COMMON_LIST, {
+                          practiceMode: 1,
+                          qid: this.mCurBank.qid, bankPage: BankConstants.ROUTER_BANK_DETAILS
+                        } as NavQid)
 
                       }
 
@@ -589,8 +599,13 @@ struct BankDetailsPage {
       .height('100%')
     }
     .hideTitleBar(true)
-    .onBackPressed(()=>{
-      this.appPathStack.popToIndex(-1)
+    .onBackPressed(() => {
+      if (this.pages) {
+        this.appPathStack.pop()
+      } else {
+        this.appPathStack.popToIndex(-1)
+      }
+
       return true
     })
   }

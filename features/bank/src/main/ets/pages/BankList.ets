@@ -198,6 +198,7 @@ export struct BankList {
   @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
   @State selectAll: boolean = false; // 全选状态
   @State isLoading: boolean = false;
+  @Prop myDown: string = ''
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
@@ -252,7 +253,8 @@ export struct BankList {
         isUpDate: this.isUpDate,
         downloadedState: 0,
         bankDetails: item,
-        questionList: questionList
+        questionList: questionList,
+        page: this.myDown
       } as generatedType)
     } else {
       //未下载
@@ -261,7 +263,8 @@ export struct BankList {
       this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS, {
         downloadedState: 1,
         bankDetails: item,
-        questionListtwo: bankDesc
+        questionListtwo: bankDesc,
+        page: this.myDown
       } as generatedType)
     }
 

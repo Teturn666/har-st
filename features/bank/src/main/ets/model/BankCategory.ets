@@ -30,6 +30,7 @@ export  interface generatedType {
   downloadedState: number;
   questionList: Array<QuestionRes>
   questionListtwo: Array<QuestionItem>
+  page?:string
 }
 
 export  interface NavQid{

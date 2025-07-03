@@ -39,7 +39,7 @@ import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
 import { accessManager } from '../utils/AccessManager'
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
-import { NavDoubleString } from '../model/NavGenericType'
+import { NavDoubleString, NavQid } from '../model/NavGenericType'
 
 
 const SWIPER_ASPECT_RATIO = 2.4
@@ -435,7 +435,7 @@ export struct HomePage {
 
   //跳转到我的下载
   private jumpToDownloadResult() {
-    this.appPathStack.pushPathByName(HomeConstants.ROUTER_MY_DOWNLOAD, null)
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_MY_DOWNLOAD, { bankPage: 'myDown' } as NavQid)
   }
 
   //跳转到自定义题库
