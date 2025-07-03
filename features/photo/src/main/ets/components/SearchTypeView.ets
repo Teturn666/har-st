@@ -57,7 +57,6 @@ export struct SearchTypeView {
               .height("100%")
               .justifyContent(FlexAlign.Start)
             } else {
-
               Column() {
                 SearchLocalResult()
               }
