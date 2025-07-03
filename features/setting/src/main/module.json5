@@ -8,16 +8,5 @@
     "deviceTypes": [
       "phone"
     ],
-    "abilities": [
-      {
-        "name": "SettingAbility1",
-        "srcEntry": "./ets/settingability1/SettingAbility1.ets",
-        "description": "$string:SettingAbility1_desc",
-        "icon": "$media:layered_image",
-        "label": "$string:SettingAbility1_label",
-        "startWindowIcon": "$media:startIcon",
-        "startWindowBackground": "$color:start_window_background"
-      }
-    ]
   }
 }

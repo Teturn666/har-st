@@ -445,7 +445,7 @@ export struct CustomizedBankPage {
   build() {
     NavDestination() {
       Column() {
-        WebParseExcel()
+       WebParseExcel()
         TitleBar({
           title: '自定义题库',
           backClick: () => {
