@@ -15,8 +15,11 @@ import { PointsType } from '../model/pointsType';
 import { MyHistoryPage } from './MyHistoryPage';
 import { MyInvitationPage } from './MyInvitationPage';
 import { PointExchangePage } from './PointExchangePage';
-
-
+@Builder
+function PointsPageBuilder() {
+  PointsPage()
+}
+@Entry
 @Component
 export struct PointsPage {
   @State title: string = "我的积分";
@@ -404,10 +407,7 @@ export struct PointsPage {
     }
   }
 }
-@Builder
-function PointsPageBuilder() {
-  PointsPage()
-}
+
 @ComponentV2
 struct PointsCard {
   @Param points: string = ''; // e.g., "1积分", "2积分"

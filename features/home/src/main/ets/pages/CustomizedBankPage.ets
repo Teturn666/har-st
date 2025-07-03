@@ -15,6 +15,8 @@ import { EmitterConstants, PreferencesConstants, preferencesUtils, StringUtils, 
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { SearchEngine } from 'search';
 import { fileIo } from '@kit.CoreFileKit';
+import HomeConstants from '../Constants/HomeConstants';
+import { Customized } from '../model/NavGenericType';
 
 const TAG = 'CustomizedBankPage'
 
@@ -34,6 +36,7 @@ export struct CustomizedBankPage {
   @State externalFileName: string = '';
   private labels: string = 'ABCDEFGHI对错√×✔X正确错误YN'
   @Consume appPathStack: NavPathStack
+  @State isShow: boolean = true
 
   // 将QuestionModel列表转换为QuestionRes列表
   private toQuestionResList(importResult: ImportWithLog): QuestionRes[] {
@@ -80,20 +83,23 @@ export struct CustomizedBankPage {
 
 
     // 如果没有外部文件，则使用文件选择器
-    const documentPicker = new picker.DocumentViewPicker();
-    const result = await documentPicker.select({
-      fileSuffixFilters: ['.xlsx', '.xls', '.txt'],
-      maxSelectNumber: 1
-    });
+    if (this.isShow) {
+      const documentPicker = new picker.DocumentViewPicker();
+      const result = await documentPicker.select({
+        fileSuffixFilters: ['.xlsx', '.xls', '.txt'],
+        maxSelectNumber: 1
+      });
 
-    if (result.length === 0) {
-      promptAction.showToast({ message: '未选择文件', duration: 2000 });
-      this.appPathStack.pop()
-      return;
+      if (result.length === 0) {
+        promptAction.showToast({ message: '未选择文件', duration: 2000 });
+        this.appPathStack.pop()
+        return;
+      }
+
+      // 处理选择的文件
+      await this.processSelectedFile(result[0]);
     }
 
-    // 处理选择的文件
-    await this.processSelectedFile(result[0]);
   }
 
   // 处理选择文件的方法（原有逻辑）
@@ -443,6 +449,10 @@ export struct CustomizedBankPage {
   }
 
   aboutToAppear() {
+    const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE) as Customized[]
+    if (res && res.length > 0) {
+      this.isShow = res[0].isShow
+    }
     setTimeout(() => {
       this.questionImport()
     }, 500)
@@ -542,9 +552,8 @@ export struct CustomizedBankPage {
       }
       .alignItems(HorizontalAlign.Start)
     }
-    .hideTitleBar( true)
+    .hideTitleBar(true)
   }
-
 }
 
 @Builder

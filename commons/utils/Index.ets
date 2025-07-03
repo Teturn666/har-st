@@ -24,8 +24,8 @@ export { OnWXResp, APP_ID, WXApi, WXEventHandler } from './src/main/ets/utils/WX
 
 export { CropperConfig } from './src/main/ets/model/CropperConfig'
 
-export {
-  LoadingStatus
-} from './src/main/ets/common/CommonEnums'
+export { LoadingStatus } from './src/main/ets/common/CommonEnums'
+
+export { webType } from './src/main/ets/model/webType'
 
 export * from "./src/main/ets/utils"

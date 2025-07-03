@@ -1,6 +1,5 @@
 import { PayModel } from '../model/PayModel'
 import { PriceInfoRes } from '../model/PriceInfoRes'
-import { router } from '@kit.ArkUI'
 import { emitter } from '@kit.BasicServicesKit'
 import * as wxOpenSdk from '@tencent/wechat_open_sdk'
 import {
@@ -9,7 +8,8 @@ import {
   EmitterConstants,
   ToastUtils,
   WXEventHandler,
-  OnWXResp
+  OnWXResp,
+  webType
 } from 'utils/Index'
 import { APP_ID, WXApi } from 'utils/Index'
 import { common } from '@kit.AbilityKit'
@@ -38,6 +38,7 @@ export struct PayPage {
   @State isVip: number = 0
   @State vipTime: string = ''
   @Consume appPathStack: NavPathStack
+
   aboutToAppear(): void {
     this.loadData()
     this.initData()
@@ -93,13 +94,10 @@ export struct PayPage {
 
   private jumpToHelpCenter() {
     try {
-      router.pushNamedRoute({
-        name: "webPage",
-        params: {
-          url: "https://ti.iksdt.com/static/doc/fwxy.html",
-          title: "快搜搜题会员服务协议"
-        }
-      });
+      this.appPathStack.pushPathByName('webPage', {
+        url: "https://ti.iksdt.com/static/doc/fwxy.html",
+        title: "快搜搜题会员服务协议"
+      } as webType)
       console.info(`${TAG} Navigation attempted`);
     } catch (error) {
       console.error(`${TAG} Navigation failed:`, error);
@@ -107,8 +105,7 @@ export struct PayPage {
   }
 
   private jumpToLogin() {
-    this.appPathStack.pushPathByName('login',null)
-  //  router.pushNamedRoute({ name: 'login' }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName('login', null)
   }
 
   private async jumpToWxPay() {
@@ -189,7 +186,7 @@ export struct PayPage {
             .height(32)
             .margin({ left: 16, top: 12 })
             .onClick(() => {
-       this.appPathStack.pop()
+              this.appPathStack.pop()
             })
 
           Text('会员中心')
@@ -379,7 +376,7 @@ export struct PayPage {
       .height('100%')
       .width('100%')
     }
-    .hideTitleBar( true)
+    .hideTitleBar(true)
   }
 }
 
@@ -459,6 +456,7 @@ struct PaymentFooter {
     .position({ bottom: 0 })
   }
 }
+
 @Builder
 function PayPageBuilder() {
   PayPage()

@@ -147,18 +147,6 @@
       ]
     },
     {
-      "name": "web",
-      "srcPath": "./commons/web",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
       "name": "widget",
       "srcPath": "./commons/widget",
       "targets": [
@@ -243,8 +231,8 @@
       ]
     },
     {
-      "name": "webs",
-      "srcPath": "./commons/webs",
+      "name": "web",
+      "srcPath": "./commons/web",
       "targets": [
         {
           "name": "default",

@@ -1,20 +1,24 @@
 import { QuestionRes } from "db";
 
-export  interface  NavDoubleString{
-  title:string
-  type:string
+
+export interface NavDoubleString {
+  title: string
+  type: string
 }
-export  interface  NavChangeString{
-  refresh:string
-  type:string
+
+export interface NavChangeString {
+  refresh: string
+  type: string
 }
-export  interface NavQid{
+
+export interface NavQid {
   practiceMode?: number;
   qid?: number;
   backIndex?: number;
-  bankPage?:string
+  bankPage?: string
 }
-export  interface DetailParams {
+
+export interface DetailParams {
   title: string;
   correctCount: number;
   wrongCount: number;
@@ -23,5 +27,9 @@ export  interface DetailParams {
   typePage: number;
   backIndex: number;
   isBankData: boolean;
-  bankPage:string
+  bankPage: string
+}
+
+export interface Customized {
+  isShow: boolean
 }

@@ -3,7 +3,7 @@ import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
 import { EmitterConstants, Logger } from 'utils';
 import { BankListRes, QuestionRes } from 'db'
-import { ComponentContent, promptAction, router } from '@kit.ArkUI';
+import { ComponentContent, promptAction, } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
 import { FinishDialog } from './FinishDialog';
 import lottie from '@ohos/lottie';
@@ -23,7 +23,6 @@ const TAG = '[BankList]'
 let jsonData = null
 
 const context = (getContext(this) as common.UIAbilityContext)
-
 
 
 @Builder
@@ -166,7 +165,6 @@ struct DeleteDialog {
   }
 }
 
-
 @Component
 export struct BankList {
   @State bankRes: BankRes = new BankRes();
@@ -250,24 +248,17 @@ export struct BankList {
       const bankQuestionList = await this.bankModel.getBankQuestionList(item.qid)
       //只截取前10道题目
       let questionList = bankQuestionList.slice(0, 10)
-      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS,{  isUpDate: this.isUpDate,
+      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS, {
+        isUpDate: this.isUpDate,
         downloadedState: 0,
         bankDetails: item,
-        questionList: questionList} as generatedType)
-      // router.pushNamedRoute({
-      //   name: BankConstants.ROUTER_BANK_DETAILS,
-      //   params: {
-      //     isUpDate: this.isUpDate,
-      //     downloadedState: 0,
-      //     bankDetails: item,
-      //     questionList: questionList
-      //   }
-      // })
+        questionList: questionList
+      } as generatedType)
     } else {
       //未下载
       let bankDesc = await this.bankModel.getBankDesc(item.qid, item.url)
       console.log("返回的：" + JSON.stringify(bankDesc))
-      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS,{
+      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS, {
         downloadedState: 1,
         bankDetails: item,
         questionListtwo: bankDesc
@@ -430,13 +421,13 @@ export struct BankList {
             .size({ width: $r('app.float.float_32vp'), height: $r('app.float.float_32vp') })
             .margin({ left: 15, right: 15 })
             .onClick(() => {
-             this.appPathStack.pop()
+              this.appPathStack.pop()
             })
           Text("我的下载")
             .fontSize($r('app.float.font_size_18fp'))
             .fontColor($r('app.color.c_black'))
 
-          if(this.bankRes.newsData.length > 0 ) {
+          if (this.bankRes.newsData.length > 0) {
             Text(this.management ? "退出管理" : "管理")
               .fontSize($r('app.float.font_size_12fp'))
               .fontColor('#060606')
@@ -444,7 +435,7 @@ export struct BankList {
               .onClick(() => {
                 this.management = !this.management;
               })
-          }else {
+          } else {
             Blank()
               .width('20%')
           }

@@ -1,6 +1,5 @@
 import { SearchResultRes } from '../model/SearchResultRes'
 import { BottomBar } from './BottomBar'
-import { router } from '@kit.ArkUI'
 import { routerHome } from '../constants/RouterHome'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { SearchModel } from '../model/SearchModel'
@@ -9,6 +8,7 @@ import { SearchModel } from '../model/SearchModel'
 export struct SearchQuestionBank {
   @State isLoading: boolean = true
   @State resultList: SearchResultRes[] = []
+  @Consume appPathStack: NavPathStack
   @StorageProp("ocr_text")
   @Watch('SearchChange') text: string = ""
   @StorageProp("select_question_type")
@@ -19,6 +19,7 @@ export struct SearchQuestionBank {
     this.isLoading = true
     this.getData()
   }
+
   aboutToAppear(): void {
     setTimeout(() => {
       this.getData()
@@ -133,9 +134,7 @@ export struct SearchQuestionBank {
 
           BottomBar({
             searchClick: () => {
-              router.replaceUrl({
-                url: routerHome.ROUTER_PhotoSearch_Page
-              })
+              this.appPathStack.replacePathByName(routerHome.ROUTER_PhotoSearch_Page, null)
             },
             ButtonWidth: '100%'
           })

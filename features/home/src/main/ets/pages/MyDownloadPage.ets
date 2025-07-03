@@ -1,5 +1,3 @@
-import { TitleBar } from 'widget'
-import { router } from '@kit.ArkUI'
 import { HomeModel } from '../model/HomeModel'
 import { BankListRes } from 'db'
 import { BankList } from 'bank/Index'
@@ -24,9 +22,10 @@ struct MyDownloadPage {
       }
 
     }
-    .hideTitleBar( true)
+    .hideTitleBar(true)
   }
 }
+
 @Builder
 function MyDownloadPageBuilder() {
   MyDownloadPage()

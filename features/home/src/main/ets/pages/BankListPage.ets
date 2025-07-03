@@ -15,10 +15,10 @@ export struct BankListPage {
   @State questionBanks: BankListRes[] = [];
   @State type: number = 1 // 1=题库练习, 2=错题练习, 3=收藏练习
   @State homeModel: HomeModel = HomeModel.getInstance()
-  @StorageProp(cameraAppStorage.SELECT_CHANGE_TEXT) @Watch('ChangeTxt') text:number=0
+  @StorageProp(cameraAppStorage.SELECT_CHANGE_TEXT) @Watch('ChangeTxt') text: number = 0
   @Consume appPathStack: NavPathStack
-  ChangeTxt(){
-    console.log('接受的参数111', this.text)
+
+  ChangeTxt() {
     if (this.text === 1) {
       this.homeModel.getBankList()
         .then(banks => {
@@ -35,7 +35,7 @@ export struct BankListPage {
         .catch((error: Error) => {
           console.error("Error fetching wrong bank list:", error);
         });
-    } else if (this.text === 3){
+    } else if (this.text === 3) {
       this.homeModel.getCollectionBankList()
         .then(banks => {
           this.questionBanks = banks;
@@ -47,13 +47,10 @@ export struct BankListPage {
     AppStorage.setOrCreate('ChangeText', 0)
   }
 
-
-
   aboutToAppear(): void {
     const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_BANK_LIST) as NavDoubleString[]
     if (res && res.length) {
       const params = res[0]
-      console.log('接受的参数', res[0].title)
       // 解析 title 和 type
       if (params.title) {
         this.title = params.title
@@ -121,7 +118,6 @@ export struct BankListPage {
       .height('100%')
     }
     .hideTitleBar(true)
-
 
   }
 }

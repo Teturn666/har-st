@@ -4,7 +4,8 @@ import {
   GetAllSelectedUtil,
   Logger,
   PreferencesConstants,
-  preferencesUtils
+  preferencesUtils,
+  webType
 } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { emitter } from '@kit.BasicServicesKit'
@@ -16,7 +17,6 @@ import { HomeBankListRes } from '../model/HomeBankListRes'
 import { LoadingStatus } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import common from '@ohos.app.ability.common'
-import router from '@ohos.router'
 import { PayView } from 'view/Index'
 import lottie, { AnimationItem } from '@ohos/lottie'
 import { taskpool, util } from '@kit.ArkTS'
@@ -63,6 +63,7 @@ enum SearchMode {
   SCAN = 'scan', // 扫描搜题
   SCREEN_READ = 'screen_read' // 读屏搜题
 }
+
 @Component
 export struct HomePage {
   @State chooseImage: PixelMap | undefined = undefined
@@ -148,7 +149,6 @@ export struct HomePage {
     screenManager.exitFull(getContext())
     this.TopHeight = 0
   }
-
 
   build() {
     RelativeContainer() {
@@ -445,12 +445,10 @@ export struct HomePage {
 
   //跳转到H5页面
   private jumpToWeb() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_WEB, params: {
-        url: HomeConstants.USE_TEACH_URL,
-        title: '使用教程'
-      }
-    })
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_WEB, {
+      url: HomeConstants.USE_TEACH_URL,
+      title: '使用教程'
+    } as webType)
     onEventObject(HomeMobClickConstants.PLAY_GUIDE_VIDEO)
   }
 

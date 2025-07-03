@@ -1,7 +1,7 @@
 import bundleManager from '@ohos.bundle.bundleManager';
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { promptAction, router } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
@@ -17,7 +17,8 @@ import {
   OnWXResp,
   WXApi,
   WXEventHandler,
-  APP_ID
+  APP_ID,
+  webType
 } from 'utils/Index'
 import { LoginModel } from '../model/LoginModel';
 import { BankListRes } from 'db';
@@ -44,7 +45,6 @@ interface UserInfoResponse {
   errcode?: number;
   errmsg?: string;
 }
-
 
 
 @Component
@@ -233,7 +233,7 @@ export struct LoginPage {
       }
     })
 
-  this.appPathStack.pop()
+    this.appPathStack.pop()
   }
 
   async huaweiLogin(error: BusinessError | undefined,
@@ -290,7 +290,7 @@ export struct LoginPage {
             .height(32)
             .margin({ left: 16, top: 12 })
             .onClick(() => {
-           this.appPathStack.pop()
+              this.appPathStack.pop()
             })
           Text('登录')
             .fontSize(18)
@@ -388,24 +388,20 @@ export struct LoginPage {
             .fontSize(12)
             .fontColor('#007AFF')
             .onClick(() => {
-              router.pushNamedRoute({
-                name: LoginConstants.ROUTER_WEB, params: {
-                  url: LoginConstants.USER_AGREEMENT_URL,
-                  title: "用户协议"
-                }
-              }, router.RouterMode.Single)
+              this.appPathStack.pushPathByName(LoginConstants.ROUTER_WEB, {
+                url: LoginConstants.USER_AGREEMENT_URL,
+                title: "用户协议"
+              } as webType)
             })
             .margin({ right: 4 })
           Text('《隐私政策》')
             .fontSize(12)
             .fontColor('#007AFF')
             .onClick(() => {
-              router.pushNamedRoute({
-                name: LoginConstants.ROUTER_WEB, params: {
-                  url: LoginConstants.USER_PRIVACY_URL,
-                  title: "隐私政策"
-                }
-              }, router.RouterMode.Single)
+              this.appPathStack.pushPathByName(LoginConstants.ROUTER_WEB, {
+                url: LoginConstants.USER_PRIVACY_URL,
+                title: "隐私政策"
+              } as webType)
             })
             .margin({ right: 4 })
           Text('和')
@@ -416,12 +412,10 @@ export struct LoginPage {
             .fontSize(12)
             .fontColor('#007AFF')
             .onClick(() => {
-              router.pushNamedRoute({
-                name: LoginConstants.ROUTER_WEB, params: {
-                  url: LoginConstants.USER_HUAWEI_URL,
-                  title: ""
-                }
-              }, router.RouterMode.Single)
+              this.appPathStack.pushPathByName(LoginConstants.ROUTER_WEB, {
+                url: LoginConstants.USER_HUAWEI_URL,
+                title: ""
+              } as webType)
             })
         }
         .width('80%')
@@ -430,9 +424,10 @@ export struct LoginPage {
       .height('100%')
       .width('100%')
     }
-    .hideTitleBar( true)
+    .hideTitleBar(true)
   }
 }
+
 @Builder
 function LoginPageBuilder() {
   LoginPage()

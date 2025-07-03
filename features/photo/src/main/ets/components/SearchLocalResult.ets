@@ -2,8 +2,6 @@ import { QuestionRes } from 'db'
 import { SearchEngine } from 'search'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { BottomBar } from './BottomBar'
-import { emitter } from '@kit.BasicServicesKit'
-import { router } from '@kit.ArkUI'
 import { routerHome } from '../constants/RouterHome'
 
 //本地题库
@@ -11,6 +9,7 @@ import { routerHome } from '../constants/RouterHome'
 export struct SearchLocalResult {
   @State isLoading: boolean = true
   @State resultData: QuestionRes[] = []
+  @Consume appPathStack: NavPathStack
   @StorageProp("ocr_text")
   @Watch('SearchChange') text: string = ""
   @StorageProp("select_question_type")
@@ -127,9 +126,7 @@ export struct SearchLocalResult {
 
           BottomBar({
             searchClick: () => {
-              router.replaceUrl({
-                url: routerHome.ROUTER_PhotoSearch_Page
-              })
+              this.appPathStack.replacePathByName(routerHome.ROUTER_PhotoSearch_Page, null)
             },
             ButtonWidth: '100%'
           })

@@ -11,7 +11,6 @@ import { emitter } from '@kit.BasicServicesKit';
 const context = (getContext(this) as common.UIAbilityContext)
 let jsonData = null
 
-
 @Component
 export struct BankPage {
   @State categoryList: Array<BankCategory> = [];
@@ -250,10 +249,12 @@ export struct BankPage {
     })
   }
 }
+
 @Builder
 function BankPageBuilder() {
   BankPage()
 }
+
 @Component
 struct CategoryTabContent {
   private category: BankCategory = { name: '', aid: '', url: '' };

@@ -46,8 +46,6 @@ export struct SettingPage {
   })
   @Provide pathStack: NavPathStack = new NavPathStack();
 
-
-
   // 打开选择题库对话框的方法
   async showSelectBankDialog() {
     await this.getIsShowDialog()
@@ -177,7 +175,7 @@ export struct SettingPage {
               .width('100%')
               .onClick(() => {
                 // 跳转到屏幕识别页面
-                this.pathStack.pushDestination(new NavPathInfo(SettingConstants.ROUTER_SCREEN_READ,null));
+                this.pathStack.pushDestination(new NavPathInfo(SettingConstants.ROUTER_SCREEN_READ, null));
 
               })
 
@@ -481,13 +479,14 @@ export struct SettingPage {
           .width('100%')
         }
       }
-      .navDestination(this.pageMap)
+      .navDestination(this.navMap)
       .hideTitleBar(true)
     }
     .hideTitleBar(true)
   }
+
   @Builder
-  pageMap(name: string) {
+  navMap(name: string) {
     if (name === SettingConstants.ROUTER_SCREEN_READ) {
       ScreenReadSetting()
     }

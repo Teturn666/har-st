@@ -11,6 +11,7 @@ import { common, Want } from '@kit.AbilityKit';
 import fs from '@ohos.file.fs';
 import { systemShare } from '@kit.ShareKit';
 import { fileUri } from '@kit.CoreFileKit';
+import { Customized } from '../model/NavGenericType';
 
 const TAG = 'CustomQuestionPage';
 
@@ -23,6 +24,7 @@ struct CustomQuestionPage {
   @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
   @State selectAll: boolean = false; // 全选状态
   @Consume appPathStack: NavPathStack
+
   async getimportList() {
     this.isLoading = true;
     try {
@@ -36,10 +38,6 @@ struct CustomQuestionPage {
     } finally {
       this.isLoading = false;
     }
-  }
-
-  onPageShow(): void {
-    this.getimportList();
   }
 
   aboutToAppear(): void {
@@ -256,11 +254,11 @@ struct CustomQuestionPage {
         TitleBar({
           title: '自定义题库',
           backClick: () => {
-           this.appPathStack.pop()
+            this.appPathStack.pop()
           },
           rightBuilderParam: this.rightBuilder,
           rightBuilderClick: () => {
-            this.appPathStack.pushPathByName(HomeConstants.ROUTER_HELP_PAGE,null)
+            this.appPathStack.pushPathByName(HomeConstants.ROUTER_HELP_PAGE, null)
           }
         }).width('100%');
 
@@ -286,7 +284,8 @@ struct CustomQuestionPage {
             .width(70)
             .height(25)
             .onClick(() => {
-              this.appPathStack.pushPathByName(HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE,null)
+              this.appPathStack.pushPathByName(HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE,
+                { isShow: true } as Customized)
             });
         }
         .width('90%')
@@ -502,8 +501,12 @@ struct CustomQuestionPage {
       }
     }
     .hideTitleBar(true)
+    .onShown(() => {
+      this.getimportList();
+    })
   }
 }
+
 @Builder
 function CustomQuestionPageBuilder() {
   CustomQuestionPage()
