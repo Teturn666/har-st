@@ -27,10 +27,6 @@ struct PhotoSearchPage {
     createAtManager.releaseCamera()
   }
 
-  onBackPress(): boolean | void {
-    return true
-  }
-
   SelectImg() {
     albumPicker.SelectImg((img: image.ImageSource) => {
       if (img) {
@@ -160,9 +156,7 @@ struct PhotoSearchPage {
       }
       .onClick(() => {
         createAtManager.releaseCamera()
-        router.replaceUrl({
-          url: HomeConstants.ROUTER_MAIN_PAGE,
-        })
+        router.back()
       })
       .margin({ top: 20, left: 20 })
       .backgroundColor('#ff4e4d4d')

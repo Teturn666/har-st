@@ -39,10 +39,6 @@ struct MainPage {
     this.showDialog = preferencesUtils.getBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, true)
   }
 
-  onBackPress(): boolean | void {
-    return true
-  }
-
   // 修改布尔值的方法
   updateBooleanValue(newValue: boolean) {
     preferencesUtils.putBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, newValue)

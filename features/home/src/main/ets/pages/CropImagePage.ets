@@ -62,9 +62,8 @@ struct CropImagePage {
         }
         .onClick(() => {
           if (this.backHome) {
-            router.replaceUrl({
-              url: HomeConstants.ROUTER_MAIN_PAGE,
-            })
+            let a = Number(router.getLength()) - 2
+            router.back(a)
           } else {
             router.back()
           }
@@ -87,6 +86,7 @@ struct CropImagePage {
         .backgroundColor("#CA6928")
         .onClick(() => {
           this.backHome = true
+          console.log("层数" + this.backHome);
           this.isLoading = true
           this.controller.getCroppedImage().then((pixelMap) => {
             if (pixelMap) {

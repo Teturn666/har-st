@@ -224,14 +224,6 @@ export struct HomePage {
     }
   }
 
-  /**
-   * 拦截系统返回键
-   * @returns 返回true表示拦截返回操作
-   */
-  onBackPress(): boolean | void {
-    return true
-  }
-
   build() {
     RelativeContainer() {
       Column() {
