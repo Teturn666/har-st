@@ -5,7 +5,7 @@ export struct ProgressLoading {
   @Prop
   strokeWidth: number = 4
   @Prop
-  color: ResourceColor ='#fff6605e'
+  color: ResourceColor = '#fff6605e'
   @Prop
   angle: number = 0
   @Prop
@@ -70,7 +70,7 @@ export struct ProgressLoading {
         .fontSize(14)
         .fontColor(this.color)
         .margin({
-          top:20
+          top: 20
         })
         .alignRules({
           center: { anchor: 'pro', align: VerticalAlign.Bottom },
