@@ -1,15 +1,15 @@
 import { TitleBar } from 'widget/Index'
 import MineConstants from "../Constants/MineConstants";
-import { router } from '@kit.ArkUI';
-import { ChPackageUtils } from 'utils';
+import { ChPackageUtils, webType } from 'utils';
+
 
 @Component
 export struct AboutUsPage {
   //版本号
   @State version: string = ''
+  @Consume appPathStack: NavPathStack
 
   aboutToAppear(): void {
-    console.log('AboutUsPages')
     this.loadsource()
   }
 
@@ -23,7 +23,7 @@ export struct AboutUsPage {
       Column() {
         TitleBar({
           title: '关于我们', backClick: () => {
-            router.back()
+            this.appPathStack.pop()
           }
         }).width('100%')
         Image($r('app.media.ic_app_icon'))
@@ -40,12 +40,10 @@ export struct AboutUsPage {
             Image($r('app.media.ic_enter')).width(6).height(10)
               .margin({ right: 12 })
           }.width('100%').onClick(() => {
-            router.pushNamedRoute({
-              name: MineConstants.ROUTER_WEB, params: {
-                url: MineConstants.USER_AGREEMENT_URL,
-                title: "用户协议"
-              }
-            }, router.RouterMode.Single)
+            this.appPathStack.pushPathByName(MineConstants.ROUTER_WEB, {
+              url: MineConstants.USER_AGREEMENT_URL,
+              title: "用户协议"
+            } as webType)
           }).width('100%')
 
           Row() {
@@ -60,12 +58,10 @@ export struct AboutUsPage {
               .width(6).height(10)
               .margin({ right: 12 })
           }.width('100%').onClick(() => {
-            router.pushNamedRoute({
-              name: MineConstants.ROUTER_WEB, params: {
-                url: MineConstants.USER_PRIVACY_URL,
-                title: "隐私政策"
-              }
-            }, router.RouterMode.Single)
+            this.appPathStack.pushPathByName(MineConstants.ROUTER_WEB, {
+              url: MineConstants.USER_PRIVACY_URL,
+              title: "隐私政策"
+            } as webType)
           })
         }
         .width('90%')
@@ -88,12 +84,10 @@ export struct AboutUsPage {
       }.alignItems(HorizontalAlign.Center)
       .width('100%')
       .height('100%')
-
     }
-    .hideTitleBar( true)
+    .hideTitleBar(true)
   }
 }
-
 
 @Builder
 function AboutUsPageBuilder() {

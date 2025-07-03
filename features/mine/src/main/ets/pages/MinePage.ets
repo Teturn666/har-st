@@ -3,14 +3,19 @@ import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
-import { ComponentContent, router } from '@kit.ArkUI';
+import { ComponentContent, } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
-import { WebType} from "utils/src/main/ets/model/commom"
+import { preferencesUtils, PreferencesConstants, EmitterConstants, webType } from 'utils/Index'
+
+import('login/src/main/ets/pages/LoginPage')
+import('points/src/main/ets/pages/PointsPage')
+import('setting/src/main/ets/pages/SettingPage')
+import('pay/src/main/ets/pages/PayPage')
+
 
 const context = (getContext(this) as common.UIAbilityContext)
 
@@ -96,7 +101,6 @@ function buildText() {
 @Component
 export struct MinePage {
   @State message: string = "hello"
-  @Consume appPathStack: NavPathStack
   private ctx: UIContext = this.getUIContext();
   private contentNode: ComponentContent<Object> =
     new ComponentContent(this.ctx, wrapBuilder(buildText))
@@ -105,6 +109,7 @@ export struct MinePage {
   @State loginState: string = ''
   @State isVip: number = 0
   @State vipTime: string = ''
+  @Consume appPathStack: NavPathStack
 
   aboutToAppear(): void {
     this.initData()
@@ -143,34 +148,35 @@ export struct MinePage {
 
   private jumpToLogin() {
     if (!this.isLogin()) {
-      this.appPathStack.pushPathByName(MineConstants.ROUTER_LOGIN ,null)
+      this.appPathStack.pushPathByName(MineConstants.ROUTER_LOGIN, null)
     }
   }
 
   private jumpToSearchResult() {
-    this.appPathStack.pushPathByName(MineConstants.ROUTER_ABOUT_US,null)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_ABOUT_US, null)
   }
 
   private jumpToSetting() {
-   // this.appPathStack.pushPathByName(MineConstants.ROUTER_SETTING,null)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_SETTING, null)
   }
 
   private jumpToVIP() {
-   // this.appPathStack.pushPathByName(MineConstants.ROUTER_VIP,null)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_VIP, null)
   }
 
   private jumpToPoints() {
     if (this.isLogin()) {
-     // this.appPathStack.pushPathByName(MineConstants.ROUTER_POINTS,null)
+      this.appPathStack.pushPathByName(MineConstants.ROUTER_POINTS, null)
     } else {
       this.jumpToLogin()
     }
   }
 
   private jumpToHelpCenter() {
-    // this.appPathStack.pushPathByName(MineConstants.ROUTER_WEB,{ url: MineConstants.USER_HELP_URL,
-    //   title: "帮助中心"} as WebType)
-
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_WEB, {
+      url: MineConstants.USER_HELP_URL,
+      title: "帮助中心"
+    } as webType)
   }
 
   private jumpToAppStore() {
@@ -443,9 +449,7 @@ export struct MinePage {
             name: $r('app.string.about_us'),
             isShow: false,
             click: () => {
-              this.appPathStack.pushPathByName('demoPages',null)
-              //this.jumpToSearchResult()
-
+              this.jumpToSearchResult()
               onEventObject(MineMobClickConstants.MENU_ABOUT)
             }
           })

@@ -1,12 +1,69 @@
 {
   "routerMap": [
     {
-      "name": "home/HomePage",
+      "name": "HomePage",
       "pageSourceFile": "src/main/ets/pages/HomePage.ets",
-      "buildFunction": "HomePageBuilder",
-      "data": {
-        "description" : "this is PageOne"
-      }
+      "buildFunction": "HomePageBuilder"
+    },
+    {
+      "name": "searchIntroductionPage",
+      "pageSourceFile": "src/main/ets/pages/SearchIntroductionPage.ets",
+      "buildFunction": "SearchIntroductionPageBuilder"
+    },
+    {
+      "name": "photoSearchPage",
+      "pageSourceFile": "src/main/ets/pages/PhotoSearchPage.ets",
+      "buildFunction": "PhotoSearchPageBuilder"
+    },
+    {
+      "name": "cropImagePage",
+      "pageSourceFile": "src/main/ets/pages/CropImagePage.ets",
+      "buildFunction": "CropImagePageBuilder"
+    },
+    {
+      "name": "searchQuestionsPage",
+      "pageSourceFile": "src/main/ets/pages/SearchQuestions.ets",
+      "buildFunction": "SearchQuestionsBuilder"
+    },
+    {
+      "name": "bankListPage",
+      "pageSourceFile": "src/main/ets/pages/BankListPage.ets",
+      "buildFunction": "BankListPageBuilder"
+    },
+    {
+      "name": "exercisePage",
+      "pageSourceFile": "src/main/ets/pages/ExercisePage.ets",
+      "buildFunction": "ExercisePageBuilder"
+    },
+    {
+      "name": "exerciseCommonPage",
+      "pageSourceFile": "src/main/ets/pages/ExerciseCommonPage.ets",
+      "buildFunction": "ExerciseCommonPageBuilder"
+    },
+    {
+      "name": "exerciseDetailsPage",
+      "pageSourceFile": "src/main/ets/pages/ExerciseDetailsPage.ets",
+      "buildFunction": "ExerciseDetailsPageBuilder"
+    },
+    {
+      "name": "myDownloadPage",
+      "pageSourceFile": "src/main/ets/pages/MyDownloadPage.ets",
+      "buildFunction": "MyDownloadPageBuilder"
+    },
+    {
+      "name": "customQuestionPage",
+      "pageSourceFile": "src/main/ets/pages/CustomQuestionPage.ets",
+      "buildFunction": "CustomQuestionPageBuilder"
+    },
+    {
+      "name": "helpPage",
+      "pageSourceFile": "src/main/ets/pages/HelpPage.ets",
+      "buildFunction": "HelpPageBuilder"
+    },
+    {
+      "name": "customizedBankPage",
+      "pageSourceFile": "src/main/ets/pages/CustomizedBankPage.ets",
+      "buildFunction": "CustomizedBankPageBuilder"
     }
   ]
 }

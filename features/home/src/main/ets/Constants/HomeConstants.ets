@@ -44,9 +44,7 @@ export default class HomeConstants {
   //拍照搜题
   static readonly ROUTER_PHOTO_SEARCH = 'photoSearchPage'
   //自定义搜题区域
-  static readonly ROUTER_CROP_IMAGE= 'cropImagePage'
- //首页
-  static readonly ROUTER_MAIN_PAGE= '@bundle:com.chznai.ikst/entry/ets/pages/MainPage'
+  static readonly ROUTER_CROP_IMAGE = 'cropImagePage'
   // 读屏设置页
   static readonly SCREEN_READ_PAGE = 'ScreenReadPage'
   // 支付页

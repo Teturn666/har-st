@@ -4,26 +4,25 @@ import { window } from '@kit.ArkUI';
 import { PreferencesConstants, preferencesUtils, WXApi, WXEventHandler } from 'utils/Index';
 import { DemoConstants } from 'utils';
 import { cSJAdSdkAd } from '../utils/CSJAdSdk';
-import { MainModel } from '../model/MainModel';
 import { BusinessError } from '@kit.BasicServicesKit';
 import fs from '@ohos.file.fs';
-import { router } from '@kit.ArkUI';
-import EntryConstants from '../components/EntryConstants';
-import {createAtManager} from 'home/src/main/ets/utils/CreateAtManager'
-import {albumPicker} from 'home/src/main/ets/utils/AlbumPicker'
-import {cameraAppStorage} from 'home/src/main/ets/Constants/CameraAppStorage'
+import { createAtManager } from 'home/src/main/ets/utils/CreateAtManager'
+import { albumPicker } from 'home/src/main/ets/utils/AlbumPicker'
+import { cameraAppStorage } from 'home/src/main/ets/Constants/CameraAppStorage'
+
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
-    this.handleWeChatCallIfNeed(want)
+    // this.handleWeChatCallIfNeed(want)
     cSJAdSdkAd.ctx = this.context
     preferencesUtils.context = this.context
     createAtManager.ctx = this.context
-    albumPicker.ctx=this.context
+    albumPicker.ctx = this.context
     // 处理文件打开请求
     this.handleFileOpen(want);
   }
 
+  //
   private handleFileOpen(want: Want): void {
     // 获取文件URI
     const uri = want.uri;
@@ -53,7 +52,7 @@ export default class EntryAbility extends UIAbility {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
       'application/vnd.ms-excel', // .xls
       'text/plain', // .txt
-      'text/csv' // .csv (通常也被当作Excel文件处理)
+      'text/csv'// .csv (通常也被当作Excel文件处理)
     ];
 
     const isExcelFile = type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
@@ -66,7 +65,8 @@ export default class EntryAbility extends UIAbility {
 
     if (isFileUri || isSupportedFile || hasSupportedMimeType) {
       hilog.info(0x0000, 'testTag', 'Processing file URI: %{public}s', uri);
-      hilog.info(0x0000, 'testTag', 'Match reason - isFileUri: %{public}s, isSupportedFile: %{public}s, hasSupportedMimeType: %{public}s',
+      hilog.info(0x0000, 'testTag',
+        'Match reason - isFileUri: %{public}s, isSupportedFile: %{public}s, hasSupportedMimeType: %{public}s',
         isFileUri?.toString(), isSupportedFile?.toString(), hasSupportedMimeType?.toString());
       hilog.info(0x0000, 'testTag', 'File type details - Excel: %{public}s, TXT: %{public}s, Type: %{public}s',
         isExcelFile?.toString(), isTxtFile?.toString(), type || 'null');
@@ -131,12 +131,12 @@ export default class EntryAbility extends UIAbility {
         AppStorage.setOrCreate('fileType', detectedFileType);
         AppStorage.setOrCreate('fileExtension', fileExtension);
         AppStorage.setOrCreate('shouldOpenFile', true);
-
+        AppStorage.setOrCreate('isCustomizedBankPage', true)
         hilog.info(0x0000, 'testTag', 'File info stored - Name: %{public}s, Type: %{public}s, Extension: %{public}s',
           fileName, detectedFileType, fileExtension);
 
         //导航到自定义题库页面
-        this.navigateToCustomizedBankPageWithRouter();
+        // this.navigateToCustomizedBankPageWithRouter();
 
       } catch (err) {
         let error: BusinessError = err as BusinessError;
@@ -144,32 +144,11 @@ export default class EntryAbility extends UIAbility {
       }
     } else {
       hilog.info(0x0000, 'testTag', 'No matching conditions for file opening');
-      hilog.info(0x0000, 'testTag', 'Conditions checked - URI exists: %{public}s, is file URI: %{public}s, is supported file: %{public}s',
+      hilog.info(0x0000, 'testTag',
+        'Conditions checked - URI exists: %{public}s, is file URI: %{public}s, is supported file: %{public}s',
         (uri ? 'true' : 'false'), (isFileUri ? 'true' : 'false'), (isSupportedFile ? 'true' : 'false'));
       hilog.info(0x0000, 'testTag', 'File type received: %{public}s, MIME from params: %{public}s',
         type || 'null', mimeTypeFromParams || 'null');
-    }
-  }
-
-  //导航到自定义题库页面的方法
-  private navigateToCustomizedBankPageWithRouter(): void {
-    try {
-      // 延迟执行，确保应用完全启动
-      setTimeout(() => {
-        router.pushNamedRoute({
-          name: EntryConstants.ROUTER_CUSTOMIZED_BANK_PAGE,
-          params: {
-            fileUri: AppStorage.get<string>('fileUri'),
-            fileName: AppStorage.get<string>('fileName'),
-          },
-        },router.RouterMode.Single).then(() => {
-          hilog.info(0x0000, 'testTag', 'Successfully navigated to CustomizedBankPage with router');
-        }).catch((error:Error) => {
-          hilog.error(0x0000, 'testTag', 'Router navigation failed: %{public}s', error.message);
-        });
-      }, 500); // 延迟500ms确保应用启动完成
-    } catch (error) {
-      hilog.error(0x0000, 'testTag', 'Router navigation error: %{public}s', error.message);
     }
   }
 
@@ -180,7 +159,6 @@ export default class EntryAbility extends UIAbility {
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // Main window is created, set main page for this ability
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
-
     windowStage.loadContent('pages/MainPage', (err) => {
       if (err.code) {
         hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
@@ -194,7 +172,7 @@ export default class EntryAbility extends UIAbility {
     let res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
     if (res?.hmAd?.adconfig?.csjAppId) {
       cSJAdSdkAd.ConfigSDK()
-      }
+    }
 
   }
 
@@ -206,8 +184,8 @@ export default class EntryAbility extends UIAbility {
   onForeground(): void {
     // Ability has brought to foreground
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onForeground');
-    let camera =AppStorage.get(cameraAppStorage.CAMERA_RESTART_CAMERA) as boolean
-    if (camera){
+    let camera = AppStorage.get(cameraAppStorage.CAMERA_RESTART_CAMERA) as boolean
+    if (camera) {
       createAtManager.cameraShooting()
     }
 
@@ -216,6 +194,7 @@ export default class EntryAbility extends UIAbility {
   onBackground(): void {
     // Ability has back to background
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
+    AppStorage.setOrCreate('isCustomizedBankPage', false)
   }
 
   onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {

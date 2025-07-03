@@ -1,6 +1,7 @@
 // 画中画控制器单例
 import { BuilderNode, NodeController, PiPWindow } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { PreferencesConstants, preferencesUtils } from 'utils';
 
 const TAG = 'PipManager';
 
@@ -274,5 +275,16 @@ export class PipManager {
     if (this.nodeController) {
       this.nodeController.update(param)
     }
+  }
+
+  /**
+   * 设置PIP管理器的样式配置
+   * 从用户偏好设置中加载悬浮窗的颜色和字体配置
+   */
+  public setPipManagerStyles(): void {
+    PipManager.titleColor = preferencesUtils.getString(PreferencesConstants.TITLE_COLOR_SETTING)
+    PipManager.optionColor = preferencesUtils.getString(PreferencesConstants.OPTION_COLOR_SETTING)
+    PipManager.floatingColor = preferencesUtils.getString(PreferencesConstants.FLOATING_COLOR_SETTING)
+    PipManager.fontSize = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE)
   }
 }

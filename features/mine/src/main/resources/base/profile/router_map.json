@@ -4,11 +4,6 @@
       "name": "aboutUsPage",
       "pageSourceFile": "src/main/ets/pages/AboutUsPage.ets",
       "buildFunction": "AboutUsPageBuilder"
-    },
-    {
-      "name": "demoPages",
-      "pageSourceFile": "src/main/ets/pages/demoPages.ets",
-      "buildFunction": "demoPageBuilder"
     }
 
   ]

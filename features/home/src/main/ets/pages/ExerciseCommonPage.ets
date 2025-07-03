@@ -1,13 +1,13 @@
-import router from '@ohos.router';
 import promptAction from '@ohos.promptAction';
 import { QuestionRes, questionCollectionTable, questionWrongTable, } from 'db';
 import { TitleBar } from 'widget/Index';
 import { HomeModel } from '../model/HomeModel';
 import HomeConstants from '../Constants/HomeConstants'
 import { preferencesUtils, PreferencesConstants } from 'utils/Index'
+import { DetailParams, NavQid } from '../model/NavGenericType';
+import { cameraAppStorage } from '../Constants/CameraAppStorage';
 
 
-import('./ExerciseDetailsPage')
 // 模拟考试、错题练习、收藏练习题目共用页面
 interface questionSelections {
   selectedOption: string;
@@ -15,14 +15,6 @@ interface questionSelections {
   hasSubmitted: boolean;
 }
 
-// 定义路由参数的接口
-interface RouteParams {
-  practiceMode?: number;
-  qid?: number;
-  backindex?: number;
-}
-
-@Entry({ routeName: "exerciseCommonPage" })
 @Component
 struct ExerciseCommonPage {
   @State selectedIndex: number = 0;
@@ -48,6 +40,10 @@ struct ExerciseCommonPage {
   private timerId: number | null = null; // 计时器 ID
   @State backindex: number = -1; //路由页数
   @State isBankData: boolean = false;
+  @State bankPage: string = ''
+  @State navParams: NavQid = {}
+  @Consume appPathStack: NavPathStack
+
 
   // 添加判断题答案标准化方法
   private normalizeTrueFalseAnswer(answer: string): string {
@@ -255,12 +251,12 @@ struct ExerciseCommonPage {
       }
 
       // 跳转到详情页面
-      router.pushNamedRoute({
-        name: HomeConstants.ROUTER_EXERCISE_DETAILS_LIST,
-        params: {
+      this.appPathStack.replacePathByName(HomeConstants.ROUTER_EXERCISE_DETAILS_LIST,
+        {
+          bankPage: this.bankPage,
           isBankData: this.isBankData,
-          backindex: this.backindex,
-          typepage: this.practiceMode,
+          backIndex: this.backindex,
+          typePage: this.practiceMode,
           title: this.questionBankName,
           correctCount: correctCount,
           wrongCount: wrongCount,
@@ -278,8 +274,14 @@ struct ExerciseCommonPage {
               (this.questionSelections[index]?.selectedOptions.join(',') || '');
             return questionRes;
           })
-        }
-      });
+        } as DetailParams,
+        // (popInfo) => {
+        //   let params = popInfo.result as NavQid
+        //   console.log("popI1", JSON.stringify(popInfo.info));
+        //   console.log("popI2", JSON.stringify(popInfo.result));
+        //   this.navParams = params
+        // }
+        )
     }
   }
 
@@ -288,237 +290,250 @@ struct ExerciseCommonPage {
     return answer.length > 1 && /^[A-D]+$/.test(answer);
   }
 
-  build() {
-    Column() {
-      if (this.isLoading) {
-        Text('加载中...')
-          .fontSize(16)
-          .fontColor(Color.Gray)
-          .margin({ top: 20 });
-      } else if (this.questions.length === 0) {
-        Text('暂无题目数据')
-          .fontSize(16)
-          .fontColor(Color.Gray)
-          .margin({ top: 20 });
-      } else {
-        // 头部
-        TitleBar({
-          title: this.practiceMode === 1 ? this.questionBankName :
-            this.practiceMode === 2 ? "错题练习" : "收藏练习",
-          backClick: () => {
-            if (this.practiceMode === 1) {
-              promptAction.showDialog({
-                title: '提示',
-                message: '你还未完成考试，确认退出吗？',
-                buttons: [
-                  { text: '取消', color: '#666666' },
-                  { text: '确定', color: '#d2a129' },
-                ],
-              }).then((data) => {
-                if (data.index === 1) {
-                  let index = Number(router.getLength()) - 2
-                  router.back(
-                    index, {
-                    refresh: "1",
-                    type: this.practiceMode.toString()
-                  })
-                }
-              });
-            } else {
-              this.backindex -= 1
-              let index = Number(router.getLength()) - this.backindex
-              router.back(
-                index, {
-                refresh: "1",
-                type: this.practiceMode.toString()
-              })
-            }
+  BackPress() {
+    if (this.practiceMode === 1) {
+      promptAction.showDialog({
+        title: '提示',
+        message: '你还未完成考试，确认退出吗？',
+        buttons: [
+          { text: '取消', color: '#666666' },
+          { text: '确定', color: '#d2a129' },
+        ],
+      }).then((data) => {
+        if (data.index === 1) {
+          if (this.bankPage === 'bankDetailsPage') {
+            console.log('bankDetailsPagessss');
+            this.appPathStack.replacePathByName('bankDetailsPage',null)
+           // this.appPathStack.pop()
+          } else {
+            this.appPathStack.popToName(HomeConstants.ROUTER_BANK_LIST)
+            AppStorage.setOrCreate(cameraAppStorage.SELECT_CHANGE_TEXT, this.practiceMode)
           }
-        })
-          .width('100%');
-        // 进度条部分
-        Flex({ direction: FlexDirection.Column, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Start }) {
-          Row() {
-            Progress({
-              type: ProgressType.Linear,
-              value: this.currentProgress,
-              total: this.totalProgress,
-            })
-              .color(Color.Orange)
-              .width(this.practiceMode === 2 || this.practiceMode === 3 ? '90%' : '100%')
-              .height(16)
-              .backgroundColor('#dadada')
-              .style({ strokeWidth: 15 });
 
-            if (this.practiceMode === 2 || this.practiceMode === 3) {
-              Text('清空')
-                .fontSize(12)
-                .fontColor('#F2B771')
-                .margin({ left: 10 })
-                .onClick(() => {
-                  if (this.practiceMode === 2) {
-                    this.clearWrong()
-                  } else {
-                    this.colletionQuestion()
-                  }
-                });
-            }
-          }
-          .width('100%');
-
-          Row() {
-            Image($r('app.media.ic_clock'))
-              .width(16)
-              .height(16);
-            Text(this.timerText)
-              .fontColor('#F2B771')
-              .fontSize(12)
-              .margin({ left: 8 });
-
-            Blank();
-            Text(`${this.currentProgress}/${this.totalProgress}`)
-              .fontSize(12)
-              .fontColor(Color.Black);
-          }
-          .width(this.practiceMode === 2 || this.practiceMode === 3 ? '90%' : '100%')
-          .margin({ top: 8 })
-          .justifyContent(FlexAlign.SpaceBetween);
         }
-        .backgroundColor('#f5f3f4')
-        .borderRadius(8)
-        .width('90%')
-        .height(50)
-        .margin({ top: 10 })
-        .padding(10);
-
-        List() {
-          ListItem() {
-            // 内容部分
-            Row() {
-              Image(this.getQuestionTypeImage())
-                .height(24)
-                .objectFit(ImageFit.Cover)
-              Blank();
-
-              if (this.practiceMode === 1 || this.practiceMode === 3) {
-                Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ?
-                $r('app.media.stared') :
-                $r('app.media.star'))
-                  .width(18)
-                  .height(18)
-                  .onClick(() => {
-                    this.toggleFavorite();
-                  })
-                  .margin({ right: 5 })
-              }
-              if (this.practiceMode === 1 || this.practiceMode === 3) {
-                Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
-                  .fontSize(12)
-              }
-              if (this.practiceMode === 2) {
-                Image($r('app.media.ic_del'))
-                  .width(18)
-                  .height(18)
-                  .onClick(() => {
-                    // 移除逻辑
-                    this.removeCurrentQuestion()
-                  })
-                  .margin({ right: 5 });
-              }
-
-              if (this.practiceMode === 2) {
-                Text("移除")
-                  .fontColor('#F2B771')
-                  .fontSize(12);
-              }
-            }
-            .justifyContent(FlexAlign.SpaceBetween)
-            .padding(10)
-            .backgroundColor(Color.White)
-            .borderRadius(8)
-            .margin({ top: 20 })
-            .width('100%');
-          }
-
-          ListItem() {
-            // 问题描述
-            Text(this.questions[this.currentQuestionIndex].question)
-              .fontSize(16)
-              .padding({ left: 10, right: 10, top: 10 })
-              .textAlign(TextAlign.Start)
-              .width('100%');
-          }
-
-          ListItem() {
-            // 选项列表
-            Column() {
-              ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
-                Row() {
-                  Text(this.getOptionLabel(idx))
-                    .width(30)
-                    .height(30)
-                    .textAlign(TextAlign.Center)
-                    .fontSize(16)
-                    .fontColor('#000000')
-                    .borderRadius(15)
-                    .backgroundColor(this.getOptionBackgroundColor(idx))
-                    .margin({ right: 10 });
-                  Text(item)
-                    .fontSize(16)
-                    .padding(10)
-                    .width('80%')
-                    .borderRadius(8)
-                    .backgroundColor(this.getOptionBackgroundColor(idx))
-                }
-                .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
-                .margin({ top: 12, left: 16, right: 16 });
-              });
-            }
-          }
-
-          ListItem() {
-            //按钮
-            if (((this.practiceMode === 3 || this.practiceMode === 2) && this.hasSubmitted)) {
-              Row() {
-                Button() {
-                  Text('上一题')
-                    .fontSize(16)
-                    .fontColor('#F2B771')
-                }
-                .width(100)
-                .height(30)
-                .backgroundColor(Color.White)
-                .borderRadius(20)
-                .border({ width: 1, color: '#F2B771' })
-                .onClick(() => this.goToPreviousQuestion())
-
-                Button() {
-                  Text('下一题')
-                    .fontSize(16)
-                    .fontColor('#F2B771')
-                }
-                .backgroundColor(Color.White)
-                .width(100)
-                .height(30)
-                .borderRadius(20)
-                .border({ width: 1, color: '#F2B771' })
-                .onClick(() => this.goToNextQuestion())
-              }
-              .justifyContent(FlexAlign.SpaceAround)
-              .alignItems(VerticalAlign.Center)
-              .padding(10)
-              .width('100%')
-              .margin({ top: 18 })
-            }
-          }
-        }
-        .width('90%')
-        .layoutWeight(1)
-      }
+      });
+    } else {
+      this.appPathStack.popToName(HomeConstants.ROUTER_BANK_LIST)
+      AppStorage.setOrCreate(cameraAppStorage.SELECT_CHANGE_TEXT, this.practiceMode)
     }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(Color.White);
+  }
+
+  build() {
+    NavDestination() {
+      Column() {
+        if (this.isLoading) {
+          Text('加载中...')
+            .fontSize(16)
+            .fontColor(Color.Gray)
+            .margin({ top: 20 });
+        } else if (this.questions.length === 0) {
+          Text('暂无题目数据')
+            .fontSize(16)
+            .fontColor(Color.Gray)
+            .margin({ top: 20 });
+        } else {
+          // 头部
+          TitleBar({
+            title: this.practiceMode === 1 ? this.questionBankName :
+              this.practiceMode === 2 ? "错题练习" : "收藏练习",
+            backClick: () => {
+              this.BackPress()
+            }
+          })
+            .width('100%');
+          // 进度条部分
+          Flex({
+            direction: FlexDirection.Column,
+            justifyContent: FlexAlign.SpaceBetween,
+            alignItems: ItemAlign.Start
+          }) {
+            Row() {
+              Progress({
+                type: ProgressType.Linear,
+                value: this.currentProgress,
+                total: this.totalProgress,
+              })
+                .color(Color.Orange)
+                .width(this.practiceMode === 2 || this.practiceMode === 3 ? '90%' : '100%')
+                .height(16)
+                .backgroundColor('#dadada')
+                .style({ strokeWidth: 15 });
+
+              if (this.practiceMode === 2 || this.practiceMode === 3) {
+                Text('清空')
+                  .fontSize(12)
+                  .fontColor('#F2B771')
+                  .margin({ left: 10 })
+                  .onClick(() => {
+                    if (this.practiceMode === 2) {
+                      this.clearWrong()
+                    } else {
+                      this.colletionQuestion()
+                    }
+                  });
+              }
+            }
+            .width('100%');
+
+            Row() {
+              Image($r('app.media.ic_clock'))
+                .width(16)
+                .height(16);
+              Text(this.timerText)
+                .fontColor('#F2B771')
+                .fontSize(12)
+                .margin({ left: 8 });
+
+              Blank();
+              Text(`${this.currentProgress}/${this.totalProgress}`)
+                .fontSize(12)
+                .fontColor(Color.Black);
+            }
+            .width(this.practiceMode === 2 || this.practiceMode === 3 ? '90%' : '100%')
+            .margin({ top: 8 })
+            .justifyContent(FlexAlign.SpaceBetween);
+          }
+          .backgroundColor('#f5f3f4')
+          .borderRadius(8)
+          .width('90%')
+          .height(50)
+          .margin({ top: 10 })
+          .padding(10);
+
+          List() {
+            ListItem() {
+              // 内容部分
+              Row() {
+                Image(this.getQuestionTypeImage())
+                  .height(24)
+                  .objectFit(ImageFit.Cover)
+                Blank();
+
+                if (this.practiceMode === 1 || this.practiceMode === 3) {
+                  Image(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ?
+                  $r('app.media.stared') :
+                  $r('app.media.star'))
+                    .width(18)
+                    .height(18)
+                    .onClick(() => {
+                      this.toggleFavorite();
+                    })
+                    .margin({ right: 5 })
+                }
+                if (this.practiceMode === 1 || this.practiceMode === 3) {
+                  Text(this.favoriteStatus[this.questions[this.currentQuestionIndex].questionID] ? "已收藏" : "收藏")
+                    .fontSize(12)
+                }
+                if (this.practiceMode === 2) {
+                  Image($r('app.media.ic_del'))
+                    .width(18)
+                    .height(18)
+                    .onClick(() => {
+                      // 移除逻辑
+                      this.removeCurrentQuestion()
+                    })
+                    .margin({ right: 5 });
+                }
+
+                if (this.practiceMode === 2) {
+                  Text("移除")
+                    .fontColor('#F2B771')
+                    .fontSize(12);
+                }
+              }
+              .justifyContent(FlexAlign.SpaceBetween)
+              .padding(10)
+              .backgroundColor(Color.White)
+              .borderRadius(8)
+              .margin({ top: 20 })
+              .width('100%');
+            }
+
+            ListItem() {
+              // 问题描述
+              Text(this.questions[this.currentQuestionIndex].question)
+                .fontSize(16)
+                .padding({ left: 10, right: 10, top: 10 })
+                .textAlign(TextAlign.Start)
+                .width('100%');
+            }
+
+            ListItem() {
+              // 选项列表
+              Column() {
+                ForEach(this.questions[this.currentQuestionIndex].option, (item: string, idx: number) => {
+                  Row() {
+                    Text(this.getOptionLabel(idx))
+                      .width(30)
+                      .height(30)
+                      .textAlign(TextAlign.Center)
+                      .fontSize(16)
+                      .fontColor('#000000')
+                      .borderRadius(15)
+                      .backgroundColor(this.getOptionBackgroundColor(idx))
+                      .margin({ right: 10 });
+                    Text(item)
+                      .fontSize(16)
+                      .padding(10)
+                      .width('80%')
+                      .borderRadius(8)
+                      .backgroundColor(this.getOptionBackgroundColor(idx))
+                  }
+                  .onClick(() => this.handleOptionClick(this.getOptionLabel(idx)))
+                  .margin({ top: 12, left: 16, right: 16 });
+                });
+              }
+            }
+
+            ListItem() {
+              //按钮
+              if (((this.practiceMode === 3 || this.practiceMode === 2) && this.hasSubmitted)) {
+                Row() {
+                  Button() {
+                    Text('上一题')
+                      .fontSize(16)
+                      .fontColor('#F2B771')
+                  }
+                  .width(100)
+                  .height(30)
+                  .backgroundColor(Color.White)
+                  .borderRadius(20)
+                  .border({ width: 1, color: '#F2B771' })
+                  .onClick(() => this.goToPreviousQuestion())
+
+                  Button() {
+                    Text('下一题')
+                      .fontSize(16)
+                      .fontColor('#F2B771')
+                  }
+                  .backgroundColor(Color.White)
+                  .width(100)
+                  .height(30)
+                  .borderRadius(20)
+                  .border({ width: 1, color: '#F2B771' })
+                  .onClick(() => this.goToNextQuestion())
+                }
+                .justifyContent(FlexAlign.SpaceAround)
+                .alignItems(VerticalAlign.Center)
+                .padding(10)
+                .width('100%')
+                .margin({ top: 18 })
+              }
+            }
+          }
+          .width('90%')
+          .layoutWeight(1)
+        }
+      }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(Color.White);
+    }
+    .hideTitleBar(true)
+    .onBackPressed(() => {
+      this.BackPress()
+      return true;
+    })
 
   }
 
@@ -860,14 +875,8 @@ struct ExerciseCommonPage {
           this.currentProgress = this.questions.length > 0 ? 1 : 0;
           this.questionSelections = {};
           this.favoriteStatus = {};
-          // this.yic()
-          let index = Number(router.getLength()) - 1
-          router.back(
-            index, {
-            refresh: "1",
-            type: this.practiceMode.toString()
-          }
-          )
+          AppStorage.setOrCreate(cameraAppStorage.SELECT_CHANGE_TEXT, this.practiceMode)
+          this.appPathStack.pop()
         } else {
           promptAction.showToast({ message: '没有错题可清空', duration: 1500 });
         }
@@ -905,13 +914,8 @@ struct ExerciseCommonPage {
           this.currentProgress = this.questions.length > 0 ? 1 : 0;
           this.questionSelections = {};
           this.favoriteStatus = {};
-          let index = Number(router.getLength()) - 1
-          router.back(
-            index, {
-            refresh: "1",
-            type: this.practiceMode.toString()
-          }
-          )
+          AppStorage.setOrCreate(cameraAppStorage.SELECT_CHANGE_TEXT, this.practiceMode)
+          this.appPathStack.pop()
         } else {
           promptAction.showToast({ message: '没有收藏题目可清空', duration: 1500 });
         }
@@ -950,11 +954,7 @@ struct ExerciseCommonPage {
             { text: '我知道了', color: '#d2a129' },
           ],
         }).then(() => {
-          let index = Number(router.getLength()) - 1;
-          router.back(index, {
-            refresh: "1",
-            type: this.practiceMode.toString()
-          });
+          this.appPathStack.pop()
         });
       } else {
         if (this.currentQuestionIndex >= this.questions.length) {
@@ -994,74 +994,86 @@ struct ExerciseCommonPage {
   }
 
   async aboutToAppear(): Promise<void> {
-    const params = router.getParams() as RouteParams | undefined;
-    if (params && typeof params.practiceMode === 'number' && typeof params.qid === 'number') {
-      this.practiceMode = params.practiceMode;
-      this.qid = params.qid;
-      if (this.practiceMode === 1) {
-        this.backindex = params.backindex || 3;
-      } else {
-        this.backindex = params.backindex || 2;
-      }
-
-      // console.log('aboutToAppear: qid=', this.qid, 'practiceMode=', this.practiceMode);
-      if ([1, 2, 3].includes(this.practiceMode)) {
+    const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST) as NavQid[]
+    if (res && res.length) {
+      const params = res[0]
+      if (params && typeof params.practiceMode === 'number' && typeof params.qid === 'number') {
+        this.practiceMode = params.practiceMode;
+        this.qid = params.qid;
+        if (params.bankPage) {
+          this.bankPage = params.bankPage
+        }
         if (this.practiceMode === 1) {
-          // 模拟考试
-          this.isLoading = true;
-          Promise.all([
-            this.getQuestionBankList(),
-            this.getBankQuestionList(this.qid).then(() => {
-              this.checkFavoriteStatus(); // 初始化第一题的收藏状态
-            })
-          ]).then(() => {
-            this.isLoading = false;
-            this.startTimer(); // 数据加载完成后启动计时器
-          }).catch((err: Error) => {
-            this.isLoading = false;
-            console.error('异步加载失败:', err.message || err);
-            promptAction.showToast({ message: '数据加载失败', duration: 2000 });
-          });
-        } else if (this.practiceMode === 2) {
-          // 错题练习
-          this.isLoading = true;
-          Promise.all([
-            this.getQuestionBankList(),
-            this.getWrongQuestionList(this.qid)
-          ]).then(() => {
-            this.isLoading = false;
-            this.startTimer(); // 数据加载完成后启动计时器
-          }).catch((err: Error) => {
-            this.isLoading = false;
-            console.error('异步加载失败:', err.message || err);
-            promptAction.showToast({ message: '数据加载失败', duration: 2000 });
-          });
-        } else if (this.practiceMode === 3) {
-          // 收藏练习
-          this.isLoading = true;
-          Promise.all([
-            this.getQuestionBankList(),
-            this.getCollectionQuestionList(this.qid).then(() => {
-              this.checkFavoriteStatus(); // 初始化第一题的收藏状态
-            })
-          ]).then(() => {
-            this.isLoading = false;
-            this.startTimer(); // 数据加载完成后启动计时器
-          }).catch((err: Error) => {
-            this.isLoading = false;
-            console.error('异步加载失败:', err.message || err);
-            promptAction.showToast({ message: '数据加载失败', duration: 2000 });
-          });
+          this.backindex = params.backIndex || 3;
+        } else {
+          this.backindex = params.backIndex || 2;
+        }
+
+        // console.log('aboutToAppear: qid=', this.qid, 'practiceMode=', this.practiceMode);
+        if ([1, 2, 3].includes(this.practiceMode)) {
+          if (this.practiceMode === 1) {
+            // 模拟考试
+            this.isLoading = true;
+            Promise.all([
+              this.getQuestionBankList(),
+              this.getBankQuestionList(this.qid).then(() => {
+                this.checkFavoriteStatus(); // 初始化第一题的收藏状态
+              })
+            ]).then(() => {
+              this.isLoading = false;
+              this.startTimer(); // 数据加载完成后启动计时器
+            }).catch((err: Error) => {
+              this.isLoading = false;
+              console.error('异步加载失败:', err.message || err);
+              promptAction.showToast({ message: '数据加载失败', duration: 2000 });
+            });
+          } else if (this.practiceMode === 2) {
+            // 错题练习
+            this.isLoading = true;
+            Promise.all([
+              this.getQuestionBankList(),
+              this.getWrongQuestionList(this.qid)
+            ]).then(() => {
+              this.isLoading = false;
+              this.startTimer(); // 数据加载完成后启动计时器
+            }).catch((err: Error) => {
+              this.isLoading = false;
+              console.error('异步加载失败:', err.message || err);
+              promptAction.showToast({ message: '数据加载失败', duration: 2000 });
+            });
+          } else if (this.practiceMode === 3) {
+            // 收藏练习
+            this.isLoading = true;
+            Promise.all([
+              this.getQuestionBankList(),
+              this.getCollectionQuestionList(this.qid).then(() => {
+                this.checkFavoriteStatus(); // 初始化第一题的收藏状态
+              })
+            ]).then(() => {
+              this.isLoading = false;
+              this.startTimer(); // 数据加载完成后启动计时器
+            }).catch((err: Error) => {
+              this.isLoading = false;
+              console.error('异步加载失败:', err.message || err);
+              promptAction.showToast({ message: '数据加载失败', duration: 2000 });
+            });
+          }
+        } else {
+          console.error('Invalid practiceMode received:', this.practiceMode);
+          promptAction.showToast({ message: '无效的练习模式', duration: 1500 });
+          this.practiceMode = 1;
         }
       } else {
-        console.error('Invalid practiceMode received:', this.practiceMode);
-        promptAction.showToast({ message: '无效的练习模式', duration: 1500 });
+        console.error('No practiceMode parameter received or invalid type');
+        promptAction.showToast({ message: '未指定练习模式', duration: 1500 });
         this.practiceMode = 1;
       }
-    } else {
-      console.error('No practiceMode parameter received or invalid type');
-      promptAction.showToast({ message: '未指定练习模式', duration: 1500 });
-      this.practiceMode = 1;
     }
+
   }
+}
+
+@Builder
+function ExerciseCommonPageBuilder() {
+  ExerciseCommonPage()
 }
