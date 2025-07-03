@@ -1,27 +1,29 @@
 import { HomePage } from 'home/Index';
+import { CustomizedBankPage } from 'home/src/main/ets/pages/CustomizedBankPage'
 import { BankPage } from 'bank/Index';
 import { MinePage } from 'mine/Index';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { AppConstants } from '../constants/AppConstants';
 import { TabBarType } from '../model/TabBarModel';
-import router from '@ohos.router'
-import { common } from '@kit.AbilityKit';
+import { common, } from '@kit.AbilityKit';
 import { init } from '@umeng/analytics';
 import { MainModel } from '../model/MainModel';
-import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants, webType } from 'utils/Index'
 import { emitter } from '@kit.BasicServicesKit';
 import { splashAd } from '../utils/SplashAd';
 import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes';
 import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo';
+import { Customized } from 'home/src/main/ets/model/NavGenericType';
+import HomeConstants from 'home/src/main/ets/Constants/HomeConstants';
 
 
 const context = (getContext(this) as common.UIAbilityContext)
 
-@Entry()
+@Entry
 @Component
 struct MainPage {
   @LocalStorageLink('mainTabIndex') currentIndex: TabBarType = TabBarType.HOME;
-  @Provide('appPathStack') appPathStack: NavPathStack = new NavPathStack();
+  @Provide appPathStack: NavPathStack = new NavPathStack();
   @State showDialog: boolean = false
   @State mainModel: MainModel = MainModel.getInstance()
   @State isShow: boolean = false
@@ -32,15 +34,12 @@ struct MainPage {
   @State CsjHmAD: ConfigRes = {
     hmAd: new HmAdInfo()
   }
+  @StorageProp("isCustomizedBankPage") want: boolean = false
 
   private initPreferences() {
     //初始化sp实例
     preferencesUtils.setContext(context)
     this.showDialog = preferencesUtils.getBoolean(PreferencesConstants.SP_IS_FIRST_INSTALL, true)
-  }
-
-  onBackPress(): boolean | void {
-    return true
   }
 
   // 修改布尔值的方法
@@ -49,6 +48,7 @@ struct MainPage {
   }
 
   aboutToAppear(): void {
+    AppStorage.setOrCreate("PathStack", this.appPathStack)
     splashAd.ctx = this.getUIContext()
     this.initPreferences()
     this.mainModel.initDb()
@@ -57,11 +57,23 @@ struct MainPage {
     this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
     this.getCSJ()
     this.ShowSplash()
+
+  }
+
+  onPageShow(): void {
+    if (this.want) {
+      this.navCustomized()
+    }
+
+  }
+
+  navCustomized() {
+    this.appPathStack.pushDestination(new NavPathInfo(HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE,
+      { isShow: false } as Customized));
   }
 
   async getCSJ() {
     await MainModel.getInstance().getConfigList()
-
 
   }
 
@@ -121,7 +133,7 @@ struct MainPage {
           .backgroundColor($r('app.color.start_window_background'))
         }
         .hideTitleBar(true)
-        // .navDestination(this.appRouter)
+        .navDestination(this.navMap)
         .mode(NavigationMode.Stack)
 
         if (this.showDialog) {
@@ -131,22 +143,26 @@ struct MainPage {
               Row() {
                 Text("用户协议").fontColor($r('app.color.c_f75a23'))
                   .fontSize(18).onClick(() => {
-                  router.pushNamedRoute({
-                    name: "webPage", params: {
-                      url: "https://ti.iksdt.com/static/doc/yhxy.html",
-                      title: "用户协议"
-                    }
+                  this.showDialog = false
+                  this.appPathStack.pushPathByName("webPage", {
+                    url: "https://ti.iksdt.com/static/doc/yhxy.html",
+                    title: "用户协议",
+                    page: 'mainPage'
+                  } as webType, (popInfo: PopInfo) => {
+                    this.showDialog = popInfo.result as boolean
                   })
                 }).margin({ left: 12 })
                 Text("和").fontColor($r('app.color.c_3e3e3e'))
                   .fontSize(18)
                 Text("隐私政策").fontColor($r('app.color.c_f75a23'))
                   .fontSize(18).onClick(() => {
-                  router.pushNamedRoute({
-                    name: "webPage", params: {
-                      url: "https://ti.iksdt.com/static/doc/yszc.html",
-                      title: "隐私政策"
-                    }
+                  this.showDialog = false
+                  this.appPathStack.pushPathByName("webPage", {
+                    url: "https://ti.iksdt.com/static/doc/yszc.html",
+                    title: "隐私政策",
+                    page: 'mainPage'
+                  } as webType, (popInfo: PopInfo) => {
+                    this.showDialog = popInfo.result as boolean
                   })
                 })
                 Blank()
@@ -205,6 +221,13 @@ struct MainPage {
         .width('100%')
         .height('100%')
         .expandSafeArea()
+    }
+  }
+
+  @Builder
+  navMap(name: string) {
+    if (name === HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE) {
+      CustomizedBankPage()
     }
   }
 }

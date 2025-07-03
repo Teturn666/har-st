@@ -79,6 +79,10 @@
     {
       "name": "font_size_18fp",
       "value": "18fp"
+    },
+    {
+      "name": "page_text_font_size",
+      "value": "50fp"
     }
   ]
 }

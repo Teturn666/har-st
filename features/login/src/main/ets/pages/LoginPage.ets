@@ -1,7 +1,7 @@
 import bundleManager from '@ohos.bundle.bundleManager';
 import * as wxOpenSdk from '@tencent/wechat_open_sdk';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { promptAction, } from '@kit.ArkUI';
+import { promptAction } from '@kit.ArkUI';
 import common from '@ohos.app.ability.common';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { ErrCode } from '@tencent/wechat_open_sdk';
@@ -9,7 +9,6 @@ import http from '@ohos.net.http';
 import { authentication, loginComponentManager, LoginWithHuaweiIDButton } from '@kit.AccountKit';
 import { util } from '@kit.ArkTS';
 import { LoginConstants } from '../Constants/LoginConstants';
-import { WebType } from "utils/src/main/ets/model/commom"
 import {
   preferencesUtils,
   PreferencesConstants,
@@ -18,7 +17,8 @@ import {
   OnWXResp,
   WXApi,
   WXEventHandler,
-  APP_ID
+  APP_ID,
+  webType
 } from 'utils/Index'
 import { LoginModel } from '../model/LoginModel';
 import { BankListRes } from 'db';
@@ -388,20 +388,20 @@ export struct LoginPage {
             .fontSize(12)
             .fontColor('#007AFF')
             .onClick(() => {
-              this.appPathStack.pushPathByName('webPages', {
+              this.appPathStack.pushPathByName(LoginConstants.ROUTER_WEB, {
                 url: LoginConstants.USER_AGREEMENT_URL,
                 title: "用户协议"
-              } as WebType)
+              } as webType)
             })
             .margin({ right: 4 })
           Text('《隐私政策》')
             .fontSize(12)
             .fontColor('#007AFF')
             .onClick(() => {
-              this.appPathStack.pushPathByName('webPages', {
+              this.appPathStack.pushPathByName(LoginConstants.ROUTER_WEB, {
                 url: LoginConstants.USER_PRIVACY_URL,
                 title: "隐私政策"
-              } as WebType)
+              } as webType)
             })
             .margin({ right: 4 })
           Text('和')
@@ -415,7 +415,7 @@ export struct LoginPage {
               this.appPathStack.pushPathByName(LoginConstants.ROUTER_WEB, {
                 url: LoginConstants.USER_HUAWEI_URL,
                 title: ""
-              } as WebType)
+              } as webType)
             })
         }
         .width('80%')

@@ -7,6 +7,6 @@
     "routerMap": "$profile:router_map",
     "deviceTypes": [
       "phone"
-    ]
+    ],
   }
 }

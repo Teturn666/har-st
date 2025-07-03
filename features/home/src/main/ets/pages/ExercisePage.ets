@@ -1,10 +1,13 @@
-import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
 import { QuestionRes } from 'db';
+import { HeaderComponent } from '../components/HeaderComponent';
+import { NavigationButtons } from '../components/NavigationButtons';
+import { OptionList } from '../components/OptionList';
+import { ProgressBar } from '../components/ProgressBar';
+import { QuestionContent } from '../components/QuestionContent';
 import HomeConstants from '../Constants/HomeConstants';
 import { HomeModel } from '../model/HomeModel';
-
-import('./ExerciseCommonPage')
+import { NavQid } from '../model/NavGenericType';
 
 interface questionSelections {
   selectedOption: string;
@@ -14,7 +17,7 @@ interface questionSelections {
 
 const TAG = 'ExercisePage';
 
-@Entry({ routeName: 'exercisePage' })
+
 @Component
 struct ExercisePage {
   @State qid: number = -1
@@ -31,6 +34,8 @@ struct ExercisePage {
   @State questionSelections: Record<number, questionSelections> = {}; // 记录每题选择
   @State totalProgress: number = this.questions.length;
   @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
+  @State bankPage:string=''
+  @Consume appPathStack: NavPathStack
 
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
@@ -352,423 +357,98 @@ struct ExercisePage {
     return this.favoriteStatus[question.questionID] || false;
   }
 
-  build() {
-    if (this.questions.length > 0)
-    Column() {
-      HeaderComponent({
-        qid: this.qid,
-        selectedIndex: this.selectedIndex,
-        onModeChange: (index: number) => {
-          this.selectedIndex = index;
-        }
-      })
-
-
-      // 进度条部分
-      ProgressBar({
-        current: this.currentQuestionIndex + 1,
-        total: this.questions.length,
-        onReset: () => {
-          this.resetProgress()
-        }
-      })
-
-      if (this.questions.length > 0) {
-        List() {
-          ListItem() {
-            QuestionContent({
-              question: this.questions[this.currentQuestionIndex],
-              isStarred: this.isQuestionStarred(this.currentQuestionIndex),
-              onToggleStar: () => {
-                this.toggleFavorite()
-              }
-            })
-          }
-
-          ListItem() {
-            OptionList({
-              options: this.questions[this.currentQuestionIndex].option,
-              selectedOptions: this.selectedOptions,
-              selectedOption: this.selectedOption,
-              hasSubmitted: this.hasSubmitted,
-              isMultipleChoice: this.isMultipleChoice(),
-              correctAnswers: this.questions[this.currentQuestionIndex].answer,
-              isReviewMode: this.selectedIndex === 1,
-              onOptionClick: (option) => {
-                this.handleOptionClick(option)
-              }
-            })
-          }
-
-          ListItem() {
-            NavigationButtons({
-              canGoPrevious: this.currentQuestionIndex > 0,
-              canGoNext: this.currentQuestionIndex < this.questions.length - 1,
-              onPrevious: () => {
-                this.goToPreviousQuestion()
-              },
-              onNext: () => {
-                this.goToNextQuestion()
-              }
-            })
-          }
-        }
-        .width('100%')
-        .layoutWeight(1)
+  aboutToAppear(): void {
+    const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_EXERCISE_LIST) as NavQid[]
+    if (res && res.length&& res[0].qid) {
+      const params = res[0]
+      if (params.bankPage) this.bankPage = params.bankPage
+      this.qid = parseInt(params.qid!.toString(), 10);
+      console.log(TAG, 'Received qid =' + this.qid);
+      if (this.qid > 0) {
+        this.getBankQuestionList(this.qid).then(() => {
+          this.checkFavoriteStatus(); // 初始化第一题的收藏状态
+        });
       }
     }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(Color.White)
   }
-
-  aboutToAppear(): void {
-    const params = router.getParams() as Record<string, string>;
-    if (params.qid) {
-      this.qid = parseInt(params.qid, 10);
-    }
-    console.log(TAG, 'Received qid =' + this.qid);
-    if (this.qid > 0) {
-      this.getBankQuestionList(this.qid).then(() => {
-        this.checkFavoriteStatus(); // 初始化第一题的收藏状态
-      });
-    }
-  }
-}
-
-
-@Component
-struct HeaderComponent {
-  @Prop selectedIndex: number = 0;
-  @Prop qid: number = 0;
-  onModeChange: (index: number) => void = () => {
-
-  };
 
   build() {
-    Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
-      Image($r('app.media.ic_back'))
-        .objectFit(ImageFit.Contain)
-        .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
-        .margin({ left: 15, right: 75 })
-        .align(Alignment.TopStart)
-        .onClick(() => {
-          router.back()
+    NavDestination() {
+    if (this.questions.length > 0){
+      Column() {
+        HeaderComponent({
+          bankPage:this.bankPage,
+          qid: this.qid,
+          selectedIndex: this.selectedIndex,
+          onModeChange: (index: number) => {
+            this.selectedIndex = index;
+          }
         })
 
-      Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
-        Button() {
-          Row() {
-            Button('答题')
-              .fontColor(this.selectedIndex === 0 ? '#d2a129' : '#FFFFFF')
-              .fontSize($r('app.float.font_size_12fp'))
-              .border({ width: 1, color: '#d2a129' })
-              .width(60)
-              .height(28)
-              .backgroundColor(this.selectedIndex === 0 ? '#FFFFFF' : '#d2a129')
-              .borderRadius(6)
-              .padding({ left: 12, right: 12 })
-              .onClick(() => {
-                this.onModeChange(0);
-                promptAction.showToast({ message: '切换到答题' });
-              })
-            Button('背题')
-              .fontColor(this.selectedIndex === 1 ? '#d2a129' : '#FFFFFF')
-              .fontSize($r('app.float.font_size_12fp'))
-              .border({ width: 1, color: '#d2a129' })
-              .width(60)
-              .height(28)
-              .backgroundColor(this.selectedIndex === 1 ? '#FFFFFF' : '#d2a129')
-              .borderRadius(6)
-              .padding({ left: 12, right: 12 })
-              .onClick(() => {
-                this.onModeChange(1);
-                promptAction.showToast({ message: '切换到背题' });
-              })
+        // 进度条部分
+        ProgressBar({
+          current: this.currentQuestionIndex + 1,
+          total: this.questions.length,
+          onReset: () => {
+            this.resetProgress()
           }
-          .justifyContent(FlexAlign.SpaceBetween)
-          .alignItems(VerticalAlign.Center)
-        }
-        .backgroundColor('#d2a129')
+        })
 
-        Blank()
-        Button('模拟考试')
-          .width(70)
-          .height(28)
-          .backgroundColor('#d2a129')
-          .borderRadius(6)
-          .padding({ left: 12, right: 12 })
-          .margin({ right: 12 })
-          .onClick(() => {
-            router.pushNamedRoute({
-              name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-              params: {
-                practiceMode: 1,
-                qid: this.qid
-              }
-            }, router.RouterMode.Single)
-          })
+        if (this.questions.length > 0) {
+          List() {
+            ListItem() {
+              QuestionContent({
+                question: this.questions[this.currentQuestionIndex],
+                isStarred: this.isQuestionStarred(this.currentQuestionIndex),
+                onToggleStar: () => {
+                  this.toggleFavorite()
+                }
+              })
+            }
+
+            ListItem() {
+              OptionList({
+                options: this.questions[this.currentQuestionIndex].option,
+                selectedOptions: this.selectedOptions,
+                selectedOption: this.selectedOption,
+                hasSubmitted: this.hasSubmitted,
+                isMultipleChoice: this.isMultipleChoice(),
+                correctAnswers: this.questions[this.currentQuestionIndex].answer,
+                isReviewMode: this.selectedIndex === 1,
+                onOptionClick: (option) => {
+                  this.handleOptionClick(option)
+                }
+              })
+            }
+
+            ListItem() {
+              NavigationButtons({
+                canGoPrevious: this.currentQuestionIndex > 0,
+                canGoNext: this.currentQuestionIndex < this.questions.length - 1,
+                onPrevious: () => {
+                  this.goToPreviousQuestion()
+                },
+                onNext: () => {
+                  this.goToNextQuestion()
+                }
+              })
+            }
+          }
+          .width('100%')
+          .layoutWeight(1)
+        }
       }
+      .width('100%')
+      .height('100%')
+      .backgroundColor(Color.White)
     }
+
+
+    }.hideTitleBar(true)
   }
 }
 
-@Component
-export struct ProgressBar {
-  @Prop current: number;
-  @Prop total: number;
-  onReset: () => void = () => {
-  };
-
-  build() {
-    Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
-      Progress({
-        type: ProgressType.Linear,
-        value: this.current,
-        total: this.total
-      })
-        .color(Color.Orange)
-        .width('60%')
-        .height($r('app.float.float_16vp'))
-        .backgroundColor($r('app.color.c_dadada'))
-        .style({ strokeWidth: 15 })
-
-      Text(`${this.current}/${this.total}`)
-        .fontSize($r('app.float.font_size_12fp'))
-        .fontColor(Color.Black)
-
-      Text('重置进度')
-        .fontSize($r('app.float.font_size_12fp'))
-        .onClick(() => this.onReset())
-    }
-    .backgroundColor($r('app.color.c_f5f3f4'))
-    .borderRadius(8)
-    .width('90%')
-    .height($r('app.float.float_50vp'))
-    .margin({ top: 10, left: 15, right: 15 })
-    .padding(10)
-  }
-}
-
-@Component
-export struct QuestionContent {
-  @Prop question: QuestionRes;
-  @Prop isStarred: boolean;
-  onToggleStar: () => void = () => {
-  };
-
-  build() {
-    Column() {
-      Row() {
-        Image(this.getQuestionTypeImage())
-          .height($r('app.float.float_24vp'))
-          .objectFit(ImageFit.Cover)
-
-        Blank()
-
-        Row() {
-          Image(this.isStarred ? $r('app.media.stared') : $r('app.media.star'))
-            .width($r('app.float.float_18vp'))
-            .height($r('app.float.float_18vp'))
-            .margin({ right: 5 })
-
-          Text(this.isStarred ? "已收藏" : "收藏")
-            .fontSize($r('app.float.font_size_14fp'))
-        }
-        .onClick(() => this.onToggleStar())
-      }
-      .justifyContent(FlexAlign.SpaceBetween)
-      .padding(10)
-      .backgroundColor($r('app.color.c_white'))
-      .borderRadius(8)
-      .margin({ top: 20, left: 15, right: 15 })
-      .width('90%')
-
-      Text(this.question.question)
-        .fontSize(16)
-        .padding({ left: 15, right: 15, top: 10 })
-        .textAlign(TextAlign.Start)
-        .width('90%')
-    }
-  }
-
-  private getQuestionTypeImage(): Resource {
-    const options = this.question.option;
-    const answer = this.question.answer;
-
-    const isTrueFalse = options.length === 2 && options.includes('正确') && options.includes('错误');
-    const isMultiple = answer.length > 1 && /^[A-D]+$/.test(answer);
-
-    if (isMultiple) {
-      return $r('app.media.ic_mu');
-    } else if (isTrueFalse) {
-      return $r('app.media.ic_es');
-    } else {
-      return $r('app.media.ic_ch');
-    }
-  }
-}
-
-@Component
-export struct OptionList {
-  @Prop options: string[];
-  @Prop selectedOptions: string[];
-  @Prop selectedOption: string;
-  @Prop hasSubmitted: boolean;
-  @Prop isMultipleChoice: boolean;
-  @Prop correctAnswers: string;
-  @Prop isReviewMode: boolean; // 新增：是否为背题模式
-  onOptionClick: (option: string) => void = () => {
-  };
-
-  build() {
-    Column() {
-      ForEach(this.options, (item: string, idx: number) => {
-        Row() {
-          Text(String.fromCharCode(65 + idx))
-            .width(30)
-            .height($r('app.float.float_30vp'))
-            .textAlign(TextAlign.Center)
-            .fontSize($r('app.float.font_size_16fp'))
-            .fontColor($r('app.color.c_black'))
-            .borderRadius(15)
-            .backgroundColor(
-              this.getOptionBackgroundColor(idx)
-            )
-            .margin({ right: 10 })
-
-          Text(item)
-            .fontSize($r('app.float.font_size_16fp'))
-            .padding(10)
-            .width('80%')
-            .borderRadius(8)
-            .backgroundColor(
-              this.getOptionBackgroundColor(idx)
-            )
-        }
-        .onClick(() => this.onOptionClick(String.fromCharCode(65 + idx)))
-        .margin({ top: 12, left: 16, right: 16 })
-      })
-    }
-    .width('100%')
-  }
-
-  private isTrueFalseQuestion(): boolean {
-    // 检查是否为2个选项
-    if (this.options.length !== 2) {
-      return false;
-    }
-
-    // 定义所有可能的判断题选项组合
-    const trueFalsePatterns: string[][] = [
-      ['正确', '错误'],
-      ['√', '×'],
-      ['对', '错'],
-      ['Y', 'N'],
-      ['A', 'B']// 当选项就是A/B时需要结合其他条件判断
-    ];
-
-    // 检查选项是否匹配任何一种判断题模式
-    return trueFalsePatterns.some(pattern => {
-      return (this.options.includes(pattern[0]) && this.options.includes(pattern[1])) ||
-        (this.options.includes(pattern[1]) && this.options.includes(pattern[0]));
-    });
-  }
-
-  private getOptionBackgroundColor(idx: number): ResourceStr {
-    const optionLabel = String.fromCharCode(65 + idx);
-    const isSelected = this.isMultipleChoice
-      ? this.selectedOptions.includes(optionLabel)
-      : this.selectedOption === optionLabel;
-
-    let isCorrect = false;
-
-    // 修复判断题的正确答案判断逻辑
-    if (this.isTrueFalseQuestion()) {
-      // 对于判断题，需要通过选项内容或答案格式来判断
-      const optionContent = this.options[idx];
-
-      // 如果答案是选项标签格式(A/B)
-      if (this.correctAnswers === 'A' || this.correctAnswers === 'B') {
-        isCorrect = optionLabel === this.correctAnswers;
-      } else {
-        // 如果答案是选项内容格式
-        isCorrect = optionContent === this.correctAnswers;
-      }
-    } else {
-      // 普通单选题和多选题
-      isCorrect = this.correctAnswers.includes(optionLabel);
-    }
-
-    if (this.isReviewMode) {
-      return isCorrect ? '#DFF5E3' : '#F2F2F2';
-    }
-
-    if (this.hasSubmitted) {
-      if (isCorrect) {
-        return '#DFF5E3';
-      }
-      if (isSelected && !isCorrect) {
-        return '#FDECEC';
-      }
-      return '#F2F2F2';
-    } else {
-      return isSelected ? '#B3E5FC' : '#F2F2F2';
-    }
-  }
-}
-
-@Component
-export struct NavigationButtons {
-  @Prop canGoPrevious: boolean;
-  @Prop canGoNext: boolean;
-  onPrevious: () => void = () => {
-  };
-  onNext: () => void = () => {
-  };
-
-  build() {
-    Row() {
-      // 只有当canGoPrevious为true时才显示上一题按钮
-      if (this.canGoPrevious) {
-        Button() {
-          Text('上一题')
-            .fontSize($r('app.float.font_size_16fp'))
-            .fontColor($r('app.color.c_F2B771'))
-        }
-        .width(100)
-        .height($r('app.float.float_30vp'))
-        .backgroundColor(Color.White)
-        .borderRadius(20)
-        .border({ width: 1, color: $r('app.color.c_F2B771') })
-        .margin({ left: this.canGoPrevious ? 20 : 0 })
-        .onClick(() => this.onPrevious())
-      } else {
-        Blank()
-      }
-
-      // 只有当canGoNext为true时才显示下一题按钮
-      if (this.canGoNext) {
-        Button() {
-          Text('下一题')
-            .fontSize($r('app.float.font_size_16fp'))
-            .fontColor($r('app.color.c_F2B771'))
-        }
-        .backgroundColor(Color.White)
-        .width(100)
-        .height($r('app.float.float_30vp'))
-        .borderRadius(20)
-        .border({ width: 1, color: $r('app.color.c_F2B771') })
-        .margin({ right: this.canGoNext ? 20 : 0 })
-        .onClick(() => this.onNext())
-      } else {
-        Blank()
-      }
-    }
-    .justifyContent(FlexAlign.SpaceBetween)
-    .alignItems(VerticalAlign.Center)
-    .padding(10)
-    .width('100%')
-    .margin({ top: 18, bottom: 20 })
-  }
+@Builder
+function ExercisePageBuilder() {
+  ExercisePage()
 }

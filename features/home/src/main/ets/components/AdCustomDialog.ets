@@ -31,7 +31,7 @@ export struct AdCustomDialog {
         this.readSearch()
 
       } else {
-        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION,null)
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
       }
 
     }
@@ -44,8 +44,6 @@ export struct AdCustomDialog {
     this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
     this.CsjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE)
     this.CsjHmParams = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
-
-
   }
 
   build() {
@@ -129,7 +127,7 @@ export struct AdCustomDialog {
         .onClick(() => {
           if (!this.isVip) {
             this.controller?.close()
-            this.appPathStack.pushPathByName(HomeConstants.SCREEN_PAY_PAGE,null)
+            this.appPathStack.pushPathByName(HomeConstants.SCREEN_PAY_PAGE, null)
 
           }
         })

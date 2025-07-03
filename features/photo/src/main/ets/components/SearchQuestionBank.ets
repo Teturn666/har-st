@@ -1,14 +1,16 @@
 import { SearchResultRes } from '../model/SearchResultRes'
 import { BottomBar } from './BottomBar'
-import { router } from '@kit.ArkUI'
 import { routerHome } from '../constants/RouterHome'
 import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
 import { SearchModel } from '../model/SearchModel'
+
 
 @Component
 export struct SearchQuestionBank {
   @State isLoading: boolean = true
   @State resultList: SearchResultRes[] = []
+  @State searchData: SearchResultRes[] = []
+  @Consume appPathStack: NavPathStack
   @StorageProp("ocr_text")
   @Watch('SearchChange') text: string = ""
   @StorageProp("select_question_type")
@@ -19,16 +21,23 @@ export struct SearchQuestionBank {
     this.isLoading = true
     this.getData()
   }
+
   aboutToAppear(): void {
     setTimeout(() => {
       this.getData()
     })
   }
 
+  onPageHide(): void {
+    this.isLoading = true
+    this.resultList = []
+  }
+
   getData() {
     SearchModel.getInstance().searchResultList(this.text.replace(/\r?\n/g, '')).then((data) => {
+      this.searchData = data
       this.resultList = []
-      for (let i = 0; i < data.length; i++) {
+      for (let i = 0; i < data?.length; i++) {
         let item = data[i]
         let aslice = item.ASlice
         if (aslice != null && aslice.length > 1) {
@@ -56,16 +65,20 @@ export struct SearchQuestionBank {
               break
           }
         }
+
       }
       this.scroller.scrollEdge(Edge.Top)
-      this.isLoading = false
+      setTimeout(() => {
+        this.isLoading = false
+      })
+
     })
   }
 
   build() {
     if (this.isLoading) {
       ProgressLoading()
-    } else {
+    } else if (!this.isLoading) {
       if (this.resultList?.length > 0) {
         Column() {
           List({ scroller: this.scroller }) {
@@ -133,23 +146,35 @@ export struct SearchQuestionBank {
 
           BottomBar({
             searchClick: () => {
-              router.replaceUrl({
-                url: routerHome.ROUTER_PhotoSearch_Page
-              })
+              this.appPathStack.removeByName('photoSearchPage')
+              this.appPathStack.replacePathByName(routerHome.ROUTER_PhotoSearch_Page, null)
             },
             ButtonWidth: '100%'
           })
 
         }
         .height('100%')
-      } else {
-        Text($r('app.string.search_nodata'))
-          .fontSize(16)
-          .align(Alignment.Start)
-          .fontColor($r('app.color.c_f75a23'))
-          .onAppear(() => {
-            this.isLoading = false
+      } else if (this.searchData?.length === 0) {
+        Column() {
+          Row() {
+            Text($r('app.string.search_nodata'))
+              .fontSize(16)
+              .align(Alignment.Start)
+              .fontColor($r('app.color.c_f75a23'))
+
+          }
+          .alignItems(VerticalAlign.Top)
+          .layoutWeight(1)
+
+          BottomBar({
+            searchClick: () => {
+              this.appPathStack.removeByName('photoSearchPage')
+              this.appPathStack.replacePathByName(routerHome.ROUTER_PhotoSearch_Page, null)
+            },
+            ButtonWidth: '100%'
           })
+        }
+
       }
     }
   }
