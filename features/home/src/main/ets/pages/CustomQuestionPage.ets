@@ -12,6 +12,7 @@ import { systemShare } from '@kit.ShareKit';
 import { fileUri } from '@kit.CoreFileKit';
 import { Customized } from '../model/NavGenericType';
 
+
 const TAG = 'CustomQuestionPage';
 
 @Component
@@ -496,7 +497,6 @@ struct CustomQuestionPage {
           .height('auto');
         }
 
-        WebParseExcel();
       }
     }
     .hideTitleBar(true)
