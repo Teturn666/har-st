@@ -84,181 +84,188 @@ export struct PointExchangePage {
   }
 
   build() {
-    Column() {
-      // Title Bar
-      TitleBar({
-        title: '积分兑换',
-        backClick: () => {
-        this.PathStack.pop()
+    NavDestination() {
+      Column() {
+        // Title Bar
+        TitleBar({
+          title: '积分兑换',
+          backClick: () => {
+            this.PathStack.pop()
+          }
+        }).width('100%')
+
+        // User Info Section
+        Row() {
+          Image($r('app.media.user_icon'))
+            .alt($r('app.media.user_icon'))
+            .objectFit(ImageFit.Contain)
+            .width(48)
+            .height(48)
+            .borderRadius($r('app.float.float_24vp'))
+
+          Column() {
+            Row() {
+              Text(this.userName)
+                .fontSize(14)
+                .fontColor($r("app.color.c_3e3e3e"))
+                .textAlign(TextAlign.Start)
+                .padding({ left: 16, right: 8 })
+                .lineHeight(20)
+
+              if (this.userVip) {
+                Image($r('app.media.ic_VIP'))
+                  .width(18)
+                  .height(12)
+              }
+
+            }
+
+            Text(this.userVip ? "VIP用户" : "普通用户")
+              .fontSize(10)
+              .fontColor($r("app.color.c_9d9d9d"))
+              .textAlign(TextAlign.Start)
+              .padding({ left: 16 })
+              .lineHeight(20)
+          }
+          .alignItems(HorizontalAlign.Start)
+          .width('60%')
+
+          Column() {
+            Text(this.userPoints.toString())
+              .fontSize(20)
+              .fontColor('#F75A23')
+              .lineHeight(22)
+              .textAlign(TextAlign.Start)
+            Text("可用积分")
+              .fontSize(10)
+              .fontColor($r("app.color.c_9d9d9d"))
+              .textAlign(TextAlign.Start)
+              .lineHeight(20)
+          }
+          .justifyContent(FlexAlign.Start)
+          .width('30%')
         }
-      }).width('100%')
+        .alignItems(VerticalAlign.Top)
+        .padding({ left: 18, top: 10, right: 18 })
 
-      // User Info Section
-      Row() {
-        Image($r('app.media.user_icon'))
-          .alt($r('app.media.user_icon'))
-          .objectFit(ImageFit.Contain)
-          .width(48)
-          .height(48)
-          .borderRadius($r('app.float.float_24vp'))
-
+        // Exchange Content Section
         Column() {
           Row() {
-            Text(this.userName)
-              .fontSize(14)
-              .fontColor($r("app.color.c_3e3e3e"))
-              .textAlign(TextAlign.Start)
-              .padding({ left: 16, right: 8 })
-              .lineHeight(20)
-
-            if (this.userVip) {
-              Image($r('app.media.ic_VIP'))
-                .width(18)
-                .height(12)
-            }
-
+            Image($r('app.media.ic_exchange'))
+              .width(78)
+              .height(18)
           }
+          .margin({ left: 15, top: 10 })
 
-          Text(this.userVip ? "VIP用户" : "普通用户")
-            .fontSize(10)
-            .fontColor($r("app.color.c_9d9d9d"))
-            .textAlign(TextAlign.Start)
-            .padding({ left: 16 })
-            .lineHeight(20)
-        }
-        .alignItems(HorizontalAlign.Start)
-        .width('60%')
-
-        Column() {
-          Text(this.userPoints.toString())
-            .fontSize(20)
-            .fontColor('#F75A23')
-            .lineHeight(22)
-            .textAlign(TextAlign.Start)
-          Text("可用积分")
-            .fontSize(10)
-            .fontColor($r("app.color.c_9d9d9d"))
-            .textAlign(TextAlign.Start)
-            .lineHeight(20)
-        }
-        .justifyContent(FlexAlign.Start)
-        .width('30%')
-      }
-      .alignItems(VerticalAlign.Top)
-      .padding({ left: 18, top: 10, right: 18 })
-
-      // Exchange Content Section
-      Column() {
-        Row() {
-          Image($r('app.media.ic_exchange'))
-            .width(78)
-            .height(18)
-        }
-        .margin({ left: 15, top: 10 })
-
-        // Loading State
-        if (this.isLoading) {
-          Column() {
-            Text('加载中...')
-              .fontSize(16)
-              .fontColor($r('app.color.c_3e3e3e'))
-              .textAlign(TextAlign.Center)
-          }
-          .width('100%')
-          .padding(20)
-        } else if (this.errorMessage) {
-          Column() {
-            Text(this.errorMessage)
-              .fontSize(16)
-              .textAlign(TextAlign.Center)
-            Button('重试')
-              .fontSize(14)
-              .padding(10)
-              .margin({ top: 10 })
-              .onClick(() => {
-                this.getExchangeList()
-              })
-          }
-          .width('100%')
-          .padding(20)
-        } else {
-          ForEach(this.exchangeList, (item: ExchangeRes) => {
-            Stack() {
-              Image($r('app.media.ic_exchangebg'))
-                .objectFit(ImageFit.Contain)
-                .width(340)
-                .height(70)
-
-              Row() {
-                Row() {
-                  Column() {
-                    Text(`${item.quantity}天VIP`)
-                      .fontSize(14)
-                      .fontColor('#564c3c')
-                    Text(`${item.quantity}天VIP权益`)
-                      .fontSize(12)
-                      .fontColor('#F75A23')
-                      .margin({ top: 10 })
-                  }
-                  .margin({ left: 15 })
-                  .alignItems(HorizontalAlign.Start)
-
-                  Blank()
-
-                  Column() {
-                    Text(`${item.cost}积分`)
-                      .fontSize(16)
-                      .fontColor('#F75A23')
-                    Text(`原价${item.original}积分`)
-                      .fontSize(12)
-                      .fontColor('#9D9D9D')
-                      .margin({ top: 10 })
-                      .decoration({ type: TextDecorationType.LineThrough })
-                  }
-                  .margin({ left: 15, right: 15 })
-                  .alignItems(HorizontalAlign.Center)
-                }
-                .width('80%')
-
-                Row() {
-                  Text("兑换")
-                    .fontSize(14)
-                    .fontColor('#564c3c')
-                    .padding(5)
-                    .borderRadius(8)
-                    .onClick(() => {
-                      if (Number(this.userPoints) >= item.cost) {
-                        this.showExchange(item)
-                      } else {
-                        promptAction.showToast({ message: '积分不足，无法兑换' })
-                      }
-                    })
-                }
-                .justifyContent(FlexAlign.Center)
-                .width('20%')
-
-                // .opacity(this.userPoints >= item.cost ? 1.0 : 0.5)
-              }
-              .justifyContent(FlexAlign.SpaceAround)
-              .width('100%')
+          // Loading State
+          if (this.isLoading) {
+            Column() {
+              Text('加载中...')
+                .fontSize(16)
+                .fontColor($r('app.color.c_3e3e3e'))
+                .textAlign(TextAlign.Center)
             }
             .width('100%')
-            .margin({ top: 10 })
-          }, (item: ExchangeRes) => item.id.toString())
-        }
-      }
-      .borderRadius(12)
-      .padding({ top: 8 })
-      .justifyContent(FlexAlign.Start)
-      .alignItems(HorizontalAlign.Start)
-      .margin({ top: 15 })
-      .width('95%')
-      .height('100%')
-      .backgroundColor(Color.White)
-    }
-    .backgroundColor($r('app.color.c_fff9ed'))
-    .width('100%')
-    .height('100%')
-  }
-}
+            .padding(20)
+          } else if (this.errorMessage) {
+            Column() {
+              Text(this.errorMessage)
+                .fontSize(16)
+                .textAlign(TextAlign.Center)
+              Button('重试')
+                .fontSize(14)
+                .padding(10)
+                .margin({ top: 10 })
+                .onClick(() => {
+                  this.getExchangeList()
+                })
+            }
+            .width('100%')
+            .padding(20)
+          } else {
+            ForEach(this.exchangeList, (item: ExchangeRes) => {
+              Stack() {
+                Image($r('app.media.ic_exchangebg'))
+                  .objectFit(ImageFit.Contain)
+                  .width(340)
+                  .height(70)
 
+                Row() {
+                  Row() {
+                    Column() {
+                      Text(`${item.quantity}天VIP`)
+                        .fontSize(14)
+                        .fontColor('#564c3c')
+                      Text(`${item.quantity}天VIP权益`)
+                        .fontSize(12)
+                        .fontColor('#F75A23')
+                        .margin({ top: 10 })
+                    }
+                    .margin({ left: 15 })
+                    .alignItems(HorizontalAlign.Start)
+
+                    Blank()
+
+                    Column() {
+                      Text(`${item.cost}积分`)
+                        .fontSize(16)
+                        .fontColor('#F75A23')
+                      Text(`原价${item.original}积分`)
+                        .fontSize(12)
+                        .fontColor('#9D9D9D')
+                        .margin({ top: 10 })
+                        .decoration({ type: TextDecorationType.LineThrough })
+                    }
+                    .margin({ left: 15, right: 15 })
+                    .alignItems(HorizontalAlign.Center)
+                  }
+                  .width('80%')
+
+                  Row() {
+                    Text("兑换")
+                      .fontSize(14)
+                      .fontColor('#564c3c')
+                      .padding(5)
+                      .borderRadius(8)
+                      .onClick(() => {
+                        if (Number(this.userPoints) >= item.cost) {
+                          this.showExchange(item)
+                        } else {
+                          promptAction.showToast({ message: '积分不足，无法兑换' })
+                        }
+                      })
+                  }
+                  .justifyContent(FlexAlign.Center)
+                  .width('20%')
+
+                  // .opacity(this.userPoints >= item.cost ? 1.0 : 0.5)
+                }
+                .justifyContent(FlexAlign.SpaceAround)
+                .width('100%')
+              }
+              .width('100%')
+              .margin({ top: 10 })
+            }, (item: ExchangeRes) => item.id.toString())
+          }
+        }
+        .borderRadius(12)
+        .padding({ top: 8 })
+        .justifyContent(FlexAlign.Start)
+        .alignItems(HorizontalAlign.Start)
+        .margin({ top: 15 })
+        .width('95%')
+        .height('100%')
+        .backgroundColor(Color.White)
+      }
+      .backgroundColor($r('app.color.c_fff9ed'))
+      .width('100%')
+      .height('100%')
+    }
+    .hideTitleBar( true)
+  }
+
+}
+@Builder
+function PointExchangePageBuilder() {
+  PointExchangePage()
+}

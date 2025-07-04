@@ -396,14 +396,12 @@ export struct PointsPage {
   }
   @Builder
   navMap(name: string) {
-    if (name === PointsConstants.ROUTE_DETAILS_POINTS_HISTORY) {
-      MyHistoryPage()
-    }
-    if (name === PointsConstants.ROUTE_DETAILS_INVITATION) {
-      MyInvitationPage()
-    }
     if (name === PointsConstants.ROUTE_EXCHANGE_POINTS ) {
       PointExchangePage()
+    }else if (name === PointsConstants.ROUTE_DETAILS_INVITATION){
+      MyInvitationPage()
+    }else {
+      MyHistoryPage()
     }
   }
 }

@@ -14,6 +14,11 @@
       "name": "myInvitationPage",
       "pageSourceFile": "src/main/ets/pages/MyInvitationPage.ets",
       "buildFunction": "MyInvitationPageBuilder"
+    },
+    {
+      "name": "pointExchangePage",
+      "pageSourceFile": "src/main/ets/pages/PointExchangePage.ets",
+      "buildFunction": "PointExchangePageBuilder"
     }
 
   ]
