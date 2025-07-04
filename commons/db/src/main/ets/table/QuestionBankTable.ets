@@ -48,7 +48,7 @@ class QuestionBankTable {
   updateData(account: BankListRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_BANK_TABLE.tableName);
-    predicates.equalTo('id', account.qid);
+    predicates.equalTo('qid', account.qid);
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 

@@ -1,5 +1,9 @@
 import { AdConfigInfo } from "./AdConfigInfo"
 import { AdInfo } from "./AdInfo"
+import { BoardRes } from "./BoardRes"
+import { ShareRes } from "./ShareRes"
+import { UpdateRes } from "./UpdateRes"
+
 
 
 export class HmAdInfo {
@@ -27,4 +31,10 @@ export class HmAdInfo {
   informationTraffic: AdInfo = new AdInfo()
   //广告key配置
   adconfig: AdConfigInfo = new AdConfigInfo()
+  //升级
+  update:UpdateRes = new UpdateRes()
+  //公告
+  board:BoardRes = new BoardRes()
+  //分享
+  share:ShareRes = new ShareRes()
 }

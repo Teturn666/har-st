@@ -41,7 +41,6 @@ struct ExerciseCommonPage {
   @State backindex: number = -1; //路由页数
   @State isBankData: boolean = false;
   @State bankPage: string = ''
-  @State navParams: NavQid = {}
   @Consume appPathStack: NavPathStack
 
 
@@ -275,12 +274,7 @@ struct ExerciseCommonPage {
             return questionRes;
           })
         } as DetailParams,
-        // (popInfo) => {
-        //   let params = popInfo.result as NavQid
-        //   console.log("popI1", JSON.stringify(popInfo.info));
-        //   console.log("popI2", JSON.stringify(popInfo.result));
-        //   this.navParams = params
-        // }
+
         )
     }
   }

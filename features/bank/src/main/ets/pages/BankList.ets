@@ -15,13 +15,12 @@ import { DotLoading } from '../components/DotLoading';
 import { emitter } from '@kit.BasicServicesKit';
 import BankConstants from '../Constants/BankConstants';
 import { generatedType, Params } from '../model/BankCategory';
+import { NewFlagManager } from '../model/NewFlagManager'
 
 import('./BankDetailsPage')
 
-
 const TAG = '[BankList]'
 let jsonData = null
-
 const context = (getContext(this) as common.UIAbilityContext)
 
 
@@ -53,7 +52,7 @@ function buildText(params: Params) {
             name: params.animateName,
             animationData: jsonData,
           })
-        })// .width('90%')
+        })
         .height(30)
         .margin({ bottom: 16, top: 8 })
     }.width('90%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
@@ -90,7 +89,6 @@ struct DownloadOverDialog {
         .borderRadius(5)
         .backgroundColor($r('app.color.c_fce8e8'))
         .onClick(() => {
-
           this.controller.close()
         })
         .textAlign(TextAlign.Center)
@@ -123,7 +121,7 @@ struct DeleteDialog {
       Text("提示").fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 20 })
-      Text('确定删除 “' + this.bank?.name + '” 这个题库吗？').fontSize(18)
+      Text('确定删除 "' + this.bank?.name + '" 这个题库吗？').fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Start).margin({ top: 20, left: 20, right: 20 })
       Row() {
@@ -199,12 +197,38 @@ export struct BankList {
   @State selectAll: boolean = false; // 全选状态
   @State isLoading: boolean = false;
   @Prop myDown: string = ''
+  //NEW标识状态管理
+  private newFlagManager: NewFlagManager = NewFlagManager.getInstance();
+  @State newFlagStatusMap: Map<number, boolean> = new Map(); // 存储每个题库的NEW显示状态
 
   aboutToAppear(): void {
     this.bankRes.newsData = []
+    this.initNewFlagManager()
     this.loadFeedData()
-    // this.initLottie()
     this.initDialog()
+  }
+
+  // 初始化NEW标识管理器
+  private async initNewFlagManager(): Promise<void> {
+    await this.newFlagManager.init();
+  }
+
+  // 更新NEW标识状态
+  private async updateNewFlagStatus(items: BankListRes[]): Promise<void> {
+    for (const item of items) {
+      const shouldShow = await this.newFlagManager.shouldShowNew(item.qid, item.version || '1', item.NewFlag || false);
+      this.newFlagStatusMap.set(item.qid, shouldShow);
+    }
+    // 触发UI更新
+    this.newFlagStatusMap = new Map(this.newFlagStatusMap);
+  }
+
+  // 标记题库为已查看（下载或跳转详情时调用）
+  private async markBankAsViewed(qid: number, version: string): Promise<void> {
+    await this.newFlagManager.markAsViewed(qid, version);
+    this.newFlagStatusMap.set(qid, false);
+    // 触发UI更新
+    this.newFlagStatusMap = new Map(this.newFlagStatusMap);
   }
 
   //删除弹窗
@@ -215,10 +239,8 @@ export struct BankList {
         confirm: async (item) => {
           // 1. 先关闭对话框
           this.dialogDeleteController?.close()
-
           item.downloadedState = 2
-          this.updateStatusMap.delete(item.qid); // 删除缓存中的更新状态
-          //触发UI重新渲染
+          this.updateStatusMap.delete(item.qid);
           this.bankRes.newsData = [...this.bankRes.newsData]
           // 4. 执行删除操作
           this.bankModel.deleteTable(item.qid)
@@ -227,7 +249,6 @@ export struct BankList {
     });
     this.dialogDeleteController.open();
     emitter.emit(EmitterConstants.EM_REFRESH_HOME)
-
   }
 
   showDownloadOverDialog(success: boolean, isUpdate: boolean) {
@@ -243,6 +264,8 @@ export struct BankList {
   }
 
   async jumpToBankDetail(item: BankListRes, isUpDate: boolean) {
+    // 跳转详情时标记为已查看
+    await this.markBankAsViewed(item.qid, item.version || '1');
 
     if (item.downloadedState === 1) {
       //已下载
@@ -438,7 +461,7 @@ export struct BankList {
               .onClick(() => {
                 this.management = !this.management;
               })
-          } else {
+          }else {
             Blank()
               .width('20%')
           }
@@ -485,7 +508,8 @@ export struct BankList {
                           left: $r('app.float.float_5vp'),
                         })
 
-                      if (item.NewFlag) {
+                      // 改进的NEW标识显示逻辑：基于原有NewFlag + 用户查看状态
+                      if (this.newFlagStatusMap.get(item.qid) === true) {
                         Image($r('app.media.ic_NEW'))
                           .objectFit(ImageFit.Contain)
                           .size({ width: $r('app.float.float_20vp'), height: $r('app.float.float_12vp') })
@@ -527,7 +551,6 @@ export struct BankList {
                     right: $r('app.float.float_20vp'),
                   })
 
-
                   if (this.fromType !== 2)
                   Column() {
                     if (item.downloadedState === 1) {
@@ -536,17 +559,10 @@ export struct BankList {
                       $r('app.media.ic_download_pre'))
                         .objectFit(ImageFit.Contain)
                         .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
-                      // Text("删除")
-                      //   .visibility(this.fromType === 2 ? Visibility.Visible : Visibility.Hidden)
-                      //   .fontColor(Color.Black)
-                      //   .fontSize($r('app.float.font_size_10fp'))
                     } else {
                       Image($r('app.media.ic_download'))
                         .objectFit(ImageFit.Contain)
                         .size({ width: $r("app.float.float_60vp"), height: $r("app.float.float_60vp") })
-                      // Text("下载")
-                      //   .fontColor(Color.Black)
-                      //   .fontSize($r('app.float.font_size_10fp'))
                     }
                   }
                   .margin({
@@ -571,7 +587,9 @@ export struct BankList {
                             const success = await this.bankModel.refreshBank(item)
                             if (success) {
                               item.downloadedState = 1
-                              this.updateStatusMap.set(item.qid, false); // 更新成功后重置更新状态
+                              this.updateStatusMap.set(item.qid, false);
+                              // 更新成功后标记为已查看
+                              await this.markBankAsViewed(item.qid, item.version || '1');
                               this.bankRes.newsData = [...this.bankRes.newsData]
                               LoadingDialog.closeDialog()
                               this.showDownloadOverDialog(true, true)
@@ -603,7 +621,8 @@ export struct BankList {
                             //更新状态为已下载
                             item.downloadedState = 1
                             this.updateStatusMap.set(item.qid, false);
-                            //触发UI重新渲染
+                            // 下载成功后标记为已查看
+                            await this.markBankAsViewed(item.qid, item.version || '1');
                             this.bankRes.newsData = [...this.bankRes.newsData]
                             LoadingDialog.closeDialog()
                             this.showDownloadOverDialog(true, false)
@@ -718,6 +737,8 @@ export struct BankList {
   }
 
   async loadFeedData(): Promise<void> {
+    let newData: BankListRes[] = [];
+
     switch (this.fromType) {
       case 1:
         let hotList = await this.bankModel.getSearchBankList(this.searchText, this.pageNum);
@@ -730,6 +751,7 @@ export struct BankList {
         for (let item of hotList) {
           this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
+        newData = hotList;
         this.bankRes.newsData = this.bankRes.newsData.concat(hotList);
         break;
       case 2:
@@ -737,7 +759,8 @@ export struct BankList {
         for (let item of downloadList) {
           this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
-        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 0);
+        newData = downloadList.filter(bank => bank.bankType === 0);
+        this.bankRes.newsData = newData;
         break;
       default:
         let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum);
@@ -750,8 +773,14 @@ export struct BankList {
         for (let item of list) {
           this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
+        newData = list;
         this.bankRes.newsData = this.bankRes.newsData.concat(list);
         break;
+    }
+
+    // 更新NEW标识状态
+    if (newData.length > 0) {
+      await this.updateNewFlagStatus(newData);
     }
   }
 }
