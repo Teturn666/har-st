@@ -54,7 +54,7 @@ export class QuestionTable {
   updateData(account: QuestionRes, callback: Function) {
     const valueBucket: relationalStore.ValuesBucket = this.generateBucket(account);
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_TABLE.tableName);
-    predicates.equalTo('id', account.qId);
+    predicates.equalTo('questionID', account.questionID);
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
@@ -107,6 +107,7 @@ export class QuestionTable {
         tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
         tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
         tmp.option = resultSet.getString(resultSet.getColumnIndex('option')).split(DbConstants.SEPARATOR);
+        tmp.wrongAnswer = resultSet.getString(resultSet.getColumnIndex('wrongAnswer'));
         tmp.questionID = resultSet.getDouble(resultSet.getColumnIndex('questionID'));
         result[i] = tmp;
         resultSet.goToNextRow();
@@ -151,6 +152,7 @@ export class QuestionTable {
       question: account.question,
       answer: account.answer,
       option: (account.option ?? []).join(DbConstants.SEPARATOR),
+      wrongAnswer: account.wrongAnswer,
       questionID: account.questionID
     };
   }

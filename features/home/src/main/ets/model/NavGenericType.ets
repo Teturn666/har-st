@@ -15,7 +15,9 @@ export interface NavQid {
   practiceMode?: number;
   qid?: number;
   backIndex?: number;
-  bankPage?: string
+  bankPage?: string;
+  positions:number
+
 }
 
 export interface DetailParams {

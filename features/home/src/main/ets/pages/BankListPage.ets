@@ -79,16 +79,19 @@ export struct BankListPage {
   }
 
   // 题库
-  private onQuestionBankTap(qid: number): void {
+  private onQuestionBankTap(qid: BankListRes): void {
+
     if (this.type === 1) {
       this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_LIST, {
-        qid: qid
+        qid: qid.qid,
+        positions:qid.position
       } as NavQid)
+
     } else if (this.type === 2 || this.type === 3) {
-      this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST, {
-        practiceMode: this.type,
-        qid: qid
-      } as NavQid)
+      // this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST, {
+      //   practiceMode: this.type,
+      //   qid: qid
+      // } as NavQid)
 
     }
 
@@ -187,7 +190,7 @@ struct EmptyState {
 @Component
 struct BankList {
   @Prop banks: BankListRes[] = []
-  onItemTap: (qid: number) => void = () => {
+  onItemTap: (qid: BankListRes) => void = () => {
   }
 
   build() {
@@ -216,7 +219,7 @@ struct BankList {
           }
           .borderRadius(10)
           .backgroundColor('#F6F6F6')
-          .onClick(() => this.onItemTap(bank.qid))
+          .onClick(() => this.onItemTap(bank))
         }
       }, (bank: BankListRes) => String(bank.qid))
     }
