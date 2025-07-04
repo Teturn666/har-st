@@ -3,9 +3,10 @@
     "name": "bank",
     "type": "har",
     "description": "$string:module_desc",
+    "routerMap": "$profile:router_map",
     "mainElement": "BankAbility",
     "deviceTypes": [
       "phone"
-    ],
+    ]
   }
 }

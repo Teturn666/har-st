@@ -1,5 +1,4 @@
 import { TitleBar } from 'widget';
-import { router } from '@kit.ArkUI';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import HomeConstants from '../Constants/HomeConstants';
 import { HomeModel } from '../model/HomeModel';
@@ -11,14 +10,11 @@ import { common, Want } from '@kit.AbilityKit';
 import fs from '@ohos.file.fs';
 import { systemShare } from '@kit.ShareKit';
 import { fileUri } from '@kit.CoreFileKit';
-
-import('./HelpPage');
-import('./CustomizedBankPage');
+import { Customized } from '../model/NavGenericType';
 
 
 const TAG = 'CustomQuestionPage';
 
-@Entry({ routeName: "customQuestionPage" })
 @Component
 struct CustomQuestionPage {
   @State homeModel: HomeModel = HomeModel.getInstance();
@@ -27,6 +23,7 @@ struct CustomQuestionPage {
   @State management: boolean = false;
   @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
   @State selectAll: boolean = false; // 全选状态
+  @Consume appPathStack: NavPathStack
 
   async getimportList() {
     this.isLoading = true;
@@ -43,10 +40,6 @@ struct CustomQuestionPage {
     }
   }
 
-  onPageShow(): void {
-    this.getimportList();
-  }
-
   aboutToAppear(): void {
     this.getimportList();
   }
@@ -55,11 +48,6 @@ struct CustomQuestionPage {
   rightBuilder() {
     Text('帮助')
       .fontColor($r('app.color.c_F75A23'))
-      .onClick(() => {
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_HELP_PAGE,
-        });
-      });
   }
 
   // 删除
@@ -261,250 +249,264 @@ struct CustomQuestionPage {
   }
 
   build() {
-    Column() {
-      TitleBar({
-        title: '自定义题库',
-        backClick: () => {
-          router.back();
-        },
-        rightBuilderParam: this.rightBuilder,
-      }).width('100%');
-
-      // 题库制作助手
-      Row() {
-        Row({ space: 10 }) {
-          Row() {
-            Image($r('app.media.ic_likes'))
-              .size({ width: 70, height: 70 });
+    NavDestination() {
+      Column() {
+        TitleBar({
+          title: '自定义题库',
+          backClick: () => {
+            this.appPathStack.pop()
+          },
+          rightBuilderParam: this.rightBuilder,
+          rightBuilderClick: () => {
+            this.appPathStack.pushPathByName(HomeConstants.ROUTER_HELP_PAGE, null)
           }
+        }).width('100%');
 
-          Column({ space: 5 }) {
-            Text('题库导入')
-              .fontSize(16);
-          }
-          .justifyContent(FlexAlign.Center)
-          .alignItems(HorizontalAlign.Start);
-        }
-
-        Button('去导入', { type: ButtonType.Normal })
-          .backgroundColor('#F75A23')
-          .borderRadius(6)
-          .width(70)
-          .height(25)
-          .onClick(() => {
-            router.pushNamedRoute({
-              name: HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE,
-            });
-          });
-      }
-      .width('90%')
-      .height(90)
-      .justifyContent(FlexAlign.SpaceBetween)
-      .padding(10)
-      .backgroundColor(0xf5f5f5)
-      .borderRadius(10)
-      .margin({ top: 10 });
-
-      // 我的导入
-      if(this.questionBanks.length > 0) {
+        // 题库制作助手
         Row() {
-          Image($r('app.media.ic_import'))
-            .width(85);
-          Blank()
-          Text(this.management ? "退出管理" : "管理")
-            .fontSize($r('app.float.font_size_12fp'))
-            .fontColor('#060606')
+          Row({ space: 10 }) {
+            Row() {
+              Image($r('app.media.ic_likes'))
+                .size({ width: 70, height: 70 });
+            }
+
+            Column({ space: 5 }) {
+              Text('题库导入')
+                .fontSize(16);
+            }
+            .justifyContent(FlexAlign.Center)
+            .alignItems(HorizontalAlign.Start);
+          }
+
+          Button('去导入', { type: ButtonType.Normal })
+            .backgroundColor('#F75A23')
+            .borderRadius(6)
+            .width(70)
+            .height(25)
             .onClick(() => {
-              this.management = !this.management;
+              this.appPathStack.pushPathByName(HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE,
+                { isShow: true } as Customized)
             });
         }
         .width('90%')
-        .margin({ top: 10, left: 10, right: 10 })
-        .alignItems(VerticalAlign.Top)
-        .justifyContent(FlexAlign.Start);
-      }
+        .height(90)
+        .justifyContent(FlexAlign.SpaceBetween)
+        .padding(10)
+        .backgroundColor(0xf5f5f5)
+        .borderRadius(10)
+        .margin({ top: 10 });
 
-      if (this.questionBanks.length > 0) {
-        List() {
-          ForEach(this.questionBanks, (item: BankListRes, index) => {
-            ListItem() {
-              Column() {
-                Flex({
-                  direction: FlexDirection.Row,
-                  justifyContent: FlexAlign.SpaceAround,
-                  alignItems: ItemAlign.Center,
-                }) {
-                  if (this.management) {
-                    Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
-                    $r('app.media.ic_check_box'))
-                      .objectFit(ImageFit.Contain)
-                      .size({ width: 32, height: 32 })
-                      .margin({ left: 15 })
-                      .onClick(() => {
-                        this.toggleItemSelection(item.qid);
-                      });
-                  }
-                  Column() {
-                    Row() {
-                      Image($r('app.media.ic_question_bank'))
-                        .size({ width: $r('app.float.float_16vp'), height: $r('app.float.font_size_16fp') });
-                      Text(item.name)
-                        .fontColor($r('app.color.c_3e3e3e'))
-                        .fontSize($r('app.float.font_size_16fp'))
-                        .fontWeight(400)
-                        .margin({ left: 8 });
+        // 我的导入
+        if (this.questionBanks.length > 0) {
+          Row() {
+            Image($r('app.media.ic_import'))
+              .width(85);
+            Blank()
+            Text(this.management ? "退出管理" : "管理")
+              .fontSize($r('app.float.font_size_12fp'))
+              .fontColor('#060606')
+              .onClick(() => {
+                this.management = !this.management;
+              });
+          }
+          .width('90%')
+          .margin({ top: 10, left: 10, right: 10 })
+          .alignItems(VerticalAlign.Top)
+          .justifyContent(FlexAlign.Start);
+        }
+
+        if (this.questionBanks.length > 0) {
+          List() {
+            ForEach(this.questionBanks, (item: BankListRes, index) => {
+              ListItem() {
+                Column() {
+                  Flex({
+                    direction: FlexDirection.Row,
+                    justifyContent: FlexAlign.SpaceAround,
+                    alignItems: ItemAlign.Center,
+                  }) {
+                    if (this.management) {
+                      Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
+                      $r('app.media.ic_check_box'))
+                        .objectFit(ImageFit.Contain)
+                        .size({ width: 32, height: 32 })
+                        .margin({ left: 15 })
+                        .onClick(() => {
+                          this.toggleItemSelection(item.qid);
+                        });
                     }
+                    Column() {
+                      Row() {
+                        Image($r('app.media.ic_question_bank'))
+                          .size({ width: $r('app.float.float_16vp'), height: $r('app.float.font_size_16fp') });
+                        Text(item.name)
+                          .fontColor($r('app.color.c_3e3e3e'))
+                          .fontSize($r('app.float.font_size_16fp'))
+                          .fontWeight(400)
+                          .margin({ left: 8 });
+                      }
 
-                    Row() {
-                      if (parseInt(item.num) > 0) {
-                        Text(`题目数量：${item.num}`)
+                      Row() {
+                        if (parseInt(item.num) > 0) {
+                          Text(`题目数量：${item.num}`)
+                            .fontColor($r('app.color.c_9d9d9d'))
+                            .fontSize($r('app.float.font_size_10fp'))
+                            .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') });
+                        } else {
+                          Blank()
+                        }
+                        Text(`导入时间：${item.time}`)
                           .fontColor($r('app.color.c_9d9d9d'))
                           .fontSize($r('app.float.font_size_10fp'))
                           .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') });
-                      } else {
-                        Blank()
                       }
-                      Text(`导入时间：${item.time}`)
-                        .fontColor($r('app.color.c_9d9d9d'))
-                        .fontSize($r('app.float.font_size_10fp'))
-                        .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') });
+                      .width('85%')
+                      .justifyContent(FlexAlign.SpaceBetween);
                     }
                     .width('85%')
-                    .justifyContent(FlexAlign.SpaceBetween);
-                  }
-                  .width('85%')
-                  .alignItems(HorizontalAlign.Start)
-                  .margin({
-                    left: $r('app.float.float_20vp'),
-                    top: $r('app.float.float_20vp'),
-                    right: $r('app.float.float_20vp'),
-                  });
+                    .alignItems(HorizontalAlign.Start)
+                    .margin({
+                      left: $r('app.float.float_20vp'),
+                      top: $r('app.float.float_20vp'),
+                      right: $r('app.float.float_20vp'),
+                    });
 
-                  Column() {
-                    Image($r('app.media.ic_share'))
-                      .objectFit(ImageFit.Contain)
-                      .size({ width: $r('app.float.float_24vp'), height: $r('app.float.float_24vp') })
-                      .onClick(() => {
-                        this.handleShare(item)
-                      })
+                    Column() {
+                      Image($r('app.media.ic_share'))
+                        .objectFit(ImageFit.Contain)
+                        .size({ width: $r('app.float.float_24vp'), height: $r('app.float.float_24vp') })
+                        .onClick(() => {
+                          this.handleShare(item)
+                        })
+                    }
+                    .margin({ right: $r('app.float.float_20vp') });
                   }
-                  .margin({ right: $r('app.float.float_20vp') });
                 }
               }
-            }
-          });
-        }
-        .layoutWeight(1)
-
-        if (this.management) {
-          Row() {
-            Image(this.selectAll ? $r('app.media.ic_check_box_selected') : $r('app.media.ic_check_box'))
-              .objectFit(ImageFit.Contain)
-              .size({ width: 32, height: 32 })
-              .onClick(() => {
-                this.toggleSelectAll();
-              });
-
-
-            Text("全选")
-              .fontColor($r('app.color.c_99000000'))
-              .fontSize($r('app.float.font_size_14fp'))
-              .margin({ left: 10, })
-              .onClick(() => {
-                this.toggleSelectAll();
-              });
-
-
-            Text(`（已选${this.selectedItems.size}项）`)
-              .fontColor($r('app.color.c_99000000'))
-              .fontSize($r('app.float.font_size_14fp'))
-
-            Blank()
-
-            Image($r('app.media.ic_d'))
-              .objectFit(ImageFit.Contain)
-              .size({ width: 60, height: 22 })
-              .onClick(() => {
-                this.handleBatchDelete();
-              });
+            });
           }
-          .padding({ left: 10, right: 10 })
-          .width('100%')
-          .height(72)
-          .backgroundColor('#fffaee')
-        }
+          .layoutWeight(1)
 
-      } else {
-        Column() {
-          Image($r('app.media.hotsearch'))
-            .objectFit(ImageFit.Contain)
-            .size({ width: 117, height: 100 });
-
-          Text('暂无导入题库')
-            .fontColor('#9D9D9D')
-            .fontSize(14)
-            .margin({ top: 28 })
-            .textAlign(TextAlign.Center);
-
-          Row() {
-            Stack() {
-              Image($r('app.media.ic_qqbg'))
+          if (this.management) {
+            Row() {
+              Image(this.selectAll ? $r('app.media.ic_check_box_selected') : $r('app.media.ic_check_box'))
                 .objectFit(ImageFit.Contain)
-                .size({ width: 139, height: 40 });
+                .size({ width: 32, height: 32 })
+                .onClick(() => {
+                  this.toggleSelectAll();
+                });
 
-              Row() {
-                Image($r('app.media.ic_qq'))
-                  .objectFit(ImageFit.Contain)
-                  .size({ width: 22, height: 22 })
-                Text("从QQ导入")
-                  .fontSize(14)
-              }
-              .width('60%')
-              .justifyContent(FlexAlign.SpaceBetween)
-            }
-            .width('50%')
-            .onClick(() => {
-              this.jumpToQQ()
-            })
 
-            Stack() {
-              Image($r('app.media.ic_wechatbg'))
+              Text("全选")
+                .fontColor($r('app.color.c_99000000'))
+                .fontSize($r('app.float.font_size_14fp'))
+                .margin({ left: 10, })
+                .onClick(() => {
+                  this.toggleSelectAll();
+                });
+
+
+              Text(`（已选${this.selectedItems.size}项）`)
+                .fontColor($r('app.color.c_99000000'))
+                .fontSize($r('app.float.font_size_14fp'))
+
+              Blank()
+
+              Image($r('app.media.ic_d'))
                 .objectFit(ImageFit.Contain)
-                .size({ width: 139, height: 40 });
-
-              Row() {
-                Image($r('app.media.ic_wechat'))
-                  .objectFit(ImageFit.Contain)
-                  .size({ width: 22, height: 22 })
-                Text("从微信导入")
-                  .fontSize(14)
-
-              }
-              .width('60%')
-              .justifyContent(FlexAlign.SpaceBetween)
+                .size({ width: 60, height: 22 })
+                .onClick(() => {
+                  this.handleBatchDelete();
+                });
             }
-            .width('50%')
-            .onClick(() => {
-              this.jumpToWX()
-            })
+            .padding({ left: 10, right: 10 })
+            .width('100%')
+            .height(72)
+            .backgroundColor('#fffaee')
           }
+
+        } else {
+          Column() {
+            Image($r('app.media.hotsearch'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: 117, height: 100 });
+
+            Text('暂无导入题库')
+              .fontColor('#9D9D9D')
+              .fontSize(14)
+              .margin({ top: 28 })
+              .textAlign(TextAlign.Center);
+
+            Row() {
+              Stack() {
+                Image($r('app.media.ic_qqbg'))
+                  .objectFit(ImageFit.Contain)
+                  .size({ width: 139, height: 40 });
+
+                Row() {
+                  Image($r('app.media.ic_qq'))
+                    .objectFit(ImageFit.Contain)
+                    .size({ width: 22, height: 22 })
+                  Text("从QQ导入")
+                    .fontSize(14)
+                }
+                .width('60%')
+                .justifyContent(FlexAlign.SpaceBetween)
+              }
+              .width('50%')
+              .onClick(() => {
+                this.jumpToQQ()
+              })
+
+              Stack() {
+                Image($r('app.media.ic_wechatbg'))
+                  .objectFit(ImageFit.Contain)
+                  .size({ width: 139, height: 40 });
+
+                Row() {
+                  Image($r('app.media.ic_wechat'))
+                    .objectFit(ImageFit.Contain)
+                    .size({ width: 22, height: 22 })
+                  Text("从微信导入")
+                    .fontSize(14)
+
+                }
+                .width('60%')
+                .justifyContent(FlexAlign.SpaceBetween)
+              }
+              .width('50%')
+              .onClick(() => {
+                this.jumpToWX()
+              })
+            }
+            .width('100%')
+            .margin({ top: 20 })
+
+            Text("导入方式：将题库发送至QQ/微信--打开题库--点击右上角--选择其它应用打开--选择【快搜搜题】\n\n" +
+              "注：导入文件支持txt、excel格式，word格式请转为txt再导入\n\n" +
+              "个人制作以及添加题库遇到问题，请联系客服QQ：1729868682")
+              .fontColor('#9D9D9D')
+              .fontSize(14)
+              .margin({ top: 18 })
+              .textAlign(TextAlign.Start)
+              .width('90%')
+
+          }
+          .margin({ top: 50 })
           .width('100%')
-          .margin({ top: 20 })
-
-          Text("导入方式：将题库发送至QQ/微信--打开题库--点击右上角--选择其它应用打开--选择【快搜搜题】\n\n" +
-            "注：导入文件支持txt、excel格式，word格式请转为txt再导入\n\n" +
-            "个人制作以及添加题库遇到问题，请联系客服QQ：1729868682")
-            .fontColor('#9D9D9D')
-            .fontSize(14)
-            .margin({ top: 18 })
-            .textAlign(TextAlign.Start)
-            .width('90%')
-
+          .height('auto');
         }
-        .margin({ top: 50 })
-        .width('100%')
-        .height('auto');
+
       }
     }
+    .hideTitleBar(true)
+    .onShown(() => {
+      this.getimportList();
+    })
   }
+}
+
+@Builder
+function CustomQuestionPageBuilder() {
+  CustomQuestionPage()
 }

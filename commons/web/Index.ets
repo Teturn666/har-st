@@ -1,1 +1,0 @@
-export { ChWebPage } from './src/main/ets/pages/ChWebPage'

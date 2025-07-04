@@ -24,14 +24,15 @@
     "signingConfigs": [
       {
         "name": "default",
+        "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/chenghui/Desktop/debugSign/ksstDbug.p12",
-          "storePassword": "00000018B37B17AE761CA1C5EA5333F6E2DDB83276829C8993933FB8EE5C42E9FAA923B426B7EA95",
+          "storeFile": "/Users/fire/Downloads/debug/ksstDbug.p12",
+          "storePassword": "00000018A94E7DE091280AEF724D8147793224B22AAE2CE16C381B0A3E2DD65727D018BE8BE0EA59",
           "keyAlias": "Tl",
-          "keyPassword": "00000018711BFD2205BA9C4E2F44E7677B539818CBB243E42821BC3561F2E2CBB4D51F915CA2BAD7",
+          "keyPassword": "000000185BAD6B1DEFA7D8A4A323640F2B9285D1881B0CFEA653CC649A8B1F120357E4D4802450B7",
           "signAlg": "SHA256withECDSA",
-          "profile": "/Users/chenghui/Downloads/ksstDebugNewDebug.p7b",
-          "certpath": "/Users/chenghui/Desktop/debugSign/ksstDebugCer.cer"
+          "profile": "/Users/fire/Downloads/debug/ksstDebugNewDebug.p7b",
+          "certpath": "/Users/fire/Downloads/debug/ksstDebugCer.cer"
         }
       }
     ]
@@ -146,18 +147,6 @@
       ]
     },
     {
-      "name": "web",
-      "srcPath": "./commons/web",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
       "name": "widget",
       "srcPath": "./commons/widget",
       "targets": [
@@ -242,8 +231,16 @@
       ]
     },
     {
-      "name": "parseExcel",
-      "srcPath": "./commons/parseExcel",
+      "name": "web",
+      "srcPath": "./commons/web",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
     }
   ],
 }

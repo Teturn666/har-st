@@ -12,5 +12,7 @@ export default class BankConstants {
   static readonly ROUTER_EXERCISE_LIST = 'exercisePage'
   //模拟考试
   static readonly ROUTER_EXERCISE_COMMON_LIST = 'exerciseCommonPage'
+  //题库详情
+  static readonly ROUTER_BANK_PAGE = 'bankPage'
 
 }

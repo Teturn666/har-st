@@ -4,7 +4,8 @@ import {
   GetAllSelectedUtil,
   Logger,
   PreferencesConstants,
-  preferencesUtils
+  preferencesUtils,
+  webType
 } from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
 import { emitter } from '@kit.BasicServicesKit'
@@ -12,7 +13,6 @@ import { image } from '@kit.ImageKit'
 import { HomeModel } from '../model/HomeModel'
 import HomeConstants from '../Constants/HomeConstants'
 import common from '@ohos.app.ability.common'
-import router from '@ohos.router'
 import { PayView } from 'view/Index'
 import lottie from '@ohos/lottie'
 import { taskpool } from '@kit.ArkTS'
@@ -33,15 +33,8 @@ import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
 import { accessManager } from '../utils/AccessManager'
 import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
+import { NavDoubleString, NavQid } from '../model/NavGenericType'
 
-import('photo/src/main/ets/pages/SearchResultPage')
-import('web/src/main/ets/pages/ChWebPage')
-import('./BankListPage')
-import('./MyDownloadPage')
-import('./CustomQuestionPage')
-import('./SearchQuestions')
-import('./SearchIntroductionPage')
-import('./PhotoSearchPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
@@ -71,14 +64,10 @@ interface AdState {
   typeSearch: boolean;
 }
 
-@Builder
-export function HomePageBuilder() {
-  HomePage()
-}
-
 @Entry()
 @Component
 export struct HomePage {
+  @Consume appPathStack: NavPathStack
   // 合并UI相关状态
   @State uiState: UIState = {
     loading: false,
@@ -97,6 +86,8 @@ export struct HomePage {
     csjId: "",
     csjIsShow: false,
     typeSearch: false
+  }
+  private TypeRead: () => void = () => {
   }
   // 保留必要的单独状态
   private homeModel: HomeModel = HomeModel.getInstance()
@@ -250,9 +241,7 @@ export struct HomePage {
               isLoading: this.uiState.loading,
               handleClick: () => {
                 accessManager.CheckCamera(['ohos.permission.CAMERA',], () => {
-                  router.pushNamedRoute({
-                    name: HomeConstants.ROUTER_PHOTO_SEARCH,
-                  })
+                  this.appPathStack.pushPathByName(HomeConstants.ROUTER_PHOTO_SEARCH, null)
                 })
               }
             })
@@ -366,13 +355,11 @@ export struct HomePage {
       this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardScan?.switchOff
       this.adState.typeSearch = false
       this.showBankSelectionDialog(() => {
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-        })
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
+
       }, () => {
-        router.pushNamedRoute({
-          name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-        })
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
+
       })
     } else {
       if (!this.businessState.isVip && this.csjHmAD?.hmAd?.rewardScan?.switchOff && !this.adState.csjCode) {
@@ -382,9 +369,8 @@ export struct HomePage {
         this.AdDialogController?.open()
       } else {
         if (this.businessState.bankList.length > 0) {
-          router.pushNamedRoute({
-            name: HomeConstants.ROUTER_SEARCH_INTRODUCTION,
-          })
+          this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
+
         }
       }
     }
@@ -503,44 +489,36 @@ export struct HomePage {
     } else {
       title = '题库练习'
     }
-
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_BANK_LIST,
-      params: {
-        title,
-        type: String(type)
-      }
-    }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_BANK_LIST, {
+      title,
+      type: String(type)
+    } as NavDoubleString)
   }
 
   /**
    * 跳转到我的下载页面
    */
   private navigateToMyDownload() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_MY_DOWNLOAD
-    })
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_MY_DOWNLOAD, { bankPage: 'myDown' } as NavQid)
+
   }
 
   /**
    * 跳转到自定义题库页面
    */
   private navigateToCustomQuestion() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_CUSTOM_QUESTION
-    })
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_CUSTOM_QUESTION, null)
+
   }
 
   /**
    * 跳转到使用教程网页
    */
   private navigateToWebTutorial() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_WEB, params: {
-        url: HomeConstants.USE_TEACH_URL,
-        title: '使用教程'
-      }
-    })
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_WEB, {
+      url: HomeConstants.USE_TEACH_URL,
+      title: '使用教程'
+    } as webType)
     onEventObject(HomeMobClickConstants.PLAY_GUIDE_VIDEO)
   }
 }
@@ -759,4 +737,9 @@ struct ExerciseHelper {
     }
     .width(Const.FULL_PERCENT)
   }
+}
+
+@Builder
+export function HomePageBuilder() {
+  HomePage()
 }

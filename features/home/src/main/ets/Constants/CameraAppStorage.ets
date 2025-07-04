@@ -9,4 +9,6 @@ export class cameraAppStorage {
   static readonly OCR_TEXT = 'ocr_text'
   //点击选择的题目类型
   static readonly SELECT_QUESTION_TYPE = 'select_question_type'
+  //我的下载、题库练习、错题练习、收藏练习
+  static readonly SELECT_CHANGE_TEXT = 'ChangeText'
 }

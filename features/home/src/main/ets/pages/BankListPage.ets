@@ -1,124 +1,124 @@
-import { router } from '@kit.ArkUI'
 import { BankListRes } from 'db'
 import { Logger } from 'utils'
+import { cameraAppStorage } from '../Constants/CameraAppStorage'
 import HomeConstants from '../Constants/HomeConstants'
 import { HomeModel } from '../model/HomeModel'
+import { NavChangeString, NavDoubleString, NavQid } from '../model/NavGenericType'
 import { HomeNet } from '../service/HomeNet'
 
-import('./ExercisePage')
 
 //我的下载、题库练习、错题练习、收藏练习列表共用的页面
-@Entry({ routeName: 'bankListPage' })
+
 @Component
 export struct BankListPage {
   title = ''
   @State questionBanks: BankListRes[] = [];
   @State type: number = 1 // 1=题库练习, 2=错题练习, 3=收藏练习
   @State homeModel: HomeModel = HomeModel.getInstance()
+  @StorageProp(cameraAppStorage.SELECT_CHANGE_TEXT) @Watch('ChangeTxt') text: number = 0
+  @Consume appPathStack: NavPathStack
 
-  //刷新数据
-  onPageShow(): void {
-    const params = router.getParams() as Record<string, string>;
-    // 检查 params 是否存在且 refresh 为 "1"
-    if (params && params.refresh === "1") {
-      if (params.type) {
-        this.type = parseInt(params.type, 10) || 1;
-        if (this.type === 1) {
-          this.homeModel.getBankList()
-            .then(banks => {
-              this.questionBanks = banks;
-            })
-            .catch((error: Error) => {
-              console.error("Error fetching bank list:", error);
-            });
-        } else if (this.type === 2) {
-          this.homeModel.getWrongBankList()
-            .then(banks => {
-              this.questionBanks = banks;
-            })
-            .catch((error: Error) => {
-              console.error("Error fetching wrong bank list:", error);
-            });
-        } else {
-          this.homeModel.getCollectionBankList()
-            .then(banks => {
-              this.questionBanks = banks;
-            })
-            .catch((error: Error) => {
-              console.error("Error fetching collection bank list:", error);
-            });
-        }
-      }
+  ChangeTxt() {
+    if (this.text === 1) {
+      this.homeModel.getBankList()
+        .then(banks => {
+          this.questionBanks = banks;
+        })
+        .catch((error: Error) => {
+          console.error("Error fetching bank list:", error);
+        });
+    } else if (this.text === 2) {
+      this.homeModel.getWrongBankList()
+        .then(banks => {
+          this.questionBanks = banks;
+        })
+        .catch((error: Error) => {
+          console.error("Error fetching wrong bank list:", error);
+        });
+    } else if (this.text === 3) {
+      this.homeModel.getCollectionBankList()
+        .then(banks => {
+          this.questionBanks = banks;
+        })
+        .catch((error: Error) => {
+          console.error("Error fetching collection bank list:", error);
+        });
     }
+    AppStorage.setOrCreate('ChangeText', 0)
   }
 
   aboutToAppear(): void {
-    const params = router.getParams() as Record<string, string>
-    // 解析 title 和 type
-    if (params.title) {
-      this.title = params.title
+    const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_BANK_LIST) as NavDoubleString[]
+    if (res && res.length) {
+      const params = res[0]
+      // 解析 title 和 type
+      if (params.title) {
+        this.title = params.title
+      }
+      if (params.type) {
+        this.type = parseInt(params.type, 10) || 1
+      }
+      if (this.type === 1) {
+        this.homeModel.getBankList()
+          .then(banks => {
+            this.questionBanks = banks
+          })
+      } else if (this.type === 2) {
+        this.homeModel.getWrongBankList()
+          .then(banks => {
+            this.questionBanks = banks
+          })
+      } else {
+        this.homeModel.getCollectionBankList()
+          .then(banks => {
+            this.questionBanks = banks
+          })
+      }
     }
-    if (params.type) {
-      this.type = parseInt(params.type, 10) || 1
-    }
-    if (this.type === 1) {
-      this.homeModel.getBankList()
-        .then(banks => {
-          this.questionBanks = banks
-        })
-    } else if (this.type === 2) {
-      this.homeModel.getWrongBankList()
-        .then(banks => {
-          this.questionBanks = banks
-        })
-    } else {
-      this.homeModel.getCollectionBankList()
-        .then(banks => {
-          this.questionBanks = banks
-        })
-    }
+
   }
 
   // 题库
   private onQuestionBankTap(qid: number): void {
     if (this.type === 1) {
-      router.pushNamedRoute({
-        name: HomeConstants.ROUTER_EXERCISE_LIST,
-        params: { qid: qid }
-      }, router.RouterMode.Single)
+      this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_LIST, {
+        qid: qid
+      } as NavQid)
     } else if (this.type === 2 || this.type === 3) {
-      router.pushNamedRoute({
-        name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-        params: {
-          practiceMode: this.type,
-          qid: qid
-        }
-      }, router.RouterMode.Single)
+      this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST, {
+        practiceMode: this.type,
+        qid: qid
+      } as NavQid)
+
     }
 
   }
 
   build() {
-    Column() {
-      PageHeader({
-        title: this.title,
-        onBack: () => router.back()
-      })
-
-      if (this.questionBanks.length > 0) {
-        BankList({
-          banks: this.questionBanks,
-          onItemTap: (qid) => this.onQuestionBankTap(qid)
+    NavDestination() {
+      Column() {
+        PageHeader({
+          title: this.title,
+          onBack: () => this.appPathStack.pop()
         })
-      } else {
-        // 无数据，渲染空状态
-        EmptyState({ type: this.type })
-      }
+
+        if (this.questionBanks.length > 0) {
+          BankList({
+            banks: this.questionBanks,
+            onItemTap: (qid) => this.onQuestionBankTap(qid)
+          })
+        } else {
+          // 无数据，渲染空状态
+          EmptyState({ type: this.type })
+        }
 
 
-    }.alignItems(HorizontalAlign.Center)
-    .width('100%')
-    .height('100%')
+      }.alignItems(HorizontalAlign.Center)
+      .width('100%')
+      .height('100%')
+    }
+    .hideTitleBar(true)
+
   }
 }
 
@@ -231,3 +231,7 @@ struct BankList {
   }
 }
 
+@Builder
+function BankListPageBuilder() {
+  BankListPage()
+}
