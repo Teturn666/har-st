@@ -89,7 +89,6 @@ struct BankDetailsPage {
       if (params.page) {
         this.pages = params.page
       }
-      console.log("接搜的参数" + this.pages);
     } else {
       Logger.error(TAG, "加载参数异常，params为空");
     }

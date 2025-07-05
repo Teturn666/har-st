@@ -161,10 +161,11 @@ export struct BankPage {
         }
 
         Tabs({ barPosition: BarPosition.Start, controller: this.subController }) {
-          ForEach(this.categoryList, (item: BankCategory) => {
+          ForEach(this.categoryList, (item: BankCategory, index: number) => {
             TabContent() {
               BankList({
-                aid: item.aid
+                aid: item.aid,
+                TabIndex: this.focusIndex,
               })
             }
             .backgroundColor(Color.White)

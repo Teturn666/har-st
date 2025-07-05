@@ -11,7 +11,8 @@
     "search": "file:../../commons/search",
     "encryption": "file:../../commons/encryption",
     "db": "file:../../commons/db",
-    "widget": "file:../../commons/widget"
+    "widget": "file:../../commons/widget",
+    "@csj/openadsdk": "6.9.1"
   }
 }
 

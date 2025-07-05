@@ -1,3 +1,6 @@
+import { CSJFeedAd } from "@csj/openadsdk"
+import { BankListRes } from "db"
+
 @Observed
 export class SearchQuestionRes {
   Name: string = ''
@@ -12,4 +15,12 @@ export class SearchQuestionRes {
   ASlice: string[] = []
   //1=已下载，2=未下载
   downloadedState: number = 2
+}
+//广告的混合类型
+@Observed
+export class HybridType {
+  @Track
+  type: "normal" | "ad" = "normal"
+  @Track
+  data: BankListRes | CSJFeedAd = {} as BankListRes
 }

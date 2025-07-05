@@ -16,8 +16,11 @@ import { emitter } from '@kit.BasicServicesKit';
 import BankConstants from '../Constants/BankConstants';
 import { generatedType, Params } from '../model/BankCategory';
 import { NewFlagManager } from '../model/NewFlagManager'
+import { cSJLoadFeedAD } from '../utils/loadFeedAd';
+import { CSJFeedAd } from '@csj/openadsdk';
+import { buildAdLayout } from '../components/buildAdLayout';
+import { HybridType } from '../model/SearchQuestionRes';
 
-import('./BankDetailsPage')
 
 const TAG = '[BankList]'
 let jsonData = null
@@ -196,16 +199,320 @@ export struct BankList {
   @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
   @State selectAll: boolean = false; // 全选状态
   @State isLoading: boolean = false;
-  @Prop myDown: string = ''
+  @State HybridList: HybridType[] = []
+  @State private dislikeStatus: boolean = false;
+  @State hotList: BankListRes[] = [] //触底请求到的新数据
+  @State adIndex: number = 0 //广告数组key
+  @State adsList: CSJFeedAd[] = []
+  @State firstLength: number = 0
+  @State deleteIndex: number = 0
+  @State OneAd: boolean = true
+  @State HybridIndex: number = 0 //渲染数组的索引
+  @Prop myDown: string = '' //判断跳转逻辑参数
+  @Prop @Watch('ChangeAd') TabIndex: number = 0
+  @State listMap: Map<number, HybridType[]> = new Map();
+  @State adMap: Map<number, CSJFeedAd[]> = new Map();
   //NEW标识状态管理
   private newFlagManager: NewFlagManager = NewFlagManager.getInstance();
   @State newFlagStatusMap: Map<number, boolean> = new Map(); // 存储每个题库的NEW显示状态
 
+  ChangeAd() {
+    cSJLoadFeedAD.AdIndex = this.TabIndex
+    let resAd = this.adMap.get(this.TabIndex)
+    if (resAd) {
+      this.adsList = resAd
+    }
+    let resList = this.listMap.get(this.TabIndex)
+    if (resList) {
+      this.HybridList = resList
+    }
+
+  }
+
   aboutToAppear(): void {
+    cSJLoadFeedAD.UiContext = this.getUIContext()
+    cSJLoadFeedAD.AdIndex = this.TabIndex
+    cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
+      this.adMap.set(this.TabIndex, adArray)
+      let res = this.adMap.get(this.TabIndex)
+      if (res) {
+        this.adsList = res
+      }
+      this.hybridData()
+    })
     this.bankRes.newsData = []
+
+    this.loadFeedData().then(() => {
+      this.firstLength = this.bankRes.newsData.length
+    })
     this.initNewFlagManager()
-    this.loadFeedData()
     this.initDialog()
+    emitter.on(EmitterConstants.Delete_ADS, () => {
+      this.closeAds()
+    })
+  }
+
+  closeAds() {
+    let res = this.listMap.get(this.TabIndex)
+    if (res) {
+      this.HybridList = res
+      this.HybridList.splice(this.deleteIndex, 1)
+      this.listMap.set(this.deleteIndex, this.HybridList)
+      let result = this.listMap.get(this.deleteIndex)
+      if (result) {
+        this.HybridList = result
+      }
+    }
+    if (this.deleteIndex === 2) {
+      this.deleteAds(0)
+    }
+    if (this.deleteIndex === (this.firstLength / 2) + 1) {
+      this.deleteAds(1)
+    }
+    if (this.deleteIndex === (this.firstLength / 2)) {
+      this.deleteAds(0)
+    }
+  }
+
+  deleteAds(Position: number) {
+    let res = this.adMap.get(this.TabIndex)
+    if (res) {
+      this.adsList = res
+      this.adsList[Position].destroy()
+      this.adsList.splice(Position, 1)
+      this.OneAd = false
+      this.adMap.set(this.TabIndex, this.adsList)
+    }
+  }
+
+  hybridData() {
+    const newList: HybridType[] = [];
+    this.bankRes.newsData.forEach((item, index) => {
+      newList.push({
+        type: 'normal', data: item
+      });
+      if (this.adMap.get(this.TabIndex)?.length && this.adIndex < 2) {
+        if (index === 1 && this.OneAd) {
+          newList.push({
+            type: 'ad', data: this.adsList[this.adIndex]
+          });
+          this.adIndex++;
+        }
+        if (index === (this.firstLength / 2 - 1)) {
+          newList.push({
+            type: 'ad', data: this.adsList[this.adIndex]
+          });
+          this.adIndex = 0
+        }
+      }
+    });
+    this.HybridList = newList;
+    this.listMap.set(this.TabIndex, this.HybridList)
+  }
+
+  @Builder
+  BankListView(item: BankListRes, index: number) {
+
+    Column() {
+      Flex({
+        direction: FlexDirection.Row,
+        justifyContent: FlexAlign.SpaceAround,
+        alignItems: ItemAlign.Center
+      }) {
+        if (this.management) {
+          Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
+          $r('app.media.ic_check_box'))
+            .objectFit(ImageFit.Contain)
+            .size({ width: 32, height: 32 })
+            .margin({ left: 15 })
+            .onClick(() => {
+              this.toggleItemSelection(item.qid);
+            });
+        }
+        Column() {
+          Row() {
+            Image($r('app.media.ic_feed'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
+            Text(item.name)
+              .fontColor($r('app.color.c_3e3e3e'))
+              .fontSize($r('app.float.font_size_16fp'))
+              .fontWeight(FontWeight.Bold)
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .width('85%')
+              .margin({
+                left: $r('app.float.float_5vp'),
+              })
+            // 改进的NEW标识显示逻辑：基于原有NewFlag + 用户查看状态
+            if (this.newFlagStatusMap.get(item.qid) === true) {
+              Image($r('app.media.ic_NEW'))
+                .objectFit(ImageFit.Contain)
+                .size({ width: $r('app.float.float_20vp'), height: $r('app.float.float_12vp') })
+                .align(Alignment.TopStart)
+            }
+          }
+
+          Text(item.desc)
+            .fontColor($r('app.color.c_3e3e3e'))
+            .fontSize($r('app.float.font_size_12fp'))
+            .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
+
+          Row() {
+            Text("题库状态：")
+              .fontColor($r('app.color.c_9d9d9d'))
+              .fontSize($r('app.float.font_size_10fp'))
+            if (item.downloadedState === 1) {
+              Text("已下载")
+                .fontColor(Color.Blue)
+                .fontSize($r('app.float.font_size_10fp'))
+                .margin({ right: $r('app.float.float_30vp') })
+            } else {
+              Text("未下载")
+                .fontColor(Color.Blue)
+                .fontSize($r('app.float.font_size_10fp'))
+                .margin({ right: $r('app.float.float_30vp') })
+            }
+            Text("题库更新时间：" + item.time)
+              .fontColor($r('app.color.c_9d9d9d'))
+              .fontSize($r('app.float.font_size_10fp'))
+          }
+        }
+        .width('85%')
+        .alignItems(HorizontalAlign.Start)
+        .justifyContent(FlexAlign.SpaceBetween)
+        .margin({
+          left: $r('app.float.float_20vp'),
+          top: $r('app.float.float_20vp'),
+          right: $r('app.float.float_20vp'),
+        })
+
+
+        if (this.fromType !== 2)
+        Column() {
+          if (item.downloadedState === 1) {
+            Image(this.updateStatusMap.get(item.qid) ?? false ?
+            $r('app.media.ic_update') :
+            $r('app.media.ic_download_pre'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
+
+          } else {
+            Image($r('app.media.ic_download'))
+              .objectFit(ImageFit.Contain)
+              .size({ width: $r("app.float.float_60vp"), height: $r("app.float.float_60vp") })
+          }
+        }
+        .margin({
+          right: $r('app.float.float_20vp'),
+        })
+        .onClick(
+
+          async () => {
+
+            this.mCurBank = item
+            const needUpdate = this.updateStatusMap.get(item.qid) ?? false;
+            this.isUpDate = needUpdate;
+
+            if (item.downloadedState === 1) {
+              if (this.fromType === 2) {
+                this.showDeleteDialog()
+              }
+
+              //更新
+              if (needUpdate) {
+                LoadingDialog.setContentNode(this.contentNodeUpdate);
+                LoadingDialog.openDialog()
+                try {
+                  const success = await this.bankModel.refreshBank(item)
+                  if (success) {
+                    item.downloadedState = 1
+                    this.updateStatusMap.set(item.qid, false);
+                    // 更新成功后标记为已查看
+                    await this.markBankAsViewed(item.qid, item.version || '1');
+                    this.bankRes.newsData = [...this.bankRes.newsData]
+                    LoadingDialog.closeDialog()
+                    this.showDownloadOverDialog(true, true)
+                    onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                      "question_bank_id": item.qid
+                    })
+                  } else {
+                    LoadingDialog.closeDialog()
+                    this.showDownloadOverDialog(false, true)
+                    onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                      "question_bank_id": item.qid
+                    })
+                  }
+                } catch (error) {
+                  LoadingDialog.closeDialog()
+                  this.showDownloadOverDialog(false, true)
+                  onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                    "question_bank_id": item.qid
+                  })
+                }
+              }
+            } else {
+              Logger.info(TAG, '题库内容--------' + item)
+              LoadingDialog.openDialog()
+              try {
+                const success = await this.bankModel.downLoadBank(item);
+                if (success) {
+                  Logger.info(TAG, '下载成功' + item)
+                  //更新状态为已下载
+                  item.downloadedState = 1
+                  let resList = this.listMap.get(this.TabIndex)
+                  if (resList) {
+                    this.HybridList = [...resList]
+                  }
+
+                  this.updateStatusMap.set(item.qid, false);
+                  // 下载成功后标记为已查看
+                  await this.markBankAsViewed(item.qid, item.version || '1');
+                  this.bankRes.newsData = [...this.bankRes.newsData]
+                  LoadingDialog.closeDialog()
+                  this.showDownloadOverDialog(true, false)
+
+                  onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
+                    "question_bank_id": item.qid
+                  })
+
+                } else {
+                  Logger.info(TAG, '下载失败' + item)
+                  LoadingDialog.closeDialog()
+                  this.showDownloadOverDialog(false, false)
+                  onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                    "question_bank_id": item.qid
+                  })
+                }
+              } catch (error) {
+                Logger.info(TAG, '下载过程中发生错误' + item)
+                LoadingDialog.closeDialog()
+                this.showDownloadOverDialog(false, false)
+                onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
+                  "question_bank_id": item.qid
+                })
+              }
+            }
+          }
+
+        )
+      }
+
+      Divider()
+        .strokeWidth(0.5)
+        .color($r('app.color.c_ebebeb'))
+        .margin({
+          left: $r('app.float.float_20vp'),
+          top: $r('app.float.float_10vp'),
+          right: $r('app.float.float_20vp'),
+        })
+      // if (index === this.bankRes.newsData.length - 1) {
+      //   Text("没有更多数据了")
+      //     .fontSize(14)
+      //     .fontColor($r('app.color.c_9d9d9d'))
+      //     .margin({ top: 15, bottom: 15 })
+      // }
+    }
   }
 
   // 初始化NEW标识管理器
@@ -461,7 +768,7 @@ export struct BankList {
               .onClick(() => {
                 this.management = !this.management;
               })
-          }else {
+          } else {
             Blank()
               .width('20%')
           }
@@ -474,203 +781,46 @@ export struct BankList {
 
       if (this.bankRes.newsData.length > 0) {
         List() {
-          ForEach(this.bankRes.newsData, (item: BankListRes, index) => {
+          ForEach(this.HybridList, (item: HybridType, index: number) => {
             ListItem() {
-              Column() {
-                Flex({
-                  direction: FlexDirection.Row,
-                  justifyContent: FlexAlign.SpaceAround,
-                  alignItems: ItemAlign.Center
-                }) {
-                  if (this.management) {
-                    Image(this.selectedItems.has(item.qid) ? $r('app.media.ic_check_box_selected') :
-                    $r('app.media.ic_check_box'))
-                      .objectFit(ImageFit.Contain)
-                      .size({ width: 32, height: 32 })
-                      .margin({ left: 15 })
-                      .onClick(() => {
-                        this.toggleItemSelection(item.qid);
-                      });
-                  }
-                  Column() {
-                    Row() {
-                      Image($r('app.media.ic_feed'))
-                        .objectFit(ImageFit.Contain)
-                        .size({ width: $r('app.float.float_16vp'), height: $r('app.float.float_16vp') })
-                      Text(item.name)
-                        .fontColor($r('app.color.c_3e3e3e'))
-                        .fontSize($r('app.float.font_size_16fp'))
-                        .fontWeight(FontWeight.Bold)
-                        .maxLines(1)
-                        .textOverflow({ overflow: TextOverflow.Ellipsis })
-                        .width('85%')
-                        .margin({
-                          left: $r('app.float.float_5vp'),
-                        })
-
-                      // 改进的NEW标识显示逻辑：基于原有NewFlag + 用户查看状态
-                      if (this.newFlagStatusMap.get(item.qid) === true) {
-                        Image($r('app.media.ic_NEW'))
-                          .objectFit(ImageFit.Contain)
-                          .size({ width: $r('app.float.float_20vp'), height: $r('app.float.float_12vp') })
-                          .align(Alignment.TopStart)
+              if (item.type === 'normal') {
+                this.BankListView(item.data as BankListRes, index)
+              } else {
+                if (item.data as CSJFeedAd) {
+                  if ((item.data as CSJFeedAd).isExpressAd()) {
+                    NodeContainer((item.data as CSJFeedAd).getAdComponent())
+                  } else {
+                    buildAdLayout({
+                      ad: item.data as CSJFeedAd, index, delete: (index: number) => {
+                        this.deleteIndex = index
                       }
-                    }
-
-                    Text(item.desc)
-                      .fontColor($r('app.color.c_3e3e3e'))
-                      .fontSize($r('app.float.font_size_12fp'))
-                      .margin({ top: $r('app.float.float_10vp'), bottom: $r('app.float.float_10vp') })
-
-                    Row() {
-                      Text("题库状态：")
-                        .fontColor($r('app.color.c_9d9d9d'))
-                        .fontSize($r('app.float.font_size_10fp'))
-                      if (item.downloadedState === 1) {
-                        Text("已下载")
-                          .fontColor(Color.Blue)
-                          .fontSize($r('app.float.font_size_10fp'))
-                          .margin({ right: $r('app.float.float_30vp') })
-                      } else {
-                        Text("未下载")
-                          .fontColor(Color.Blue)
-                          .fontSize($r('app.float.font_size_10fp'))
-                          .margin({ right: $r('app.float.float_30vp') })
-                      }
-                      Text("题库更新时间：" + item.time)
-                        .fontColor($r('app.color.c_9d9d9d'))
-                        .fontSize($r('app.float.font_size_10fp'))
-                    }
+                    })
                   }
-                  .width('85%')
-                  .alignItems(HorizontalAlign.Start)
-                  .justifyContent(FlexAlign.SpaceBetween)
-                  .margin({
-                    left: $r('app.float.float_20vp'),
-                    top: $r('app.float.float_20vp'),
-                    right: $r('app.float.float_20vp'),
-                  })
-
-                  if (this.fromType !== 2)
-                  Column() {
-                    if (item.downloadedState === 1) {
-                      Image(this.updateStatusMap.get(item.qid) ?? false ?
-                      $r('app.media.ic_update') :
-                      $r('app.media.ic_download_pre'))
-                        .objectFit(ImageFit.Contain)
-                        .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
-                    } else {
-                      Image($r('app.media.ic_download'))
-                        .objectFit(ImageFit.Contain)
-                        .size({ width: $r("app.float.float_60vp"), height: $r("app.float.float_60vp") })
-                    }
-                  }
-                  .margin({
-                    right: $r('app.float.float_20vp'),
-                  })
-                  .onClick(
-                    async () => {
-                      this.mCurBank = item
-                      const needUpdate = this.updateStatusMap.get(item.qid) ?? false;
-                      this.isUpDate = needUpdate;
-
-                      if (item.downloadedState === 1) {
-                        if (this.fromType === 2) {
-                          this.showDeleteDialog()
-                        }
-
-                        //更新
-                        if (needUpdate) {
-                          LoadingDialog.setContentNode(this.contentNodeUpdate);
-                          LoadingDialog.openDialog()
-                          try {
-                            const success = await this.bankModel.refreshBank(item)
-                            if (success) {
-                              item.downloadedState = 1
-                              this.updateStatusMap.set(item.qid, false);
-                              // 更新成功后标记为已查看
-                              await this.markBankAsViewed(item.qid, item.version || '1');
-                              this.bankRes.newsData = [...this.bankRes.newsData]
-                              LoadingDialog.closeDialog()
-                              this.showDownloadOverDialog(true, true)
-                              onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                                "question_bank_id": item.qid
-                              })
-                            } else {
-                              LoadingDialog.closeDialog()
-                              this.showDownloadOverDialog(false, true)
-                              onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                                "question_bank_id": item.qid
-                              })
-                            }
-                          } catch (error) {
-                            LoadingDialog.closeDialog()
-                            this.showDownloadOverDialog(false, true)
-                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                              "question_bank_id": item.qid
-                            })
-                          }
-                        }
-                      } else {
-                        Logger.info(TAG, '题库内容--------' + item)
-                        LoadingDialog.openDialog()
-                        try {
-                          const success = await this.bankModel.downLoadBank(item);
-                          if (success) {
-                            Logger.info(TAG, '下载成功' + item)
-                            //更新状态为已下载
-                            item.downloadedState = 1
-                            this.updateStatusMap.set(item.qid, false);
-                            // 下载成功后标记为已查看
-                            await this.markBankAsViewed(item.qid, item.version || '1');
-                            this.bankRes.newsData = [...this.bankRes.newsData]
-                            LoadingDialog.closeDialog()
-                            this.showDownloadOverDialog(true, false)
-
-                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
-                              "question_bank_id": item.qid
-                            })
-                          } else {
-                            Logger.info(TAG, '下载失败' + item)
-                            LoadingDialog.closeDialog()
-                            this.showDownloadOverDialog(false, false)
-                            onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                              "question_bank_id": item.qid
-                            })
-                          }
-                        } catch (error) {
-                          Logger.info(TAG, '下载过程中发生错误' + item)
-                          LoadingDialog.closeDialog()
-                          this.showDownloadOverDialog(false, false)
-                          onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_FAIL, {
-                            "question_bank_id": item.qid
-                          })
-                        }
-                      }
-                    }
-                  )
-                }
-
-                Divider()
-                  .strokeWidth(0.5)
-                  .color($r('app.color.c_ebebeb'))
-                  .margin({
-                    left: $r('app.float.float_20vp'),
-                    top: $r('app.float.float_10vp'),
-                    right: $r('app.float.float_20vp'),
-                  })
-                if (index === this.bankRes.newsData.length - 1) {
-                  Text("没有更多数据了")
-                    .fontSize(14)
-                    .fontColor($r('app.color.c_9d9d9d'))
-                    .margin({ top: 15, bottom: 15 })
                 }
               }
             }
             .onClick(() => {
-              this.jumpToBankDetail(item, this.isUpDate)
+              if (item.type === 'normal') {
+                this.jumpToBankDetail(item.data as BankListRes, this.isUpDate)
+              }
             })
+          }, (item: HybridType, index: number) => {
+            this.HybridIndex = index
+            return util.generateRandomUUID()
           })
+          ListItem() {
+            if (this.HybridIndex === this.HybridList?.length - 1) {
+              Column() {
+                Text("没有更多数据了")
+                  .fontSize(14)
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .margin({ top: 15, bottom: 15 })
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.Center)
+            }
+          }
+
         }.onReachEnd(() => {
           if (this.loadMore) {
             this.loadFeedData()
@@ -781,6 +931,9 @@ export struct BankList {
     // 更新NEW标识状态
     if (newData.length > 0) {
       await this.updateNewFlagStatus(newData);
+    }
+    if (this.bankRes.newsData) {
+      this.hybridData()
     }
   }
 }
