@@ -38,31 +38,57 @@ export class CSJLoadFeedAD {
     const res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
     switch (this.AdIndex) {
       case 0:
-        return res?.hmAd?.informationHot?.csj
-
+        if (res?.hmAd?.informationHot?.switchOff) {
+          return res?.hmAd?.informationHot?.csj
+        } else {
+          return ''
+        }
       case 1:
-        return res?.hmAd?.informationOffice?.csj
-
+        if (res?.hmAd?.informationOffice?.switchOff) {
+          return res?.hmAd?.informationOffice?.csj
+        } else {
+          return ''
+        }
       case 2:
-        return res?.hmAd?.informationFire?.csj
-
+        if (res?.hmAd?.informationFire?.switchOff) {
+          return res?.hmAd?.informationFire?.csj
+        } else {
+          return ''
+        }
       case 3:
-        return res?.hmAd?.informationCoalMine?.csj
+        if (res?.hmAd?.informationCoalMine?.switchOff) {
+          return res?.hmAd?.informationCoalMine?.csj
+        } else {
+          return ''
+        }
 
       case 4:
-        return res?.hmAd?.informationNetwork?.csj
+        if (res?.hmAd?.informationNetwork?.switchOff) {
+          return res?.hmAd?.informationNetwork?.csj
+        } else {
+          return ''
+        }
 
       case 5:
-        return res?.hmAd?.informationDoctor?.csj
+        if (res?.hmAd?.informationDoctor?.switchOff) {
+          return res?.hmAd?.informationDoctor?.csj
+        } else {
+          return ''
+        }
 
       case 6:
-        return res?.hmAd?.informationTraffic?.csj
+        if (res?.hmAd?.informationTraffic?.switchOff) {
+          return res?.hmAd?.informationTraffic?.csj
+        } else {
+          return ''
+        }
 
       default:
         return ''
 
     }
   }
+
   private feedAdListener: CSJFeedAdListener = {
     onError: (code: number, message: string) => {
 

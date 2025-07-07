@@ -1,7 +1,7 @@
 ///题库列表
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
-import { EmitterConstants, Logger } from 'utils';
+import { EmitterConstants, Logger, } from 'utils';
 import { BankListRes, QuestionRes } from 'db'
 import { ComponentContent, promptAction, } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
@@ -209,12 +209,13 @@ export struct BankList {
   @State OneAd: boolean = true
   @State HybridIndex: number = 0 //渲染数组的索引
   @Prop myDown: string = '' //判断跳转逻辑参数
-  @Prop @Watch('ChangeAd') TabIndex: number = 0
+  @Prop @Watch("ChangeAd") TabIndex: number = 0
   @State listMap: Map<number, HybridType[]> = new Map();
   @State adMap: Map<number, CSJFeedAd[]> = new Map();
   //NEW标识状态管理
   private newFlagManager: NewFlagManager = NewFlagManager.getInstance();
   @State newFlagStatusMap: Map<number, boolean> = new Map(); // 存储每个题库的NEW显示状态
+  @State timer: number = 0
 
   ChangeAd() {
     cSJLoadFeedAD.AdIndex = this.TabIndex
@@ -232,14 +233,18 @@ export struct BankList {
   aboutToAppear(): void {
     cSJLoadFeedAD.UiContext = this.getUIContext()
     cSJLoadFeedAD.AdIndex = this.TabIndex
-    cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
-      this.adMap.set(this.TabIndex, adArray)
-      let res = this.adMap.get(this.TabIndex)
-      if (res) {
-        this.adsList = res
-      }
-      this.hybridData()
-    })
+    this.timer = setTimeout(() => {
+      cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
+        this.adMap.set(this.TabIndex, adArray)
+        let res = this.adMap.get(this.TabIndex)
+        if (res) {
+          this.adsList = res
+        }
+        this.hybridData()
+      })
+    }, 200)
+
+
     this.bankRes.newsData = []
 
     this.loadFeedData().then(() => {
@@ -308,6 +313,10 @@ export struct BankList {
     });
     this.HybridList = newList;
     this.listMap.set(this.TabIndex, this.HybridList)
+  }
+
+  aboutToDisappear(): void {
+    clearTimeout(this.timer)
   }
 
   @Builder
