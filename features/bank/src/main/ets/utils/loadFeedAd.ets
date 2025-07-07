@@ -17,13 +17,14 @@ export class CSJLoadFeedAD {
   }
   UiContext?: UIContext
   AdIndex: number = 0
+  codeId: string = ''
 
   async loadFeedAd(callback: (adArray: CSJFeedAd[]) => void,) {
 
     this.AdList = callback
     try {
       let adCreator = CSJAdSdk.getAdCreator()
-      let adSlot: AdSlot = new AdSlotBuilder().setCodeId(this.getAdIndex())//955804860
+      let adSlot: AdSlot = new AdSlotBuilder().setCodeId(this.codeId)//955804860
         .setAcceptSize(350, 200)
         .setAdCount(2)// .setBidAdm(this.mBiddingAdm)
         .setSupportRenderControl(true)
@@ -31,61 +32,6 @@ export class CSJLoadFeedAD {
 
       adCreator.loadFeedAd(adSlot, this.feedAdListener)
     } finally {
-    }
-  }
-
-  private getAdIndex() {
-    const res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
-    switch (this.AdIndex) {
-      case 0:
-        if (res?.hmAd?.informationHot?.switchOff) {
-          return res?.hmAd?.informationHot?.csj
-        } else {
-          return ''
-        }
-      case 1:
-        if (res?.hmAd?.informationOffice?.switchOff) {
-          return res?.hmAd?.informationOffice?.csj
-        } else {
-          return ''
-        }
-      case 2:
-        if (res?.hmAd?.informationFire?.switchOff) {
-          return res?.hmAd?.informationFire?.csj
-        } else {
-          return ''
-        }
-      case 3:
-        if (res?.hmAd?.informationCoalMine?.switchOff) {
-          return res?.hmAd?.informationCoalMine?.csj
-        } else {
-          return ''
-        }
-
-      case 4:
-        if (res?.hmAd?.informationNetwork?.switchOff) {
-          return res?.hmAd?.informationNetwork?.csj
-        } else {
-          return ''
-        }
-
-      case 5:
-        if (res?.hmAd?.informationDoctor?.switchOff) {
-          return res?.hmAd?.informationDoctor?.csj
-        } else {
-          return ''
-        }
-
-      case 6:
-        if (res?.hmAd?.informationTraffic?.switchOff) {
-          return res?.hmAd?.informationTraffic?.csj
-        } else {
-          return ''
-        }
-
-      default:
-        return ''
-
     }
   }
 

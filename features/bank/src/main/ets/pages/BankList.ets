@@ -1,7 +1,7 @@
 ///题库列表
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
-import { EmitterConstants, Logger, } from 'utils';
+import { EmitterConstants, Logger, PreferencesConstants, preferencesUtils, } from 'utils';
 import { BankListRes, QuestionRes } from 'db'
 import { ComponentContent, promptAction, } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
@@ -219,29 +219,31 @@ export struct BankList {
 
   ChangeAd() {
     cSJLoadFeedAD.AdIndex = this.TabIndex
-    let resAd = this.adMap.get(this.TabIndex)
-    if (resAd) {
-      this.adsList = resAd
-    }
     let resList = this.listMap.get(this.TabIndex)
     if (resList) {
       this.HybridList = resList
     }
-
+    let resAd = this.adMap.get(this.TabIndex)
+    if (resAd) {
+      this.adsList = resAd
+    }
   }
 
   aboutToAppear(): void {
     cSJLoadFeedAD.UiContext = this.getUIContext()
     cSJLoadFeedAD.AdIndex = this.TabIndex
     this.timer = setTimeout(() => {
-      cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
-        this.adMap.set(this.TabIndex, adArray)
-        let res = this.adMap.get(this.TabIndex)
-        if (res) {
-          this.adsList = res
-        }
-        this.hybridData()
-      })
+      if (this.getAdIndex()) {
+        cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
+          this.adMap.set(this.TabIndex, adArray)
+          let res = this.adMap.get(this.TabIndex)
+          if (res) {
+            this.adsList = res
+          }
+          this.hybridData()
+        })
+      }
+
     }, 200)
 
 
@@ -285,7 +287,9 @@ export struct BankList {
       this.adsList = res
       this.adsList[Position].destroy()
       this.adsList.splice(Position, 1)
-      this.OneAd = false
+      if (Position!==1){
+        this.OneAd = false
+      }
       this.adMap.set(this.TabIndex, this.adsList)
     }
   }
@@ -313,6 +317,69 @@ export struct BankList {
     });
     this.HybridList = newList;
     this.listMap.set(this.TabIndex, this.HybridList)
+  }
+
+  getAdIndex() {
+    const res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+    switch (this.TabIndex) {
+      case 0:
+        if (res?.hmAd?.informationHot?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationHot?.csj
+          return res?.hmAd?.informationHot?.switchOff
+        } else {
+          return false
+        }
+      case 1:
+        if (res?.hmAd?.informationOffice?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationOffice?.csj
+          return res?.hmAd?.informationOffice?.switchOff
+        } else {
+          return false
+        }
+      case 2:
+        if (res?.hmAd?.informationFire?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationFire?.csj
+
+          return res?.hmAd?.informationFire?.switchOff
+        } else {
+          return false
+        }
+      case 3:
+        if (res?.hmAd?.informationCoalMine?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationCoalMine?.csj
+
+          return res?.hmAd?.informationCoalMine?.switchOff
+        } else {
+          return false
+        }
+      case 4:
+        if (res?.hmAd?.informationNetwork?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationNetwork?.csj
+
+          return res?.hmAd?.informationNetwork?.switchOff
+        } else {
+          return false
+        }
+      case 5:
+        if (res?.hmAd?.informationDoctor?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationDoctor?.csj
+
+          return res?.hmAd?.informationDoctor?.switchOff
+        } else {
+          return false
+        }
+      case 6:
+        if (res?.hmAd?.informationTraffic?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationTraffic?.csj
+
+          return res?.hmAd?.informationTraffic?.switchOff
+        } else {
+          return false
+        }
+      default:
+        return false
+
+    }
   }
 
   aboutToDisappear(): void {
