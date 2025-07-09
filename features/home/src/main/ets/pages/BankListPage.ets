@@ -88,10 +88,10 @@ export struct BankListPage {
       } as NavQid)
 
     } else if (this.type === 2 || this.type === 3) {
-      // this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST, {
-      //   practiceMode: this.type,
-      //   qid: qid
-      // } as NavQid)
+      this.appPathStack.pushPathByName(HomeConstants.ROUTER_EXERCISE_COMMON_LIST, {
+        practiceMode: this.type,
+        qid: qid.qid
+      } as NavQid)
 
     }
 

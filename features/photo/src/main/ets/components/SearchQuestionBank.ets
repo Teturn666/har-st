@@ -154,7 +154,7 @@ export struct SearchQuestionBank {
 
         }
         .height('100%')
-      } else if (this.searchData?.length === 0) {
+      } else if (this.searchData==null) {
         Column() {
           Row() {
             Text($r('app.string.search_nodata'))
