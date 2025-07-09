@@ -26,6 +26,7 @@ export struct SearchQuestions {
   @State isShow: boolean = false;
   @State isCamera: boolean = true;
   @State isXCom: boolean = true
+  @State SearchResult:boolean = false
   context: Context | undefined = this.getUIContext().getHostContext();
   @Consume appPathStack: NavPathStack
   controller: XComponentController = new XComponentController()
@@ -70,6 +71,10 @@ export struct SearchQuestions {
 
   private async searchResult(mDataText: SharedArrayBuffer) {
     this.resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(this.dataValue, mDataText)
+    if (this.resultSearchRes != null) {
+      this.SearchResult=true
+    }
+
   }
 
   //转换答案前加ABCD
@@ -155,8 +160,9 @@ export struct SearchQuestions {
             .justifyContent(FlexAlign.SpaceBetween)
 
             Column() {
-              if (this.resultSearchRes != null) {
+              if (this.SearchResult) {
                 Column({ space: 10 }) {
+                    if (this.resultSearchRes != null) {
                   Scroll() {
                     Column() {
                       Text("答案：" + this.resultSearchRes.answer)
@@ -190,7 +196,7 @@ export struct SearchQuestions {
                     .alignItems(HorizontalAlign.Start)
                   }
                   .scrollBar(BarState.Off)
-
+                }
                 }
                 .alignItems(HorizontalAlign.Start)
 
@@ -205,7 +211,8 @@ export struct SearchQuestions {
                 .borderRadius(6)
                 .width(this.isPortrait ? '90%' : 320)
                 .height(this.isPortrait ? 300 : 180)
-                .backgroundColor(Color.White)
+                .backgroundColor("#eceaea")
+                .opacity(this.resultSearchRes!=null?0.8:0.3)
                 .alignRules(
                   this.isPortrait
                     ? {
@@ -234,10 +241,11 @@ export struct SearchQuestions {
 
                   }
                   .backgroundColor("#ffe74c13")
+                  .opacity(this.resultSearchRes!=null?0.8:0.3)
                   .width(this.isPortrait ? 280 : 320)
                   .height(this.isPortrait ? 55 : 35)
                   .borderRadius(6)
-                  .enabled(this.isCamera)
+                  .enabled(this.isCamera &&this.resultSearchRes!==null)
                   .onClick(() => {
                     //TODO  解锁题目
                     if (this.CameraChange) {
@@ -270,7 +278,7 @@ export struct SearchQuestions {
                     align: VerticalAlign.Bottom
                   }
                 })
-              }
+             }
             }
             .justifyContent(FlexAlign.Start)
             .margin({
