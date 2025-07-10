@@ -3,14 +3,20 @@ import { PreferencesConstants, preferencesUtils } from "utils";
 @CustomDialog
 export struct TextSizeDialog {
   controller?: CustomDialogController;
-  @State fontSize: number = 16;
+  @State titleSize: number = 16;
+  @State answerSize: number = 16;
   // 进度条数值，用于控制滑块位置和字体大小关联，可按需调整范围
-  @State sliderValue: number = 16;
+  @State sliderValue: number = 16; //题目字体初始值
+  @State answerValue: number = 16 //答案字体初始值
 
   aboutToAppear(): void {
     let size = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE)
     if (size) {
       this.sliderValue = size
+    }
+    let answer = preferencesUtils.getNumber(PreferencesConstants.FLOATING_ANSWER_SIZE)
+    if (answer) {
+      this.answerValue = answer
     }
   }
 
@@ -54,21 +60,19 @@ export struct TextSizeDialog {
 
           Column({ space: 10 }) {
             Text('世界上第一个永久极地考察站是________。')
-              .fontSize(this.fontSize)
+              .fontSize(this.titleSize)
               .fontColor(Color.White)
             Text('A长城站')
-              .fontSize(this.fontSize)
+              .fontSize(this.titleSize)
               .fontColor(Color.White)
             Text('B奥尔卡德斯站')
-              .fontSize(this.fontSize)
+              .fontSize(this.titleSize)
               .fontColor('#E6D296')
-
-
             Text('C俄罗斯')
-              .fontSize(this.fontSize)
+              .fontSize(this.titleSize)
               .fontColor(Color.White)
             Text('D阿蒙森-斯科特站')
-              .fontSize(this.fontSize)
+              .fontSize(this.titleSize)
               .fontColor(Color.White)
           }
           .width('100%')
@@ -82,10 +86,12 @@ export struct TextSizeDialog {
         .margin({ top: 10 })
 
         Row() {
+          Text("答案")
+
           Slider({
-            value: this.sliderValue,
-            min: 13,
-            max: 30
+            value: this.answerValue,
+            min: 12,
+            max: 25
           })
             .selectedColor('#000')// 已选择部分颜色
             .trackThickness(1)// 轨道粗细
@@ -95,13 +101,36 @@ export struct TextSizeDialog {
             .blockSize({ width: 15, height: 15 })// 滑块大小
             .width('86%')// 自定义滑块样式
             .onChange((value: number) => {
-              this.fontSize = value;
+              this.answerSize = value;
             })
-            .margin({ left: 5, right: 5 });
 
         }
         .id('slider')
-        .margin({ top: 28, bottom: 15 });
+        .margin({ top: 28, });
+
+        Row() {
+          Text("题目")
+
+          Slider({
+            value: this.sliderValue,
+            min: 12,
+            max: 25
+          })
+            .selectedColor('#000')// 已选择部分颜色
+            .trackThickness(1)// 轨道粗细
+            .blockColor('#CCC')// 滑块颜色
+            .blockBorderColor('#ffeff0f3')// 滑块边框颜色
+            .blockBorderWidth(2)// 滑块边框宽度
+            .blockSize({ width: 15, height: 15 })// 滑块大小
+            .width('86%')// 自定义滑块样式
+            .onChange((value: number) => {
+              this.titleSize = value;
+            })
+
+        }
+        .justifyContent(FlexAlign.Center)
+        .id('slider2')
+        .margin({ top: 1, });
 
         Text('确认')
           .width(80)
@@ -116,7 +145,8 @@ export struct TextSizeDialog {
             offsetY: 5
           })
           .onClick(() => {
-            preferencesUtils.putNumber(PreferencesConstants.FLOATING_TEXT_SIZE, this.fontSize)
+            preferencesUtils.putNumber(PreferencesConstants.FLOATING_ANSWER_SIZE, this.answerSize)
+            preferencesUtils.putNumber(PreferencesConstants.FLOATING_TEXT_SIZE, this.titleSize)
             this.controller?.close()
           })
       }
@@ -127,7 +157,7 @@ export struct TextSizeDialog {
 
 
       Text('B-奥尔卡德斯站')
-        .fontSize(this.fontSize)
+        .fontSize(this.answerSize)
         .margin({ top: 90 })
         .fontColor('#E6D296')
         .alignRules({
@@ -162,14 +192,35 @@ export struct TextSizeDialog {
           .fontSize(16)
           .fontColor('#ccc')
       }
-      .margin({ top: 30 })
-      .width('75%')
+      .margin({ top: 15, left: 28 })
+      .width('65%')
 
       .alignRules({
         top: { anchor: 'stretchingImage', align: VerticalAlign.Bottom },
         middle: { anchor: '__container__', align: HorizontalAlign.Center }
       })
 
+      Row() {
+        Text('小')
+          .width('36%')
+          .fontSize(12)
+          .fontColor('#ccc')
+        Text('标准')
+          .fontSize(14)
+          .fontColor('#ccc')
+
+          .layoutWeight(1)
+        Text('大')
+          .fontSize(16)
+          .fontColor('#ccc')
+      }
+      .margin({ top: 55, left: 28 })
+      .width('65%')
+
+      .alignRules({
+        top: { anchor: 'stretchingImage', align: VerticalAlign.Bottom },
+        middle: { anchor: '__container__', align: HorizontalAlign.Center }
+      })
     }
   }
 }
