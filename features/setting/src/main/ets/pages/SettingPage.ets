@@ -34,7 +34,7 @@ export struct SettingPage {
     backgroundColor: 0xd9ffffff,
     cornerRadius: 5,
     width: 310,
-    height: 430,
+    height: 450,
     maskColor: "#88000000",
     borderStyle: BorderStyle.Dashed,
     shadow: ({

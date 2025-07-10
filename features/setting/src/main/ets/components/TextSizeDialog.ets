@@ -13,10 +13,12 @@ export struct TextSizeDialog {
     let size = preferencesUtils.getNumber(PreferencesConstants.FLOATING_TEXT_SIZE)
     if (size) {
       this.sliderValue = size
+      this.titleSize = size
     }
     let answer = preferencesUtils.getNumber(PreferencesConstants.FLOATING_ANSWER_SIZE)
     if (answer) {
       this.answerValue = answer
+      this.answerSize = answer
     }
   }
 
