@@ -46,8 +46,22 @@ export class PreferencesConstants {
   static readonly OPTION_COLOR_SETTING = 'option_color_setting'
   //悬浮窗颜色设置
   static readonly FLOATING_COLOR_SETTING = 'floating_color_setting'
-  //悬浮窗字体大小设置
+  //悬浮窗字体题目设置
   static readonly FLOATING_TEXT_SIZE = 'floating_text_size'
+  //悬浮窗字体答案设置
+  static readonly FLOATING_ANSWER_SIZE = 'floating_answer_size'
   //识别区域设置
   static readonly SCREEN_READ_SETTING = 'Screen_Read_Setting'
+  //VIP天数提醒
+  static readonly SP_VIP_REMINDER_DATE = 'vip_reminder_date'
+  //公告显示时间
+  static readonly SP_NOTICE_LAST_SHOWN_DATE = 'notice_last_shown_date'
+  //分享显示时间
+  static readonly SP_SHARE_LAST_SHOWN_DATE = 'share_last_shown_date'
+  //分享是否显示
+  static readonly SP_SHARE_SHOWN_TODAY_DATE = 'share_shown_today_date'
+  //SP_ANY_DIALOG_SHOWN_TODAY
+  static readonly SP_ANY_DIALOG_SHOWN_TODAY = 'any_dialog_shown_shown_today'
+
+
 }

@@ -9,7 +9,6 @@
     "@tencent/wechat_open_sdk": "^1.0.14"
   },
   "devDependencies": {
-    "web": "file:../../commons/web",
     "utils": "file:../../commons/utils",
     "network": "file:../../commons/network",
     "db": "file:../../commons/db"

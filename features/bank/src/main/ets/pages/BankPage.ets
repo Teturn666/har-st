@@ -6,13 +6,11 @@ import lottie, { AnimationItem } from '@ohos/lottie';
 import { common } from '@kit.AbilityKit';
 import { util } from '@kit.ArkTS'
 import BankConstants from '../Constants/BankConstants';
-import { router } from '@kit.ArkUI';
 import { emitter } from '@kit.BasicServicesKit';
 
 const context = (getContext(this) as common.UIAbilityContext)
 let jsonData = null
 
-@Entry
 @Component
 export struct BankPage {
   @State categoryList: Array<BankCategory> = [];
@@ -24,6 +22,7 @@ export struct BankPage {
   private subController: TabsController = new TabsController();
   @State hasLoadData: boolean = false
   @State ShowText: boolean = true
+  @Consume appPathStack: NavPathStack
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
   private animateItem: AnimationItem | null = null
@@ -43,7 +42,7 @@ export struct BankPage {
   }
 
   private jumpTohotBankpage() {
-    router.pushNamedRoute({ name: BankConstants.ROUTER_HOT_Search })
+    this.appPathStack.pushPathByName(BankConstants.ROUTER_HOT_Search, null)
   }
 
   @Builder
@@ -162,10 +161,11 @@ export struct BankPage {
         }
 
         Tabs({ barPosition: BarPosition.Start, controller: this.subController }) {
-          ForEach(this.categoryList, (item: BankCategory) => {
+          ForEach(this.categoryList, (item: BankCategory, index: number) => {
             TabContent() {
               BankList({
-                aid: item.aid
+                aid: item.aid,
+                TabIndex: this.focusIndex,
               })
             }
             .backgroundColor(Color.White)
@@ -249,6 +249,11 @@ export struct BankPage {
       this.hasLoadData = true
     })
   }
+}
+
+@Builder
+function BankPageBuilder() {
+  BankPage()
 }
 
 @Component

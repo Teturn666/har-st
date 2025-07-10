@@ -3,7 +3,9 @@
     "name": "pay",
     "type": "har",
     "description": "$string:module_desc",
+    "routerMap": "$profile:router_map",
     "mainElement": "PayAbility",
+    "routerMap": "$profile:router_map",
     "deviceTypes": [
       "phone"
     ],

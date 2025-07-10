@@ -5,11 +5,13 @@ export struct ProgressLoading {
   @Prop
   strokeWidth: number = 4
   @Prop
-  color: ResourceColor ='#fff6605e'
+  color: ResourceColor = '#fff6605e'
   @Prop
   angle: number = 0
   @Prop
   value: number = 40
+  @Prop
+  showText:boolean = true
   isRight: boolean = true
   timer: number = -1
 
@@ -66,16 +68,19 @@ export struct ProgressLoading {
           })
 
         })
-      Text("加载中")
-        .fontSize(14)
-        .fontColor(this.color)
-        .margin({
-          top:20
-        })
-        .alignRules({
-          center: { anchor: 'pro', align: VerticalAlign.Bottom },
-          middle: { anchor: 'pro', align: HorizontalAlign.Center }
-        })
+      if (this.showText){
+        Text("加载中")
+          .fontSize(14)
+          .fontColor(this.color)
+          .margin({
+            top: 20
+          })
+          .alignRules({
+            center: { anchor: 'pro', align: VerticalAlign.Bottom },
+            middle: { anchor: 'pro', align: HorizontalAlign.Center }
+          })
+      }
+
     }
   }
 }

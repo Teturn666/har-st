@@ -49,6 +49,12 @@ export default class ChRdb {
           // console.info(`Success to executeSql.`);
         }
       }
+      if (this.rdbStore.version === 2) {
+        if (DbConstants.QUESTION_TABLE.tableName === this.tableName) {
+          await this.rdbStore.executeSql('ALTER TABLE question ADD COLUMN wrongAnswer TEXT')
+          this.rdbStore.version = 3
+        }
+      }
       // Logger.info('getRdbStore() finished.');
       callback();
     } catch (e) {

@@ -1,10 +1,13 @@
-import { router } from '@kit.ArkUI'
 import promptAction from '@ohos.promptAction';
-import { QuestionRes } from 'db';
+import { BankListRes, QuestionRes } from 'db';
+import { HeaderComponent } from '../components/HeaderComponent';
+import { NavigationButtons } from '../components/NavigationButtons';
+import { OptionList } from '../components/OptionList';
+import { ProgressBar } from '../components/ProgressBar';
+import { QuestionContent } from '../components/QuestionContent';
 import HomeConstants from '../Constants/HomeConstants';
 import { HomeModel } from '../model/HomeModel';
-
-import('./ExerciseCommonPage')
+import { NavQid } from '../model/NavGenericType';
 
 interface questionSelections {
   selectedOption: string;
@@ -14,7 +17,7 @@ interface questionSelections {
 
 const TAG = 'ExercisePage';
 
-@Entry({ routeName: 'exercisePage' })
+
 @Component
 struct ExercisePage {
   @State qid: number = -1
@@ -31,6 +34,156 @@ struct ExercisePage {
   @State questionSelections: Record<number, questionSelections> = {}; // 记录每题选择
   @State totalProgress: number = this.questions.length;
   @State favoriteStatus: Record<number, boolean> = {}; // 按 questionID 存储收藏状态
+  @State bankPage: string = ''
+  @Consume appPathStack: NavPathStack
+  @State positions: number = -1 // 当前进度位置
+  @State bankInfo: BankListRes | null = null; // 存储当前题库信息
+
+  //更新当前进度位置
+  private updateCurrentPosition(newPosition: number) {
+    this.positions = newPosition;
+    console.log(`进度更新: 当前位置 ${this.positions}`);
+
+    // 异步保存进度到数据库
+    this.saveProgressToDatabase();
+  }
+
+  // 保存进度到数据库
+  private async saveProgressToDatabase() {
+    if (!this.bankInfo) {
+      console.error('题库信息不存在，无法保存进度');
+      return;
+    }
+
+    try {
+      // 更新题库信息中的 position 字段
+      const updatedBankInfo: BankListRes = {
+        id: this.bankInfo.id,
+        qid: this.bankInfo.qid,
+        name: this.bankInfo.name,
+        desc: this.bankInfo.desc,
+        time: this.bankInfo.time,
+        url: this.bankInfo.url,
+        num: this.bankInfo.num,
+        version: this.bankInfo.version,
+        position: this.positions, // 更新进度位置
+        downloadedState: this.bankInfo.downloadedState,
+        bankType: this.bankInfo.bankType,
+        NewFlag: this.bankInfo.NewFlag
+      };
+      // 调用 homeModel 中的更新方法保存到数据库
+      await this.homeModel.updateBankPosition(updatedBankInfo);
+      console.log(`进度已保存到数据库: qid=${this.qid}, position=${this.positions}`);
+
+    } catch (error) {
+      console.error('保存进度失败:', error);
+    }
+  }
+
+  //从数据库加载进度
+  private async loadProgressFromDatabase(): Promise<number> {
+    try {
+      // 获取当前题库信息
+      const bankList = await this.homeModel.getBankListById(this.qid);
+      if (bankList && bankList.length > 0) {
+        this.bankInfo = bankList[0];
+        const savedPosition = this.bankInfo.position || 0;
+        console.log(`从数据库加载进度: position=${savedPosition}`);
+        return Math.max(0, savedPosition); // 确保不小于0
+      }
+    } catch (error) {
+      console.error('加载进度失败:', error);
+    }
+    return 0; // 默认从第一题开始
+  }
+
+  //从题目数据中恢复之前的答题状态
+  private restoreAnsweredStates() {
+    this.questions.forEach((question, index) => {
+      if (question.wrongAnswer && question.wrongAnswer.trim() !== '') {
+        console.log(`恢复第${index + 1}题的答题状态, wrongAnswer: ${question.wrongAnswer}`);
+
+        // 判断是否为多选题
+        const isMultiple = this.isMultipleChoiceForQuestion(question);
+
+        if (isMultiple) {
+          // 多选题：wrongAnswer可能是单个选项或多个选项
+          // 如果wrongAnswer是多个字符，按字符拆分；如果是单个字符，直接使用
+          let selectedOptions: string[] = [];
+          if (question.wrongAnswer.length > 1 && /^[A-Z]+$/.test(question.wrongAnswer)) {
+            // 如果是ABC这样的格式，按字符拆分
+            selectedOptions = question.wrongAnswer.split('');
+          } else {
+            // 如果是单个选项，直接使用
+            selectedOptions = [question.wrongAnswer];
+          }
+
+          this.questionSelections[index] = {
+            selectedOption: '',
+            selectedOptions: selectedOptions,
+            hasSubmitted: true
+          };
+        } else {
+          // 单选题或判断题：wrongAnswer是单个选项
+          let selectedOption = question.wrongAnswer;
+
+          // 对于判断题，如果wrongAnswer是选项内容而不是标签，需要转换为标签
+          if (this.isTrueFalseQuestionForQuestion(question)) {
+            selectedOption = this.getOptionLabelFromContent(question, question.wrongAnswer);
+          }
+
+          this.questionSelections[index] = {
+            selectedOption: selectedOption,
+            selectedOptions: [],
+            hasSubmitted: true
+          };
+        }
+      }
+    });
+  }
+
+  //判断指定题目是否为多选题
+  private isMultipleChoiceForQuestion(question: QuestionRes): boolean {
+    const answer = question.answer;
+    return answer.length > 1 && /^[A-Z]+$/.test(answer);
+  }
+
+  //判断指定题目是否为判断题
+  private isTrueFalseQuestionForQuestion(question: QuestionRes): boolean {
+    const options = question.option;
+
+    // 检查是否为2个选项
+    if (options.length !== 2) {
+      return false;
+    }
+
+    // 定义所有可能的判断题选项组合
+    const trueFalsePatterns = [
+      ['正确', '错误'],
+      ['√', '×'],
+      ['对', '错'],
+      ['Y', 'N'],
+      ['A', 'B']// 当选项就是A/B时
+    ];
+
+    // 检查选项是否匹配任何一种判断题模式
+    return trueFalsePatterns.some(pattern => {
+      return (options.includes(pattern[0]) && options.includes(pattern[1])) ||
+        (options.includes(pattern[1]) && options.includes(pattern[0]));
+    });
+  }
+
+  //根据选项内容获取选项标签
+  private getOptionLabelFromContent(question: QuestionRes, content: string): string {
+    const options = question.option;
+    for (let i = 0; i < options.length; i++) {
+      if (options[i] === content) {
+        return String.fromCharCode(65 + i); // 返回A、B、C等
+      }
+    }
+    // 如果找不到匹配的内容，可能传入的就是标签，直接返回
+    return content;
+  }
 
   private async saveToWrongTable(question: QuestionRes, wrongAnswer: string) {
     try {
@@ -134,6 +287,7 @@ struct ExercisePage {
   private async handleOptionClick(optionLabel: string) {
     if (this.selectedIndex === 0 && !this.hasSubmitted) {
       const currentQuestion = this.questions[this.currentQuestionIndex];
+      let wrongAnswer = optionLabel;
 
       if (this.isMultipleChoice()) {
         // 多选逻辑保持不变
@@ -147,15 +301,24 @@ struct ExercisePage {
             this.hasSubmitted = true;
             await this.saveToWrongTable(currentQuestion, optionLabel);
             this.saveQuestionState();
+
+            // 答题完成，更新进度
+            this.saveProgressAfterAnswer();
           } else {
             const allCorrectSelected = correctAnswers.every(ans => this.selectedOptions.includes(ans)) &&
             this.selectedOptions.every(opt => correctAnswers.includes(opt));
             if (allCorrectSelected) {
               this.hasSubmitted = true;
               this.saveQuestionState();
+
+              // 答题完成，更新进度
+              this.saveProgressAfterAnswer();
             }
           }
         }
+
+        // 更新wrongAnswer为所有选中的选项
+        wrongAnswer = this.selectedOptions.join('');
         this.saveQuestionState();
       } else {
         // 单选：设置选项并提交
@@ -164,7 +327,6 @@ struct ExercisePage {
 
         // 修复后的答案判断逻辑
         let isCorrect = false;
-        let wrongAnswer = optionLabel;
 
         if (this.isTrueFalseQuestion()) {
           // 判断题：获取正确答案的选项标签
@@ -176,16 +338,6 @@ struct ExercisePage {
             const optionIndex = optionLabel.charCodeAt(0) - 65;
             wrongAnswer = currentQuestion.option[optionIndex];
           }
-
-          // 添加调试日志
-          console.log('判断题调试信息:', {
-            selectedOption: optionLabel,
-            answerInDB: currentQuestion.answer,
-            correctOptionLabel: correctOptionLabel,
-            selectedContent: currentQuestion.option[optionLabel.charCodeAt(0) - 65],
-            isCorrect: isCorrect,
-            options: currentQuestion.option
-          });
         } else {
           // 普通单选题：比较选项标签与答案
           isCorrect = optionLabel === currentQuestion.answer;
@@ -195,14 +347,31 @@ struct ExercisePage {
         if (!isCorrect) {
           await this.saveToWrongTable(currentQuestion, wrongAnswer);
         }
-        this.saveQuestionState();
+
+        // 答题完成，更新进度
+        this.saveProgressAfterAnswer();
       }
+
+      //提交后的选项保存在wrongAnswer中，不管对错的选项都保存到wrongAnswer中
+      const updateQuetsionInfo: QuestionRes = {
+        id: currentQuestion.id,
+        qId: currentQuestion.qId,
+        qName: currentQuestion.qName,
+        question: currentQuestion.question,
+        option: currentQuestion.option,
+        answer: currentQuestion.answer,
+        wrongAnswer: wrongAnswer,
+        questionID: currentQuestion.questionID
+      };
+      this.homeModel.updateQuestion(updateQuetsionInfo)
+      this.saveQuestionState();
+
     }
   }
 
   private isMultipleChoice(): boolean {
     const answer = this.questions[this.currentQuestionIndex].answer;
-    return answer.length > 1 && /^[A-D]+$/.test(answer);
+    return answer.length > 1 && /^[A-Z]+$/.test(answer);
   }
 
   private resetQuestionState() {
@@ -289,16 +458,32 @@ struct ExercisePage {
       if (list.length > 0) {
         this.questions = list;
         this.totalProgress = list.length;
-        this.currentQuestionIndex = 0;
-        this.currentProgress = 1;
         this.questionSelections = {};
         this.favoriteStatus = {};
+
+        // 从数据库加载进度
+        const savedPosition = await this.loadProgressFromDatabase();
+
+        // 重置当前状态
         this.resetQuestionState();
+
+        // 恢复之前的答题状态
+        this.restoreAnsweredStates();
+
+        // 智能设置当前题目位置（考虑未答题情况）
+        this.setCurrentQuestionPosition(savedPosition);
+
         // 批量检查收藏状态
         const existedList = await this.homeModel.getCollectionQuestionList(qid);
         list.forEach((question) => {
           this.favoriteStatus[question.questionID] = existedList.some(item => item.questionID === question.questionID);
         });
+
+        // 恢复当前题目的状态
+        this.restoreQuestionState();
+
+        console.log(`题目加载完成，定位到第 ${this.currentProgress} 题`);
+
       } else {
         promptAction.showToast({ message: '暂无题目数据', duration: 2000 });
       }
@@ -316,15 +501,92 @@ struct ExercisePage {
         { text: '取消', color: '#666666' },
         { text: '确定', color: '#d2a129' },
       ],
-    }).then((data) => {
+    }).then(async (data) => {
       if (data.index === 1) {
-        this.currentProgress = 1;
-        this.currentQuestionIndex = 0;
-        this.questionSelections = {};
-        this.resetQuestionState();
-        promptAction.showToast({ message: '进度已重置', duration: 1500 });
+        try {
+          // 只清空已经答过题目的wrongAnswer（wrongAnswer不为空的题目）
+          for (let i = 0; i < this.questions.length; i++) {
+            const currentQuestion = this.questions[i];
+            // 检查是否已经答过这道题（wrongAnswer不为空且不只是空白字符）
+            if (currentQuestion.wrongAnswer && currentQuestion.wrongAnswer.trim() !== '') {
+              const updateQuestionInfo: QuestionRes = {
+                id: currentQuestion.id,
+                qId: currentQuestion.qId,
+                qName: currentQuestion.qName,
+                question: currentQuestion.question,
+                option: currentQuestion.option,
+                answer: currentQuestion.answer,
+                wrongAnswer: '', // 清空wrongAnswer
+                questionID: currentQuestion.questionID
+              };
+              await this.homeModel.updateQuestion(updateQuestionInfo);
+              // 同时更新内存中的题目数据
+              this.questions[i].wrongAnswer = '';
+              console.log(`清空第${i + 1}题的答题记录`);
+            }
+          }
+
+          // 重置进度相关状态
+          this.currentProgress = 1;
+          this.currentQuestionIndex = 0;
+          this.questionSelections = {};
+          this.resetQuestionState();
+
+          // 重置进度位置并保存到数据库
+          this.updateCurrentPosition(0);
+
+        } catch (error) {
+          console.error('重置进度失败:', error);
+          promptAction.showToast({ message: '重置进度失败', duration: 1500 });
+        }
       }
     });
+  }
+
+  private findFirstUnansweredQuestion(): number {
+    for (let i = 0; i < this.questions.length; i++) {
+      const question = this.questions[i];
+      // 检查题目是否未答过（wrongAnswer为空或只有空白字符）
+      if (!question.wrongAnswer || question.wrongAnswer.trim() === '') {
+        console.log(`找到第一个未答题: 第${i + 1}题`);
+        return i;
+      }
+    }
+    // 如果所有题目都答过了，返回最后一题的位置
+    console.log('所有题目都已答过，定位到最后一题');
+    return this.questions.length - 1;
+  }
+
+  private setCurrentQuestionPosition(savedPosition: number) {
+    // 首先尝试从保存的位置开始找未答题
+    let targetPosition = savedPosition;
+
+    // 确保保存的位置不超出范围
+    targetPosition = Math.min(Math.max(0, targetPosition), this.questions.length - 1);
+
+    // 从保存的位置开始，查找第一个未答题
+    let foundUnanswered = false;
+    for (let i = targetPosition; i < this.questions.length; i++) {
+      const question = this.questions[i];
+      if (!question.wrongAnswer || question.wrongAnswer.trim() === '') {
+        targetPosition = i;
+        foundUnanswered = true;
+        console.log(`从保存位置${savedPosition}开始，找到未答题位置: 第${i + 1}题`);
+        break;
+      }
+    }
+
+    // 如果从保存位置往后没找到未答题，从头开始找
+    if (!foundUnanswered) {
+      targetPosition = this.findFirstUnansweredQuestion();
+    }
+
+    // 设置当前位置
+    this.currentQuestionIndex = targetPosition;
+    this.currentProgress = targetPosition + 1;
+    this.positions = targetPosition;
+
+    console.log(`最终定位到第${this.currentProgress}题`);
   }
 
   private goToPreviousQuestion() {
@@ -347,428 +609,139 @@ struct ExercisePage {
     }
   }
 
+  //答题完成后保存进度
+  private saveProgressAfterAnswer() {
+    // 如果不是最后一题，保存下一题的位置
+    if (this.currentQuestionIndex < this.questions.length - 1) {
+      this.updateCurrentPosition(this.currentQuestionIndex + 1);
+      console.log(`答题完成，进度保存为下一题: ${this.currentQuestionIndex + 1}`);
+    } else {
+      // 如果是最后一题，保存当前位置（表示全部完成）
+      this.updateCurrentPosition(this.currentQuestionIndex);
+      console.log('最后一题答完，进度保存完成状态');
+
+    }
+  }
+
   isQuestionStarred(index: number): boolean {
     const question = this.questions[index];
     return this.favoriteStatus[question.questionID] || false;
   }
 
   build() {
-    if (this.questions.length > 0)
-    Column() {
-      HeaderComponent({
-        qid: this.qid,
-        selectedIndex: this.selectedIndex,
-        onModeChange: (index: number) => {
-          this.selectedIndex = index;
-        }
-      })
-
-
-      // 进度条部分
-      ProgressBar({
-        current: this.currentQuestionIndex + 1,
-        total: this.questions.length,
-        onReset: () => {
-          this.resetProgress()
-        }
-      })
-
+    NavDestination() {
       if (this.questions.length > 0) {
-        List() {
-          ListItem() {
-            QuestionContent({
-              question: this.questions[this.currentQuestionIndex],
-              isStarred: this.isQuestionStarred(this.currentQuestionIndex),
-              onToggleStar: () => {
-                this.toggleFavorite()
-              }
-            })
-          }
+        Column() {
+          HeaderComponent({
+            bankPage: this.bankPage,
+            qid: this.qid,
+            selectedIndex: this.selectedIndex,
+            onModeChange: (index: number) => {
+              this.selectedIndex = index;
+            }
+          })
 
-          ListItem() {
-            OptionList({
-              options: this.questions[this.currentQuestionIndex].option,
-              selectedOptions: this.selectedOptions,
-              selectedOption: this.selectedOption,
-              hasSubmitted: this.hasSubmitted,
-              isMultipleChoice: this.isMultipleChoice(),
-              correctAnswers: this.questions[this.currentQuestionIndex].answer,
-              isReviewMode: this.selectedIndex === 1,
-              onOptionClick: (option) => {
-                this.handleOptionClick(option)
-              }
-            })
-          }
+          // 进度条部分
+          ProgressBar({
+            current: this.currentQuestionIndex + 1,
+            total: this.questions.length,
+            onReset: () => {
+              this.resetProgress()
+            }
+          })
 
-          ListItem() {
-            NavigationButtons({
-              canGoPrevious: this.currentQuestionIndex > 0,
-              canGoNext: this.currentQuestionIndex < this.questions.length - 1,
-              onPrevious: () => {
-                this.goToPreviousQuestion()
-              },
-              onNext: () => {
-                this.goToNextQuestion()
+          if (this.questions.length > 0) {
+            List() {
+              ListItem() {
+                QuestionContent({
+                  question: this.questions[this.currentQuestionIndex],
+                  isStarred: this.isQuestionStarred(this.currentQuestionIndex),
+                  onToggleStar: () => {
+                    this.toggleFavorite()
+                  }
+                })
               }
-            })
+
+              ListItem() {
+                OptionList({
+                  options: this.questions[this.currentQuestionIndex].option,
+                  selectedOptions: this.selectedOptions,
+                  selectedOption: this.selectedOption,
+                  hasSubmitted: this.hasSubmitted,
+                  isMultipleChoice: this.isMultipleChoice(),
+                  correctAnswers: this.questions[this.currentQuestionIndex].answer,
+                  isReviewMode: this.selectedIndex === 1,
+                  onOptionClick: (option) => {
+                    this.handleOptionClick(option)
+                  }
+                })
+              }
+
+              ListItem() {
+                NavigationButtons({
+                  canGoPrevious: this.currentQuestionIndex > 0 && (this.selectedIndex === 1 || this.hasSubmitted),
+                  canGoNext: this.currentQuestionIndex < this.questions.length - 1 &&
+                    (this.selectedIndex === 1 || this.hasSubmitted),
+                  onPrevious: () => {
+                    this.goToPreviousQuestion()
+                  },
+                  onNext: () => {
+                    this.goToNextQuestion()
+                  }
+                })
+              }
+            }
+            .width('100%')
+            .layoutWeight(1)
           }
         }
         .width('100%')
-        .layoutWeight(1)
+        .height('100%')
+        .backgroundColor(Color.White)
       }
-    }
-    .width('100%')
-    .height('100%')
-    .backgroundColor(Color.White)
+
+
+    }.hideTitleBar(true)
   }
 
   aboutToAppear(): void {
-    const params = router.getParams() as Record<string, string>;
-    if (params.qid) {
-      this.qid = parseInt(params.qid, 10);
+    const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_EXERCISE_LIST) as NavQid[]
+    if (res && res.length && res[0].qid) {
+      const params = res[0]
+      if (params.bankPage) {
+        this.bankPage = params.bankPage
+      }
+      this.qid = parseInt(params.qid!.toString(), 10);
+      if (params.positions) {
+        this.positions = parseInt(params.positions.toString(), 10)
+      }
+      console.log(TAG, 'Received qid =' + this.qid);
+      if (this.qid > 0) {
+        this.getBankQuestionList(this.qid).then(() => {
+          this.checkFavoriteStatus(); // 初始化第一题的收藏状态
+        });
+      }
     }
-    console.log(TAG, 'Received qid =' + this.qid);
-    if (this.qid > 0) {
-      this.getBankQuestionList(this.qid).then(() => {
-        this.checkFavoriteStatus(); // 初始化第一题的收藏状态
-      });
+  }
+
+
+  aboutToDisappear(): void {
+    // 页面销毁前最后一次保存进度
+    if (this.positions >= 0) {
+      this.saveProgressToDatabase();
+      console.log('页面销毁，最终保存进度:', this.positions);
     }
   }
 }
 
 
-@Component
-struct HeaderComponent {
-  @Prop selectedIndex: number = 0;
-  @Prop qid: number = 0;
-  onModeChange: (index: number) => void = () => {
-
-  };
-
-  build() {
-    Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
-      Image($r('app.media.ic_back'))
-        .objectFit(ImageFit.Contain)
-        .size({ width: $r('app.float.float_48vp'), height: $r('app.float.float_48vp') })
-        .margin({ left: 15, right: 75 })
-        .align(Alignment.TopStart)
-        .onClick(() => {
-          router.back()
-        })
-
-      Flex({ direction: FlexDirection.Row, alignItems: ItemAlign.Center }) {
-        Button() {
-          Row() {
-            Button('答题')
-              .fontColor(this.selectedIndex === 0 ? '#d2a129' : '#FFFFFF')
-              .fontSize($r('app.float.font_size_12fp'))
-              .border({ width: 1, color: '#d2a129' })
-              .width(60)
-              .height(28)
-              .backgroundColor(this.selectedIndex === 0 ? '#FFFFFF' : '#d2a129')
-              .borderRadius(6)
-              .padding({ left: 12, right: 12 })
-              .onClick(() => {
-                this.onModeChange(0);
-                promptAction.showToast({ message: '切换到答题' });
-              })
-            Button('背题')
-              .fontColor(this.selectedIndex === 1 ? '#d2a129' : '#FFFFFF')
-              .fontSize($r('app.float.font_size_12fp'))
-              .border({ width: 1, color: '#d2a129' })
-              .width(60)
-              .height(28)
-              .backgroundColor(this.selectedIndex === 1 ? '#FFFFFF' : '#d2a129')
-              .borderRadius(6)
-              .padding({ left: 12, right: 12 })
-              .onClick(() => {
-                this.onModeChange(1);
-                promptAction.showToast({ message: '切换到背题' });
-              })
-          }
-          .justifyContent(FlexAlign.SpaceBetween)
-          .alignItems(VerticalAlign.Center)
-        }
-        .backgroundColor('#d2a129')
-
-        Blank()
-        Button('模拟考试')
-          .width(70)
-          .height(28)
-          .backgroundColor('#d2a129')
-          .borderRadius(6)
-          .padding({ left: 12, right: 12 })
-          .margin({ right: 12 })
-          .onClick(() => {
-            router.pushNamedRoute({
-              name: HomeConstants.ROUTER_EXERCISE_COMMON_LIST,
-              params: {
-                practiceMode: 1,
-                qid: this.qid
-              }
-            }, router.RouterMode.Single)
-          })
-      }
-    }
-  }
+@Builder
+function ExercisePageBuilder() {
+  ExercisePage()
 }
 
-@Component
-export struct ProgressBar {
-  @Prop current: number;
-  @Prop total: number;
-  onReset: () => void = () => {
-  };
 
-  build() {
-    Flex({ direction: FlexDirection.Row, justifyContent: FlexAlign.SpaceBetween, alignItems: ItemAlign.Center }) {
-      Progress({
-        type: ProgressType.Linear,
-        value: this.current,
-        total: this.total
-      })
-        .color(Color.Orange)
-        .width('60%')
-        .height($r('app.float.float_16vp'))
-        .backgroundColor($r('app.color.c_dadada'))
-        .style({ strokeWidth: 15 })
 
-      Text(`${this.current}/${this.total}`)
-        .fontSize($r('app.float.font_size_12fp'))
-        .fontColor(Color.Black)
 
-      Text('重置进度')
-        .fontSize($r('app.float.font_size_12fp'))
-        .onClick(() => this.onReset())
-    }
-    .backgroundColor($r('app.color.c_f5f3f4'))
-    .borderRadius(8)
-    .width('90%')
-    .height($r('app.float.float_50vp'))
-    .margin({ top: 10, left: 15, right: 15 })
-    .padding(10)
-  }
-}
 
-@Component
-export struct QuestionContent {
-  @Prop question: QuestionRes;
-  @Prop isStarred: boolean;
-  onToggleStar: () => void = () => {
-  };
 
-  build() {
-    Column() {
-      Row() {
-        Image(this.getQuestionTypeImage())
-          .height($r('app.float.float_24vp'))
-          .objectFit(ImageFit.Cover)
-
-        Blank()
-
-        Row() {
-          Image(this.isStarred ? $r('app.media.stared') : $r('app.media.star'))
-            .width($r('app.float.float_18vp'))
-            .height($r('app.float.float_18vp'))
-            .margin({ right: 5 })
-
-          Text(this.isStarred ? "已收藏" : "收藏")
-            .fontSize($r('app.float.font_size_14fp'))
-        }
-        .onClick(() => this.onToggleStar())
-      }
-      .justifyContent(FlexAlign.SpaceBetween)
-      .padding(10)
-      .backgroundColor($r('app.color.c_white'))
-      .borderRadius(8)
-      .margin({ top: 20, left: 15, right: 15 })
-      .width('90%')
-
-      Text(this.question.question)
-        .fontSize(16)
-        .padding({ left: 15, right: 15, top: 10 })
-        .textAlign(TextAlign.Start)
-        .width('90%')
-    }
-  }
-
-  private getQuestionTypeImage(): Resource {
-    const options = this.question.option;
-    const answer = this.question.answer;
-
-    const isTrueFalse = options.length === 2 && options.includes('正确') && options.includes('错误');
-    const isMultiple = answer.length > 1 && /^[A-D]+$/.test(answer);
-
-    if (isMultiple) {
-      return $r('app.media.ic_mu');
-    } else if (isTrueFalse) {
-      return $r('app.media.ic_es');
-    } else {
-      return $r('app.media.ic_ch');
-    }
-  }
-}
-
-@Component
-export struct OptionList {
-  @Prop options: string[];
-  @Prop selectedOptions: string[];
-  @Prop selectedOption: string;
-  @Prop hasSubmitted: boolean;
-  @Prop isMultipleChoice: boolean;
-  @Prop correctAnswers: string;
-  @Prop isReviewMode: boolean; // 新增：是否为背题模式
-  onOptionClick: (option: string) => void = () => {
-  };
-
-  build() {
-    Column() {
-      ForEach(this.options, (item: string, idx: number) => {
-        Row() {
-          Text(String.fromCharCode(65 + idx))
-            .width(30)
-            .height($r('app.float.float_30vp'))
-            .textAlign(TextAlign.Center)
-            .fontSize($r('app.float.font_size_16fp'))
-            .fontColor($r('app.color.c_black'))
-            .borderRadius(15)
-            .backgroundColor(
-              this.getOptionBackgroundColor(idx)
-            )
-            .margin({ right: 10 })
-
-          Text(item)
-            .fontSize($r('app.float.font_size_16fp'))
-            .padding(10)
-            .width('80%')
-            .borderRadius(8)
-            .backgroundColor(
-              this.getOptionBackgroundColor(idx)
-            )
-        }
-        .onClick(() => this.onOptionClick(String.fromCharCode(65 + idx)))
-        .margin({ top: 12, left: 16, right: 16 })
-      })
-    }
-    .width('100%')
-  }
-
-  private isTrueFalseQuestion(): boolean {
-    // 检查是否为2个选项
-    if (this.options.length !== 2) {
-      return false;
-    }
-
-    // 定义所有可能的判断题选项组合
-    const trueFalsePatterns: string[][] = [
-      ['正确', '错误'],
-      ['√', '×'],
-      ['对', '错'],
-      ['Y', 'N'],
-      ['A', 'B']// 当选项就是A/B时需要结合其他条件判断
-    ];
-
-    // 检查选项是否匹配任何一种判断题模式
-    return trueFalsePatterns.some(pattern => {
-      return (this.options.includes(pattern[0]) && this.options.includes(pattern[1])) ||
-        (this.options.includes(pattern[1]) && this.options.includes(pattern[0]));
-    });
-  }
-
-  private getOptionBackgroundColor(idx: number): ResourceStr {
-    const optionLabel = String.fromCharCode(65 + idx);
-    const isSelected = this.isMultipleChoice
-      ? this.selectedOptions.includes(optionLabel)
-      : this.selectedOption === optionLabel;
-
-    let isCorrect = false;
-
-    // 修复判断题的正确答案判断逻辑
-    if (this.isTrueFalseQuestion()) {
-      // 对于判断题，需要通过选项内容或答案格式来判断
-      const optionContent = this.options[idx];
-
-      // 如果答案是选项标签格式(A/B)
-      if (this.correctAnswers === 'A' || this.correctAnswers === 'B') {
-        isCorrect = optionLabel === this.correctAnswers;
-      } else {
-        // 如果答案是选项内容格式
-        isCorrect = optionContent === this.correctAnswers;
-      }
-    } else {
-      // 普通单选题和多选题
-      isCorrect = this.correctAnswers.includes(optionLabel);
-    }
-
-    if (this.isReviewMode) {
-      return isCorrect ? '#DFF5E3' : '#F2F2F2';
-    }
-
-    if (this.hasSubmitted) {
-      if (isCorrect) {
-        return '#DFF5E3';
-      }
-      if (isSelected && !isCorrect) {
-        return '#FDECEC';
-      }
-      return '#F2F2F2';
-    } else {
-      return isSelected ? '#B3E5FC' : '#F2F2F2';
-    }
-  }
-}
-
-@Component
-export struct NavigationButtons {
-  @Prop canGoPrevious: boolean;
-  @Prop canGoNext: boolean;
-  onPrevious: () => void = () => {
-  };
-  onNext: () => void = () => {
-  };
-
-  build() {
-    Row() {
-      // 只有当canGoPrevious为true时才显示上一题按钮
-      if (this.canGoPrevious) {
-        Button() {
-          Text('上一题')
-            .fontSize($r('app.float.font_size_16fp'))
-            .fontColor($r('app.color.c_F2B771'))
-        }
-        .width(100)
-        .height($r('app.float.float_30vp'))
-        .backgroundColor(Color.White)
-        .borderRadius(20)
-        .border({ width: 1, color: $r('app.color.c_F2B771') })
-        .margin({ left: this.canGoPrevious ? 20 : 0 })
-        .onClick(() => this.onPrevious())
-      } else {
-        Blank()
-      }
-
-      // 只有当canGoNext为true时才显示下一题按钮
-      if (this.canGoNext) {
-        Button() {
-          Text('下一题')
-            .fontSize($r('app.float.font_size_16fp'))
-            .fontColor($r('app.color.c_F2B771'))
-        }
-        .backgroundColor(Color.White)
-        .width(100)
-        .height($r('app.float.float_30vp'))
-        .borderRadius(20)
-        .border({ width: 1, color: $r('app.color.c_F2B771') })
-        .margin({ right: this.canGoNext ? 20 : 0 })
-        .onClick(() => this.onNext())
-      } else {
-        Blank()
-      }
-    }
-    .justifyContent(FlexAlign.SpaceBetween)
-    .alignItems(VerticalAlign.Center)
-    .padding(10)
-    .width('100%')
-    .margin({ top: 18, bottom: 20 })
-  }
-}

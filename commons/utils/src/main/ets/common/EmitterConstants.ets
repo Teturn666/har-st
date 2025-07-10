@@ -10,4 +10,6 @@ export class EmitterConstants {
   static readonly EM_REFRESH_BANK = 'refreshBank'
   //刷新修改颜色
   static readonly SETTING_COLOR = 'color_setting'
+  //删除广告
+  static  readonly Delete_ADS="delete_ads"
 }

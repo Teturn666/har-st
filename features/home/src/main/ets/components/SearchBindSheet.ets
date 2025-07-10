@@ -70,169 +70,179 @@ export struct SearchBindSheet {
   }
 
   build() {
-    Column() {
-      Row() {
-        Column() {
+      Column() {
+        Row() {
           Column() {
-            TextArea({
-              text: $$this.searchText,
-              controller: this.textAreaController,
-            })
-              .onDidInsert((info: InsertValue) => {
-                this.isEditing = true
-                this.ChangeValue = true
+            Column() {
+              TextArea({
+                text: $$this.searchText,
+                controller: this.textAreaController,
               })
-              .onChange((value: string) => {
-                if (!value) {
-                  this.isEditing = false
-                }
-              })
-              .backgroundColor(Color.Pink)
-              .enableKeyboardOnFocus(false)
-              .key('inputId')
-              .fontSize(12)
-              .width('100%')
-              .maxLines(40)
-              .onEditChange((isEditing: boolean) => {
-                if (isEditing) {
+                .onDidInsert((info: InsertValue) => {
                   this.isEditing = true
-                }
+                  this.ChangeValue = true
+                })
+                .onChange((value: string) => {
+                  this.ChangeValue = true
+                  if (!value) {
+                    this.isEditing = false
+                  }
+                })
+                .backgroundColor(Color.Pink)
+                .enableKeyboardOnFocus(false)
+                .key('inputId')
+                .fontSize(12)
+                .width('100%')
+                .maxLines(40)
+                .onEditChange((isEditing: boolean) => {
+                  if (isEditing) {
+                    this.isEditing = true
+                  }
 
-              })
-              .layoutWeight(1)
-              .backgroundColor('#FFFFFF')
-              .padding(10)
-            if (!this.isEditing) {
-              Row() {
+                })
+                .layoutWeight(1)
+                .backgroundColor('#FFFFFF')
+                .padding(10)
+              if (!this.isEditing) {
+                Row() {
+                }
+                .width('100%')
+                .height(10)
               }
-              .width('100%')
-              .height(10)
-            }
-            if (this.isEditing) {
-              Row() {
+              if (this.isEditing) {
                 Row() {
-                  PasteButton({ text: PasteDescription.PASTE })
-                    .width(30)
-                    .height(16)
-                    .fontSize(12)
-                    .fontWeight(FontWeight.Normal)
-                    .fontColor(Color.Black)
-                    .backgroundColor($r('app.color.c_ccc'))
-                    .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
-                      if (PasteButtonOnClickResult.SUCCESS === result) {
-                        pasteboard.getSystemPasteboard()
-                          .getData((err: BusinessError, pasteData: pasteboard.PasteData) => {
-                            if (err) {
-                              return;
-                            }
-                            this.searchText = pasteData.getPrimaryText();
-                          });
-                      } else {
-                        inputMethod.getController().stopInputSession();
-                        promptAction.showToast({
-                          message: '剪切板为空'
-                        })
-                      }
-                    })
-                }
-                .justifyContent(FlexAlign.Center)
-                .borderRadius(3)
-                .margin({ left: 10, bottom: 3 })
-                .width(30)
-                .height(16)
-                .backgroundColor('#ECECEC')
+                  Row() {
+                    PasteButton({ text: PasteDescription.PASTE })
+                      .width(30)
+                      .height(16)
+                      .fontSize(12)
+                      .fontWeight(FontWeight.Normal)
+                      .fontColor(Color.Black)
+                      .backgroundColor($r('app.color.c_ccc'))
+                      .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
+                        if (PasteButtonOnClickResult.SUCCESS === result) {
+                          pasteboard.getSystemPasteboard()
+                            .getData((err: BusinessError, pasteData: pasteboard.PasteData) => {
+                              if (err) {
+                                return;
+                              }
+                              this.searchText = pasteData.getPrimaryText();
+                            });
+                        } else {
+                          inputMethod.getController().stopInputSession();
+                          promptAction.showToast({
+                            message: '剪切板为空'
+                          })
+                        }
+                      })
+                  }
+                  .justifyContent(FlexAlign.Center)
+                  .borderRadius(3)
+                  .margin({ left: 10, bottom: 3 })
+                  .width(30)
+                  .height(16)
+                  .backgroundColor('#ECECEC')
 
-                Row() {
-                  Text('清除')
-                    .fontSize(12)
+                  Row() {
+                    Text('清除')
+                      .fontSize(12)
+                  }
+                  .onClick(() => {
+                    this.searchText = ''
+                    this.isEditing = false
+                  })
+                  .borderRadius(3)
+                  .margin({ left: 10, bottom: 3 })
+                  .width(30)
+                  .height(16)
+                  .backgroundColor('#ECECEC')
+                  .justifyContent(FlexAlign.Center)
+
+                  Row() {
+                    this.microphone()
+                  }
+                  .justifyContent(FlexAlign.End)
+                  .layoutWeight(1)
                 }
                 .onClick(() => {
-                  this.searchText = ''
-                  this.isEditing = false
+                  this.isEditing = !this.isEditing
                 })
-                .borderRadius(3)
-                .margin({ left: 10, bottom: 3 })
-                .width(30)
-                .height(16)
-                .backgroundColor('#ECECEC')
-                .justifyContent(FlexAlign.Center)
-
-                Row() {
-                  this.microphone()
-                }
-                .justifyContent(FlexAlign.End)
-                .layoutWeight(1)
               }
-              .onClick(() => {
-                this.isEditing = !this.isEditing
+            }
+            .height('100%')
+            .onClick(() => {
+              this.isEditing = !this.isEditing
+            })
+          }
+          .layoutWeight(1)
+
+          if (!this.isEditing) {
+            this.microphone()
+          }
+
+        }
+        .onClick(() => {
+          this.isEditing = false
+        })
+        .width('100%')
+        .height(this.isEditing ? 120 : 50)
+        .border({
+          width: 1,
+          color: Color.Black
+        })
+        .borderRadius(6)
+
+        BottomBar({
+          searchText: '搜索', searchClick: () => {
+            if (this.searchText && this.ChangeValue) {
+              inputMethod.getController().stopInputSession();
+              this.isEditing = false
+              AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT, this.searchText)
+              this.ChangeValue = false
+            }
+            if (this.searchText === '') {
+              inputMethod.getController().stopInputSession();
+              promptAction.showToast({
+                message: '请输入内容后进行搜索',
+
               })
             }
-          }
-          .height('100%')
-          .onClick(() => {
-            this.isEditing = !this.isEditing
-          })
+
+          },
+          ButtonWidth: '100%'
+        })
+        Row() {
+          ForEach(this.list, (item: string, index: number) => {
+            Row() {
+              this.SearchTypeBuilder(item, index)
+            }
+            .onClick(() => {
+              this.SearchIndex = index
+              AppStorage.setOrCreate(cameraAppStorage.SELECT_QUESTION_TYPE, index)
+            })
+
+          }, (item: string, index: number) => JSON.stringify(item) + index)
+
+        }
+        .margin({ top: 20 })
+        .width('100%')
+        .justifyContent(FlexAlign.Start)
+        .onClick(() => {
+          this.isEditing = false
+        })
+
+        Column() {
+          SearchTypeView({ TypeFlex: true })
+
         }
         .layoutWeight(1)
 
-        if (!this.isEditing) {
-          this.microphone()
-        }
-
       }
-      .onClick(() => {
-        this.isEditing = false
-      })
-      .width('100%')
-      .height(this.isEditing ? 120 : 50)
-      .border({
-        width: 1,
-        color: Color.Black
-      })
-      .borderRadius(6)
+      .height('100%')
+      .backgroundColor(Color.White)
+      .padding(20)
 
-      BottomBar({
-        searchText: '搜索', searchClick: () => {
-          if (this.searchText && this.ChangeValue) {
-            inputMethod.getController().stopInputSession();
-            this.isEditing = false
-            AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT, this.searchText)
-            this.ChangeValue = false
-          }
 
-        },
-        ButtonWidth: '100%'
-      })
-      Row() {
-        ForEach(this.list, (item: string, index: number) => {
-          Row() {
-            this.SearchTypeBuilder(item, index)
-          }
-          .onClick(() => {
-            this.SearchIndex = index
-            AppStorage.setOrCreate(cameraAppStorage.SELECT_QUESTION_TYPE, index)
-          })
-
-        }, (item: string, index: number) => JSON.stringify(item) + index)
-
-      }
-      .margin({ top: 20 })
-      .width('100%')
-      .justifyContent(FlexAlign.Start)
-      .onClick(() => {
-        this.isEditing = false
-      })
-
-      Column() {
-        SearchTypeView({ TypeFlex: true })
-
-      }
-      .layoutWeight(1)
-
-    }
-    .height('100%')
-    .backgroundColor(Color.White)
-    .padding(20)
   }
 }
 

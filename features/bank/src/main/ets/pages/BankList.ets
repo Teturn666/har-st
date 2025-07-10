@@ -1,9 +1,9 @@
 ///题库列表
 import { BankModel } from '../model/BankModel'
 import BankRes from '../model/BankRes'
-import { EmitterConstants, Logger } from 'utils';
+import { EmitterConstants, Logger, PreferencesConstants, preferencesUtils, } from 'utils';
 import { BankListRes, QuestionRes } from 'db'
-import { ComponentContent, promptAction, router } from '@kit.ArkUI';
+import { ComponentContent, promptAction, } from '@kit.ArkUI';
 import { LoadingDialog } from './LoadingDialog';
 import { FinishDialog } from './FinishDialog';
 import lottie from '@ohos/lottie';
@@ -14,31 +14,18 @@ import BankMobClickConstants from '../Constants/BankMobClickConstants';
 import { DotLoading } from '../components/DotLoading';
 import { emitter } from '@kit.BasicServicesKit';
 import BankConstants from '../Constants/BankConstants';
-import { DateItem } from '../model/BankCategory';
+import { generatedType, Params } from '../model/BankCategory';
+import { NewFlagManager } from '../model/NewFlagManager'
+import { cSJLoadFeedAD } from '../utils/loadFeedAd';
 import { CSJFeedAd } from '@csj/openadsdk';
 import { buildAdLayout } from '../components/buildAdLayout';
-import { cSJLoadFeedAD } from '../utils/loadFeedAd';
-import json from '@ohos.util.json';
-
-import('./BankDetailsPage')
+import { HybridType } from '../model/SearchQuestionRes';
 
 
 const TAG = '[BankList]'
 let jsonData = null
-
 const context = (getContext(this) as common.UIAbilityContext)
 
-class Params {
-  controller: CanvasRenderingContext2D
-  animateName: string
-  imgRes: string
-
-  constructor(controller: CanvasRenderingContext2D, animateName: string, imgRes: string) {
-    this.controller = controller;
-    this.animateName = animateName;
-    this.imgRes = imgRes;
-  }
-}
 
 @Builder
 function buildText(params: Params) {
@@ -68,7 +55,7 @@ function buildText(params: Params) {
             name: params.animateName,
             animationData: jsonData,
           })
-        })// .width('90%')
+        })
         .height(30)
         .margin({ bottom: 16, top: 8 })
     }.width('90%').backgroundColor($r('app.color.start_window_background')).borderRadius(10)
@@ -105,7 +92,6 @@ struct DownloadOverDialog {
         .borderRadius(5)
         .backgroundColor($r('app.color.c_fce8e8'))
         .onClick(() => {
-
           this.controller.close()
         })
         .textAlign(TextAlign.Center)
@@ -138,7 +124,7 @@ struct DeleteDialog {
       Text("提示").fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Center).margin({ top: 20 })
-      Text('确定删除 “' + this.bank?.name + '” 这个题库吗？').fontSize(18)
+      Text('确定删除 "' + this.bank?.name + '" 这个题库吗？').fontSize(18)
         .fontColor($r("app.color.c_9d9d9d"))
         .textAlign(TextAlign.Start).margin({ top: 20, left: 20, right: 20 })
       Row() {
@@ -180,7 +166,6 @@ struct DeleteDialog {
   }
 }
 
-
 @Component
 export struct BankList {
   @State bankRes: BankRes = new BankRes();
@@ -190,6 +175,7 @@ export struct BankList {
   @State fromType: number = 0 //0=题库广场，1=热门搜索，2=我的下载
   @State pageNum: number = 1
   @State loadMore: boolean = false
+  @Consume appPathStack: NavPathStack
   private ctx: UIContext = this.getUIContext();
   private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
   private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
@@ -213,56 +199,191 @@ export struct BankList {
   @State selectedItems: Set<number> = new Set(); // 存储选中的题库ID
   @State selectAll: boolean = false; // 全选状态
   @State isLoading: boolean = false;
-  @State HybridList: DateItem[] = []
+  @State HybridList: HybridType[] = []
   @State private dislikeStatus: boolean = false;
   @State hotList: BankListRes[] = [] //触底请求到的新数据
   @State adIndex: number = 0 //广告数组key
   @State adsList: CSJFeedAd[] = []
   @State firstLength: number = 0
+  @State deleteIndex: number = 0
+  @State OneAd: boolean = true
+  @State HybridIndex: number = 0 //渲染数组的索引
+  @Prop myDown: string = '' //判断跳转逻辑参数
+  @Prop @Watch("ChangeAd") TabIndex: number = 0
+  @State listMap: Map<number, HybridType[]> = new Map();
+  @State adMap: Map<number, CSJFeedAd[]> = new Map();
+  //NEW标识状态管理
+  private newFlagManager: NewFlagManager = NewFlagManager.getInstance();
+  @State newFlagStatusMap: Map<number, boolean> = new Map(); // 存储每个题库的NEW显示状态
+  @State timer: number = 0
 
-  aboutToAppear(): void {
-    cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
-      this.adsList = adArray
-      this.getAdList()
-    })
-    this.bankRes.newsData = []
-    this.loadFeedData().then(() => {
-      this.firstLength = this.bankRes.newsData.length
-
-    })
-    // this.initLottie()
-    this.initDialog()
+  ChangeAd() {
+    cSJLoadFeedAD.AdIndex = this.TabIndex
+    let resList = this.listMap.get(this.TabIndex)
+    if (resList) {
+      this.HybridList = resList
+    }
+    let resAd = this.adMap.get(this.TabIndex)
+    if (resAd) {
+      this.adsList = resAd
+    }
   }
 
-  getAdList() {
-    const newList: DateItem[] = [];
+  aboutToAppear(): void {
+    cSJLoadFeedAD.UiContext = this.getUIContext()
+    cSJLoadFeedAD.AdIndex = this.TabIndex
+    this.timer = setTimeout(() => {
+      if (this.getAdIndex()) {
+        cSJLoadFeedAD.loadFeedAd((adArray: CSJFeedAd[]) => {
+          this.adMap.set(this.TabIndex, adArray)
+          let res = this.adMap.get(this.TabIndex)
+          if (res) {
+            this.adsList = res
+          }
+          this.hybridData()
+        })
+      }
+
+    }, 200)
+
+
+    this.bankRes.newsData = []
+
+    this.loadFeedData().then(() => {
+      this.firstLength = this.bankRes.newsData.length
+    })
+    this.initNewFlagManager()
+    this.initDialog()
+    emitter.on(EmitterConstants.Delete_ADS, () => {
+      this.closeAds()
+    })
+  }
+
+  closeAds() {
+    let res = this.listMap.get(this.TabIndex)
+    if (res) {
+      this.HybridList = res
+      this.HybridList.splice(this.deleteIndex, 1)
+      this.listMap.set(this.deleteIndex, this.HybridList)
+      let result = this.listMap.get(this.deleteIndex)
+      if (result) {
+        this.HybridList = result
+      }
+    }
+    if (this.deleteIndex === 2) {
+      this.deleteAds(0)
+    }
+    if (this.deleteIndex === (this.firstLength / 2) + 1) {
+      this.deleteAds(1)
+    }
+    if (this.deleteIndex === (this.firstLength / 2)) {
+      this.deleteAds(0)
+    }
+  }
+
+  deleteAds(Position: number) {
+    let res = this.adMap.get(this.TabIndex)
+    if (res) {
+      this.adsList = res
+      this.adsList[Position].destroy()
+      this.adsList.splice(Position, 1)
+      if (Position!==1){
+        this.OneAd = false
+      }
+      this.adMap.set(this.TabIndex, this.adsList)
+    }
+  }
+
+  hybridData() {
+    const newList: HybridType[] = [];
     this.bankRes.newsData.forEach((item, index) => {
-      // 添加普通内容
       newList.push({
-        type: 'normal',
-        data: item
+        type: 'normal', data: item
       });
-      if (this.adsList.length > 0 && this.adIndex < 2) {
-        if (index === 1) {
+      if (this.adMap.get(this.TabIndex)?.length && this.adIndex < 2) {
+        if (index === 1 && this.OneAd) {
           newList.push({
-            type: 'ad',
-            data: this.adsList[this.adIndex]
+            type: 'ad', data: this.adsList[this.adIndex]
           });
           this.adIndex++;
         }
-
-        if (index === (Math.floor(this.firstLength / 2) - 1)) {
+        if (index === (this.firstLength / 2 - 1)) {
           newList.push({
-            type: 'ad',
-            data: this.adsList[this.adIndex]
+            type: 'ad', data: this.adsList[this.adIndex]
           });
           this.adIndex = 0
         }
       }
-
     });
     this.HybridList = newList;
+    this.listMap.set(this.TabIndex, this.HybridList)
+  }
 
+  getAdIndex() {
+    const res = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS)
+    switch (this.TabIndex) {
+      case 0:
+        if (res?.hmAd?.informationHot?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationHot?.csj
+          return res?.hmAd?.informationHot?.switchOff
+        } else {
+          return false
+        }
+      case 1:
+        if (res?.hmAd?.informationOffice?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationOffice?.csj
+          return res?.hmAd?.informationOffice?.switchOff
+        } else {
+          return false
+        }
+      case 2:
+        if (res?.hmAd?.informationFire?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationFire?.csj
+
+          return res?.hmAd?.informationFire?.switchOff
+        } else {
+          return false
+        }
+      case 3:
+        if (res?.hmAd?.informationCoalMine?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationCoalMine?.csj
+
+          return res?.hmAd?.informationCoalMine?.switchOff
+        } else {
+          return false
+        }
+      case 4:
+        if (res?.hmAd?.informationNetwork?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationNetwork?.csj
+
+          return res?.hmAd?.informationNetwork?.switchOff
+        } else {
+          return false
+        }
+      case 5:
+        if (res?.hmAd?.informationDoctor?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationDoctor?.csj
+
+          return res?.hmAd?.informationDoctor?.switchOff
+        } else {
+          return false
+        }
+      case 6:
+        if (res?.hmAd?.informationTraffic?.switchOff) {
+          cSJLoadFeedAD.codeId = res?.hmAd?.informationTraffic?.csj
+
+          return res?.hmAd?.informationTraffic?.switchOff
+        } else {
+          return false
+        }
+      default:
+        return false
+
+    }
+  }
+
+  aboutToDisappear(): void {
+    clearTimeout(this.timer)
   }
 
   @Builder
@@ -299,8 +420,8 @@ export struct BankList {
               .margin({
                 left: $r('app.float.float_5vp'),
               })
-
-            if (item.NewFlag) {
+            // 改进的NEW标识显示逻辑：基于原有NewFlag + 用户查看状态
+            if (this.newFlagStatusMap.get(item.qid) === true) {
               Image($r('app.media.ic_NEW'))
                 .objectFit(ImageFit.Contain)
                 .size({ width: $r('app.float.float_20vp'), height: $r('app.float.float_12vp') })
@@ -351,24 +472,20 @@ export struct BankList {
             $r('app.media.ic_download_pre'))
               .objectFit(ImageFit.Contain)
               .size({ width: $r('app.float.float_60vp'), height: $r('app.float.float_60vp') })
-            // Text("删除")
-            //   .visibility(this.fromType === 2 ? Visibility.Visible : Visibility.Hidden)
-            //   .fontColor(Color.Black)
-            //   .fontSize($r('app.float.font_size_10fp'))
+
           } else {
             Image($r('app.media.ic_download'))
               .objectFit(ImageFit.Contain)
               .size({ width: $r("app.float.float_60vp"), height: $r("app.float.float_60vp") })
-            // Text("下载")
-            //   .fontColor(Color.Black)
-            //   .fontSize($r('app.float.font_size_10fp'))
           }
         }
         .margin({
           right: $r('app.float.float_20vp'),
         })
         .onClick(
+
           async () => {
+
             this.mCurBank = item
             const needUpdate = this.updateStatusMap.get(item.qid) ?? false;
             this.isUpDate = needUpdate;
@@ -386,7 +503,9 @@ export struct BankList {
                   const success = await this.bankModel.refreshBank(item)
                   if (success) {
                     item.downloadedState = 1
-                    this.updateStatusMap.set(item.qid, false); // 更新成功后重置更新状态
+                    this.updateStatusMap.set(item.qid, false);
+                    // 更新成功后标记为已查看
+                    await this.markBankAsViewed(item.qid, item.version || '1');
                     this.bankRes.newsData = [...this.bankRes.newsData]
                     LoadingDialog.closeDialog()
                     this.showDownloadOverDialog(true, true)
@@ -417,8 +536,14 @@ export struct BankList {
                   Logger.info(TAG, '下载成功' + item)
                   //更新状态为已下载
                   item.downloadedState = 1
+                  let resList = this.listMap.get(this.TabIndex)
+                  if (resList) {
+                    this.HybridList = [...resList]
+                  }
+
                   this.updateStatusMap.set(item.qid, false);
-                  //触发UI重新渲染
+                  // 下载成功后标记为已查看
+                  await this.markBankAsViewed(item.qid, item.version || '1');
                   this.bankRes.newsData = [...this.bankRes.newsData]
                   LoadingDialog.closeDialog()
                   this.showDownloadOverDialog(true, false)
@@ -426,6 +551,7 @@ export struct BankList {
                   onEventObject(BankMobClickConstants.QUESTION_BANK_CLICK_DOWNLOAD_SUCCESS, {
                     "question_bank_id": item.qid
                   })
+
                 } else {
                   Logger.info(TAG, '下载失败' + item)
                   LoadingDialog.closeDialog()
@@ -444,6 +570,7 @@ export struct BankList {
               }
             }
           }
+
         )
       }
 
@@ -455,13 +582,36 @@ export struct BankList {
           top: $r('app.float.float_10vp'),
           right: $r('app.float.float_20vp'),
         })
-      if (index === this.bankRes.newsData.length - 1) {
-        Text("没有更多数据了")
-          .fontSize(14)
-          .fontColor($r('app.color.c_9d9d9d'))
-          .margin({ top: 15, bottom: 15 })
-      }
+      // if (index === this.bankRes.newsData.length - 1) {
+      //   Text("没有更多数据了")
+      //     .fontSize(14)
+      //     .fontColor($r('app.color.c_9d9d9d'))
+      //     .margin({ top: 15, bottom: 15 })
+      // }
     }
+  }
+
+  // 初始化NEW标识管理器
+  private async initNewFlagManager(): Promise<void> {
+    await this.newFlagManager.init();
+  }
+
+  // 更新NEW标识状态
+  private async updateNewFlagStatus(items: BankListRes[]): Promise<void> {
+    for (const item of items) {
+      const shouldShow = await this.newFlagManager.shouldShowNew(item.qid, item.version || '1', item.NewFlag || false);
+      this.newFlagStatusMap.set(item.qid, shouldShow);
+    }
+    // 触发UI更新
+    this.newFlagStatusMap = new Map(this.newFlagStatusMap);
+  }
+
+  // 标记题库为已查看（下载或跳转详情时调用）
+  private async markBankAsViewed(qid: number, version: string): Promise<void> {
+    await this.newFlagManager.markAsViewed(qid, version);
+    this.newFlagStatusMap.set(qid, false);
+    // 触发UI更新
+    this.newFlagStatusMap = new Map(this.newFlagStatusMap);
   }
 
   //删除弹窗
@@ -472,10 +622,8 @@ export struct BankList {
         confirm: async (item) => {
           // 1. 先关闭对话框
           this.dialogDeleteController?.close()
-
           item.downloadedState = 2
-          this.updateStatusMap.delete(item.qid); // 删除缓存中的更新状态
-          //触发UI重新渲染
+          this.updateStatusMap.delete(item.qid);
           this.bankRes.newsData = [...this.bankRes.newsData]
           // 4. 执行删除操作
           this.bankModel.deleteTable(item.qid)
@@ -484,7 +632,6 @@ export struct BankList {
     });
     this.dialogDeleteController.open();
     emitter.emit(EmitterConstants.EM_REFRESH_HOME)
-
   }
 
   showDownloadOverDialog(success: boolean, isUpdate: boolean) {
@@ -500,33 +647,31 @@ export struct BankList {
   }
 
   async jumpToBankDetail(item: BankListRes, isUpDate: boolean) {
+    // 跳转详情时标记为已查看
+    await this.markBankAsViewed(item.qid, item.version || '1');
 
     if (item.downloadedState === 1) {
       //已下载
       const bankQuestionList = await this.bankModel.getBankQuestionList(item.qid)
       //只截取前10道题目
       let questionList = bankQuestionList.slice(0, 10)
-      router.pushNamedRoute({
-        name: BankConstants.ROUTER_BANK_DETAILS,
-        params: {
-          isUpDate: this.isUpDate,
-          downloadedState: 0,
-          bankDetails: item,
-          questionList: questionList
-        }
-      })
+      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS, {
+        isUpDate: this.isUpDate,
+        downloadedState: 0,
+        bankDetails: item,
+        questionList: questionList,
+        page: this.myDown
+      } as generatedType)
     } else {
       //未下载
       let bankDesc = await this.bankModel.getBankDesc(item.qid, item.url)
       console.log("返回的：" + JSON.stringify(bankDesc))
-      router.pushNamedRoute({
-        name: BankConstants.ROUTER_BANK_DETAILS,
-        params: {
-          downloadedState: 1,
-          bankDetails: item,
-          questionListtwo: bankDesc
-        }
-      })
+      this.appPathStack.pushPathByName(BankConstants.ROUTER_BANK_DETAILS, {
+        downloadedState: 1,
+        bankDetails: item,
+        questionListtwo: bankDesc,
+        page: this.myDown
+      } as generatedType)
     }
 
   }
@@ -685,7 +830,7 @@ export struct BankList {
             .size({ width: $r('app.float.float_32vp'), height: $r('app.float.float_32vp') })
             .margin({ left: 15, right: 15 })
             .onClick(() => {
-              router.back()
+              this.appPathStack.pop()
             })
           Text("我的下载")
             .fontSize($r('app.float.font_size_18fp'))
@@ -712,33 +857,46 @@ export struct BankList {
 
       if (this.bankRes.newsData.length > 0) {
         List() {
-          ForEach(this.HybridList, (item: DateItem, index: number) => {
+          ForEach(this.HybridList, (item: HybridType, index: number) => {
             ListItem() {
               if (item.type === 'normal') {
                 this.BankListView(item.data as BankListRes, index)
               } else {
-                if (!this.dislikeStatus) {
-                  if (item.data as CSJFeedAd) {
-
-                    if ((item.data as CSJFeedAd).isExpressAd()) {
-
-                      NodeContainer((item.data as CSJFeedAd).getAdComponent())
-                    } else {
-                      // this.buildAdLayout(item.data as CSJFeedAd,index);
-                      buildAdLayout({ ad: item.data as CSJFeedAd, index, })
-
-                    }
+                if (item.data as CSJFeedAd) {
+                  if ((item.data as CSJFeedAd).isExpressAd()) {
+                    NodeContainer((item.data as CSJFeedAd).getAdComponent())
+                  } else {
+                    buildAdLayout({
+                      ad: item.data as CSJFeedAd, index, delete: (index: number) => {
+                        this.deleteIndex = index
+                      }
+                    })
                   }
                 }
               }
-
             }
             .onClick(() => {
               if (item.type === 'normal') {
                 this.jumpToBankDetail(item.data as BankListRes, this.isUpDate)
               }
             })
-          }, (item: DateItem, index: number) => util.generateRandomUUID())
+          }, (item: HybridType, index: number) => {
+            this.HybridIndex = index
+            return util.generateRandomUUID()
+          })
+          ListItem() {
+            if (this.HybridIndex === this.HybridList?.length - 1) {
+              Column() {
+                Text("没有更多数据了")
+                  .fontSize(14)
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .margin({ top: 15, bottom: 15 })
+              }
+              .width('100%')
+              .justifyContent(FlexAlign.Center)
+            }
+          }
+
         }.onReachEnd(() => {
           if (this.loadMore) {
             this.loadFeedData()
@@ -805,6 +963,8 @@ export struct BankList {
   }
 
   async loadFeedData(): Promise<void> {
+    let newData: BankListRes[] = [];
+
     switch (this.fromType) {
       case 1:
         let hotList = await this.bankModel.getSearchBankList(this.searchText, this.pageNum);
@@ -817,6 +977,7 @@ export struct BankList {
         for (let item of hotList) {
           this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
+        newData = hotList;
         this.bankRes.newsData = this.bankRes.newsData.concat(hotList);
         break;
       case 2:
@@ -824,7 +985,8 @@ export struct BankList {
         for (let item of downloadList) {
           this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
-        this.bankRes.newsData = downloadList.filter(bank => bank.bankType === 0);
+        newData = downloadList.filter(bank => bank.bankType === 0);
+        this.bankRes.newsData = newData;
         break;
       default:
         let list = await this.bankModel.getBankList(this.aid.toString(), this.pageNum);
@@ -837,11 +999,17 @@ export struct BankList {
         for (let item of list) {
           this.updateStatusMap.set(item.qid, await this.isNeedUpdate(item));
         }
+        newData = list;
         this.bankRes.newsData = this.bankRes.newsData.concat(list);
         break;
     }
+
+    // 更新NEW标识状态
+    if (newData.length > 0) {
+      await this.updateNewFlagStatus(newData);
+    }
     if (this.bankRes.newsData) {
-      this.getAdList()
+      this.hybridData()
     }
   }
 }

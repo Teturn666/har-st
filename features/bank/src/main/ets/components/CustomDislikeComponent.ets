@@ -1,15 +1,10 @@
 import { FilterWord } from '@csj/openadsdk';
 
 import { emitter } from '@kit.BasicServicesKit';
-import promptAction from '@ohos.promptAction';
+
+import { EmitterConstants } from 'utils';
 
 
-/**
- * 自定义弹窗组件
- * @param onSelected ： filterItem 被点击时回调 ,【需要把该回调的执行透传给CSJ SDK】
- * @param onOtherSuggestComment 弹窗二级建议弹窗后，当点击内容提交时需回调【需要把该回调的执行透传给CSJ SDK】
- * @param onUserSuggestDialogCancel 弹窗二级建议弹窗Close后，需回调次接口，同时回传用户建议内容【需要把该回调的执行透传给CSJ SDK】
- */
 @Builder
 export function customDislikeComponent(fwList: Array<FilterWord>,
   onSelected: (filterPosition: number, filterName: string) => void,
@@ -18,7 +13,7 @@ export function customDislikeComponent(fwList: Array<FilterWord>,
 ) {
   //自定义Dislike弹窗
   CSJDislikeComponent({
-    _fwList:fwList,
+    _fwList: fwList,
     _onSelected: onSelected,
     _onOtherSuggestComment: onOtherSuggestComment,
     _onUserSuggestDialogCancel: onUserSuggestDialogCancel,
@@ -26,21 +21,16 @@ export function customDislikeComponent(fwList: Array<FilterWord>,
   });
 }
 
-
-/**
- * 自定义Dislike弹窗组件
- */
 @Component
 export default struct CSJDislikeComponent {
   private _onSelected?: (filterPosition: number, filterName: string) => void;
   private _onOtherSuggestComment?: (suggestionValue: string) => void;
   private _onUserSuggestDialogCancel?: (commentValue: string) => void;
   private _fwList?: Array<FilterWord>;
+
   build() {
     Column() {
       List() {
-        //filterWords列表
-
         ForEach(this._fwList, (item: FilterWord, index: number) => {
           ListItem() {
             this.filterWordsItem(item, index,)
@@ -54,7 +44,6 @@ export default struct CSJDislikeComponent {
           })
         }, (item: string) => JSON.stringify(item))
 
-        //反馈建议
         ListItem() {
           UserSuggestComment({
             onOtherSuggestComment: this._onOtherSuggestComment,
@@ -86,22 +75,17 @@ export default struct CSJDislikeComponent {
       if (fw.getOptions() && fw.getOptions().length > 0) {
         Column() {
           //一级item
-          this.filterWordOnly(fw.getName(), position, );
+          this.filterWordOnly(fw.getName(), position,);
           //二级item
           this.optionItem(fw, position);
         }
         .justifyContent(FlexAlign.Start)
       } else {
-        this.filterWordOnly(fw.getName(), position, );
+        this.filterWordOnly(fw.getName(), position,);
       }
     }
   }
 
-  /**
-   * 一级选项
-   * @param name
-   * @param filterItemIds
-   */
   @Builder
   filterWordOnly(name: string, position: number,) {
     Text(name)
@@ -110,11 +94,10 @@ export default struct CSJDislikeComponent {
       .alignSelf(ItemAlign.Start)
       .padding({
         left: 6
-      })//filterItem被点击------------调用onSelected通知sdk-----------------
+      })
       .onClick(() => {
         // 内容无法显示黑屏
-        console.log('电机了',name);
-        emitter.emit('delete')
+        emitter.emit(EmitterConstants.Delete_ADS)
 
         if (this._onSelected) {
           this._onSelected(position, name);
@@ -122,11 +105,6 @@ export default struct CSJDislikeComponent {
       })
   }
 
-  /**
-   * 二级选项
-   * @param name
-   * @param filterItemIds
-   */
   @Builder
   optionItem(fw: FilterWord, position: number) {
     List({ space: 0 }) {
@@ -145,12 +123,10 @@ export default struct CSJDislikeComponent {
           bottom: 4,
           top: 4
         })
-        //filterItem被点击------------调用onSelected通知sdk-----------------
         .onClick(() => {
           if (this._onSelected) {
             this._onSelected(position, fwItem.getName());
-            console.log('电机了耳机弹窗',fwItem.getName());
-            emitter.emit('delete')
+            emitter.emit(EmitterConstants.Delete_ADS)
           }
         })
       }, (fwItem: FilterWord) => JSON.stringify(fwItem))
@@ -162,9 +138,6 @@ export default struct CSJDislikeComponent {
   }
 }
 
-/**
- * 用户其它建议Component
- */
 @Component
 export struct UserSuggestComment {
   onOtherSuggestComment?: (suggestionValue: string) => void;
@@ -201,10 +174,6 @@ export struct UserSuggestComment {
   }
 }
 
-
-/**
- * 二级弹窗，填写具体建议
- */
 @CustomDialog
 export struct CustomSuggestionDialog {
   private _suggestionDialogController: CustomDialogController
@@ -227,13 +196,11 @@ export struct CustomSuggestionDialog {
             this._suggestionDialogController?.close();
           })
 
-        //其它建议
         Text("其它建议")
           .fontSize('16fp')
           .fontColor("#80323232")
           .padding({ left: '8vp', right: '8vp' })
 
-        //提交
         Text("提交")
           .fontSize('16fp')
           .fontColor(this._hasContent ? "#323232" : "#80323232")
@@ -243,7 +210,7 @@ export struct CustomSuggestionDialog {
                 this._commitListener(this._suggestContent); //提交内容处理【------该回调的执行需要透传给CSJ SDK--------】
               }
               this._suggestionDialogController.close(); //关闭弹窗
-              // emitter.emit('delete')
+              emitter.emit(EmitterConstants.Delete_ADS)
             }
           }).padding({ left: '8vp', right: '8vp' })
       }
@@ -256,11 +223,7 @@ export struct CustomSuggestionDialog {
       .width("100%")
       .justifyContent(FlexAlign.SpaceBetween)
 
-
-      //分割线
       Divider().strokeWidth(0.5).color('#20161823').width("98%")
-
-      //内容
       TextArea({ placeholder: "请具体说明问题，我们将尽快处理" })
         .placeholderColor("#57161823")
         .fontSize('16fp')
@@ -279,7 +242,7 @@ export struct CustomSuggestionDialog {
     .borderRadius('8vp')
     .onDisAppear(() => {
       if (this._cancelListener) {
-        this._cancelListener(this._suggestContent);//【------该回调的执行需要透传给CSJ SDK--------】
+        this._cancelListener(this._suggestContent); //【------该回调的执行需要透传给CSJ SDK--------】
       }
     })
   }

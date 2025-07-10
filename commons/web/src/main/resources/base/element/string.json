@@ -1,16 +1,8 @@
 {
   "string": [
     {
-      "name": "module_desc",
-      "value": "module description"
-    },
-    {
-      "name": "WebAbility_desc",
+      "name": "shared_desc",
       "value": "description"
-    },
-    {
-      "name": "WebAbility_label",
-      "value": "label"
     }
   ]
 }

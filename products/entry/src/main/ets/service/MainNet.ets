@@ -21,7 +21,7 @@ export class MainNet {
             let jsonObj = JSON.parse(res.data.data) as ConfigRes
 
             //TODO 上线需注释，切记！！！！广告测试开关及数据。
-            // this.testAd(jsonObj)
+             this.testAd(jsonObj)
 
             preferencesUtils.putGenerics(PreferencesConstants.CSJ_AD_PARAMS, jsonObj)
             resolve(jsonObj)
@@ -37,12 +37,27 @@ export class MainNet {
 
   //广告测试数据
   private testAd(jsonObj: ConfigRes) {
-    jsonObj.hmAd.adconfig.csjAppId = '5477447'
-    jsonObj.hmAd.rewardScan.csj = '955804646'
-    jsonObj.hmAd.rewardScan.switchOff = true
-    jsonObj.hmAd.rewardRead.csj = '955804646'
-    jsonObj.hmAd.rewardRead.switchOff = true
-    jsonObj.hmAd.rewardPoint.csj = '955804646'
-    jsonObj.hmAd.rewardPoint.switchOff = false
+    // jsonObj.hmAd.adconfig.csjAppId = '5477447'
+    // jsonObj.hmAd.informationHot.csj = '955804860'
+    // jsonObj.hmAd.informationHot.switchOff = true
+    // jsonObj.hmAd.informationOffice.csj = '955804860'
+    // jsonObj.hmAd.informationOffice.switchOff = true
+    // jsonObj.hmAd.informationFire.csj = '955804860'
+    // jsonObj.hmAd.informationFire.switchOff = true
+    // jsonObj.hmAd.informationCoalMine.csj = '955804860'
+    // jsonObj.hmAd.informationCoalMine.switchOff = true
+    // jsonObj.hmAd.informationNetwork.csj = '955804860'
+    // jsonObj.hmAd.informationNetwork.switchOff = true
+    // jsonObj.hmAd.informationDoctor.csj = '955804860'
+    // jsonObj.hmAd.informationDoctor.switchOff = true
+    // jsonObj.hmAd.informationTraffic.csj = '955804860'
+    // jsonObj.hmAd.informationTraffic.switchOff = true
+
+    // jsonObj.hmAd.rewardScan.csj = '955804646'
+    // jsonObj.hmAd.rewardScan.switchOff = true
+    // jsonObj.hmAd.rewardRead.csj = '955804646'
+    // jsonObj.hmAd.rewardRead.switchOff = true
+    // jsonObj.hmAd.rewardPoint.csj = '955804646'
+    // jsonObj.hmAd.rewardPoint.switchOff = false
   }
 }

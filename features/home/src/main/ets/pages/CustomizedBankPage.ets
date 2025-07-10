@@ -1,8 +1,8 @@
 import fs from '@ohos.file.fs';
 import { TitleBar } from 'widget'
-import { promptAction, router } from '@kit.ArkUI'
+import { promptAction, } from '@kit.ArkUI'
 import { getFileExtension, getPrefix } from '../manage/SelectFileManage';
-import { WebClass, WebParseExcel } from '../components/WebParseExcel';
+import { WebClass, WebParseExcel } from 'parseexcel';
 import { questionBankTable, QuestionTable } from 'db';
 import picker from '@ohos.file.picker';
 import { util } from '@kit.ArkTS';
@@ -15,10 +15,12 @@ import { EmitterConstants, PreferencesConstants, preferencesUtils, StringUtils, 
 import SearchConstants from 'search/src/main/ets/constants/SearchConstants';
 import { SearchEngine } from 'search';
 import { fileIo } from '@kit.CoreFileKit';
+import HomeConstants from '../Constants/HomeConstants';
+import { Customized } from '../model/NavGenericType';
 
 const TAG = 'CustomizedBankPage'
 
-@Entry({ routeName: "customizedBankPage" })
+
 @Component
 export struct CustomizedBankPage {
   @State questionErrorList: QuestionError[] = []
@@ -33,6 +35,8 @@ export struct CustomizedBankPage {
   @State externalFileUri: string = '';
   @State externalFileName: string = '';
   private labels: string = 'ABCDEFGHI对错√×✔X正确错误YN'
+  @Consume appPathStack: NavPathStack
+  @State isShow: boolean = true
 
   // 将QuestionModel列表转换为QuestionRes列表
   private toQuestionResList(importResult: ImportWithLog): QuestionRes[] {
@@ -79,20 +83,23 @@ export struct CustomizedBankPage {
 
 
     // 如果没有外部文件，则使用文件选择器
-    const documentPicker = new picker.DocumentViewPicker();
-    const result = await documentPicker.select({
-      fileSuffixFilters: ['.xlsx', '.xls', '.txt'],
-      maxSelectNumber: 1
-    });
+    if (this.isShow) {
+      const documentPicker = new picker.DocumentViewPicker();
+      const result = await documentPicker.select({
+        fileSuffixFilters: ['.xlsx', '.xls', '.txt'],
+        maxSelectNumber: 1
+      });
 
-    if (result.length === 0) {
-      promptAction.showToast({ message: '未选择文件', duration: 2000 });
-      router.back();
-      return;
+      if (result.length === 0) {
+        promptAction.showToast({ message: '未选择文件', duration: 2000 });
+        this.appPathStack.pop()
+        return;
+      }
+
+      // 处理选择的文件
+      await this.processSelectedFile(result[0]);
     }
 
-    // 处理选择的文件
-    await this.processSelectedFile(result[0]);
   }
 
   // 处理选择文件的方法（原有逻辑）
@@ -306,30 +313,9 @@ export struct CustomizedBankPage {
       const helper = new util.Base64Helper();
       const excelBase64Str = helper.encodeToStringSync(new Uint8Array(buffer));
       this.loadingMessage = '正在解析Excel数据...';
-      // Promise化Excel解析过程
-      const excelDataObj = await new Promise<ExcelDataObj>((resolve, reject) => {
-        WebClass.webviewController.runJavaScript(
-          `parseExcelQuizBank(${JSON.stringify(file.name)},${JSON.stringify(excelBase64Str)})`,
-          async (error, excelData) => {
-            if (error) {
-              console.error(TAG, `run Excel error, ErrorCode: ${error.code}`);
-              reject(new Error(`Excel解析失败: ${error.code}`));
-              return;
-            }
 
-            if (!excelData || excelData === 'null') {
-              reject(new Error('Excel符合格式的数据为空'));
-              return;
-            }
-
-            try {
-              resolve(JSON.parse(excelData) as ExcelDataObj);
-            } catch (parseError) {
-              reject(new Error(`Excel数据解析失败: ${parseError}`));
-            }
-          }
-        );
-      });
+      // 解析Excel数据
+      const excelDataObj = await WebClass.webParseExcel(file.name, excelBase64Str) as ExcelDataObj;
 
       this.message = `开始处理Excel文件: ${file.path}`;
 
@@ -442,6 +428,10 @@ export struct CustomizedBankPage {
   }
 
   aboutToAppear() {
+    const res = this.appPathStack.getParamByName(HomeConstants.ROUTER_CUSTOMIZED_BANK_PAGE) as Customized[]
+    if (res && res.length > 0) {
+      this.isShow = res[0].isShow
+    }
     setTimeout(() => {
       this.questionImport()
     }, 500)
@@ -453,93 +443,101 @@ export struct CustomizedBankPage {
   }
 
   build() {
-    Column() {
-      WebParseExcel()
-      TitleBar({
-        title: '自定义题库',
-        backClick: () => {
-          router.back()
-        },
-      }).width('100%')
-
+    NavDestination() {
       Column() {
-        Text("个人制作和导入题库遇到问题\n请联系QQ：1729868682")
-          .fontSize($r('app.float.float_12vp'))
-          .fontColor($r('app.color.c_f2f7ff'))
-      }
-      .justifyContent(FlexAlign.Center)
-      .width('100%')
-      .height($r('app.float.float_50vp'))
-      .backgroundColor($r('app.color.c_F75A23'))
+       WebParseExcel()
+        TitleBar({
+          title: '自定义题库',
+          backClick: () => {
+            this.appPathStack.pop()
+          },
+        }).width('100%')
 
-      // Loading状态显示
-      if (this.isLoading) {
         Column() {
-          LoadingProgress()
-            .width(40)
-            .height(40)
-            .margin({ bottom: 10 })
-            .color($r('app.color.c_F75A23'))
-
-          Text(this.loadingMessage)
-            .fontSize(14)
-            .fontColor($r('app.color.c_9d9d9d'))
+          Text("个人制作和导入题库遇到问题\n请联系QQ：1729868682")
+            .fontSize($r('app.float.float_12vp'))
+            .fontColor($r('app.color.c_f2f7ff'))
         }
         .justifyContent(FlexAlign.Center)
         .width('100%')
-        .height(200)
-      } else {
-        // 文件路径信息
-        Text(this.message)
-          .fontSize(12)
-          .fontColor($r('app.color.c_9d9d9d'))
-          .margin({
-            top: 10,
-            bottom: 10,
-            left: 20,
-            right: 20
-          })
-          .textAlign(TextAlign.Start)
+        .height($r('app.float.float_50vp'))
+        .backgroundColor($r('app.color.c_F75A23'))
 
-        List({ space: 5 }) {
-          ForEach(
-            this.questionErrorList,
-            (item: QuestionError) => {
-              ListItem() {
-                Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
+        // Loading状态显示
+        if (this.isLoading) {
+          Column() {
+            LoadingProgress()
+              .width(40)
+              .height(40)
+              .margin({ bottom: 10 })
+              .color($r('app.color.c_F75A23'))
+
+            Text(this.loadingMessage)
+              .fontSize(14)
+              .fontColor($r('app.color.c_9d9d9d'))
+          }
+          .justifyContent(FlexAlign.Center)
+          .width('100%')
+          .height(200)
+        } else {
+          // 文件路径信息
+          Text(this.message)
+            .fontSize(12)
+            .fontColor($r('app.color.c_9d9d9d'))
+            .margin({
+              top: 10,
+              bottom: 10,
+              left: 20,
+              right: 20
+            })
+            .textAlign(TextAlign.Start)
+
+          List({ space: 5 }) {
+            ForEach(
+              this.questionErrorList,
+              (item: QuestionError) => {
+                ListItem() {
+                  Text(`${item.sheetName} 第${item.row}行, ${item.error}`)
+                    .fontSize(12)
+                    .fontColor($r('app.color.c_9d9d9d'))
+                    .margin({ bottom: 10, left: 20, right: 20 })
+                    .textAlign(TextAlign.Start)
+                }
+              },
+            )
+            ListItem() {
+              // 动态显示导入结果
+              if (this.importStatus === '成功') {
+                Text('导入完成')
+                  .fontSize(12)
+                  .fontColor($r('app.color.c_9d9d9d'))
+                  .margin({ bottom: 10, left: 20, right: 20 })
+                  .textAlign(TextAlign.Start)
+              } else if (this.importStatus === '失败') {
+                Text('导入失败')
                   .fontSize(12)
                   .fontColor($r('app.color.c_9d9d9d'))
                   .margin({ bottom: 10, left: 20, right: 20 })
                   .textAlign(TextAlign.Start)
               }
-            },
-          )
-          ListItem() {
-            // 动态显示导入结果
-            if (this.importStatus === '成功') {
-              Text('导入完成')
-                .fontSize(12)
-                .fontColor($r('app.color.c_9d9d9d'))
-                .margin({ bottom: 10, left: 20, right: 20 })
-                .textAlign(TextAlign.Start)
-            } else if (this.importStatus === '失败') {
-              Text('导入失败')
-                .fontSize(12)
-                .fontColor($r('app.color.c_9d9d9d'))
-                .margin({ bottom: 10, left: 20, right: 20 })
-                .textAlign(TextAlign.Start)
             }
           }
+          // .height("auto")
+          .layoutWeight(1)
+          .width("100%")
+
         }
-        // .height("auto")
-        .layoutWeight(1)
-        .width("100%")
 
       }
-
+      .alignItems(HorizontalAlign.Start)
     }
-    .alignItems(HorizontalAlign.Start)
+    .hideTitleBar(true)
   }
+}
+
+@Builder
+function CustomizedBankPageBuilder() {
+  CustomizedBankPage()
 }
 
 @CustomDialog

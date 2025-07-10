@@ -3,13 +3,13 @@ import { systemShare } from '@kit.ShareKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
 import { common, Want } from '@kit.AbilityKit';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
-import { ComponentContent, router } from '@kit.ArkUI';
+import { ComponentContent, } from '@kit.ArkUI';
 import { OfficialDialog } from './OfficialDialog';
 import MineConstants from "../Constants/MineConstants";
 import MineMobClickConstants from "../Constants/MineMobClickConstants";
 import { onEventObject } from "@umeng/analytics";
 import { productViewManager } from "@kit.StoreKit";
-import { preferencesUtils, PreferencesConstants, EmitterConstants } from 'utils/Index'
+import { preferencesUtils, PreferencesConstants, EmitterConstants, webType } from 'utils/Index'
 
 import('login/src/main/ets/pages/LoginPage')
 import('points/src/main/ets/pages/PointsPage')
@@ -97,7 +97,7 @@ function buildText() {
   .borderRadius(10)
 }
 
-@Entry
+
 @Component
 export struct MinePage {
   @State message: string = "hello"
@@ -109,6 +109,7 @@ export struct MinePage {
   @State loginState: string = ''
   @State isVip: number = 0
   @State vipTime: string = ''
+  @Consume appPathStack: NavPathStack
 
   aboutToAppear(): void {
     this.initData()
@@ -147,37 +148,35 @@ export struct MinePage {
 
   private jumpToLogin() {
     if (!this.isLogin()) {
-      router.pushNamedRoute({ name: MineConstants.ROUTER_LOGIN }, router.RouterMode.Single)
+      this.appPathStack.pushPathByName(MineConstants.ROUTER_LOGIN, null)
     }
   }
 
   private jumpToSearchResult() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_ABOUT_US }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_ABOUT_US, null)
   }
 
   private jumpToSetting() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_SETTING }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_SETTING, null)
   }
 
   private jumpToVIP() {
-    router.pushNamedRoute({ name: MineConstants.ROUTER_VIP }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_VIP, null)
   }
 
   private jumpToPoints() {
     if (this.isLogin()) {
-      router.pushNamedRoute({ name: MineConstants.ROUTER_POINTS }, router.RouterMode.Single)
+      this.appPathStack.pushPathByName(MineConstants.ROUTER_POINTS, null)
     } else {
       this.jumpToLogin()
     }
   }
 
   private jumpToHelpCenter() {
-    router.pushNamedRoute({
-      name: MineConstants.ROUTER_WEB, params: {
-        url: MineConstants.USER_HELP_URL,
-        title: "帮助中心"
-      }
-    }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(MineConstants.ROUTER_WEB, {
+      url: MineConstants.USER_HELP_URL,
+      title: "帮助中心"
+    } as webType)
   }
 
   private jumpToAppStore() {

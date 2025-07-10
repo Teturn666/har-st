@@ -3,6 +3,7 @@
     "name": "mine",
     "type": "har",
     "description": "$string:module_desc",
+    "routerMap": "$profile:router_map",
     "mainElement": "MineAbility",
     "deviceTypes": [
       "phone",

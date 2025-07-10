@@ -4,6 +4,7 @@
     "type": "har",
     "description": "$string:module_desc",
     "mainElement": "PointsAbility",
+    "routerMap": "$profile:router_map",
     "deviceTypes": [
       "phone"
     ],

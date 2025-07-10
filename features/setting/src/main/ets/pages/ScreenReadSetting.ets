@@ -9,7 +9,7 @@ const TAG = 'ScreenReadSetting';
 
 @Component
 export struct ScreenReadSetting {
-  @Consume('pathStack') pathStack: NavPathStack;
+  @Consume pathStack: NavPathStack;
   @State title: string = '读屏设置';
   @State selectedImageUri: string = '';
   // 识别相关状态
@@ -279,4 +279,8 @@ export struct ScreenReadSetting {
 interface Position {
   x: number;
   y: number;
+}
+@Builder
+function ScreenReadSettingBuilder() {
+  ScreenReadSetting()
 }

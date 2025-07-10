@@ -119,4 +119,44 @@ export class HomeModel {
     let QuestionBankList = await questionBankTable.querySync(qId, false) ?? [];
     return QuestionBankList
   }
+
+  /**
+   * 根据 qid 获取题库信息
+   */
+  async getBankListById(qid: number): Promise<BankListRes[]> {
+    return await questionBankTable.querySync(qid, false);
+  }
+
+  /**
+   * 更新题库进度位置
+   */
+  async updateBankPosition(bankInfo: BankListRes): Promise<void> {
+    return new Promise((resolve, reject) => {
+      questionBankTable.updateData(bankInfo, (ret: boolean) => {
+        if (ret) {
+          console.log('题库进度更新成功');
+          resolve();
+        } else {
+          console.error('题库进度更新失败');
+          reject(new Error('更新失败'));
+        }
+      });
+    });
+  }
+
+  //更新题目
+  async updateQuestion(questionDb: QuestionRes): Promise<void> {
+    return new Promise((resolve, reject) => {
+      QuestionTable.getInstance().updateData(questionDb, (ret: boolean) => {
+        if (ret) {
+          console.log('题目更新成功');
+          resolve();
+        } else {
+          console.error('题目更新失败');
+          reject(new Error('更新失败'));
+        }
+      });
+    });
+  }
+
 }

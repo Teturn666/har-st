@@ -3,7 +3,6 @@ import { hilog } from "@kit.PerformanceAnalysisKit"
 import { BusinessError, emitter } from "@kit.BasicServicesKit"
 import { image } from "@kit.ImageKit"
 import { textRecognition } from "@kit.CoreVisionKit"
-import { router } from "@kit.ArkUI"
 import { onEventObject } from "@umeng/analytics"
 import HomeMobClickConstants from "../Constants/HomeMobClickConstants"
 import HomeConstants from "../Constants/HomeConstants"
@@ -14,7 +13,6 @@ export class OcrToText {
   private imageSource?: image.ImageSource
   chooseImage?: PixelMap
   dataValues: string = ""
-
   // private openPhoto(): Promise<string> {
   //   return new Promise<string>((resolve, reject) => {
   //     let photoPicker = new picker.PhotoViewPicker()
@@ -65,9 +63,6 @@ export class OcrToText {
           emitter.emit(EmitterConstants.EM_DATA_TEXT, { data: { "text": data.value } })
           let value=data.value.replace(/\\n|\n|/g, ' ')
           AppStorage.setOrCreate(cameraAppStorage.OCR_TEXT,value)
-          if (search) {
-            this.jumpToSearchResult()
-          }
         }
         if (this.chooseImage && this.imageSource) {
           this.chooseImage.release()
@@ -76,14 +71,6 @@ export class OcrToText {
       })
   }
 
-  //跳转到搜索结果页
-  private jumpToSearchResult() {
-
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_SEARCH_RESULT
-    })
-    onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
-  }
 }
 
 export const ocrToText = new OcrToText()

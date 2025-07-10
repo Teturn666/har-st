@@ -1,17 +1,18 @@
 import { emitter } from "@kit.BasicServicesKit";
-import { display, router, window as kitWindow } from "@kit.ArkUI";
-import { accessManager } from "../utils/AccessManager";
-import { cameraManager } from "../utils/CameraManager";
-import window from '@ohos.window';
+import { display, window as kitWindow } from "@kit.ArkUI";
+import { CameraManager, cameraManager } from "../utils/CameraManager";
 import { SearchEngine } from "search";
 import { QuestionRes } from "db";
 import { EmitterConstants } from "utils";
 import { MDataTextManage } from "search/src/main/ets/manage/MDataTextManage";
+import { abilityAccessCtrl, Permissions } from "@kit.AbilityKit";
+import { image } from "@kit.ImageKit";
+import { ProgressLoading } from "utils/src/main/ets/components/ProgressLoading";
 
 
 const TAG = "SearchQuestions";
 
-@Entry({ routeName: "searchQuestionsPage" })
+
 @Component
 export struct SearchQuestions {
   @State dataValue: string = ""
@@ -20,11 +21,22 @@ export struct SearchQuestions {
   @State isPortrait: boolean = true;
   @State Search: boolean = true
   @State orientation: number = display.Orientation.LANDSCAPE;
+  @State isOne: boolean = false;
+  @State xComponentSurfaceId: string = '';
+  @State isShow: boolean = false;
+  @State isCamera: boolean = true;
+  @State isXCom: boolean = true
+  @State SearchResult:boolean = false
+  context: Context | undefined = this.getUIContext().getHostContext();
+  @Consume appPathStack: NavPathStack
   controller: XComponentController = new XComponentController()
-  win: window.Window | null = null
-  map: PixelMap | null = null
+  cameraPermission: Permissions = 'ohos.permission.CAMERA';
+  pixelMap: image.PixelMap | null = null
 
   async aboutToAppear() {
+    cameraManager.context = this.context;
+    this.requestPermissionsFn();
+
     // 取出最新的分词处理数据
     let mDataText = MDataTextManage.getInstance().getDataText()
     console.debug(TAG, '分词处理数据已拿到')
@@ -42,11 +54,27 @@ export struct SearchQuestions {
 
   aboutToDisappear(): void {
     cameraManager.releaseCamera()
-    console.log(TAG, "aboutToDisappear")
+    this.resultSearchRes = null
+  }
+
+  async requestPermissionsFn(): Promise<void> {
+    let atManager = abilityAccessCtrl.createAtManager();
+    if (this.context) {
+      let res = await atManager.requestPermissionsFromUser(this.context, [this.cameraPermission]);
+      for (let i = 0; i < res.permissions.length; i++) {
+        if (this.cameraPermission.toString() === res.permissions[i] && res.authResults[i] === 0) {
+          this.isShow = true;
+        }
+      }
+    }
   }
 
   private async searchResult(mDataText: SharedArrayBuffer) {
     this.resultSearchRes = await SearchEngine.getInstance().queryTextWithIndexInThread(this.dataValue, mDataText)
+    if (this.resultSearchRes != null) {
+      this.SearchResult=true
+    }
+
   }
 
   //转换答案前加ABCD
@@ -63,206 +91,250 @@ export struct SearchQuestions {
   }
 
   build() {
-    Column() {
-
-      RelativeContainer() {
+    NavDestination() {
+      Stack() {
         Column() {
-          XComponent({
-            type: XComponentType.SURFACE,
-            controller: this.controller
-          })
-            .width("100%")
-            .height("100%")
-            .onLoad(() => {
-              accessManager.CheckCamera(["ohos.permission.CAMERA"], () => {
-                cameraManager.initCamera(this.controller.getXComponentSurfaceId())
-              })
+
+          RelativeContainer() {
+            Column() {
+              if (this.isShow) {
+                XComponent({
+                  id: 'componentId',
+                  type: XComponentType.SURFACE,
+                  controller: this.controller
+                })
+                  .onLoad(async () => {
+                    this.xComponentSurfaceId = this.controller.getXComponentSurfaceId(); // 获取组件surfaceId。
+                    cameraManager.initCamera(this.xComponentSurfaceId).then(() => {
+                      this.isXCom = false
+                    })
+                  })
+                  .width('100%')
+                  .height('100%')
+              }
+            }
+            .justifyContent(FlexAlign.Center)
+            .height('100%')
+            .width('100%')
+
+            Row() {
+              Column() {
+                Image($r("sys.media.ohos_ic_public_arrow_left"))
+                  .fillColor(Color.White)
+                  .width(25)
+                  .aspectRatio(1)
+                  .borderRadius(15)
+                  .backgroundColor("#504F4E")
+                  .onClick(() => {
+                    this.appPathStack.pop()
+                  })
+              }
+              .width(50)
+              .aspectRatio(1)
+
+              Column() {
+                Image($r("app.media.screen_rotation"))
+                  .fillColor(Color.White)
+                  .width(25)
+                  .aspectRatio(1)
+                  .borderRadius(15)
+                  .backgroundColor("#504F4E")
+                  .onClick(() => {
+                    this.isPortrait = !this.isPortrait;
+                    // this.setScreenOrientation(this.isPortrait);
+                  })
+              }
+              .width(50)
+              .aspectRatio(1)
+            }
+            .width('100%')
+            .height(30)
+            .padding({
+              left: 15, right: 15
             })
-        }
+            .alignRules({
+              top: { anchor: '__container__', align: VerticalAlign.Top },
 
-        // .rotate({ angle: 90 }) // 旋转45度
+            })
+            .margin({ top: 20 })
+            .justifyContent(FlexAlign.SpaceBetween)
 
-        Row() {
-          Column() {
-            Image($r("sys.media.ohos_ic_public_arrow_left"))
-              .fillColor(Color.White)
-              .width(25)
-              .aspectRatio(1)
-              .borderRadius(15)
-              .backgroundColor("#504F4E")
-              .onClick(() => {
-                router.back()
-              })
-          }
-          .width(50)
-          .aspectRatio(1)
+            Column() {
+              if (this.SearchResult) {
+                Column({ space: 10 }) {
+                    if (this.resultSearchRes != null) {
+                  Scroll() {
+                    Column() {
+                      Text("答案：" + this.resultSearchRes.answer)
+                        .fontColor('#D87147')
+                        .fontSize(this.isPortrait ? 20 : 14)
+                        .padding(this.isPortrait ? 10 : 5)
 
-          Column() {
-            Image($r("app.media.screen_rotation"))
-              .fillColor(Color.White)
-              .width(25)
-              .aspectRatio(1)
-              .borderRadius(15)
-              .backgroundColor("#504F4E")
-              .onClick(() => {
-                this.isPortrait = !this.isPortrait;
-                // this.setScreenOrientation(this.isPortrait);
-              })
-          }
-          .width(50)
-          .aspectRatio(1)
-        }
-        .width('100%')
-        .height(30)
-        .padding({
-          left: 15, right: 15
-        })
-        .alignRules({
-          top: { anchor: '__container__', align: VerticalAlign.Top },
-
-        })
-        .margin({ top: 20 })
-        .justifyContent(FlexAlign.SpaceBetween)
-
-        Column() {
-          if (this.resultSearchRes != null) {
-            Column({ space: 10 }) {
-              Scroll() {
-                Column() {
-                  Text("答案：" + this.resultSearchRes.answer)
-                    .fontColor('#D87147')
-                    .fontSize(this.isPortrait ? 20 : 14)
-                    .padding(this.isPortrait ? 10 : 5)
-
-                  Column({ space: 7 }) {
-                    Text(this.resultSearchRes.question)
-                      .fontSize(this.isPortrait ? 18 : 12)
-                      .padding({
-                        top: this.isPortrait ? 5 : 2,
-                        bottom: this.isPortrait ? 5 : 2
-                      })
-                    if (this.resultSearchRes.option.length > 0) {
-                      ForEach(this.resultSearchRes.option, (item: string, index) => {
-                        Text(this.answerTr(index, item))
+                      Column({ space: 7 }) {
+                        Text(this.resultSearchRes.question)
                           .fontSize(this.isPortrait ? 18 : 12)
-                          .fontColor(
-                            this.isRightAnswer(this.answerTr(index, item), this.resultSearchRes?.answer) ? '#D87147' :
-                              '#3e3e3e'
-                          )
-                      })
+                          .padding({
+                            top: this.isPortrait ? 5 : 2,
+                            bottom: this.isPortrait ? 5 : 2
+                          })
+                        if (this.resultSearchRes.option.length > 0) {
+                          ForEach(this.resultSearchRes.option, (item: string, index) => {
+                            Text(this.answerTr(index, item))
+                              .fontSize(this.isPortrait ? 18 : 12)
+                              .fontColor(
+                                this.isRightAnswer(this.answerTr(index, item), this.resultSearchRes?.answer) ?
+                                  '#D87147' :
+                                  '#3e3e3e'
+                              )
+                          })
+                        }
+                      }
+                      .alignItems(HorizontalAlign.Start)
+                    }
+                    .width('100%')
+                    .justifyContent(FlexAlign.Start)
+                    .alignItems(HorizontalAlign.Start)
+                  }
+                  .scrollBar(BarState.Off)
+                }
+                }
+                .alignItems(HorizontalAlign.Start)
+
+                .padding(this.isPortrait ? 20 : 10)
+                .margin({
+                  left: this.isPortrait ? 20 : 0,
+                  right: this.isPortrait ? 20 : 0,
+                  bottom: this.isPortrait ? 0 : 20,
+
+                })
+                .opacity(0.9)
+                .borderRadius(6)
+                .width(this.isPortrait ? '90%' : 320)
+                .height(this.isPortrait ? 300 : 180)
+                .backgroundColor("#eceaea")
+                .opacity(this.resultSearchRes!=null?0.8:0.3)
+                .alignRules(
+                  this.isPortrait
+                    ? {
+                    bottom: {
+                      anchor: "ct",
+                      align: VerticalAlign.Top
                     }
                   }
-                  .alignItems(HorizontalAlign.Start)
-                }
-                .width('100%')
-                .justifyContent(FlexAlign.Start)
-                .alignItems(HorizontalAlign.Start)
-              }
-              .scrollBar(BarState.Off)
+                    : {
+                    right: { anchor: "__container__", align: HorizontalAlign.End },
+                    bottom: { anchor: "__container__", align: VerticalAlign.Bottom }
+                  }
+                )
 
+                Column() {
+                  Row() {
+                    if (this.isCamera) {
+                      Text(this.CameraChange ? "锁定题目" : "解锁题目")
+                        .width("100%")
+                        .fontColor(Color.White)
+                        .textAlign(TextAlign.Center)
+                        .fontSize(this.isPortrait ? 20 : 14)
+                    } else {
+                      ProgressLoading({ showText: false, pWidth: 30 })
+                    }
+
+                  }
+                  .backgroundColor("#ffe74c13")
+                  .opacity(this.resultSearchRes!=null?0.8:0.3)
+                  .width(this.isPortrait ? 280 : 320)
+                  .height(this.isPortrait ? 55 : 35)
+                  .borderRadius(6)
+                  .enabled(this.isCamera &&this.resultSearchRes!==null)
+                  .onClick(() => {
+                    //TODO  解锁题目
+                    if (this.CameraChange) {
+                      this.CameraChange = false
+                      this.Search = false
+                      this.dataValue = ''
+                      cameraManager.releaseCamera()
+                    } else {
+                      this.isCamera = false
+                      cameraManager.initImageReceiver()
+                      cameraManager.initCamera(this.xComponentSurfaceId).then(() => {
+                        this.Search = true
+                        this.CameraChange = true
+                        this.isCamera = true
+                      })
+
+                    }
+                  })
+
+                }
+                .margin({
+                  bottom: this.isPortrait ? 20 : 20
+                })
+                .id('ct')
+                .opacity(0.7)
+                .padding(this.isPortrait ? 20 : 10)
+                .alignRules({
+                  bottom: {
+                    anchor: "__container__",
+                    align: VerticalAlign.Bottom
+                  }
+                })
+             }
             }
-            .alignItems(HorizontalAlign.Start)
-
-            .padding(this.isPortrait ? 20 : 10)
+            .justifyContent(FlexAlign.Start)
             .margin({
-              left: this.isPortrait ? 20 : 0,
-              right: this.isPortrait ? 20 : 0,
-              bottom: this.isPortrait ? 0 : 20,
-
+              right: this.isPortrait ? 0 : 130,
+              bottom: this.isPortrait ? 0 : 70
             })
-            .opacity(0.9)
-            .borderRadius(6)
-            .width(this.isPortrait ? '90%' : 320)
-            .height(this.isPortrait ? 300 : 180)
-            .backgroundColor(Color.White)
+            .rotate({ angle: this.isPortrait ? 0 : 90 }) // 旋转45度
             .alignRules(
-              this.isPortrait
-                ? {
-                bottom: {
-                  anchor: "ct",
-                  align: VerticalAlign.Top
+              this.isPortrait ?
+                {
+                  bottom: {
+                    anchor: "__container__",
+                    align: VerticalAlign.Bottom
+                  }
                 }
-              }
                 : {
-                right: { anchor: "__container__", align: HorizontalAlign.End },
-                bottom: { anchor: "__container__", align: VerticalAlign.Bottom }
+                bottom: {
+                  anchor: "__container__",
+                  align: VerticalAlign.Bottom
+                },
+                right: {
+                  anchor: "__container__",
+                  align: HorizontalAlign.End
+                }
               }
             )
 
-            Column() {
-              Text(this.CameraChange ? "锁定题目" : "解锁题目")
-                .backgroundColor("#ffe74c13")
-                .width(this.isPortrait ? 280 : 320)
-                .height(this.isPortrait ? 55 : 35)
-                .borderRadius(6)
-                .fontColor(Color.White)
-                .textAlign(TextAlign.Center)
-                .fontSize(this.isPortrait ? 20 : 14)
-                .onClick(() => {
-                  //TODO  解锁题目
-                  if (this.CameraChange) {
-                    this.CameraChange = false
-                    this.Search = false
-                    this.dataValue = ''
-                    cameraManager.releaseCamera()
-                  } else {
-                    this.CameraChange = true
-                    cameraManager.initCamera(this.controller.getXComponentSurfaceId())
-                    this.Search = true
-                    this.resultSearchRes = null
-                  }
-                })
-            }
-            .margin({
-              bottom: this.isPortrait ? 20 : 20
-            })
-            .id('ct')
-            .opacity(0.7)
-            .padding(this.isPortrait ? 20 : 10)
-            .alignRules({
-
-              bottom: {
-                anchor: "__container__",
-                align: VerticalAlign.Bottom
-              }
-            })
           }
+
+          .width("100%")
+          .height("100%")
         }
-        .justifyContent(FlexAlign.Start)
-        .margin({
-          right: this.isPortrait ? 0 : 130,
-          bottom: this.isPortrait ? 0 : 70
-        })
-        .rotate({ angle: this.isPortrait ? 0 : 90 }) // 旋转45度
-        .alignRules(
-          this.isPortrait ?
-            {
 
-              bottom: {
-                anchor: "__container__",
-                align: VerticalAlign.Bottom
-              }
-            }
-            : {
+        .width("100%")
+        .height("100%")
 
-            bottom: {
-              anchor: "__container__",
-              align: VerticalAlign.Bottom
-            },
-            right: {
-              anchor: "__container__",
-              align: HorizontalAlign.End
-            }
-          }
-        )
-
+        if (this.isXCom) {
+          ProgressLoading({ showText: false, pWidth: 30 })
+        }
       }
-
-      .width("100%")
-      .height("100%")
     }
-
-    .width("100%")
-    .height("100%")
+    .hideTitleBar(true)
+    .onShown(() => {
+      cameraManager.initImageReceiver()
+      if (this.xComponentSurfaceId !== '') {
+        cameraManager.initCamera(this.xComponentSurfaceId)
+      }
+    })
+    .onDisAppear(() => {
+      cameraManager.releaseCamera()
+      this.resultSearchRes = null
+    })
   }
+}
+
+@Builder
+function SearchQuestionsBuilder() {
+  SearchQuestions()
 }
