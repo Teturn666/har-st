@@ -1,42 +1,133 @@
-import { PayModel } from '../model/PayModel';
-import { PriceInfoRes } from '../model/PriceInfoRes';
-import { router } from '@kit.ArkUI';
+import { PayModel } from '../model/PayModel'
+import { PriceInfoRes } from '../model/PriceInfoRes'
+import { emitter } from '@kit.BasicServicesKit'
+import * as wxOpenSdk from '@tencent/wechat_open_sdk'
+import {
+  preferencesUtils,
+  PreferencesConstants,
+  EmitterConstants,
+  ToastUtils,
+  WXEventHandler,
+  OnWXResp,
+  webType
+} from 'utils/Index'
+import { APP_ID, WXApi } from 'utils/Index'
+import { common } from '@kit.AbilityKit'
+import { ErrCode } from '@tencent/wechat_open_sdk'
 
-const TAG = '[PayPage]';
+const TAG = '[PayPage]'
 
-@Entry
+
 @Component
 export struct PayPage {
-  @State payModel: PayModel = PayModel.getInstance();
-  @State priceList: PriceInfoRes[] = [];
-  @State selectedCard: string = '3';
-  @State totalPrice: number = 60.0;
-  @State savePrice: number = 60.0;
-  @State autoRenew: boolean = false;
-  @State agreementChecked: boolean = false;
-  @State isVip: boolean = true;
-  @State isLoading: boolean = true;
-  @State errorMessage: string = '';
-  private scroller: Scroller = new Scroller();
+  private wxApi = WXApi
+  private wxEventHandler = WXEventHandler
+  @State payModel: PayModel = PayModel.getInstance()
+  @State priceList: PriceInfoRes[] = []
+  @State selectedCard: string = '3'
+  @State totalPrice: number = 60.0
+  @State savePrice: number = 60.0
+  @State autoRenew: boolean = false
+  @State agreementChecked: boolean = false
+  @State isLoading: boolean = true
+  @State errorMessage: string = ''
+  private scroller: Scroller = new Scroller()
+  @State nickName: string = ''
+  @State avatarUrl: string = ''
+  @State loginState: string = ''
+  @State isVip: number = 0
+  @State vipTime: string = ''
+  @Consume appPathStack: NavPathStack
 
   aboutToAppear(): void {
-    console.info(`${TAG} aboutToAppear called`);
-    this.loadData();
+    this.loadData()
+    this.initData()
+    this.wxEventHandler.registerOnWXRespCallback(this.onWXResp)
+  }
+
+  aboutToDisappear(): void {
+    this.wxEventHandler.unregisterOnWXRespCallback(this.onWXResp)
+  }
+
+  private onWXResp: OnWXResp = async (resp) => {
+    if (resp.errCode === ErrCode.ERR_OK) {
+      await this.loadUser()
+      ToastUtils.showToast('支付成功')
+    } else {
+      ToastUtils.showToast('支付失败')
+    }
+  }
+
+  private async loadUser() {
+    let usrInfo = await this.payModel.getUser()
+    preferencesUtils.putNumber(PreferencesConstants.SP_IS_VIP, usrInfo.vip)
+    preferencesUtils.putString(PreferencesConstants.SP_VIP_TIME, usrInfo.vip_expire)
+    emitter.emit(EmitterConstants.EM_USER_LOGIN, {
+      data: {
+        'nickName': this.nickName,
+        'avatarUrl': this.avatarUrl,
+        'isLogin': this.loginState,
+        'isVip': usrInfo.vip,
+        'vipTime': usrInfo.vip_expire
+      }
+    })
+  }
+
+  private initData() {
+    emitter.on(EmitterConstants.EM_USER_LOGIN, (event) => {
+      this.loginState = event.data![PreferencesConstants.SP_IS_LOGIN]
+      this.nickName = event.data![PreferencesConstants.SP_NICK_NAME]
+      this.avatarUrl = event.data![PreferencesConstants.SP_AVATAR_URL]
+      this.isVip = event.data![PreferencesConstants.SP_IS_VIP]
+      this.vipTime = event.data![PreferencesConstants.SP_VIP_TIME]
+    })
+  }
+
+  private isLogin(): boolean {
+    this.loginState = preferencesUtils.getString(PreferencesConstants.SP_IS_LOGIN, '0')
+    this.nickName = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    this.avatarUrl = preferencesUtils.getString(PreferencesConstants.SP_AVATAR_URL)
+    this.vipTime = preferencesUtils.getString(PreferencesConstants.SP_VIP_TIME)
+    this.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP)
+    return this.loginState === '1'
   }
 
   private jumpToHelpCenter() {
     try {
-      router.pushNamedRoute({
-        name: "webPage",
-        params: {
-          url: "https://ti.iksdt.com/static/doc/fwxy.html",
-          title: "快搜搜题会员服务协议"
-        }
-      });
+      this.appPathStack.pushPathByName('webPage', {
+        url: "https://ti.iksdt.com/static/doc/fwxy.html",
+        title: "快搜搜题会员服务协议"
+      } as webType)
       console.info(`${TAG} Navigation attempted`);
     } catch (error) {
       console.error(`${TAG} Navigation failed:`, error);
     }
+  }
+
+  private jumpToLogin() {
+    this.appPathStack.pushPathByName('login', null)
+  }
+
+  private async jumpToWxPay() {
+    let payInfo = await this.payModel.getCreatePay(this.selectedCard)
+
+
+    if (payInfo.partner_id === "") {
+      ToastUtils.showToast("服务或网络异常，请稍后重试")
+      return
+    }
+
+    let req = new wxOpenSdk.PayReq()
+    req.partnerId = payInfo.partner_id
+    req.appId = APP_ID
+    req.packageValue = 'Sign=WXPay'
+    req.prepayId = payInfo.prepay_id
+    req.nonceStr = payInfo.nonce_str
+    req.timeStamp = payInfo.timestamp.toString()
+    req.sign = payInfo.sign
+
+    let finished = await this.wxApi.sendReq(getContext(this) as common.UIAbilityContext, req)
+    // hilog.info(0x0000, 'TAG', `发送支付请求完成: ${finished}`)
   }
 
   private async loadData(): Promise<void> {
@@ -80,230 +171,293 @@ export struct PayPage {
   // 获取卡的背景图片
   private getCardBackground(card: PriceInfoRes, isSelected: boolean): string {
     if (isSelected) {
-      return card.id === '3' ? 'ic_yearbg' : 'ic_bg';
+      return card.id === '3' ? 'ic_yearbg' : 'ic_vipbg';
     }
     return card.id === '3' ? 'ic_yearedbg' : 'ic_bged';
   }
 
   build() {
-    Column() {
-      // 顶部导航栏
-      Row() {
-        Image($r('app.media.ic_back'))
-          .width(32)
-          .height(32)
-          .margin({ left: 16, top: 12 })
-          .onClick(() => {
-            router.back();
-          })
+    NavDestination() {
+      Column() {
+        // 顶部导航栏
+        Row() {
+          Image($r('app.media.ic_back'))
+            .width(32)
+            .height(32)
+            .margin({ left: 16, top: 12 })
+            .onClick(() => {
+              this.appPathStack.pop()
+            })
 
-        Text('会员中心')
-          .fontSize(18)
-          .textAlign(TextAlign.Center)
-          .fontWeight(400)
-          .flexGrow(1)
-          .margin({ top: 12 })
+          Text('会员中心')
+            .fontSize(18)
+            .textAlign(TextAlign.Center)
+            .fontWeight(400)
+            .flexGrow(1)
+            .margin({ top: 12 })
 
-        Blank()
-          .width(32)
-          .margin({ right: 16, top: 12 })
-      }
-      .width('100%')
-      .height(48)
-      .backgroundColor(Color.White)
-      .justifyContent(FlexAlign.SpaceBetween)
+          Blank()
+            .width(32)
+            .margin({ right: 16, top: 12 })
+        }
+        .width('100%')
+        .height(48)
+        .backgroundColor(Color.White)
+        .justifyContent(FlexAlign.SpaceBetween)
 
-      // 用户信息
-      Row() {
-        Image($r('app.media.ic_head'))
-          .width(40)
-          .height(40)
-          .borderRadius(20)
-          .margin({ left: 28 })
+        // 用户信息
+        Row() {
+          Image(this.isLogin() ? this.avatarUrl : $r('app.media.ic_head'))
+            .alt($r('app.media.ic_head'))
+            .width(48)
+            .height(48)
+            .borderRadius(28)
+            .margin({ left: 28 })
 
-        Column() {
-          Row() {
-            Text('用户xxx')
-              .fontSize(14)
-              .fontColor('#3E3E3E')
-            if (this.isVip) {
-              Image($r('app.media.ic_vip'))
-                .width(16)
-                .height(16)
-                .margin({ left: 4 })
+          Column() {
+            Row() {
+              Text(this.isLogin() ? this.nickName : "用户名")
+                .fontSize(14)
+                .fontColor('#3E3E3E')
+              if (this.isVip === 1) {
+                Image($r('app.media.ic_vips'))
+                  .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+                  .width(16)
+                  .height(16)
+                  .margin({ left: 4 })
+              }
+            }
+            .justifyContent(FlexAlign.Center)
+            .alignItems(VerticalAlign.Center)
+
+            if (this.isVip === 1) {
+              Text('VIP' + this.vipTime + '到期，购买后有效期顺延')
+                .visibility(this.isLogin() ? Visibility.Visible : Visibility.Hidden)
+                .fontSize(10)
+                .fontColor('#9D9D9D')
+                .margin({ top: 5 })
             }
           }
+          .margin({ left: 18 })
           .justifyContent(FlexAlign.Center)
-          .alignItems(VerticalAlign.Center)
-
-          if (this.isVip) {
-            Text('VIP 2023-01-01 到期')
-              .fontSize(10)
-              .fontColor('#9D9D9D')
-              .margin({ top: 5 })
-          }
+          .alignItems(HorizontalAlign.Start)
         }
-        .margin({ left: 18 })
-        .justifyContent(FlexAlign.Center)
-        .alignItems(HorizontalAlign.Start)
-      }
-      .width('100%')
-      .height(72)
-      .backgroundColor(Color.White)
+        .width('100%')
+        .height(72)
+        .backgroundColor(Color.White)
 
-      // 会员卡
-      List({ space: 10, scroller: this.scroller }) {
-        if (this.isLoading) {
-          ListItem() {
-            Text('加载中...')
-              .fontSize(14)
-              .fontColor('#9D9D9D')
-              .width('100%')
-              .textAlign(TextAlign.Center)
-          }
-        } else if (this.priceList.length === 0) {
-          ListItem() {
-            Column() {
-              Text(this.errorMessage || '无会员卡数据')
+        // 会员卡
+        List({ space: 10, scroller: this.scroller }) {
+          if (this.isLoading) {
+            ListItem() {
+              Text('加载中...')
                 .fontSize(14)
                 .fontColor('#9D9D9D')
                 .width('100%')
                 .textAlign(TextAlign.Center)
-              if (this.errorMessage) {
-                Button('重试')
-                  .fontSize(14)
-                  .margin({ top: 10 })
-                  .onClick(() => {
-                    this.loadData();
-                  })
-              }
             }
-          }
-        } else {
-          ForEach(this.priceList, (card: PriceInfoRes) => {
+          } else if (this.priceList.length === 0) {
             ListItem() {
-              Stack() {
-                Image($r(`app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`))
-                  .width(105)
-                  .height(78)
-                  .onError(() => {
-                    console.error(`${TAG} Failed to load image: app.media.${this.getCardBackground(card,
-                      this.selectedCard === card.id)}`);
-                  })
-                Column() {
-                  Text(card.showtext)
-                    .fontWeight(600)
-                    .fontSize(20)
-                    .fontColor('#967d25')
-                    .fontStyle(FontStyle.Italic)
-                  Text(`¥${card.priceTr.toFixed(1)}`)
-                    .fontSize(16)
-                    .fontColor('#F75A23')
-                    .margin({ top: 5 })
-                  if (card.id === '4') {
-                    Text('限时尝鲜')
-                      .fontSize(8)
-                      .fontColor('#9D9D9D')
-                  } else if (card.priceOrigin > card.priceTr) {
-                    Text(`原价：¥${card.priceOrigin.toFixed(1)}`)
-                      .fontSize(8)
-                      .fontColor('#9D9D9D')
-                      .decoration({ type: TextDecorationType.LineThrough })
-                  }
+              Column() {
+                Text(this.errorMessage || '无会员卡数据')
+                  .fontSize(14)
+                  .fontColor('#9D9D9D')
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                if (this.errorMessage) {
+                  Button('重试')
+                    .fontSize(14)
+                    .margin({ top: 10 })
+                    .onClick(() => {
+                      this.loadData();
+                    })
                 }
-                .margin({ left: 10 })
               }
-              .alignContent(Alignment.Start)
-              .onClick(() => {
-                this.selectCard(card);
-              })
             }
-          }, (card: PriceInfoRes) => card.id)
-        }
-      }
-      .width('100%')
-      .height(100)
-      .listDirection(Axis.Horizontal)
-      .scrollBar(BarState.Off)
-      .friction(0.6)
-      .padding({ left: 16, right: 16 })
-
-      Row() {
-        Image(this.agreementChecked ? $r('app.media.ic_protocoled') : $r('app.media.ic_protocol'))
-          .width(12)
-          .height(12)
-          .margin({ left: 18, top: 8 })
-          .onClick(() => {
-            this.agreementChecked = !this.agreementChecked;
-          })
-        Text('我已阅读并同意')
-          .fontSize(12)
-          .fontColor('#3E3E3E')
-          .margin({ left: 8, top: 8 })
-        Text('《快搜搜题会员购买协议》')
-          .fontSize(12)
-          .fontColor('#F75A23')
-          .margin({ left: 2, top: 8 })
-          .onClick(() => {
-            this.jumpToHelpCenter();
-          })
-      }
-      .width('100%')
-      .height('auto')
-      .backgroundColor(Color.White)
-
-      Row() {
-
-      }
-      .width('90%')
-      .height(0.8)
-      .backgroundColor('#ebebeb')
-      .margin({ left: 32, right: 32, top: 20 })
-
-      // 底部支付
-      Row() {
-        Column() {
-          Row() {
-            Text(`总计：`)
-              .fontSize(20)
-              .fontColor('#3E3E3E')
-              .margin({ left: 16, top: 12 })
-            Text(`¥${this.totalPrice.toFixed(1)}`)
-              .fontSize(20)
-              .fontColor('#F75A23')
-              .fontWeight(600)
-              .margin({ left: 0, top: 12 })
-          }
-
-          if (this.savePrice > 0.0) {
-            Text(`已优惠：¥${this.savePrice.toFixed(1)}`)
-              .fontSize(12)
-              .fontColor('#9D9D9D')
-              .fontWeight(400)
-              .margin({ left: 16, top: 8 })
+          } else {
+            ForEach(this.priceList, (card: PriceInfoRes) => {
+              ListItem() {
+                Stack() { //ic_bg ${this.getCardBackground(card, this.selectedCard === card.id)}
+                  Image($r(`app.media.${this.getCardBackground(card, this.selectedCard === card.id)}`))
+                    .objectFit(ImageFit.Contain)
+                    .width(105)
+                    .height(80)
+                  Column() {
+                    Text(card.showtext)
+                      .fontWeight(600)
+                      .fontSize(20)
+                      .fontColor('#967d25')
+                      .fontStyle(FontStyle.Italic)
+                    Text(`¥${card.priceTr.toFixed(1)}`)
+                      .fontSize(16)
+                      .fontColor('#F75A23')
+                      .margin({ top: 5 })
+                    if (card.id === '4') {
+                      Text('限时尝鲜')
+                        .fontSize(8)
+                        .fontColor('#9D9D9D')
+                    } else if (card.priceOrigin > card.priceTr) {
+                      Text(`原价：¥${card.priceOrigin.toFixed(1)}`)
+                        .fontSize(8)
+                        .fontColor('#9D9D9D')
+                        .decoration({ type: TextDecorationType.LineThrough })
+                    }
+                  }
+                  .margin({ left: 10 })
+                }
+                .alignContent(Alignment.Start)
+                .onClick(() => {
+                  this.selectCard(card);
+                })
+              }
+            })
           }
         }
-        .justifyContent(FlexAlign.Start)
-        .alignItems(HorizontalAlign.Start)
+        .width('100%')
+        .height(100)
+        .listDirection(Axis.Horizontal)
+        .scrollBar(BarState.Off)
+        .friction(0.6)
+        .padding({ left: 16, right: 16 })
+
+        Row() {
+          Image(this.agreementChecked ? $r('app.media.ic_protocoled') : $r('app.media.ic_protocol'))
+            .width(12)
+            .height(12)
+            .margin({ left: 18, top: 8 })
+            .onClick(() => {
+              this.agreementChecked = !this.agreementChecked;
+            })
+          Text('我已阅读并同意')
+            .fontSize(12)
+            .fontColor('#3E3E3E')
+            .margin({ left: 8, top: 8 })
+          Text('《快搜搜题会员购买协议》')
+            .fontSize(12)
+            .fontColor('#F75A23')
+            .margin({ left: 2, top: 8 })
+            .onClick(() => {
+              this.jumpToHelpCenter();
+            })
+        }
+        .width('100%')
+        .height('auto')
+        .backgroundColor(Color.White)
+
+        Row() {
+          Image($r('app.media.ic_vips'))
+            .size({ width: $r('app.float.float_28vp'), height: $r('app.float.float_18vp') })
+          Image($r('app.media.ic_vipsize'))
+            .size({ width: $r('app.float.float_112vp'), height: $r('app.float.float_18vp') })
+            .margin({ left: 8 })
+        }
+        .margin({ left: 25, top: 18 })
+        .width('100%')
+
+        BenefitItem({ title: "搜题工具", description: "无广告畅快使用" })
+        BenefitItem({ title: "指定搜索题库", description: "搜题更高效" })
+        BenefitItem({ title: "任务积分", description: "会员额外积分奖励" })
 
         Blank()
-        Stack() {
-          Image($r('app.media.ic_button'))
-            .width(113)
-            .height(48)
-          Text("立即开通")
-            .fontSize(14)
-            .fontColor(Color.White)
-        }
-        .alignContent(Alignment.Center)
-        .margin({ right: 18 })
+        // 底部支付
+        PaymentFooter({ totalPrice: this.totalPrice, savePrice: this.savePrice, isLogin: this.isLogin() })
+          .onClick(async () => {
+            if (!this.agreementChecked) {
+              ToastUtils.showToast('请先勾选并同意购买后再次尝试')
+              return
+            }
+            if (this.isLogin()) {
+              this.jumpToWxPay()
+            } else {
+              this.jumpToLogin()
+            }
+          })
       }
+      .height('100%')
       .width('100%')
-      .height(64)
-      .backgroundColor(Color.White)
-      .position({ bottom: 0 })
     }
-    .height('100%')
-    .width('100%')
+    .hideTitleBar(true)
   }
+}
+
+@Component
+struct BenefitItem {
+  @Prop title: string = '';
+  @Prop description: string = '';
+
+  build() {
+    Row() {
+      Text(this.title)
+        .fontSize($r('app.float.font_size_14fp'))
+        .fontWeight(400)
+      Text(this.description)
+        .fontSize($r('app.float.font_size_14fp'))
+        .fontColor('#967d25')
+        .fontWeight(400)
+    }
+    .justifyContent(FlexAlign.SpaceBetween)
+    .margin({ top: 8 })
+    .padding({ left: 18, right: 18 })
+    .width('90%')
+    .height('55')
+    .borderRadius(5)
+    .backgroundColor('#ecebeb')
+  }
+}
+
+
+@Component
+struct PaymentFooter {
+  @Prop totalPrice: number = 60.0
+  @Prop savePrice: number = 60.0
+  @Prop isLogin: boolean = false
+
+  build() {
+    Row() {
+      Column() {
+        Row() {
+          Text(`总计：`)
+            .fontSize(20)
+            .fontColor('#3E3E3E')
+            .margin({ left: 16, top: 12 })
+          Text(`¥${this.totalPrice.toFixed(1)}`)
+            .fontSize(20)
+            .fontColor('#F75A23')
+            .fontWeight(600)
+            .margin({ left: 0, top: 12 })
+        }
+
+        if (this.savePrice > 0.0) {
+          Text(`已优惠：¥${this.savePrice.toFixed(1)}`)
+            .fontSize(12)
+            .fontColor('#9D9D9D')
+            .fontWeight(400)
+            .margin({ left: 16, top: 8 })
+        }
+      }
+      .justifyContent(FlexAlign.Start)
+      .alignItems(HorizontalAlign.Start)
+
+      Blank()
+      Stack() {
+        Image($r('app.media.ic_button'))
+          .width(113)
+          .height(48)
+        Text(this.isLogin ? "立即开通" : "支付前登录")
+          .fontSize(14)
+          .fontColor(Color.White)
+      }
+      .alignContent(Alignment.Center)
+      .margin({ right: 18 })
+    }
+    .width('100%')
+    .height(64)
+    .backgroundColor(Color.White)
+    .position({ bottom: 0 })
+  }
+}
+
+@Builder
+function PayPageBuilder() {
+  PayPage()
 }

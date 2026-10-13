@@ -53,6 +53,10 @@
       "value": "50vp"
     },
     {
+      "name": "float_60vp",
+      "value": "60vp"
+    },
+    {
       "name": "float_140vp",
       "value": "140vp"
     },
@@ -75,6 +79,10 @@
     {
       "name": "font_size_18fp",
       "value": "18fp"
+    },
+    {
+      "name": "page_text_font_size",
+      "value": "50fp"
     }
   ]
 }

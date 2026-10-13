@@ -10,6 +10,7 @@
     "search": "file:../../commons/search",
     "db": "file:../../commons/db",
     "network": "file:../../commons/network",
+    "home": "file:../home"
   },
 }
 

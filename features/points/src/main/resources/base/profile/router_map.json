@@ -1,0 +1,25 @@
+{
+  "routerMap": [
+    {
+      "name": "pointsPage",
+      "pageSourceFile": "src/main/ets/pages/PointsPage.ets",
+      "buildFunction": "PointsPageBuilder"
+    },
+    {
+      "name": "myHistoryPage",
+      "pageSourceFile": "src/main/ets/pages/MyHistoryPage.ets",
+      "buildFunction": "MyHistoryPageBuilder"
+    },
+    {
+      "name": "myInvitationPage",
+      "pageSourceFile": "src/main/ets/pages/MyInvitationPage.ets",
+      "buildFunction": "MyInvitationPageBuilder"
+    },
+    {
+      "name": "pointExchangePage",
+      "pageSourceFile": "src/main/ets/pages/PointExchangePage.ets",
+      "buildFunction": "PointExchangePageBuilder"
+    }
+
+  ]
+}

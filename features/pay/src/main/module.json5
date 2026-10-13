@@ -1,26 +1,13 @@
 {
   "module": {
     "name": "pay",
-    "type": "feature",
+    "type": "har",
     "description": "$string:module_desc",
+    "routerMap": "$profile:router_map",
     "mainElement": "PayAbility",
+    "routerMap": "$profile:router_map",
     "deviceTypes": [
       "phone"
-    ],
-    "deliveryWithInstall": true,
-    "installationFree": false,
-    "pages": "$profile:main_pages",
-    "abilities": [
-      {
-        "name": "PayAbility",
-        "srcEntry": "./ets/payability/PayAbility.ets",
-        "description": "$string:PayAbility_desc",
-        "icon": "$media:layered_image",
-        "label": "$string:PayAbility_label",
-        "startWindowIcon": "$media:startIcon",
-        "startWindowBackground": "$color:start_window_background",
-        "exported": true
-      }
     ],
     "requestPermissions": [
       {

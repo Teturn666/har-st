@@ -12,11 +12,14 @@
     "encryption": "file:../../commons/encryption",
     "db": "file:../../commons/db",
     "web": "file:../../commons/web",
+    "parseexcel": 'file:../../commons/parseExcel',
     "photo": "file:../photo",
     "view": "file:../view",
     "widget": "file:../../commons/widget",
     "bank": 'file:../../features/bank',
-    "setting": 'file:../setting'
+    "setting": 'file:../setting',
+    "libscrcap2pixel.so": "file:./src/main/cpp/types/libscrcap2pixel",
+    "@candies/image_cropper": "^1.1.1"
   }
 }
 

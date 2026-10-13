@@ -1,0 +1,1 @@
+export { PayPage } from './src/main/ets/pages/PayPage'

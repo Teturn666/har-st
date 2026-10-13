@@ -2,11 +2,11 @@
   "module": {
     "name": "web",
     "type": "har",
-    "description": "$string:module_desc",
+    "description": "$string:shared_desc",
+    "mainElement": "websAbility",
+    "routerMap": "$profile:router_map",
     "deviceTypes": [
-      "phone",
-      "tablet",
-      "2in1"
-    ]
+      "phone"
+    ],
   }
 }

@@ -4,8 +4,9 @@
     "type": "har",
     "description": "$string:module_desc",
     "mainElement": "SettingAbility",
+    "routerMap": "$profile:router_map",
     "deviceTypes": [
       "phone"
-    ]
+    ],
   }
 }

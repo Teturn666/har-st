@@ -1,0 +1,19 @@
+{
+  "routerMap": [
+    {
+      "name": "bankPage",
+      "pageSourceFile": "src/main/ets/pages/BankPage.ets",
+      "buildFunction": "BankPageBuilder"
+    },
+    {
+      "name": "hotSearchPage",
+      "pageSourceFile": "src/main/ets/pages/HotSearchPage.ets",
+      "buildFunction": "HotSearchPageBuilder"
+    },
+    {
+      "name": "bankDetailsPage",
+      "pageSourceFile": "src/main/ets/pages/BankDetailsPage.ets",
+      "buildFunction": "BankDetailsPageBuilder"
+    }
+  ]
+}

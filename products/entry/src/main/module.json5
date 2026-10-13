@@ -19,7 +19,7 @@
         "name": "EntryAbility",
         "srcEntry": "./ets/entryability/EntryAbility.ets",
         "description": "$string:EntryAbility_desc",
-        "icon": "$media:img",
+        "icon": "$media:startIcon",
         "label": "$string:EntryAbility_label",
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
@@ -31,6 +31,36 @@
             ],
             "actions": [
               "action.system.home"
+            ]
+          },
+          {
+            "entities": [
+              "entity.system.default"
+            ],
+            "actions": [
+              "ohos.want.action.viewData"
+            ],
+            "uris": [
+              {
+                "scheme": "file",
+                "type": "*/*",
+                "linkFeature": "FileOpen"
+              },
+              {
+                "scheme": "file",
+                "type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "linkFeature": "FileOpen"
+              },
+              {
+                "scheme": "file",
+                "type": "application/vnd.ms-excel",
+                "linkFeature": "FileOpen"
+              },
+              {
+                "scheme": "file",
+                "type": "text/plain",
+                "linkFeature": "FileOpen"
+              }
             ]
           }
         ]
@@ -70,6 +100,26 @@
       {
         "name": "ohos.permission.GET_NETWORK_INFO"
       },
+      {
+        "name": "ohos.permission.CAMERA",
+        "reason": "$string:app_camera",
+        "usedScene": {
+          "when": "always",
+          "abilities": [
+            "EntryAbility"
+          ]
+        }
+      },
+//      {
+//        "name": "ohos.permission.READ_IMAGEVIDEO",
+//        "reason": "$string:app_imagevideo",
+//        "usedScene": {
+//          "when": "always",
+//          "abilities": [
+//            "EntryAbility"
+//          ]
+//        }
+//      }
     ]
   }
 }

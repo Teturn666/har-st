@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from '@ohos/axios'
-import { ChPackageUtils, Logger } from 'utils'
+import { ChPackageUtils, PreferencesConstants, preferencesUtils } from 'utils'
 
 export class HttpUtils {
   public static readonly Success_code: number = 0
@@ -13,10 +13,12 @@ export class HttpUtils {
 
   //通用接口链接
   public static getInstance(): AxiosInstance {
-    let deviceId = ChPackageUtils.getDeviceId()
+    let deviceId = preferencesUtils.getString(PreferencesConstants.SP_UUID)
+    let versionName = preferencesUtils.getString(PreferencesConstants.SP_VERSION_NAME)
     let unionId = ChPackageUtils.getUnionId()
     let openId = ChPackageUtils.getOpenId()
     let channel = ChPackageUtils.getChannel()
+    let deviceModel = ChPackageUtils.getDeviceModel()
     return axios.create({
       baseURL: HttpUtils.mBaseUrl,
       timeout: HttpUtils.READ_TIME_OUT,
@@ -24,10 +26,10 @@ export class HttpUtils {
         'open-id': openId,
         'union-id': unionId,
         'device-id': deviceId,
-        'device-model': "",
+        'device-model': deviceModel,
         'apk-channel': channel,
         'apk-name': channel,
-        'apk-version': '1.0.0'
+        'apk-version': versionName
       }
     })
   }

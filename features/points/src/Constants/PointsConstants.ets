@@ -12,5 +12,8 @@ export default class PointsConstants {
   static readonly POINTS_DAYS_STATUS_WILL = 3
   static readonly POINTS_DAYS_DEFAULT_POINTS = '0'
   static readonly POINTS_DAYS_DEFAULT_SIGN_DAYS = '0'
+  //积分兑换页
+  static readonly ROUTE_EXCHANGE_POINTS = 'pointExchangePage'
+
 
 }

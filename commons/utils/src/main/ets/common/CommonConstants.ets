@@ -1,5 +1,3 @@
-import dataPreferences from '@ohos.data.preferences'
-
 export class CommonConstants {
   // percent
   static readonly FULL_PERCENT: string = '100%';
@@ -10,6 +8,8 @@ export class CommonConstants {
   static readonly TWENTY_PERCENT: string = '20%';
   // space
   static readonly SPACE_16: number = 16;
+  static readonly SPACE_5: number = 5;
+  static readonly SPACE_4: number = 4;
   //height
   static readonly HEIGHT_160: number = 160;
   static readonly HEIGHT_30: number = 30;
@@ -21,11 +21,4 @@ export class CommonConstants {
   static readonly RADIUS_8: number = 8;
   //内边距
   static readonly PADDING_8: number = 8;
-  static readonly SP_OPTIONS: dataPreferences.Options = {
-    name: 'isLogin',
-  }
-  //union-id
-  static readonly SP_UNION_ID = 'union-id'
-  //open-id
-  static readonly SP_OPEN_ID = 'open-id'
 }

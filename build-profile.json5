@@ -3,7 +3,7 @@
     "products": [
       {
         "name": "default",
-        "signingConfig": "lianxing",
+        "signingConfig": "default",
         "compatibleSdkVersion": "5.0.3(15)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
@@ -22,30 +22,17 @@
       }
     ],
     "signingConfigs": [
-            {
-              "name": "default",
-              "type": "HarmonyOS",
-              "material": {
-                "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
-                "storePassword": "000000181BD2E79489912C543F33CEDF5DB746F05DF2E8140AF5EC3F55417854CEF624D1C318F495",
-                "keyAlias": "Tl",
-                "keyPassword": "0000001873D3735AA4A7846DAD1B8DA3B065E1D5D08FF6DE1F23C46E6B671D5CA4F30D04A13F33E3",
-                "signAlg": "SHA256withECDSA",
-                "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
-                "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
-              }
-            },
       {
-        "name": "lianxing",
+        "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "storeFile": "/Users/fire/Downloads/debugSign/ksstDbug.p12",
-          "storePassword": "00000018DD2413AD9D37A53B023C8EE0E3334FBB7E4D3DED80AD61D55F0A7CF861DCF20D065AE60F",
-          "keyAlias": "tl",
-          "keyPassword": "00000018F6BA91D36B6391267E5E28B47C9B45D1279EC26571915FB454987318684C63B271A3D0AF",
+          "storeFile": "/Users/fire/Downloads/debug/ksstDbug.p12",
+          "storePassword": "00000018A94E7DE091280AEF724D8147793224B22AAE2CE16C381B0A3E2DD65727D018BE8BE0EA59",
+          "keyAlias": "Tl",
+          "keyPassword": "000000185BAD6B1DEFA7D8A4A323640F2B9285D1881B0CFEA653CC649A8B1F120357E4D4802450B7",
           "signAlg": "SHA256withECDSA",
-          "profile": "/Users/fire/Downloads/debugSign/ksstProfileDebug.p7b",
-          "certpath": "/Users/fire/Downloads/debugSign/ksstDebugCer.cer"
+          "profile": "/Users/fire/Downloads/debug/ksstDebugNewDebug.p7b",
+          "certpath": "/Users/fire/Downloads/debug/ksstDebugCer.cer"
         }
       }
     ]
@@ -160,18 +147,6 @@
       ]
     },
     {
-      "name": "web",
-      "srcPath": "./commons/web",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
       "name": "widget",
       "srcPath": "./commons/widget",
       "targets": [
@@ -244,8 +219,8 @@
       ]
     },
     {
-      "name": "share",
-      "srcPath": "./features/share",
+      "name": "setting",
+      "srcPath": "./features/setting",
       "targets": [
         {
           "name": "default",
@@ -256,8 +231,8 @@
       ]
     },
     {
-      "name": "setting",
-      "srcPath": "./features/setting",
+      "name": "web",
+      "srcPath": "./commons/web",
       "targets": [
         {
           "name": "default",

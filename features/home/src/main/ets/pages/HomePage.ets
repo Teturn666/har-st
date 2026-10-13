@@ -1,173 +1,486 @@
-import { CommonConstants, Logger } from 'utils/Index'
+import {
+  CommonConstants as Const,
+  EmitterConstants,
+  GetAllSelectedUtil,
+  Logger,
+  PreferencesConstants,
+  preferencesUtils,
+  webType
+} from 'utils/Index'
 import { hilog } from '@kit.PerformanceAnalysisKit'
-import { BusinessError } from '@kit.BasicServicesKit'
-import { fileIo, picker } from '@kit.CoreFileKit'
+import { emitter } from '@kit.BasicServicesKit'
 import { image } from '@kit.ImageKit'
-import { textRecognition } from '@kit.CoreVisionKit'
 import { HomeModel } from '../model/HomeModel'
-import { HomeBankListRes } from '../model/HomeBankListRes'
-import { LoadingStatus } from 'utils'
 import HomeConstants from '../Constants/HomeConstants'
 import common from '@ohos.app.ability.common'
-import router from '@ohos.router'
 import { PayView } from 'view/Index'
-import lottie, { AnimationItem } from '@ohos/lottie'
-import { util } from '@kit.ArkTS'
+import lottie from '@ohos/lottie'
+import { taskpool } from '@kit.ArkTS'
 import { onEventObject } from '@umeng/analytics'
 import HomeMobClickConstants from '../Constants/HomeMobClickConstants'
+import { ProgressLoading } from 'utils/src/main/ets/components/ProgressLoading'
+import { screenManager } from '../utils/ScreenManager'
+import { selectBankDialog } from 'setting/src/main/ets/pages/SelectBankDialog'
 import { BankListRes } from 'db'
+import { AdCustomDialog } from '../components/AdCustomDialog'
+import { ConfigRes } from 'utils/src/main/ets/model/ConfigRes'
+import { HmAdInfo } from 'utils/src/main/ets/model/HmAdInfo'
+import { Params, PipManager } from '../manage/PipManage'
+import { ocrToText } from '../utils/OcrToText'
+import { ScreenCaptureManager } from '../manage/ScreenCaptureManager'
+import { readSearchCurrent, ReadSearchResult } from '../manage/ConcurrentManage'
+import { MDataTextManage } from 'search/src/main/ets/manage/MDataTextManage'
+import { accessManager } from '../utils/AccessManager'
+import { SearchMapManage } from 'search/src/main/ets/manage/SearchMapManage'
+import SearchConstants from 'search/src/main/ets/constants/SearchConstants'
+import { NavDoubleString, NavQid } from '../model/NavGenericType'
 
-import('photo/src/main/ets/pages/SearchResultPage')
-import('web/src/main/ets/pages/ChWebPage')
-import('./BankListPage')
-import('./MyDownloadPage')
 
 const SWIPER_ASPECT_RATIO = 2.4
 const SWIPER_MARGIN = 220
 let arr: number[] = [1]
-const context = (getContext(this) as common.UIAbilityContext)
 
 const TAG = '[HomePage]'
 
-let jsonData = null
+// 定义UI状态接口
+interface UIState {
+  loading: boolean;
+  topHeight: number;
+}
 
-@Builder
-export function HomePageBuilder() {
-  HomePage()
+// 定义业务状态接口
+interface BusinessState {
+  bankList: BankListRes[];
+  agreementChecked: boolean;
+  isVip: number;
+  pipAnswer: string;
+}
+
+// 定义广告状态接口
+interface AdState {
+  csjCode: number;
+  csjId: string;
+  csjIsShow: boolean;
+  typeSearch: boolean;
 }
 
 @Entry()
 @Component
 export struct HomePage {
-  private imageSource: image.ImageSource | undefined = undefined
-  @State chooseImage: PixelMap | undefined = undefined
-  @State dataValues: string = ''
-  @State homeModel: HomeModel = HomeModel.getInstance()
-  @State loadingStatus: LoadingStatus = LoadingStatus.OFF
-  @State accounts: Array<HomeBankListRes> = []
-  testString: number[] = []
-  private mainRenderingSettings: RenderingContextSettings = new RenderingContextSettings(true)
-  private controller: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.mainRenderingSettings)
-  private animateName = "loading"
-  private resStr = util.TextDecoder.create('utf-8', { ignoreBOM: true })
-  private animateItem: AnimationItem | null = null
-  @State hasLoadData: boolean = false
-  @State questionBanks: BankListRes[] = [];
-  @State wrongBanks: BankListRes[] = [];
-  @State collectionBanks: BankListRes[] = [];
+  @Consume appPathStack: NavPathStack
+  // 合并UI相关状态
+  @State uiState: UIState = {
+    loading: false,
+    topHeight: 0
+  }
+  // 合并业务逻辑相关状态
+  @State businessState: BusinessState = {
+    bankList: [],
+    agreementChecked: false,
+    isVip: 0,
+    pipAnswer: '暂未搜索到该题'
+  }
+  // 合并广告相关状态
+  @State adState: AdState = {
+    csjCode: 0,
+    csjId: "",
+    csjIsShow: false,
+    typeSearch: false
+  }
+  private TypeRead: () => void = () => {
+  }
+  // 保留必要的单独状态
+  private homeModel: HomeModel = HomeModel.getInstance()
+  private dialogController: CustomDialogController | null = null;
+  private executeScreenReading: () => void = () => {
+  }
+  private csjHmAD: ConfigRes = { hmAd: new HmAdInfo() }
+  // 事件监听器管理
+  private eventListeners: Map<string, (event: ESObject) => void> = new Map()
+  AdDialogController = new CustomDialogController({
+    builder: AdCustomDialog({
+      isShowDialog: (() => {
+        this.AdDialogController?.close()
+      }),
+      readSearch: () => this.executeScreenReading(),
+      CsjId: this.adState.csjId,
+      CsjIsShow: this.adState.csjIsShow,
+      TypeSearch: this.adState.typeSearch
+    }),
+    autoCancel: false,
+    alignment: DialogAlignment.Center,
+    offset: { dx: 0, dy: -20 },
+    gridCount: 4,
+    customStyle: false,
+    backgroundColor: 0xd9ffffff,
+    cornerRadius: 5,
+    width: 300,
+    height: 350,
+    maskColor: "#88000000",
+    borderStyle: BorderStyle.Dashed,
+    shadow: ({
+      radius: 20,
+      color: Color.Grey,
+      offsetX: 10,
+      offsetY: 10
+    }),
+  });
 
-  aboutToAppear(): void {
-    this.initLottie()
-    this.loadResources()
+  /**
+   * 页面初始化生命周期方法
+   * 异步加载页面所需的基础数据和配置
+   */
+  async aboutToAppear() {
+    try {
+      // 更新状态
+      this.businessState.isVip = preferencesUtils.getNumber(PreferencesConstants.SP_IS_VIP);
+      this.csjHmAD = preferencesUtils.getGenerics(PreferencesConstants.CSJ_AD_PARAMS);
+      this.adState.csjCode = preferencesUtils.getNumber(PreferencesConstants.CSJ_AD_CODE);
+
+      // 注册事件监听器
+      this.registerAllEventListeners();
+
+      // 加载资源
+      await this.loadPageResources();
+
+      // 异步加载共享数据
+      this.preloadSharedSearchData();
+    } catch (error) {
+      Logger.error(`HomePage initialization failed: ${error}`);
+    }
   }
 
-  async loadResources(): Promise<void> {
-    console.log("主页面")
-    //获取数据库下载的题库
-    const banks = await this.homeModel.getBankList();
-    this.questionBanks = banks;
-
-    //获取数据库错题的题库
-    const wrongq = await this.homeModel.getWrongBankList()
-    this.wrongBanks = wrongq;
-
-    //获取数据库收藏的题库
-    const collectionBank = await this.homeModel.getCollectionBankList()
-    this.collectionBanks = collectionBank;
+  /**
+   * 注册页面所需的所有事件监听器
+   * 统一管理事件监听器的注册，便于维护和清理
+   */
+  private registerAllEventListeners() {
+    // 首页刷新事件
+    const handleHomeRefresh = () => {
+      this.loadPageResources();
+    };
+    this.eventListeners.set(EmitterConstants.EM_REFRESH_HOME, handleHomeRefresh);
+    emitter.on(EmitterConstants.EM_REFRESH_HOME, handleHomeRefresh);
   }
 
+  /**
+   * 清理所有注册的事件监听器
+   * 防止内存泄漏，在页面销毁时调用
+   */
+  private unregisterAllEventListeners() {
+    this.eventListeners.forEach((handler, eventType) => {
+      emitter.off(eventType, handler);
+    });
+    this.eventListeners.clear();
+  }
+
+  /**
+   * 预加载搜索相关的共享数据
+   * 根据用户选择的题库范围，异步加载对应的搜索数据到内存
+   */
+  private async preloadSharedSearchData() {
+    try {
+      let mdataText: SharedArrayBuffer | null = null;
+      if (GetAllSelectedUtil.isUserBankAllSelected()) {
+        mdataText = await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL);
+      } else {
+        mdataText = await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME);
+      }
+      MDataTextManage.getInstance().saveDataText(mdataText);
+    } catch (error) {
+      Logger.error(`Failed to load shared data: ${error}`);
+    }
+  }
+
+  /**
+   * 页面销毁生命周期方法
+   * 清理资源和状态，防止内存泄漏
+   */
   aboutToDisappear(): void {
-    lottie.destroy()
+    // 完善资源清理
+    try {
+      // 清理事件监听器
+      this.unregisterAllEventListeners();
+
+      // 清理其他资源
+      lottie.destroy();
+      screenManager.exitFull(getContext());
+
+      // 重置状态
+      this.uiState.topHeight = 0;
+    } catch (error) {
+      Logger.error(`HomePage cleanup failed: ${error}`);
+    }
   }
 
   build() {
-    Column() {
-      // if (this.hasLoadData && this.loadingStatus === LoadingStatus.LOADING) {
-      //   Flex({ direction: FlexDirection.Column, alignItems: ItemAlign.Center, justifyContent: FlexAlign.Center }) {
-      //     Canvas(this.controller)
-      //       .width('30%')
-      //       .height('20%')
-      //       .onReady(() => {
-      //         this.animateItem = lottie.loadAnimation({
-      //           container: this.controller,
-      //           renderer: 'canvas',
-      //           loop: true,
-      //           autoplay: true,
-      //           context: context,
-      //           name: this.animateName,
-      //           animationData: jsonData,
-      //         })
-      //       })
-      //   }
-      //
-      // } else if (this.loadingStatus === LoadingStatus.SUCCESS) {
-      List({ space: CommonConstants.SPACE_16 }) {
-        ListItem() {
-          Banner({
-            swiperData: arr,
-            handleClick: (item: number) => {
-              hilog.info(0x0001, "testTag", "---->" + item);
-              this.jumpToWeb()
-            }
-          })
-        }
+    RelativeContainer() {
+      Column() {
+        List({ space: Const.SPACE_16 }) {
+          ListItem() {
+            Banner({
+              swiperData: arr,
+              handleClick: (item: number) => {
+                hilog.info(0x0001, "testTag", "---->" + item);
+                this.navigateToWebTutorial()
+              }
+            })
+          }
 
-        ListItem() {
-          SearchHelper({
-            handleClick: async () => {
-              this.selectImage()
-            }
-          })
-        }
+          ListItem() {
+            SearchList({
+              onScanSearchClick: this.handleScanSearchClick,
+              onScreenReadSearchClick: this.handleScreenReadSearchClick
+            })
+          }
 
-        ListItem() {
-          BankHelper({
-            downloadClick: async () => {
-              //跳转到我的下载页面
-              this.jumpToDownloadResult()
-            }
-          })
-        }
+          ListItem() {
+            SearchHelper({
+              isLoading: this.uiState.loading,
+              handleClick: () => {
+                accessManager.CheckCamera(['ohos.permission.CAMERA',], () => {
+                  this.appPathStack.pushPathByName(HomeConstants.ROUTER_PHOTO_SEARCH, null)
+                })
+              }
+            })
+          }
 
-        ListItem() {
-          ExerciseHelper({
-            bankClick: async () => {
-              //跳转练习列表页面
-              this.jumpToBankList(1)
-            },
-            wrongClick: async () => {
-              //跳转错题列表练习页面
-              this.jumpToBankList(2)
-            },
-            collectionClick: async () => {
-              //跳转收藏列表练习页面
-              this.jumpToBankList(3)
-            },
-          })
-        }
+          ListItem() {
+            BankHelper({
+              onDownloadClick: async () => {
+                this.navigateToMyDownload()
+              },
+              onCustomQuestionClick: async () => {
+                this.navigateToCustomQuestion()
+              }
+            })
+          }
 
-        //测试显示ocr的文本
-        // ListItem() {
-        //   Text(this.dataValues)
-        //     .fontSize($r('app.float.font_size_10fp'))
-        //     .fontColor($r('app.color.c_black'))
-        // }
+          ListItem() {
+            ExerciseHelper({
+              onBankClick: async () => {
+                this.navigateToBankList(1)
+              },
+              onWrongClick: async () => {
+                this.navigateToBankList(2)
+              },
+              onCollectionClick: async () => {
+                this.navigateToBankList(3)
+              },
+            })
+          }
+        }
+        .scrollBar(BarState.Off)
+        .height(Const.FULL_PERCENT)
+        .width(Const.FULL_PERCENT)
+        .padding({
+          left: $r('app.float.float_15vp'),
+          right: $r('app.float.float_15vp')
+        })
       }
-      .scrollBar(BarState.Off)
 
-      // } else if (this.loadingStatus === LoadingStatus.FAILED) {
-      //   Text('数据插入失败').fontSize(18)
-      // }
+      Column() {
+        if (this.uiState.loading) {
+          Row() {
+            ProgressLoading()
+          }
+          .width("100%")
+          .height("100%")
+        }
+      }
+      .alignRules({
+        center: { anchor: '__container__', align: VerticalAlign.Center },
+        middle: { anchor: '__container__', align: HorizontalAlign.Center }
+      })
     }
-    .height(CommonConstants.FULL_PERCENT)
-    .width(CommonConstants.FULL_PERCENT)
-    .padding({
-      left: $r('app.float.float_15vp'), right: $r('app.float.float_15vp')
+    .margin({
+      top: this.uiState.topHeight
     })
   }
 
-  //跳转到练习列表共用的页面，1=题库练习，2=错题练习，3=收藏练习
-  private jumpToBankList(type: number) {
+  /**
+   * 加载页面所需的资源数据
+   * 包括题库列表等基础数据的获取
+   */
+  private async loadPageResources() {
+    try {
+      this.checkShouldShowSelectDialog();
+      const banks = await this.homeModel.getBankList();
+      this.businessState.bankList = banks;
+    } catch (error) {
+      Logger.error(`Failed to load resources: ${error}`);
+    }
+  }
+
+  /**
+   * 显示题库选择对话框
+   * @param onVipDialogCallback VIP相关操作的回调函数
+   * @param onTextChangeCallback 文本变化的回调函数
+   */
+  private async showBankSelectionDialog(onVipDialogCallback: Function, onTextChangeCallback: Function) {
+    this.dialogController = new CustomDialogController({
+      builder: selectBankDialog({
+        agreementChecked: this.businessState.agreementChecked,
+        onConfirm: (selected: string[]) => {
+          this.businessState.agreementChecked = this.businessState.agreementChecked;
+        },
+        isVipDialog: () => {
+          this.dialogController?.close()
+          if (!this.businessState.isVip && this.businessState.bankList.length > 0 &&
+          this.adState.csjIsShow && !this.adState.csjCode) {
+            this.AdDialogController?.open()
+          } else {
+            if (this.businessState.bankList.length > 0) {
+              onVipDialogCallback()
+            }
+          }
+        },
+        isChangeText: () => {
+          onTextChangeCallback()
+        }
+      })
+    });
+    this.dialogController.open();
+  }
+
+  /**
+   * 处理扫描搜题点击事件
+   * 根据用户VIP状态和广告配置决定是否显示广告或直接跳转
+   */
+  private handleScanSearchClick = () => {
+    if (!this.checkShouldShowSelectDialog()) {
+      this.adState.csjId = this.csjHmAD?.hmAd?.rewardScan?.csj
+      this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardScan?.switchOff
+      this.adState.typeSearch = false
+      this.showBankSelectionDialog(() => {
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
+
+      }, () => {
+        this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
+
+      })
+    } else {
+      if (!this.businessState.isVip && this.csjHmAD?.hmAd?.rewardScan?.switchOff && !this.adState.csjCode) {
+        this.adState.csjId = this.csjHmAD?.hmAd?.rewardScan?.csj
+        this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardScan?.switchOff
+        this.adState.typeSearch = false
+        this.AdDialogController?.open()
+      } else {
+        if (this.businessState.bankList.length > 0) {
+          this.appPathStack.pushPathByName(HomeConstants.ROUTER_SEARCH_INTRODUCTION, null)
+
+        }
+      }
+    }
+  }
+  /**
+   * 处理读屏搜题点击事件
+   * 设置OCR文本监听器，并根据用户状态决定后续操作流程
+   */
+  private handleScreenReadSearchClick = async () => {
+    // 清理已存在的数据文本监听器
+    const existingHandler = this.eventListeners.get(EmitterConstants.EM_DATA_TEXT);
+    if (existingHandler) {
+      emitter.off(EmitterConstants.EM_DATA_TEXT, existingHandler);
+    }
+
+    // 注册新的数据文本监听器
+    const handleOcrTextData = async (event: ESObject) => {
+      const ocrText: string = event.data!["text"].replace(/\r?\n/g, '');
+      const mDataText = MDataTextManage.getInstance().getDataText();
+
+      if (mDataText && mDataText?.byteLength !== 0) {
+        this.executeSearchTask(ocrText, this.businessState.pipAnswer, mDataText);
+      }
+    };
+
+    this.eventListeners.set(EmitterConstants.EM_DATA_TEXT, handleOcrTextData);
+    emitter.on(EmitterConstants.EM_DATA_TEXT, handleOcrTextData);
+
+    if (!this.checkShouldShowSelectDialog()) {
+      this.adState.csjId = this.csjHmAD?.hmAd?.rewardRead?.csj
+      this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardRead?.switchOff
+      this.executeScreenReading = () => {
+        this.initializeScreenCapture()
+      }
+      this.adState.typeSearch = true
+      await this.showBankSelectionDialog(this.initializeScreenCapture, this.initializeScreenCapture)
+    } else {
+      if (!this.businessState.isVip && this.csjHmAD?.hmAd?.rewardRead?.switchOff && !this.adState.csjCode) {
+        this.adState.csjId = this.csjHmAD?.hmAd?.rewardRead?.csj
+        this.adState.csjIsShow = this.csjHmAD?.hmAd?.rewardRead?.switchOff
+        this.adState.typeSearch = true
+        this.executeScreenReading = () => {
+          this.initializeScreenCapture()
+        }
+        this.AdDialogController?.open()
+      } else {
+        if (this.businessState.bankList.length > 0) {
+          this.initializeScreenCapture()
+        }
+      }
+    }
+  }
+
+  /**
+   * 执行读屏搜题任务
+   * 使用TaskPool在后台线程执行搜索任务，避免阻塞UI线程
+   * @param ocrText OCR识别的文本内容
+   * @param pipAnswer 悬浮窗答案内容
+   * @param mDataText 搜索数据的共享内存缓冲区
+   */
+  private async executeSearchTask(ocrText: string, pipAnswer: string, mDataText: SharedArrayBuffer) {
+    try {
+      const task: taskpool.Task = new taskpool.Task(readSearchCurrent, getContext(this), ocrText, pipAnswer, mDataText);
+      const res = await taskpool.execute(task) as ReadSearchResult;
+
+      if (!res.answer || !res.question) {
+        return
+      }
+
+      PipManager.getInstance().updatePipUI(new Params({
+        answer: res.answer,
+        question: res.question
+      }));
+
+      this.businessState.pipAnswer = res.answer + res.question
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
+    }
+  }
+
+  /**
+   * 初始化屏幕截图功能
+   * 设置截图回调并启动屏幕捕获
+   */
+  private initializeScreenCapture = async () => {
+    const screenCaptureManager = ScreenCaptureManager.getInstance(getContext(this) as common.ApplicationContext);
+
+    screenCaptureManager.setCallback({
+      onPixelMapReady: async (pixelMap: image.PixelMap) => {
+        ocrToText.loadImage(pixelMap)
+      }
+    });
+
+    screenCaptureManager.startScreenCapture();
+  }
+
+  /**
+   * 检查是否需要显示选择对话框
+   * @returns 返回是否应该显示对话框的布尔值
+   */
+  private checkShouldShowSelectDialog(): boolean {
+    return this.businessState.agreementChecked =
+      preferencesUtils.getBoolean(PreferencesConstants.SP_SELECT_DIALOG_SHOW, false)
+  }
+
+  /**
+   * 跳转到题库列表页面
+   * @param type 练习类型 1=题库练习，2=错题练习，3=收藏练习
+   */
+  private navigateToBankList(type: number) {
     let title = ''
     if (type === 2) {
       title = '错题练习'
@@ -176,129 +489,53 @@ export struct HomePage {
     } else {
       title = '题库练习'
     }
-
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_BANK_LIST,
-      params: {
-        title,
-        type: String(type)
-      }
-    }, router.RouterMode.Single)
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_BANK_LIST, {
+      title,
+      type: String(type)
+    } as NavDoubleString)
   }
 
-  //跳转到搜索结果页
-  private jumpToSearchResult(ocrTxt: string) {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_SEARCH_RESULT, params: {
-        ocrTxt: ocrTxt
-      }
-    })
-    onEventObject(HomeMobClickConstants.E_CLICK_EXPORT_ALLROUNDSEARCH)
+  /**
+   * 跳转到我的下载页面
+   */
+  private navigateToMyDownload() {
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_MY_DOWNLOAD, { bankPage: 'myDown' } as NavQid)
+
   }
 
-  //跳转到我的下载
-  private jumpToDownloadResult() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_MY_DOWNLOAD
-    })
+  /**
+   * 跳转到自定义题库页面
+   */
+  private navigateToCustomQuestion() {
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_CUSTOM_QUESTION, null)
+
   }
 
-  //跳转到H5页面
-  private jumpToWeb() {
-    router.pushNamedRoute({
-      name: HomeConstants.ROUTER_WEB, params: {
-        url: HomeConstants.USE_TEACH_URL,
-        title: '使用教程'
-      }
-    })
+  /**
+   * 跳转到使用教程网页
+   */
+  private navigateToWebTutorial() {
+    this.appPathStack.pushPathByName(HomeConstants.ROUTER_WEB, {
+      url: HomeConstants.USE_TEACH_URL,
+      title: '使用教程'
+    } as webType)
     onEventObject(HomeMobClickConstants.PLAY_GUIDE_VIDEO)
-  }
-
-  private async ocrToText() {
-    if (!this.chooseImage) {
-      return
-    }
-    // 调用文本识别接口
-    let visionInfo: textRecognition.VisionInfo = {
-      pixelMap: this.chooseImage
-    };
-    let textConfiguration: textRecognition.TextRecognitionConfiguration = {
-      isDirectionDetectionSupported: false
-    };
-    textRecognition.recognizeText(visionInfo, textConfiguration,
-      (error: BusinessError, data: textRecognition.TextRecognitionResult) => {
-        // 识别成功，获取对应的结果
-        if (error.code == 0) {
-          let recognitionString = data.toString()
-          hilog.info(0x0000, 'OCRDemo', `Succeeded in recognizing text：${recognitionString}`)
-          // 将结果更新到Text中显示
-          this.dataValues = data.value
-          this.jumpToSearchResult(data.value)
-        }
-        if (this.chooseImage && this.imageSource) {
-          this.chooseImage.release()
-          this.imageSource.release()
-        }
-      })
-  }
-
-  private async selectImage() {
-    let uri = await this.openPhoto()
-    if (uri === undefined) {
-      hilog.error(0x0000, 'OCRDemo', "Failed to get uri.")
-      return
-    }
-    this.loadImage(uri)
-  }
-
-  private openPhoto(): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      let photoPicker = new picker.PhotoViewPicker()
-      photoPicker.select({
-        MIMEType: picker.PhotoViewMIMETypes.IMAGE_TYPE, maxSelectNumber: 1
-      }).then((res: picker.PhotoSelectResult) => {
-        resolve(res.photoUris[0])
-      }).catch((err: BusinessError) => {
-
-        hilog.error(0x0000, 'OCRDemo', `Failed to get photo image uri. code：${err.code}，message：${err.message}`)
-        resolve('')
-      })
-    })
-  }
-
-  private loadImage(name: string) {
-    setTimeout(async () => {
-      let fileSource = await fileIo.open(name, fileIo.OpenMode.READ_ONLY)
-      this.imageSource = image.createImageSource(fileSource.fd)
-      this.chooseImage = await this.imageSource.createPixelMap()
-      this.ocrToText()
-    }, 100)
-  }
-
-  //加载 lottie 动画
-  private initLottie() {
-    // loading.json需要放到lottie包下的rawfile中
-    context.resourceManager.getRawFileContent('loading.json', async (err: Error, data: Uint8Array) => {
-      if (data === null || data === undefined || data.buffer === undefined) {
-        return;
-      }
-      let lottieStr = await this.resStr.decodeWithStream(new Uint8Array(data.buffer))
-      jsonData = JSON.parse(lottieStr);
-      this.hasLoadData = true
-    })
   }
 }
 
-
-//搜题助手
+/**
+ * 搜题助手组件
+ * 提供万能搜题功能的入口
+ */
 @Component
 struct SearchHelper {
   @State isShow: boolean = false
+  @Prop isLoading: boolean = false
   handleClick: () => void = () => {
   }
 
   @Builder
-  payViewBuilder() {
+  buildPayView() {
     Column() {
       PayView()
     }
@@ -311,13 +548,17 @@ struct SearchHelper {
           .objectFit(ImageFit.Contain)
         Text($r('app.string.almighty_search'))
           .fontSize($r('app.float.font_size_24fp'))
-          .fontColor($r('app.color.c_white'))
-      }.margin({ top: $r('app.float.float_10vp') }).onClick(() => this.handleClick())
+          .fontColor('#7B6008')
+      }.onClick(() => this.handleClick())
     }
+    .enabled(!this.isLoading)
   }
 }
 
-//banner
+/**
+ * 轮播图组件
+ * 展示首页横幅广告或推广内容
+ */
 @Component
 struct Banner {
   @Prop swiperData: number[];
@@ -330,17 +571,17 @@ struct Banner {
       ForEach(this.swiperData, (item: number) => {
         Row() {
           Image($r('app.media.bg_banner'))
-            .width(CommonConstants.FULL_PERCENT)
-            .height(CommonConstants.FULL_PERCENT)
+            .width(Const.FULL_PERCENT)
+            .height(Const.FULL_PERCENT)
             .borderRadius($r('app.float.float_16vp'))
             .onClick(() => this.handleClick(item))
         }
-        .width(CommonConstants.FULL_PERCENT)
+        .width(Const.FULL_PERCENT)
         .aspectRatio(SWIPER_ASPECT_RATIO)
         .padding({ right: $r('app.float.float_12vp') })
       }, (item: number) => item + "")
     }
-    .width(CommonConstants.FULL_PERCENT)
+    .width(Const.FULL_PERCENT)
     .displayCount(1)
     .displayMode(SwiperDisplayMode.AUTO_LINEAR)
     .nextMargin(SWIPER_MARGIN)
@@ -352,45 +593,121 @@ struct Banner {
   }
 }
 
-//题库
+/**
+ * 搜索功能列表组件
+ * 提供扫描搜题和读屏搜题两个主要功能入口
+ */
+@Component
+struct SearchList {
+  onScanSearchClick: () => void = () => {
+  }
+  onScreenReadSearchClick: () => void = () => {
+  }
+
+  async aboutToAppear() {
+  }
+
+  /**
+   * 组件销毁时的清理工作
+   * 清理PIP管理器和屏幕捕获相关资源
+   */
+  aboutToDisappear(): void {
+    console.log(TAG, "aboutToDisappear")
+    PipManager.getInstance().unregisterPipStateChangeListener();
+    PipManager.getInstance().setAutoStart(false);
+    ScreenCaptureManager.stopScreenCapture();
+  }
+
+  build() {
+    Row({ space: 20 }) {
+      Column() {
+        Image($r('app.media.ic_scan_search'))
+          .width(82)
+          .height(82)
+        Text($r('app.string.scan_search'))
+          .fontColor($r('app.color.c_8a8a8a'))
+          .fontSize(14)
+          .margin({ top: 4 })
+      }
+      .onClick(() => this.onScanSearchClick())
+
+      Column() {
+        Image($r('app.media.ic_read_search'))
+          .width(82)
+          .height(82)
+        Text($r('app.string.read_search'))
+          .fontColor($r('app.color.c_8a8a8a'))
+          .fontSize(14)
+          .margin({ top: 4 })
+      }
+      .onClick(async () => {
+        PipManager.getInstance().setPipManagerStyles()
+        this.onScreenReadSearchClick()
+      })
+    }
+    .margin({ left: 15 })
+    .width(Const.FULL_PERCENT)
+  }
+}
+
+/**
+ * 题库助手组件
+ * 提供下载和自定义题库功能入口
+ */
 @Component
 struct BankHelper {
-  downloadClick: () => void = () => {
+  onDownloadClick: () => void = () => {
+  }
+  onCustomQuestionClick: () => void = () => {
   }
 
   build() {
     Column() {
-      Row() {
+      Row({ space: Const.SPACE_4 }) {
         Image($r('app.media.ic_question_bank'))
           .width(18)
           .height(18)
         Image($r('app.media.ic_question_bank_txt'))
           .height(15)
       }
+      .width(Const.FULL_PERCENT)
       .alignItems(VerticalAlign.Top)
+      .justifyContent(FlexAlign.Start)
 
-      Image($r('app.media.ic_my_download'))
-        .width(90)
-        .height(90)
-        .onClick(() => this.downloadClick())
-
-    }.margin({ top: $r('app.float.float_15vp') })
+      Row({ space: Const.SPACE_5 }) {
+        Image($r('app.media.ic_my_download'))
+          .width(90)
+          .height(90)
+          .onClick(() => this.onDownloadClick())
+        Image($r('app.media.ic_custom_question'))
+          .width(90)
+          .height(90)
+          .onClick(() => this.onCustomQuestionClick())
+      }
+      .width(Const.FULL_PERCENT)
+      .margin(15)
+    }
+    .width(Const.FULL_PERCENT)
+    .margin({ top: $r('app.float.float_10vp') })
   }
 }
 
-//练习
+/**
+ * 练习助手组件
+ * 提供题库练习、错题练习、收藏练习三种练习模式入口
+ */
 @Component
 struct ExerciseHelper {
-  bankClick: () => void = () => {
+  onBankClick: () => void = () => {
   }
-  wrongClick: () => void = () => {
+  onWrongClick: () => void = () => {
   }
-  collectionClick: () => void = () => {
+  onCollectionClick: () => void = () => {
   }
 
   build() {
     Column() {
-      Row() {
+      Row({ space: Const.SPACE_4 }) {
         Image($r('app.media.ic_exercise'))
           .width(18)
           .height(18)
@@ -398,22 +715,31 @@ struct ExerciseHelper {
           .height(15)
       }
       .alignItems(VerticalAlign.Top)
+      .justifyContent(FlexAlign.Start)
+      .width(Const.FULL_PERCENT)
 
-      Row() {
+      Row({ space: Const.SPACE_5 }) {
         Image($r('app.media.ic_question_bank_exercise'))
           .width(90)
           .height(90)
-          .onClick(() => this.bankClick())
+          .onClick(() => this.onBankClick())
         Image($r('app.media.ic_fault_exercise'))
           .width(90)
           .height(90)
-          .onClick(() => this.wrongClick())
+          .onClick(() => this.onWrongClick())
         Image($r('app.media.ic_collect_exercise'))
           .width(90)
           .height(90)
-          .onClick(() => this.collectionClick())
+          .onClick(() => this.onCollectionClick())
       }
-
-    }.margin({ top: $r('app.float.float_15vp') })
+      .width(Const.FULL_PERCENT)
+      .margin(15)
+    }
+    .width(Const.FULL_PERCENT)
   }
+}
+
+@Builder
+export function HomePageBuilder() {
+  HomePage()
 }

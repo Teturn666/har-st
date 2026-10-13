@@ -1,9 +1,5 @@
 {
   "src": [
-    "pages/PointsPage",
-    "pages/MyHistoryPage",
-    "pages/MyInvitationPage",
-    "pages/BoundPage"
-
+    "pages/PointsPage"
   ]
 }

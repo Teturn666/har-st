@@ -1,26 +1,23 @@
-import { ArrayList, HashMap, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
-import { QuestionRes, questionTable } from 'db/Index'
-import { Logger, StringUtils } from 'utils/Index'
+import { ArrayList, LinkedList, List, TreeMap, TreeSet } from '@kit.ArkTS'
+import { QuestionRes, QuestionTable } from 'db/Index'
+import { GetAllSelectedUtil, Logger, PreferencesConstants, preferencesUtils, StringUtils } from 'utils/Index'
 import { SegmentEngine } from './SegmentEngine'
-import { taskpool } from '@kit.ArkTS';
 
 import { StringFilter } from './StringFilter'
-import { QuestionBean } from '../model/QuestionBean';
 import systemDateTime from '@ohos.systemDateTime';
 import SearchConstants from '../constants/SearchConstants'
+import { taskpool } from '@kit.ArkTS';
+import { searchInitCurrent, searchTask } from '../manage/ConcurrentManage'
+import { common } from '@kit.AbilityKit'
+import { relationalStore } from '@kit.ArkData'
+import DbConstants from 'db/src/main/ets/constants/DbConstants'
+import { SearchMapManage } from '../manage/SearchMapManage'
+import { MDataTextManage } from '../manage/MDataTextManage'
 
-// TODO taskpool涉及到参数序列化，SearchEngine会提示参数序列化失败
-// @Concurrent
-// async function initSearchEngine(engine:SearchEngine): Promise<boolean>{
-//   await engine.initWithThreadTask();
-//   return engine.mIsInitFinish
-// }
+const TAG = 'SearchEngine'
 
 export class SearchEngine {
   private static delegate = new SearchEngine()
-  private mDataTexts: HashMap<string, TreeSet<number>> = new TreeMap()
-  private questionList: ArrayList<QuestionRes> = new ArrayList<QuestionRes>()
-  private mDataSize = 0;
   mIsInitFinish = false
   private mStopWords = "\t1234567890【】，。,.、  ？?_;；：:…'\"\nABCD"
   private static MIN_SCORE = 0.001
@@ -32,159 +29,225 @@ export class SearchEngine {
     return SearchEngine.delegate
   }
 
-  // static initEngine(){
-  //   taskpool.execute(initSearchEngine,SearchEngine.getInstance()).then((res:object)=>{
-  //     Logger.debug("搜索引擎初始化结果："+res)
-  //   })
-  // }
+  /**
+   * 查找题目表数据库所有的数据
+   *
+   * @param context - 应用上下文对象，用于获取数据库连接
+   * @returns 返回包含所有题目数据的列表
+   */
+  private async findAllQuestionDataSync(context: Context, qid: number, type: number) {
+    let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
+    // let questions = await QuestionTable.getInstance()?.querySync(0)  // 旧
+    // 题库所对应的题库
+    let questions: QuestionRes[] = []
+    // 如果是删除逻辑
+    if (type === 2) {
+      questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
+      preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions.length, context)
+      // 清空文件内容
+      await SearchMapManage.getInstance().clearTreeMapFileContent(context, SearchConstants.SEARCH_FILE_ALL)
+    } else {
+      // 添加逻辑
+      questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, qid, false, false)
+      const oldMdataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0, context)
+      preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, oldMdataSize + questions.length, context)
+    }
+    let questionList: ArrayList<QuestionRes> = new ArrayList<QuestionRes>()
 
-  // //获取题目表
-  // public setQuestionTable(questionTable: QuestionTable) {
-  //   this.mQuestionTable = questionTable
-  // }
-
-  //查找题目表数据库所有的数据
-  private findAllQuestionData() {
-    questionTable?.query(0, (result: List<QuestionRes>) => {
-      Logger.info('题目表获取到的数据====>' + result.length + "====>" + result[0].id + result[0].questionCase +
-        "====>" + result[1].id + result[1].questionCase)
-      this.questionList.clear()
-      result.forEach((resultElement) => {
-        this.questionList.add(resultElement)
-      })
-      Logger.info('=====' + this.questionList.length)
-    }, true)
+    questions.forEach((resultElement) => {
+      questionList.add(resultElement)
+    })
+    return questionList
   }
 
   /**
-   * 查找题目表数据库所有的数据
-   * @param callback true-有数据 false-无数据
+   * 根据qidArr找到数据库里的数据进行搜索初始化(vip)
+   *
+   * @param context - 应用上下文对象，用于获取数据库连接
+   * @param qidArr - 题库ID数组
+   * @returns 返回包含所有题目数据的列表
    */
-  private async findAllQuestionDataSync(): Promise<boolean> {
-    let questions = await questionTable?.querySync(0, true) ?? []
-    this.questionList.clear()
+  async findQuestionInitEngine(context: Context, qidArr: number[]) {
+    let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
+    // 题库所对应的题库
+    let questions: QuestionRes[] = []
+    for (const qid of qidArr) {
+      let data = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, qid, false, false)
+      questions = questions.concat(data)
+    }
+    let questionList: ArrayList<QuestionRes> = new ArrayList<QuestionRes>()
 
+    // 重置mDataSize的大小
+    preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length, context)
     questions.forEach((resultElement) => {
-      this.questionList.add(resultElement)
+      questionList.add(resultElement)
     })
-    return this.questionList.length != 0
+
+    if (questionList && questionList.length > 0) {
+      let startTime = systemDateTime.getTime();
+      Logger.debug(TAG, "开始初始化引擎：" + startTime)
+      await this.initEngineTaskPool(context, questionList, SearchConstants.SEARCH_FILE_SOME)
+    }
+    console.log(TAG, "findQuestionInitEngine 初始化搜索引擎完成")
   }
+
 
   /**
    * 从数据库初始化数据并判断是否需要初始化搜索引擎
    */
-  private async indexFromDatabase(): Promise<boolean> {
-    let res = await this.findAllQuestionDataSync() ?? false
-    if (res) {
+  public async indexFromDatabase(context: common.Context, qid: number, type: number): Promise<void> {
+    let questionList = await this.findAllQuestionDataSync(context, qid, type)
+    if (questionList && questionList.length > 0) {
       let startTime = systemDateTime.getTime();
-      Logger.debug("开始初始化引擎：" + startTime)
-      await this.initEngine()
-      this.mIsInitFinish = true
-      Logger.debug('搜索引擎初始化完成' + (systemDateTime.getTime() - startTime) + "ms")
-      return true
-    } else {
-      this.mIsInitFinish = false
-      return false
+      Logger.debug(TAG, "开始初始化引擎：" + startTime)
+      await this.initEngineTaskPool(context, questionList, SearchConstants.SEARCH_FILE_ALL)
     }
+  }
+
+  private async initEngineTaskPool(context: Context, questionList: ArrayList<QuestionRes>,
+    fileName: string): Promise<void> {
+    // 此处需要从沙箱文件里取出变量
+    const mDataTexts =
+      await SearchMapManage.getInstance().loadMapFromFile(context, fileName) || new Map<string, Set<number>>();
+    const mStopWords = "\t1234567890【】，。,.、  ？?_;；：:…'\"\nABCD";
+    questionList.forEach((item) => {
+      // 处理题干分词
+      const questionStr = item.question;
+      if (!StringUtils.isNullOrEmpty(questionStr)) {
+        const wordList = SegmentEngine.getInstance().cut(questionStr); // 明确变量名
+        wordList.forEach((key: string) => {
+          if (mStopWords.includes(key)) {
+            return;
+          }
+
+          // 获取或初始化Set
+          const existingSet = mDataTexts.get(key) ?? new Set<number>();
+          existingSet.add(item.id);
+          mDataTexts.set(key, existingSet);
+        });
+      }
+
+      // 处理选项分词
+      const optionStr = item.option.join();
+      if (!StringUtils.isNullOrEmpty(optionStr)) {
+        const wordList = SegmentEngine.getInstance().cut(optionStr);
+        wordList.forEach((key: string) => {
+          if (mStopWords.includes(key)) {
+            return;
+          }
+
+          const existingSet = mDataTexts.get(key) ?? new Set<number>();
+          existingSet.add(item.id);
+          mDataTexts.set(key, existingSet);
+        });
+      }
+    });
+
+    // 存储进入沙箱文件
+    await SearchMapManage.getInstance().saveMapToFile(context, mDataTexts, fileName)
+    console.debug(TAG, "保存成功")
   }
 
   /**
    * 初始化搜索引擎
+   *
+   * @param context
+   * @param type 1添加题库 2删除题库
    */
-  private async initEngine() {
-    this.mDataTexts.clear()
-    this.mDataSize = this.questionList.length
+  async initWithThread(ctx: common.Context, qid: number, type: number) {
+    SearchEngine.getInstance().indexFromDatabase(ctx, qid, type)
+  }
 
-    this.questionList.forEach((item) => {
-      // 题目提取的文字内容
-      let str = item.question + item.option.join()
-      if (!StringUtils.isNullOrEmpty(str)) {
-        //分词
-        let list = SegmentEngine.getInstance().cut(str)
-        list.forEach((key: string) => {
-          if (this.mStopWords.search(key) != -1) {
-            return
-          }
-          let textList = new TreeSet<number>()
-          if (this.mDataTexts.hasKey(key)) {
-            textList = this.mDataTexts.get(key)
-          }
-          // textList.add(item.id)
-          this.mDataTexts.set(key, textList)
-        })
+
+  /**
+   * 初始化搜索引擎
+   * @param context
+   */
+  async initWithThreadTask(qid: number, type: number) {
+    try {
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(searchInitCurrent, getContext(this), qid, type);
+      await taskpool.execute(task) as number;
+
+      // 判断是否为全选,如果是全选设置mdataText给唯一变量
+      if (GetAllSelectedUtil.isUserBankAllSelected()) {
+        const mdataText = await SearchMapManage.getInstance()
+          .loadSharedArrayBufferFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL)
+        MDataTextManage.getInstance().saveDataText(mdataText)
       }
-    })
+      SearchEngine.getInstance().mIsInitFinish = true
+    } catch (error) {
+      SearchEngine.getInstance().mIsInitFinish = false
+      Logger.error(`TaskPool 执行失败: ${error}`);
+    }
   }
 
-  //TODO 这个方法还得完善，差单线程
-  private initWithThread() {
-    //TODO 开启单线程
-    // let task = new taskpool.Task(this.initWithThreadTask())
-    // taskpool.execute(task, taskpool.Priority.HIGH).then(() => {
-    //
-    // })
-
-    this.initWithThreadTask()
-  }
-
-  // @Concurrent
-  async initWithThreadTask(): Promise<boolean> {
-    this.mIsInitFinish = false
-    return await this.indexFromDatabase()
-    // this.mIsInitFinish = true
-  }
-
-
-  //TODO 差单线程，异步获取最匹配的一个问题
   /**
    * 返回一个最匹配的结果
    * @param qStr 搜索内容
    * @returns 返回结果
    */
-  public async queryTextWithIndexInThread(qStr: string): Promise<QuestionRes | null> {
-    if (!this.mIsInitFinish) {
-      Logger.error("搜索引擎初还未初始化完成")
-      return null
-    }
+  public async queryTextWithIndexInThread(qStr: string, mDataText: SharedArrayBuffer): Promise<QuestionRes | null> {
     try {
-      let id = await SearchEngine.getInstance().searchTextWithIndex(qStr)
-      if (id === -1) {
-        return null
-      } else {
-        let result = await questionTable?.querySync(id, false) ?? []
-        Logger.info('题目表获取到的数据====>' + result.length)
-        if (result.length > 0) {
-          return result[0]
-        }
-      }
-    } catch (e) {
+      // 在这里读取内容
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(searchTask, getContext(this), qStr, mDataText);
+      const res = await taskpool.execute(task) as QuestionRes;
+      return res
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
       return null
     }
-
-    return null
   }
 
-  private async searchTextWithIndex(q: string): Promise<number> {
+  async searchTextWithIndex(q: string, context: common.Context,
+    mDataText: SharedArrayBuffer): Promise<QuestionRes | null> {
     let mMatchScores = new TreeMap<number, number>()
+
+    let mDataSize: number = 0
+    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected(context)
+    if (isAllSelect) {
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0, context)
+    } else {
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, 0, context)
+    }
+    console.debug('ConcurrentManage', "是否全选" + isAllSelect)
+    console.debug('ConcurrentManage', "mDataSize =" + mDataSize)
+
+    if (mDataSize === 0) {
+      // 查询数据库，获取题目数量
+      let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
+      const questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
+      if (isAllSelect) {
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions?.length, context)
+      } else {
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length, context)
+      }
+      mDataSize = questions?.length
+    }
+
+    let mDataTextData = SearchMapManage.getInstance().parseDataFromSharedBuffer(mDataText)
+    // 取出数据
     if (!StringUtils.isNullOrEmpty(q)) {
       let list = SegmentEngine.getInstance().cut(q)
-      list.forEach((key: string) => {
-        if (this.mStopWords.search(key) != -1) {
-          return
+      for (const key of list) {
+        if (this.mStopWords.search(key) !== -1) {
+          continue;
         }
-        let ids = this.mDataTexts.get(key)
-        if (ids != null && ids.length > 0) {
-          ids.forEach((id: number) => {
-            let score = mMatchScores.get(id) == null ? 0.0 : mMatchScores.get(id)
-
-            score += Math.log10(this.mDataSize / ids.length)
-            mMatchScores.set(id, score)
-          })
-
+        // 等待查询结果
+        const ids = mDataTextData?.[key];
+        if (ids?.length === 0) {
+          continue; // 无有效 id 时跳过
         }
-
-      })
+        // 更新匹配分数
+        ids && ids.forEach((id: number) => {
+          const currentScore = mMatchScores.get(id) ?? 0;
+          const newScore = currentScore + Math.log10(mDataSize / ids.length);
+          mMatchScores.set(id, newScore);
+        });
+      }
     }
+
     //获取 top5
     let topN = 5
     let topList = new LinkedList<TopItem>()
@@ -216,86 +279,52 @@ export class SearchEngine {
           topList.removeLast()
         }
       }
-
     })
+
     //处理 top5
     let maxVal = -1
-    let id = -1
+    let bestQuestion: QuestionRes | null = null
     let maxLcs = -1
 
+    // 只获取一次数据库连接
+    let rdbStore = await relationalStore.getRdbStore(context, DbConstants.STORE_CONFIG);
+
+    // topList 一直为空
     for (let topListElement of topList) {
-      let result = await questionTable?.querySync(topListElement.id, false) ?? []
-      Logger.info('题目表获取到的数据====>' + result.length)
+      Logger.info(TAG, "resultSet topList");
+      let result = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, topListElement.id, true, false) ?? [];
+      Logger.info(TAG, '题目表获取到的数据====>' + result.length)
+
       let qs: QuestionRes | null = null;
       if (result.length > 0) {
         qs = result[0]
       }
+
       let ss = ""
       if (qs != null) {
         ss = qs.question + qs.answer
       }
+
       let lcsVal = this.lcs(q, ss)
       if (maxLcs < lcsVal) {
         maxLcs = lcsVal
       }
+
       let score = topListElement.score * lcsVal * 1.0 / ss.length
       if (score > maxVal) {
-        id = topListElement.id
+        bestQuestion = qs
         maxVal = score
-      } else if (score == maxVal && topListElement.id > id) {
-        id = topListElement.id
+      } else if (score == maxVal && topListElement.id > (bestQuestion?.id || -1)) {
+        bestQuestion = qs
         maxVal = score
       }
     }
 
-    // Logger.info("max score:" + maxVal + ", max lcs:" + maxLcs);
     // TODO 这个系数需要根据情况调整
     if (maxVal <= 0.1) {
-      return -1
+      return null
     }
-    return id
-  }
-
-  /**
-   * 获取题目拼接的数据，读屏搜题会用到
-   * @param q 检索字符串
-   * @returns 结果
-   */
-  private async fetchTop1Question(q: string): Promise<Array<QuestionBean> | null> {
-    if (!this.mIsInitFinish) {
-      Logger.error("搜索引擎初还未初始化完成")
-      return null;
-    }
-    let qStr = StringFilter.formatString(q);
-    let id = await this.searchTextWithIndex(qStr);
-    let questions = new Array<QuestionBean>()
-    let result = await questionTable?.querySync(id, false) ?? []
-    Logger.info('题目表获取到的数据====>' + result.length)
-    if (result.length > 0 && result[0] != null) {
-      let record: QuestionRes = result[0]
-      const qItem = new QuestionBean()
-      qItem.q = "【" + record.answer + "】" + record.question
-      let options = record.option
-      options.forEach((optionsElement) => {
-        qItem.a.add(optionsElement)
-      })
-      questions.push(qItem)
-    }
-    return questions
-  }
-
-  /**
-   * 获取拼接后的题目数据（读屏搜题）
-   * @param q
-   * @param callback
-   */
-  async queryTextWithIndexInThreadTwo(q: string): Promise<Array<QuestionBean>> {
-    try {
-      let questions = await this.fetchTop1Question(q) ?? []
-      return questions;
-    } catch (e) {
-      return []
-    }
+    return bestQuestion
   }
 
   /**
@@ -312,18 +341,18 @@ export class SearchEngine {
     }
   }
 
-  //查找相似题目
+  // 拍照搜题-本地题库-查找相似题目
   private async fetchQuestions(q: string): Promise<QuestionRes[]> {
-    if (!this.mIsInitFinish) {
-      Logger.error("搜索引擎初还未初始化完成")
-      return [];
-    }
+    // if (!this.mIsInitFinish) {
+    //   Logger.error("搜索引擎初还未初始化完成")
+    //   return [];
+    // }
     let qStr = StringFilter.formatString(q)
     let ids = await this.searchQuestionsId(qStr)
     let questions = new Array<QuestionRes>()
 
     for (let idsElement of ids) {
-      let result = await questionTable?.querySync(idsElement, false) ?? []
+      let result = await QuestionTable.getInstance()?.querySync(idsElement, true, false) ?? []
       Logger.info('题目表获取到的数据====>' + result.length)
       if (result.length > 0) {
         questions.push(result[0])
@@ -339,7 +368,36 @@ export class SearchEngine {
    * @returns 检索相似的题目的ID
    */
   private async searchQuestionsId(q: string): Promise<List<number>> {
+    let mDataSize: number = 0
     let mMatchScores = new TreeMap<number, number>()
+    // 这里判断是否为全部题库
+    let mDataText: Map<string, Set<number>>
+    let isAllSelect = GetAllSelectedUtil.isUserBankAllSelected()
+    if (isAllSelect) {
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, 0)
+      mDataText =
+        await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_ALL) ||
+        new Map<string, Set<number>>()
+    } else {
+      mDataSize = preferencesUtils.getNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, 0)
+      mDataText =
+        await SearchMapManage.getInstance().loadMapFromFile(getContext(this), SearchConstants.SEARCH_FILE_SOME) ||
+        new Map<string, Set<number>>()
+    }
+
+    // 存在老用户的首选项文件为search,此时需要切换到myStore
+    if (mDataSize === 0) {
+      // 查询数据库，获取题目数量
+      let rdbStore = await relationalStore.getRdbStore(getContext(this), DbConstants.STORE_CONFIG);
+      const questions = await QuestionTable.getInstance()?.querySyncTaskPool(rdbStore, 0)
+      if (isAllSelect) {
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_ALL, questions?.length)
+      } else {
+        preferencesUtils.putNumber(PreferencesConstants.SEARCH_DATASIZE_SOME, questions?.length)
+      }
+      mDataSize = questions?.length
+    }
+
     if (!StringUtils.isNullOrEmpty(q)) {
       //分词
       let list = SegmentEngine.getInstance().cut(q)
@@ -347,11 +405,11 @@ export class SearchEngine {
         if (this.mStopWords.search(key) != -1) {
           return
         }
-        let ids = this.mDataTexts.get(key)
-        if (ids != null && ids.length > 0) {
+        let ids = mDataText.get(key)!
+        if (ids !== undefined && ids !== null && ids.size > 0) {
           ids.forEach((id: number) => {
             let score = mMatchScores.get(id) == null ? 0.0 : mMatchScores.get(id)
-            score += Math.log10(this.mDataSize / ids.length)
+            score += Math.log10(mDataSize / ids.size)
             mMatchScores.set(id, score)
           })
         }
@@ -396,7 +454,7 @@ export class SearchEngine {
     let resList = new List<TopItem>()
     let qsCache = new TreeSet<string>()
     for (let item of topList) {
-      let result = await questionTable?.querySync(item.id, false) ?? [];
+      let result = await QuestionTable.getInstance()?.querySync(item.id, true, false) ?? [];
       Logger.info('题目表获取到的数据====>' + result.length)
       if (result.length > 0) {
         let qs: QuestionRes = result[0]
@@ -412,7 +470,7 @@ export class SearchEngine {
         let lcsVal = this.lcs(q, ss)
         let score = item.score * lcsVal * 1.0 / ss.length
         let topItem = new TopItem()
-        // topItem.id = qs.id
+        topItem.id = qs.id
         topItem.score = score
         resList.add(item)
       }
@@ -429,7 +487,6 @@ export class SearchEngine {
     }
     return ids
   }
-
 
   //计算两个字符串最长公共子序列
   private lcs(s1: string, s2: string): number {

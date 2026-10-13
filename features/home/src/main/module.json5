@@ -4,11 +4,9 @@
     "type": "shared",
     "description": "$string:module_desc",
 //    "mainElement": "HomeAbility",
-    "routerMap": "$profile:route_map",
+    "routerMap": "$profile:router_map",
     "deviceTypes": [
-      "phone",
-      "tablet",
-      "2in1"
+      "phone"
     ],
     "requestPermissions": [
       {

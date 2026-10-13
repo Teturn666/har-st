@@ -1,9 +1,9 @@
-import { questionBankTable, questionTable, BankListRes, QuestionRes } from 'db'
-import { SearchDecryptUtils } from 'search'
-import { Logger, StringUtils } from 'utils'
-import { plainToClass } from 'class-transformer'
+import { Logger } from 'utils'
 import { PointsNet } from '../service/PointsNet'
 import CheckDataRes, { PointEventRes } from './CheckDataRes'
+import { ExchangeRes } from './ExchangeRes'
+import { promptAction } from '@kit.ArkUI'
+import { UserDetailRes } from './UserDetailRes'
 
 const TAG = '[PointsModel]'
 
@@ -161,6 +161,86 @@ export class PointsModel {
     } catch (e) {
       Logger.info(TAG, 'err--------' + e)
       return ''
+    }
+  }
+
+  //获取积分兑换列表
+  public async getExchangeList(): Promise<ExchangeRes[]> {
+    try {
+      let data = await this.PointsNet.getExchangeList()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return []
+    }
+  }
+
+  //积分兑换
+  public async getExchangeVip(id: string): Promise<string> {
+    try {
+      const data = await this.PointsNet.getExchangeVip(id)
+      return data
+    } catch (e) {
+      if (e === '积分不足' || e?.toString().includes('积分不足')) {
+        promptAction.showToast({ message: '积分不足，无法兑换会员', duration: 2000 })
+      } else {
+        Logger.info(TAG, '兑换失败: ' + e)
+      }
+      return ''
+    }
+  }
+
+  //查询还有多少次看广告的机会 /m/point/ad/count
+  public async getAdCount(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getAdCount()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  //看广告领积分 /m/point/ad
+  public async getAdPoint(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getAdPoint()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  //先判断是否还能跳转应用商店 /m/point/score/select
+  public async getScoreSelect(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getScoreSelect()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  // 应用商店加分接口：/m/point/score/action
+  public async getScoreAction(): Promise<string> {
+    try {
+      let data = await this.PointsNet.getScoreAction()
+      return data
+    } catch (e) {
+      Logger.info(TAG, 'err--------' + e)
+      return ''
+    }
+  }
+
+  //获取用户信息
+  public async getUser(): Promise<UserDetailRes> {
+    try {
+      let data = await this.PointsNet.getUser()
+      return data
+    } catch (e) {
+      return new UserDetailRes()
     }
   }
 }

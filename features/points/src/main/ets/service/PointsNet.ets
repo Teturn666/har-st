@@ -1,68 +1,16 @@
 import { PointsTrigger } from './PoinsTrigger';
 import { BaseResponse, HttpUtils } from 'network/Index';
-import axios, { AxiosResponse, AxiosProgressEvent } from '@ohos/axios';
-
+import { AxiosResponse } from '@ohos/axios';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { BankListRes } from 'db'
-import { Logger } from 'utils'
-import fs, { ReadTextOptions } from '@ohos.file.fs';
 import CheckDataRes, { PointEventRes } from '../model/CheckDataRes';
-
+import { ExchangeRes } from '../model/ExchangeRes';
+import { PreferencesConstants, preferencesUtils } from 'utils'
+import { UserRes } from '../model/UserRes';
+import { UserDetailRes } from '../model/UserDetailRes';
 
 const TAG = '[PointsNet]'
 
 export class PointsNet {
-  // //搜索题目
-  // public getSearchQuestionList(content: string, pageNo: string): Promise<SearchQuestionRes[]> {
-  //   return new Promise((resolve: Function, reject: Function) => {
-  //     HttpUtils.getInstance()
-  //       .get(BankTrigger.HOME_SEARCH_TITLE_LIST_URL, {
-  //         params: {
-  //           "word": content,
-  //           "pageNum": pageNo,
-  //           "pageSize": "10"
-  //         }
-  //       })
-  //       .then((res: AxiosResponse<BaseResponse<SearchQuestionRes[]>>) => {
-  //         const code = res.data.code;
-  //         if (code === "0" && res.data.data) {
-  //           resolve(res.data.data);
-  //         } else {
-  //           reject(new Error(`Request failed with code: ${code}`));
-  //         }
-  //       })
-  //       .catch((error: BusinessError) => {
-  //         reject(error);
-  //       });
-  //   });
-  // }
-  //
-  // //搜索题库
-  // public getSearchBankList(content: string, pageNo: number): Promise<BankListRes[]> {
-  //   return new Promise((resolve: Function, reject: Function) => {
-  //     HttpUtils.getInstance()
-  //       .get(BankTrigger.HOME_SEARCH_BANK_LIST_URL, {
-  //         params: {
-  //           "word": content,
-  //           "pageNo": pageNo,
-  //           "pageSize": 10
-  //         }
-  //       })
-  //       .then((res: AxiosResponse<BaseResponse<BankListRes[]>>) => {
-  //         const code = res.data.code;
-  //         if (code === "0" && res.data.data) {
-  //           resolve(res.data.data);
-  //         } else {
-  //           reject(new Error(`Request failed with code: ${code}`));
-  //         }
-  //       })
-  //       .catch((error: BusinessError) => {
-  //         reject(error);
-  //       });
-  //   });
-  // }
-  //
-
   // 获取签到积分列表
   public getListSignMap(vib: boolean): Promise<CheckDataRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -152,6 +100,7 @@ export class PointsNet {
       })
     })
   }
+
   // 积分历史增加
   public getHistoryPointIncrease(): Promise<PointEventRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -168,6 +117,7 @@ export class PointsNet {
       })
     })
   }
+
   // 积分历史消耗
   public getHistoryPointConsumer(): Promise<PointEventRes[]> {
     return new Promise((resolve: Function, reject: Function) => {
@@ -234,9 +184,9 @@ export class PointsNet {
   }
 
   // 绑定邀请码
-  public submitBoundCode(codeText:string): Promise<string> {
+  public submitBoundCode(codeText: string): Promise<string> {
     return new Promise((resolve: Function, reject: Function) => {
-      HttpUtils.getInstance().get(PointsTrigger.URL_INVITE_SUBMIT,{
+      HttpUtils.getInstance().get(PointsTrigger.URL_INVITE_SUBMIT, {
         params: {
           code: codeText
         }
@@ -245,15 +195,146 @@ export class PointsNet {
           let code = res.data.code
           if (code === "0") {
             resolve("done");
-          } else if(code === "300"){
-              resolve("您已注册超过30天，无法填写邀请码")
-          }
-          else {
+          } else if (code === "300") {
+            resolve("您已注册超过30天，无法填写邀请码")
+          } else {
             resolve("绑定失败，请检查邀请码是否正确")
             // reject("data is null");
           }
         }).catch((error: BusinessError) => {
         reject(error);
+      })
+    })
+  }
+
+  //获取积分兑换列表
+  public getExchangeList(): Promise<ExchangeRes[]> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_EXCHANGE_RULES)
+        .then((res: AxiosResponse<BaseResponse<ExchangeRes[]>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  //积分兑换
+  public getExchangeVip(id: string): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_USE_VIP, {
+        params: {
+          id: id
+        }
+      })
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else if (code === "300") {
+            reject("积分不足");
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  //查询还有多少次看广告的机会 /m/point/ad/count
+  public getAdCount(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_AD_COUNT)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.msg);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  //看广告领积分 /m/point/ad
+  public getAdPoint(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_AD)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.msg);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  //先判断是否还能跳转应用商店
+  public getScoreSelect(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_SCORE_SELECT)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  // 应用商店加分接口：/m/point/score/action
+  public getScoreAction(): Promise<string> {
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getInstance().get(PointsTrigger.URL_POINT_SCORE_ACTION)
+        .then((res: AxiosResponse<BaseResponse<string>>) => {
+          let code = res.data.code
+          if (code === "0") {
+            resolve(res.data.data);
+          } else {
+            reject("data is null");
+          }
+        }).catch((error: BusinessError) => {
+        reject(error);
+      })
+    })
+  }
+
+  //获取用户信息
+  public getUser(): Promise<UserDetailRes> {
+    let name = preferencesUtils.getString(PreferencesConstants.SP_NICK_NAME)
+    let openid = preferencesUtils.getString(PreferencesConstants.SP_OPEN_ID)
+    let unionid = preferencesUtils.getString(PreferencesConstants.SP_UNION_ID)
+    let udid = preferencesUtils.getString(PreferencesConstants.SP_UUID)
+    let data = "api=updateuser&tag=ksst&name=" + name + "&openid=" + openid
+      + "&unionid=" + unionid + "&id=" + udid
+    return new Promise((resolve: Function, reject: Function) => {
+      HttpUtils.getVipInstance()
+        .post(PointsTrigger.PAY_PRICE_URL, data)
+        .then((res: AxiosResponse<UserRes>) => {
+          let data = res.data.data
+          if (res.data.errno === 0) {
+            resolve(data)
+          } else {
+            reject("data is null")
+          }
+        }).catch((error: BusinessError) => {
+        reject(error)
       })
     })
   }

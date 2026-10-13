@@ -10,9 +10,8 @@ class QuestionWrongTable {
     new ChRdb(DbConstants.QUESTION_WRONG_TABLE.tableName, DbConstants.QUESTION_WRONG_TABLE.sqlCreate,
       DbConstants.QUESTION_WRONG_TABLE.columns);
 
-  constructor(callback: Function = () => {
-  }) {
-    this.accountTable.getRdbStore(callback);
+  constructor() {
+
   }
 
   getRdbStore(callback: Function = () => {
@@ -30,10 +29,26 @@ class QuestionWrongTable {
     return await this.accountTable.insertDataAwait(valueBucket);
   }
 
-  deleteData(account: QuestionRes, callback: Function) {
+ async deleteData(account: QuestionRes, callback: Function, rdb?: relationalStore.RdbStore) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_WRONG_TABLE.tableName);
     predicates.equalTo('qId', account.qId);
-    this.accountTable.deleteData(predicates, callback);
+    if (rdb) {
+     await this.accountTable.deleteDataTask(rdb, predicates);
+    } else {
+      this.accountTable.deleteData(predicates, callback);
+    }
+  }
+
+  // 新增方法：通过 questionID 删除错题记录
+  async deleteDataByQuestionID(questionID: number): Promise<void> {
+    try {
+      let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_WRONG_TABLE.tableName);
+      predicates.equalTo('questionID', questionID);
+      const affectedRows = await this.accountTable.deleteDataAwait(predicates);
+      Logger.info(`已删除错题表中 questionID=${questionID} 的记录，影响行数: ${affectedRows}`);
+    } catch (err) {
+      Logger.error(`删除 questionID=${questionID} 的错题记录失败: ${err}`);
+    }
   }
 
   updateData(account: QuestionRes, callback: Function) {
@@ -43,13 +58,14 @@ class QuestionWrongTable {
     this.accountTable.updateData(predicates, valueBucket, callback);
   }
 
-  async querySync(id: number, isAll: boolean = true): Promise<Array<QuestionRes>> {
+  private async executeQuestionWrongQuery(rdbStore: relationalStore.RdbStore, id: number, isAll: boolean = true) {
     let predicates = new relationalStore.RdbPredicates(DbConstants.QUESTION_WRONG_TABLE.tableName);
+
     if (!isAll) {
       predicates.equalTo('qId', id);
     }
 
-    let resultSet = await this.accountTable.querySync(predicates)
+    let resultSet = await this.accountTable.querySync(rdbStore, predicates)
     if (resultSet == null) {
       return []
     } else {
@@ -63,14 +79,16 @@ class QuestionWrongTable {
           const result: QuestionRes[] = [];
           for (let i = 0; i < count; i++) {
             let tmp: QuestionRes = {
+              id: -1,
               qId: 0,
+              qName: '',
               question: '',
               answer: '',
               option: [],
               wrongAnswer: '',
-              questionID:0
+              questionID: 0
             };
-            // tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
+            tmp.id = resultSet.getDouble(resultSet.getColumnIndex('id'));
             tmp.qId = resultSet.getDouble(resultSet.getColumnIndex('qId'));
             tmp.question = resultSet.getString(resultSet.getColumnIndex('question'));
             tmp.answer = resultSet.getString(resultSet.getColumnIndex('answer'));
@@ -89,6 +107,17 @@ class QuestionWrongTable {
       }
     }
   }
+
+  // 重构后的 QuestionCollection 查询函数
+  async querySync(id: number, isAll: boolean = true): Promise<Array<QuestionRes>> {
+    let rdb = await relationalStore.getRdbStore(getContext(), DbConstants.STORE_CONFIG)
+    return this.executeQuestionWrongQuery(rdb, id, isAll);
+  }
+
+  async querySyncTaskPool(rdbStore: relationalStore.RdbStore, id: number,
+    isAll: boolean = true): Promise<Array<QuestionRes>> {
+    return this.executeQuestionWrongQuery(rdbStore, id, isAll);
+  }
 }
 
 function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
@@ -98,6 +127,7 @@ function generateBucket(account: QuestionRes): relationalStore.ValuesBucket {
   obj.answer = account.answer;
   obj.wrongAnswer = account.wrongAnswer;
   obj.option = (account.option ?? []).join(DbConstants.SEPARATOR)
+  obj.questionID = account.questionID;
   return obj;
 }
 

@@ -3,6 +3,14 @@
     {
       "name": "app_name",
       "value": "KSST"
+    },
+    {
+      "name": "app_camera",
+      "value": "获取相机用于识别文本"
+    },
+    {
+      "name": "app_imagevideo",
+      "value": "读取媒体文件用于展示缩略图"
     }
   ]
 }

@@ -4,7 +4,7 @@ export { QuestionRes } from './src/main/ets/model/QuestionRes'
 
 export { questionBankTable } from './src/main/ets/table/QuestionBankTable'
 
-export { questionTable } from './src/main/ets/table/QuestionTable'
+export { QuestionTable } from './src/main/ets/table/QuestionTable'
 
 export { questionWrongTable } from './src/main/ets/table/QuestionWrongTable'
 

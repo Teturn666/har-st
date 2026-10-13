@@ -1,0 +1,10 @@
+{
+  "routerMap": [
+    {
+      "name": "webPage",
+      "pageSourceFile": "src/main/ets/pages/ChWebPage.ets",
+      "buildFunction": "ChWebPageBuilder"
+    }
+
+  ]
+}

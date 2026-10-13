@@ -2,7 +2,7 @@
   "name": "bank",
   "version": "1.0.0",
   "description": "Please describe the basic information.",
-  "main": "",
+  "main": "Index.ets",
   "author": "",
   "license": "",
   "dependencies": {
@@ -11,6 +11,8 @@
     "search": "file:../../commons/search",
     "encryption": "file:../../commons/encryption",
     "db": "file:../../commons/db",
+    "widget": "file:../../commons/widget",
+    "@csj/openadsdk": "6.9.1"
   }
 }
 

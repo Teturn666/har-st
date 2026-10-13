@@ -1,5 +1,14 @@
-import { BankListRes, questionBankTable, questionWrongTable, questionCollectionTable,questionTable, QuestionRes } from 'db'
+import {
+  BankListRes,
+  questionBankTable,
+  questionWrongTable,
+  questionCollectionTable,
+  QuestionTable,
+  QuestionRes
+} from 'db'
 import { LoadingStatus, Logger } from 'utils/Index'
+import { taskpool } from '@kit.ArkTS'
+import { deleteTableTask } from 'bank/src/main/ets/manage/ConcurrentManage'
 
 const TAG = '[HomeModel]'
 
@@ -18,7 +27,16 @@ export class HomeModel {
     return HomeModel.instance
   }
 
-
+  //删除数据库
+  deleteTable(qid: number) {
+    try {
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(deleteTableTask, getContext(this), qid);
+      taskpool.execute(task);
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
+    }
+  }
 
   //获取数据库下载的题库
   public async getBankList(): Promise<BankListRes[]> {
@@ -27,9 +45,10 @@ export class HomeModel {
     Logger.info(TAG, '下载的题库--------' + bankResultList.length)
     return bankResultList
   }
+
   //获取题库中的题目
-  public async getBankQuestionList(qid:number): Promise<QuestionRes[]> {
-    let resultList = await questionTable.querySync(qid,false) ?? [];
+  public async getBankQuestionList(qid: number): Promise<QuestionRes[]> {
+    let resultList = await QuestionTable.getInstance().querySync(qid, false, false) ?? [];
 
     Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
     return resultList
@@ -79,9 +98,65 @@ export class HomeModel {
     return collectionResultList
   }
 
+  //删除数据库收藏的题目
+  public async deleteDataByQuestionID(questionID: number): Promise<void> {
+    let dataByQuestionID = await questionCollectionTable.deleteDataByQuestionID(questionID);
+    return dataByQuestionID
+  }
+
+  //插入数据库收藏的题目
+  public async collectInserDataAwait(questionDb: QuestionRes): Promise<void> {
+    await questionCollectionTable.insertDataAwait(questionDb);
+  }
+
+  //插入数据库错题的题目
+  public async WrongInserDataAwait(questionDb: QuestionRes): Promise<void> {
+    await questionWrongTable.insertDataAwait(questionDb);
+  }
+
   //查询题库信息
-  public async queryQuestionBankList(qId:number): Promise<BankListRes[]> {
+  public async queryQuestionBankList(qId: number): Promise<BankListRes[]> {
     let QuestionBankList = await questionBankTable.querySync(qId, false) ?? [];
     return QuestionBankList
   }
+
+  /**
+   * 根据 qid 获取题库信息
+   */
+  async getBankListById(qid: number): Promise<BankListRes[]> {
+    return await questionBankTable.querySync(qid, false);
+  }
+
+  /**
+   * 更新题库进度位置
+   */
+  async updateBankPosition(bankInfo: BankListRes): Promise<void> {
+    return new Promise((resolve, reject) => {
+      questionBankTable.updateData(bankInfo, (ret: boolean) => {
+        if (ret) {
+          console.log('题库进度更新成功');
+          resolve();
+        } else {
+          console.error('题库进度更新失败');
+          reject(new Error('更新失败'));
+        }
+      });
+    });
+  }
+
+  //更新题目
+  async updateQuestion(questionDb: QuestionRes): Promise<void> {
+    return new Promise((resolve, reject) => {
+      QuestionTable.getInstance().updateData(questionDb, (ret: boolean) => {
+        if (ret) {
+          console.log('题目更新成功');
+          resolve();
+        } else {
+          console.error('题目更新失败');
+          reject(new Error('更新失败'));
+        }
+      });
+    });
+  }
+
 }

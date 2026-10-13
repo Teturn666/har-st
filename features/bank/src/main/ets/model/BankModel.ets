@@ -1,13 +1,15 @@
-import { questionBankTable, questionTable, BankListRes, QuestionRes } from 'db'
-import { SearchDecryptUtils } from 'search'
+import { questionBankTable, QuestionTable, BankListRes, QuestionRes, } from 'db'
+import { SearchDecryptUtils, SearchEngine } from 'search'
 import { Logger, StringUtils } from 'utils'
 import { plainToClass } from 'class-transformer'
 import { BankNet } from '../service/BankNet'
 import { BankCategory } from './BankCategory'
 import { BankQuestionRes } from './BankQuestionRes'
 import { SearchQuestionRes } from './SearchQuestionRes'
+import { taskpool } from '@kit.ArkTS'
+import { deleteTableTask } from '../manage/ConcurrentManage'
 
-const TAG = '[BankModel]'
+const TAG = 'BankModel'
 
 
 @Observed
@@ -27,23 +29,34 @@ export class BankModel {
   }
 
   //删除数据库
-  async deleteTable(qid: number) {
-    //删除相应的题库表
-    let bankResultList = await questionBankTable.querySync(qid, false) ?? [];
-    if (bankResultList.length > 0) {
-      let bankRes = bankResultList[0]
-      questionBankTable.deleteData(bankRes, (resFlag: boolean) => {
-        Logger.info(TAG, '题库deleteData--------' + resFlag)
-      })
+  deleteTable(qid: number) {
+    try {
+      // 创建任务并在 TaskPool 中执行
+      const task: taskpool.Task = new taskpool.Task(deleteTableTask, getContext(this), qid);
+      taskpool.execute(task);
+    } catch (error) {
+      Logger.error(`TaskPool 执行失败: ${error}`);
     }
-    //删除相应的题目表
-    let bankQaResultList = await questionTable.querySync(qid, false) ?? [];
-    if (bankQaResultList.length > 0) {
-      bankQaResultList.forEach((item) => {
-        questionTable.deleteData(item, (resFlag: boolean) => {
-          Logger.info(TAG, '题目deleteData--------' + resFlag)
-        })
-      })
+  }
+
+  //更新题库
+  async refreshBank(bank: BankListRes): Promise<boolean> {
+    await this.deleteTable(bank.qid)
+    const okdata = await this.downLoadBank(bank)
+    return okdata
+  }
+
+  //获取数据库题库版本
+  async getLocalVersion(qid: number): Promise<string | null> {
+    try {
+      const dbResult = await questionBankTable.querySync(qid, false) ?? [];
+      if (dbResult.length > 0) {
+        return dbResult[0].version; // Return the version of the first item
+      }
+      return null;
+    } catch (error) {
+      Logger.error(TAG, `Error querying local version for qid ${qid}: ${error}`);
+      return null;
     }
   }
 
@@ -160,6 +173,58 @@ export class BankModel {
     }
   }
 
+  //获取题库中的题目
+  public async getBankQuestionList(qid: number): Promise<QuestionRes[]> {
+    let resultList = await QuestionTable.getInstance().querySync(qid, false, false) ?? [];
+
+    Logger.info(TAG, '题库的题目--------' + JSON.stringify(resultList))
+    return resultList
+  }
+
+  //题库详情介绍
+  public async getBankDesc(qid: number, fileUrl: string): Promise<BankQuestionRes[]> {
+    let questionRes = await QuestionTable.getInstance().queryCountSync(qid)
+    if (questionRes.length > 0) {
+      let questionList: Array<BankQuestionRes> = []
+      for (let i = 0; i < questionRes.length; i++) {
+        let item = questionRes[i]
+        let res = new BankQuestionRes()
+        res.qId = item.qId.toString()
+        res.q = item.question
+        res.a = item.option
+        res.ans = item.answer
+        questionList.push(res)
+      }
+      return questionList
+    } else {
+      return await this.getNetBankQuestion(fileUrl)
+    }
+  }
+
+  //走网络请求获取题库的前10道题
+  private async getNetBankQuestion(fileUrl: string): Promise<BankQuestionRes[]> {
+    try {
+      let subTxtName = StringUtils.subUrl(fileUrl)
+      let fileContent = await this.bankNet.getBankDesc(subTxtName);
+      let suffix = StringUtils.subLastIndex(subTxtName, '.')
+      let trStr = await SearchDecryptUtils.getTrText(suffix, fileContent, subTxtName)
+      let lines = trStr.split('\n')
+      let questionList: Array<BankQuestionRes> = []
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i]
+        if (line !== '') {
+          const questionRes = plainToClass(BankQuestionRes, JSON.parse(line))
+          console.info('instance:', JSON.stringify(questionRes))
+          questionList.push(questionRes)
+        }
+      }
+      return questionList
+    } catch (e) {
+      Logger.error(TAG, `Error in getSearchBankList: ${e}`);
+      return []
+    }
+  }
+
   //点击题库下载的操作
   public async downLoadBank(bankListRes: BankListRes): Promise<boolean> {
     try {
@@ -177,9 +242,8 @@ export class BankModel {
       Logger.info(TAG, 'trStr--------' + trStr)
       //转换成 题目的对象
       let lines = trStr.split('\n')
-      // for (let line of lines) {
-        for (let i = 0; i < lines.length; i++) {
-          let line =  lines[i]
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i]
 
         if (line !== '') {
           const questionRes = plainToClass(BankQuestionRes, JSON.parse(line))
@@ -187,23 +251,39 @@ export class BankModel {
           //题目数据插入存储
           let questionDb = new QuestionRes()
           questionDb.qId = qid
+          questionDb.qName = bankListRes.name
           questionDb.question = questionRes.q
           questionDb.answer = questionRes.ans
           questionDb.option = questionRes.a
-          questionDb.questionID = qid+i+1
-          let ret = await questionTable.insertDataAwait(questionDb)
+          questionDb.questionID = qid + i + 1
+          let ret = await QuestionTable.getInstance().insertDataAwait(questionDb)
           Logger.info(TAG, 'ret--------' + ret)
         }
       }
       //插入题库表,下载成功后的状态
       bankListRes.downloadedState = 1
       bankListRes.position = 0
+      bankListRes.bankType = 0
       let ret = await questionBankTable.insertDataAwait(bankListRes)
+      this.initSearchEngin(bankListRes.qid, 1)
+
       Logger.info(TAG, 'ret22--------' + ret)
       return true
     } catch (e) {
       Logger.info(TAG, "----->" + e)
       return false
     }
+  }
+
+  //初始化搜索引擎,更新查询数据
+  public async initSearchEngin(qid: number, type: number) {
+    let result = await SearchEngine.getInstance().initWithThreadTask(qid, type)
+    Logger.debug('result---' + result)
+  }
+
+  // 多线程初始化搜索引擎,更新查询数据  (添加题库删除题库都会触发）
+  public async initSearchEnginTask(ctx: Context, qid: number, type: number) {
+    let result = await SearchEngine.getInstance().initWithThread(ctx, qid, type)
+    Logger.debug('result---' + result)
   }
 }

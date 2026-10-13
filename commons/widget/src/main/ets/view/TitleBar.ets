@@ -4,6 +4,14 @@ export struct TitleBar {
   @Prop title: string
   backClick: () => void = () => {
   };
+  rightBuilderClick: () => void = () => {
+  };
+
+  @Builder
+  rightBuilder() {
+  };
+
+  @BuilderParam rightBuilderParam: () => void = this.rightBuilder
 
   build() {
     Row() {
@@ -20,8 +28,14 @@ export struct TitleBar {
         .width('60%')
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
+      Column(){
+        this.rightBuilderParam()
+      }
+      .onClick(() =>this.rightBuilderClick())
+
+
     }
     .margin({ top: 15 })
-
+    .justifyContent(FlexAlign.SpaceBetween)
   }
 }
